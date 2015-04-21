@@ -24,6 +24,7 @@ typedef double real64;
 #include "papaya.cpp"
 
 #include <windows.h>
+#include <windowsx.h>
 #include <stdio.h>
 #include <malloc.h>
 
@@ -115,6 +116,74 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	{
 		// TODO: Handle this as an error - recreate window?
 		GlobalRunning = false;
+	} break;
+
+	case WM_NCCALCSIZE:
+	{
+		//this kills the window frame and title bar we added with
+		//WS_THICKFRAME and WS_CAPTION
+		return 0;
+	} break;
+
+
+	case WM_NCHITTEST:
+	{
+		const LONG BorderWidth = 8; //in pixels
+		RECT WindowRect;
+		GetWindowRect(Window, &WindowRect);
+		long X = GET_X_LPARAM(LParam);
+		long Y = GET_Y_LPARAM(LParam);
+
+		//bottom left corner
+		if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
+			Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+		{
+			return HTBOTTOMLEFT;
+		}
+		//bottom right corner
+		if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
+			Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+		{
+			return HTBOTTOMRIGHT;
+		}
+		//top left corner
+		if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
+			Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
+		{
+			return HTTOPLEFT;
+		}
+		//top right corner
+		if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
+			Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
+		{
+			return HTTOPRIGHT;
+		}
+		//left border
+		if (X >= WindowRect.left && X < WindowRect.left + BorderWidth)
+		{
+			return HTLEFT;
+		}
+		//right border
+		if (X < WindowRect.right && X >= WindowRect.right - BorderWidth)
+		{
+			return HTRIGHT;
+		}
+		//bottom border
+		if (Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+		{
+			return HTBOTTOM;
+		}
+		//top border
+		if (Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
+		{
+			return HTTOP;
+		}
+
+		const uint32 TitleBarHeight = 30;
+		if (Y - WindowRect.top <= TitleBarHeight)
+		{
+			return HTCAPTION;
+		}
 	} break;
 
 	case WM_SYSKEYDOWN:
@@ -226,7 +295,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			0,
 			WindowClass.lpszClassName,
 			"Papaya",
-			WS_OVERLAPPED | WS_POPUP | WS_VISIBLE | WS_MINIMIZEBOX,
+			WS_POPUP | WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_VISIBLE,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
@@ -235,10 +304,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			0,
 			Instance,
 			0);
+
 		if (Window)
 		{
 			// TODO: Improving sizing and positioning
-			SetWindowPos(Window, HWND_TOP, 320, 180, 1280, 720, SWP_SHOWWINDOW);
+			SetWindowPos(Window, HWND_TOP, 320, 180, 1280, 720, NULL );
 
 			// Since we specified CS_OWNDC, we can just
 			// get one device context and use it forever because we
