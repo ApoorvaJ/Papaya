@@ -33,8 +33,7 @@ typedef double real64;
 global_variable bool32 GlobalRunning;
 global_variable win32_offscreen_buffer GlobalBackbuffer;
 
-internal win32_window_dimension
-Win32GetWindowDimension(HWND Window)
+internal win32_window_dimension Win32GetWindowDimension(HWND Window)
 {
 	win32_window_dimension Result;
 
@@ -46,8 +45,7 @@ Win32GetWindowDimension(HWND Window)
 	return(Result);
 }
 
-internal void
-Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, int Height)
+internal void Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, int Height)
 {
 	// TODO: Bulletproof this.
 	// Maybe don't free first, free after, then free first if that fails.
@@ -80,9 +78,7 @@ Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, int Height)
 	// TODO: Probably clear this to black
 }
 
-internal void
-Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer,
-HDC DeviceContext, int WindowWidth, int WindowHeight)
+internal void Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer, HDC DeviceContext, int WindowWidth, int WindowHeight)
 {
 	// TODO: Aspect ratio correction
 	// TODO: Play with stretch modes
@@ -98,11 +94,7 @@ HDC DeviceContext, int WindowWidth, int WindowHeight)
 		DIB_RGB_COLORS, SRCCOPY);
 }
 
-internal LRESULT CALLBACK
-Win32MainWindowCallback(HWND Window,
-UINT Message,
-WPARAM WParam,
-LPARAM LParam)
+internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
 	LRESULT Result = 0;
 
@@ -210,11 +202,7 @@ LPARAM LParam)
 	return(Result);
 }
 
-int CALLBACK
-WinMain(HINSTANCE Instance,
-HINSTANCE PrevInstance,
-LPSTR CommandLine,
-int ShowCode)
+int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
 {
 	LARGE_INTEGER PerfCountFrequencyResult;
 	QueryPerformanceFrequency(&PerfCountFrequencyResult);
@@ -238,7 +226,7 @@ int ShowCode)
 			0,
 			WindowClass.lpszClassName,
 			"Papaya",
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+			WS_OVERLAPPED | WS_POPUP | WS_VISIBLE | WS_MINIMIZEBOX,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
@@ -249,6 +237,9 @@ int ShowCode)
 			0);
 		if (Window)
 		{
+			// TODO: Improving sizing and positioning
+			SetWindowPos(Window, HWND_TOP, 320, 180, 1280, 720, SWP_SHOWWINDOW);
+
 			// Since we specified CS_OWNDC, we can just
 			// get one device context and use it forever because we
 			// are not sharing it with anyone.
