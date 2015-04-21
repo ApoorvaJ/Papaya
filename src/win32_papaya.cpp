@@ -268,7 +268,7 @@ int ShowCode)
 
 			// TODO: Handle various memory footprints (USING SYSTEM METRICS)
 			uint64 TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
-			GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, TotalSize,
+			GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
 				MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 			GameMemory.TransientStorage = ((uint8 *)GameMemory.PermanentStorage +
 				GameMemory.PermanentStorageSize);
