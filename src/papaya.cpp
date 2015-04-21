@@ -1,4 +1,3 @@
-#include "papaya.h"
 
 internal void RenderWeirdGradient(
 	game_offscreen_buffer *Buffer, 
@@ -38,7 +37,7 @@ void GameUpdateAndRender(
 		Memory->IsInitialized = true;
 	}
 
-	//GameState->BlueOffset += 1;
-	//GameState->GreenOffset += 1;
+	GameState->BlueOffset += 1;
+	GameState->GreenOffset += 1;
 	RenderWeirdGradient(Buffer, GameState->BlueOffset, GameState->GreenOffset);
 }
