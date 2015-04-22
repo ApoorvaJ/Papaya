@@ -307,8 +307,17 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		if (Window)
 		{
-			// TODO: Improving sizing and positioning
-			SetWindowPos(Window, HWND_TOP, 320, 180, 1280, 720, NULL );
+			uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
+			uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+			float WindowSize = 0.8f;
+			uint32 WindowWidth = (uint32)((float)ScreenWidth * WindowSize);
+			uint32 WindowHeight = (uint32)((float)ScreenHeight * WindowSize);
+
+			uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
+			uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
+
+			SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL );
 
 			// Since we specified CS_OWNDC, we can just
 			// get one device context and use it forever because we
