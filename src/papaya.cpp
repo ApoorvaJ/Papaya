@@ -1,6 +1,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include <math.h>
+
 global_variable uint8 *Image;
 
 internal void RenderWeirdGradient(
@@ -11,12 +13,15 @@ internal void RenderWeirdGradient(
 	local_persist int ImageWidth, ImageHeight, ComponentsPerPixel;
 	if (!Image)
 	{
-		Image =	stbi_load("C:\\Users\\Apoorva\\Pictures\\Camera Roll\\picture000.jpg", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
+		Image =	stbi_load("C:\\Users\\Apoorva\\Pictures\\Camera Roll\\lenna.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
 	}
 	else
 	{
 		uint8 *Row = (uint8 *)Buffer->Memory;
 		uint8 *ImageCursor = Image;
+		uint32 CurrentPixel = 0;
+
+		uint8 FinalRed, FinalGreen, FinalBlue;
 
 		for (int Y = 0;
 			Y < Buffer->Height;
@@ -27,39 +32,33 @@ internal void RenderWeirdGradient(
 				X < Buffer->Width;
 				++X)
 			{
-				uint8 Red = *ImageCursor++;
-				uint8 Blue =  *ImageCursor++ + BlueOffset;
-				uint8 Green = *ImageCursor++ + GreenOffset;
+				if (CurrentPixel / 1280 >= ImageHeight || CurrentPixel % 1280 >= ImageWidth)
+				{
+					FinalRed = 0;
+					FinalGreen = 0;
+					FinalBlue = 0;
+				}
+				else
+				{
+					uint8 Red = *ImageCursor++;
+					uint8 Green = *ImageCursor++;
+					uint8 Blue =  *ImageCursor++;
 
+					uint8 GreyValue = (uint8)(0.299f * (float)Red + 0.587f * (float)Green + 0.114f * (float)Blue);
 
+					float BlendFactor = (sinf(BlueOffset * 0.1f) + 1.0f) * 0.5f;
+					FinalRed =		(uint8)((float)GreyValue * BlendFactor + (float)Red * (1.0f - (float)BlendFactor));
+					FinalGreen =	(uint8)((float)GreyValue * BlendFactor + (float)Green * (1.0f - (float)BlendFactor));
+					FinalBlue =		(uint8)((float)GreyValue * BlendFactor + (float)Blue * (1.0f - (float)BlendFactor));
+				}
 
-				*Pixel++ = ( (Red << 16) | (Green << 8) | Blue);
+				*Pixel++ = ( ( FinalRed << 16) | (FinalGreen << 8) | FinalBlue );
+				CurrentPixel++;
 			}
 
 			Row += Buffer->Pitch;
 		}
 	}
-
-	// TODO: Let's see what the optimizer does
-
-	/*uint8 *Row = (uint8 *)Buffer->Memory;
-	for (int Y = 0;
-		Y < Buffer->Height;
-		++Y)
-	{
-		uint32 *Pixel = (uint32 *)Row;
-		for (int X = 0;
-			X < Buffer->Width;
-			++X)
-		{
-			uint8 Blue = (X + BlueOffset);
-			uint8 Green = (Y + GreenOffset);
-
-			*Pixel++ = ((Green << 16) | Blue);
-		}
-
-		Row += Buffer->Pitch;
-	}*/
 }
 
 void GameUpdateAndRender(
