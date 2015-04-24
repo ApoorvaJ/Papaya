@@ -32,7 +32,7 @@ internal void RenderWeirdGradient(
 				X < Buffer->Width;
 				++X)
 			{
-				if (CurrentPixel / 1280 >= (uint32)ImageHeight || CurrentPixel % 1280 >= (uint32)ImageWidth)
+				if (CurrentPixel / Buffer->Width >= (uint32)ImageHeight || CurrentPixel % Buffer->Width >= (uint32)ImageWidth)
 				{
 					FinalRed = 0;
 					FinalGreen = 0;

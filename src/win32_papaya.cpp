@@ -125,6 +125,14 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		return 0;
 	} break;
 
+	case WM_SIZE:
+	{
+		uint32 NewWidth = LParam & 0xFFFF;
+		uint32 NewHeight = LParam >> 16;
+		Win32ResizeDIBSection(&GlobalBackbuffer, NewWidth, NewHeight);
+		Result = DefWindowProcA(Window, Message, WParam, LParam);
+	} break;
+
 
 	case WM_NCHITTEST:
 	{
@@ -317,7 +325,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
 			uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
 
-			SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL );
+			//SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
+			SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
 
 			// Since we specified CS_OWNDC, we can just
 			// get one device context and use it forever because we
