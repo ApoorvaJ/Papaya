@@ -13,7 +13,7 @@ internal void RenderWeirdGradient(
 	local_persist int ImageWidth, ImageHeight, ComponentsPerPixel;
 	if (!Image)
 	{
-		Image =	stbi_load("C:\\Users\\Apoorva\\Pictures\\Camera Roll\\lenna.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
+		Image =	stbi_load("C:\\Users\\Apoorva\\Pictures\\ImageTest\\lenna.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
 	}
 	else
 	{
@@ -32,7 +32,7 @@ internal void RenderWeirdGradient(
 				X < Buffer->Width;
 				++X)
 			{
-				if (CurrentPixel / 1280 >= ImageHeight || CurrentPixel % 1280 >= ImageWidth)
+				if (CurrentPixel / 1280 >= (uint32)ImageHeight || CurrentPixel % 1280 >= (uint32)ImageWidth)
 				{
 					FinalRed = 0;
 					FinalGreen = 0;
