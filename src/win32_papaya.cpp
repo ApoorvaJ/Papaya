@@ -38,6 +38,8 @@ global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable HPALETTE Palette;
 
+global_variable float Time = 0.0f;
+
 internal win32_window_dimension Win32GetWindowDimension(HWND Window)
 {
 	win32_window_dimension Result;
@@ -105,30 +107,34 @@ void Redraw(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Draw six faces of a cube
+	Time += 0.05f;
+	float Size = sin(Time) * 0.2f + 0.8f;
+	float HalfSize = Size * 0.5f;
+
     glBegin(GL_QUADS);
-    glNormal3f( 0.0F, 0.0F, 1.0F);
-    glVertex3f( 0.5F, 0.5F, 0.5F); glVertex3f(-0.5F, 0.5F, 0.5F);
-    glVertex3f(-0.5F,-0.5F, 0.5F); glVertex3f( 0.5F,-0.5F, 0.5F);
+    glNormal3f( 0.0F, 0.0F, Size);
+    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
+    glVertex3f(-HalfSize,-HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
 
-    glNormal3f( 0.0F, 0.0F,-1.0F);
-    glVertex3f(-0.5F,-0.5F,-0.5F); glVertex3f(-0.5F, 0.5F,-0.5F);
-    glVertex3f( 0.5F, 0.5F,-0.5F); glVertex3f( 0.5F,-0.5F,-0.5F);
+    glNormal3f( 0.0F, 0.0F,-Size);
+    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
+    glVertex3f( HalfSize, HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
 
-    glNormal3f( 0.0F, 1.0F, 0.0F);
-    glVertex3f( 0.5F, 0.5F, 0.5F); glVertex3f( 0.5F, 0.5F,-0.5F);
-    glVertex3f(-0.5F, 0.5F,-0.5F); glVertex3f(-0.5F, 0.5F, 0.5F);
+    glNormal3f( 0.0F, Size, 0.0F);
+    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
+    glVertex3f(-HalfSize, HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
 
-    glNormal3f( 0.0F,-1.0F, 0.0F);
-    glVertex3f(-0.5F,-0.5F,-0.5F); glVertex3f( 0.5F,-0.5F,-0.5F);
-    glVertex3f( 0.5F,-0.5F, 0.5F); glVertex3f(-0.5F,-0.5F, 0.5F);
+    glNormal3f( 0.0F,-Size, 0.0F);
+    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
+    glVertex3f( HalfSize,-HalfSize, HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
 
-    glNormal3f( 1.0F, 0.0F, 0.0F);
-    glVertex3f( 0.5F, 0.5F, 0.5F); glVertex3f( 0.5F,-0.5F, 0.5F);
-    glVertex3f( 0.5F,-0.5F,-0.5F); glVertex3f( 0.5F, 0.5F,-0.5F);
+    glNormal3f( Size, 0.0F, 0.0F);
+    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
+    glVertex3f( HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
 
-    glNormal3f(-1.0F, 0.0F, 0.0F);
-    glVertex3f(-0.5F,-0.5F,-0.5F); glVertex3f(-0.5F,-0.5F, 0.5F);
-    glVertex3f(-0.5F, 0.5F, 0.5F); glVertex3f(-0.5F, 0.5F,-0.5F);
+    glNormal3f(-Size, 0.0F, 0.0F);
+    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
+    glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
     glEnd();
 
     SwapBuffers(DeviceContext);
@@ -587,7 +593,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		/*win32_window_dimension Dimension = Win32GetWindowDimension(Window);
 		Win32DisplayBufferInWindow(&GlobalBackbuffer, DeviceContext,
 			Dimension.Width, Dimension.Height);*/
-
+		Redraw();
 		uint64 EndCycleCount = __rdtsc();
 
 		LARGE_INTEGER EndCounter;
