@@ -235,7 +235,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			{
 				// set viewing projection
 				glMatrixMode(GL_PROJECTION);
-				glFrustum(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 3.0F);
+				float FrustumX = 16.0f/9.0f;
+				glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
 
 				// position viewer
 				glMatrixMode(GL_MODELVIEW);
@@ -329,6 +330,11 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			uint32 NewHeight = LParam >> 16;*/
 			uint32 NewWidth = (int32) LOWORD(LParam);
 			uint32 NewHeight = (int32) HIWORD(LParam);
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			float FrustumX = (float)NewWidth/(float)NewHeight;
+			glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
+			glMatrixMode(GL_MODELVIEW);
 			//Win32ResizeDIBSection(&GlobalBackbuffer, NewWidth, NewHeight);
 			
 			if (RenderingContext)
