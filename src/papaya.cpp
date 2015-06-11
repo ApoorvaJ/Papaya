@@ -25,7 +25,7 @@ internal void RenderWeirdGradient(
 		fread(ttf_buffer, 1, 1<<25, fopen("c:/windows/fonts/arialbd.ttf", "rb"));
 
 		stbtt_InitFont(&font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
-		Image = stbtt_GetCodepointBitmap(&font, 0,stbtt_ScaleForPixelHeight(&font, s), c, &ImageWidth, &ImageHeight, &XOff, &YOff);
+		Image = stbtt_GetCodepointBitmap(&font, 0.0f,stbtt_ScaleForPixelHeight(&font, (float)s), c, &ImageWidth, &ImageHeight, &XOff, &YOff);
 
 	}
 	else
