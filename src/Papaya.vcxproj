@@ -68,15 +68,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="imgui.h" />
     <ClInclude Include="papaya.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </ExcludedFromBuild>
     </ClInclude>
+    <ClCompile Include="imgui.cpp" />
     <ClCompile Include="win32_papaya.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="papaya.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_rect_pack.h" />
+    <ClInclude Include="stb_textedit.h" />
     <ClInclude Include="stb_truetype.h" />
     <ClInclude Include="win32_papaya.h" />
   </ItemGroup>

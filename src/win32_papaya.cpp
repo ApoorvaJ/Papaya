@@ -23,6 +23,7 @@ typedef double real64;
 #include "papaya.h"
 #include "papaya.cpp"
 
+#include "imgui.h"
 #include <windows.h>
 #include <windowsx.h>
 #include <gl/GL.h>
@@ -37,8 +38,14 @@ global_variable win32_offscreen_buffer GlobalBackbuffer;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable HPALETTE Palette;
+global_variable int32 WindowWidth, WindowHeight;
 
 global_variable float Time = 0.0f;
+
+// imgui
+global_variable INT64 g_Time = 0;
+global_variable INT64 g_TicksPerSecond = 0;
+global_variable GLuint g_FontTexture = 0;
 
 internal win32_window_dimension Win32GetWindowDimension(HWND Window)
 {
@@ -101,47 +108,163 @@ internal void Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer, HDC Dev
 		DIB_RGB_COLORS, SRCCOPY);
 }
 
+internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
+{
+    if (cmd_lists_count == 0)
+        return;
+
+    // We are using the OpenGL fixed pipeline to make the example code simpler to read!
+    // A probable faster way to render would be to collate all vertices from all cmd_lists into a single vertex buffer.
+    // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers.
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_SCISSOR_TEST);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnable(GL_TEXTURE_2D);
+    //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context
+
+    // Setup orthographic projection matrix
+    const float width = ImGui::GetIO().DisplaySize.x;
+    const float height = ImGui::GetIO().DisplaySize.y;
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0.0f, width, height, 0.0f, -1.0f, +1.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Render command lists
+    #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+    for (int n = 0; n < cmd_lists_count; n++)
+    {
+        const ImDrawList* cmd_list = cmd_lists[n];
+        const unsigned char* vtx_buffer = (const unsigned char*)&cmd_list->vtx_buffer.front();
+        glVertexPointer(2, GL_FLOAT, sizeof(ImDrawVert), (void*)(vtx_buffer + OFFSETOF(ImDrawVert, pos)));
+        glTexCoordPointer(2, GL_FLOAT, sizeof(ImDrawVert), (void*)(vtx_buffer + OFFSETOF(ImDrawVert, uv)));
+        glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ImDrawVert), (void*)(vtx_buffer + OFFSETOF(ImDrawVert, col)));
+
+        int vtx_offset = 0;
+        for (size_t cmd_i = 0; cmd_i < cmd_list->commands.size(); cmd_i++)
+        {
+            const ImDrawCmd* pcmd = &cmd_list->commands[cmd_i];
+            if (pcmd->user_callback)
+            {
+                pcmd->user_callback(cmd_list, pcmd);
+            }
+            else
+            {
+                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->texture_id);
+                glScissor((int)pcmd->clip_rect.x, (int)(height - pcmd->clip_rect.w), (int)(pcmd->clip_rect.z - pcmd->clip_rect.x), (int)(pcmd->clip_rect.w - pcmd->clip_rect.y));
+                glDrawArrays(GL_TRIANGLES, vtx_offset, pcmd->vtx_count);
+            }
+            vtx_offset += pcmd->vtx_count;
+        }
+    }
+    #undef OFFSETOF
+
+    // Restore modified state
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glPopAttrib();
+}
+
 void Redraw(void)
 {
-	// Clear color and depth buffers
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//// Clear color and depth buffers
+ //   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Draw six faces of a cube
-	Time += 0.05f;
-	float Size = sin(Time) * 0.2f + 0.8f;
-	float HalfSize = Size * 0.5f;
+ //   // Draw six faces of a cube
+	//Time += 0.05f;
+	//float Size = sin(Time) * 0.2f + 0.8f;
+	//float HalfSize = Size * 0.5f;
 
-    glBegin(GL_QUADS);
-    glNormal3f( 0.0F, 0.0F, Size);
-    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
-    glVertex3f(-HalfSize,-HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
+ //   glBegin(GL_QUADS);
+ //   glNormal3f( 0.0F, 0.0F, Size);
+ //   glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
+ //   glVertex3f(-HalfSize,-HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
 
-    glNormal3f( 0.0F, 0.0F,-Size);
-    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
-    glVertex3f( HalfSize, HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
+ //   glNormal3f( 0.0F, 0.0F,-Size);
+ //   glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
+ //   glVertex3f( HalfSize, HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
 
-    glNormal3f( 0.0F, Size, 0.0F);
-    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
-    glVertex3f(-HalfSize, HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
+ //   glNormal3f( 0.0F, Size, 0.0F);
+ //   glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
+ //   glVertex3f(-HalfSize, HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
 
-    glNormal3f( 0.0F,-Size, 0.0F);
-    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
-    glVertex3f( HalfSize,-HalfSize, HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
+ //   glNormal3f( 0.0F,-Size, 0.0F);
+ //   glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
+ //   glVertex3f( HalfSize,-HalfSize, HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
 
-    glNormal3f( Size, 0.0F, 0.0F);
-    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
-    glVertex3f( HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
+ //   glNormal3f( Size, 0.0F, 0.0F);
+ //   glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
+ //   glVertex3f( HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
 
-    glNormal3f(-Size, 0.0F, 0.0F);
-    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
-    glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
-    glEnd();
+ //   glNormal3f(-Size, 0.0F, 0.0F);
+ //   glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
+ //   glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
+ //   glEnd();
 
-    SwapBuffers(DeviceContext);
+ //   SwapBuffers(DeviceContext);
+}
+
+internal LRESULT ImGui_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	ImGuiIO& io = ImGui::GetIO();
+    switch (msg)
+    {
+		case WM_LBUTTONDOWN:
+			io.MouseDown[0] = true;
+			return true;
+		case WM_LBUTTONUP:
+			io.MouseDown[0] = false; 
+			return true;
+		case WM_RBUTTONDOWN:
+			io.MouseDown[1] = true; 
+			return true;
+		case WM_RBUTTONUP:
+			io.MouseDown[1] = false; 
+			return true;
+		case WM_MOUSEWHEEL:
+			io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
+			return true;
+		case WM_MOUSEMOVE:
+			io.MousePos.x = (signed short)(lParam);
+			io.MousePos.y = (signed short)(lParam >> 16); 
+			return true;
+		case WM_KEYDOWN:
+			if (wParam < 256)
+				io.KeysDown[wParam] = 1;
+			return true;
+		case WM_KEYUP:
+			if (wParam < 256)
+				io.KeysDown[wParam] = 0;
+			return true;
+		case WM_CHAR:
+			// You can also use ToAscii()+GetKeyboardState() to retrieve characters.
+			if (wParam > 0 && wParam < 0x10000)
+				io.AddInputCharacter((unsigned short)wParam);
+			return true;
+    }
+    return 0;
 }
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
+	if (ImGui_WndProcHandler(Window, Message, WParam, LParam))
+        return true;
+
 	LRESULT Result = 0;
 
 	switch (Message)
@@ -233,22 +356,22 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
 			#pragma region GL Initialization
 			{
-				// set viewing projection
-				glMatrixMode(GL_PROJECTION);
-				float FrustumX = 16.0f/9.0f;
-				glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
+				//// set viewing projection
+				//glMatrixMode(GL_PROJECTION);
+				//float FrustumX = 16.0f/9.0f;
+				//glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
 
-				// position viewer
-				glMatrixMode(GL_MODELVIEW);
-				glTranslatef(0.0F, 0.0F, -2.0F);
+				//// position viewer
+				//glMatrixMode(GL_MODELVIEW);
+				//glTranslatef(0.0F, 0.0F, -2.0F);
 
-				// position object
-				glRotatef(30.0F, 1.0F, 0.0F, 0.0F);
-				glRotatef(30.0F, 0.0F, 1.0F, 0.0F);
+				//// position object
+				//glRotatef(30.0F, 1.0F, 0.0F, 0.0F);
+				//glRotatef(30.0F, 0.0F, 1.0F, 0.0F);
 
-				glEnable(GL_DEPTH_TEST);
-				glEnable(GL_LIGHTING);
-				glEnable(GL_LIGHT0);
+				//glEnable(GL_DEPTH_TEST);
+				//glEnable(GL_LIGHTING);
+				//glEnable(GL_LIGHT0);
 			}
 			#pragma endregion
 		} break;
@@ -328,22 +451,23 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		{
 			/*uint32 NewWidth = LParam & 0xFFFF;
 			uint32 NewHeight = LParam >> 16;*/
-			uint32 NewWidth = (int32) LOWORD(LParam);
-			uint32 NewHeight = (int32) HIWORD(LParam);
+			WindowWidth = (int32) LOWORD(LParam);
+			WindowHeight = (int32) HIWORD(LParam);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
-			float FrustumX = (float)NewWidth/(float)NewHeight;
+
+			float FrustumX = (float)WindowWidth/(float)WindowHeight;
 			glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
 			glMatrixMode(GL_MODELVIEW);
 			//Win32ResizeDIBSection(&GlobalBackbuffer, NewWidth, NewHeight);
 			
 			if (RenderingContext)
 			{
-				glViewport(0, 0, NewWidth, NewHeight);
+				glViewport(0, 0, WindowWidth, WindowHeight);
 			}
 			
 			//
-			//Result = DefWindowProcA(Window, Message, WParam, LParam);
+			Result = DefWindowProcA(Window, Message, WParam, LParam);
 
 		} break;
 
@@ -407,76 +531,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			{
 				return HTCAPTION;
 			}
-		} break;
 
-		#pragma endregion
-
-		#pragma region Input
-
-		case WM_SYSKEYDOWN:
-		case WM_SYSKEYUP:
-		case WM_KEYDOWN:
-		case WM_KEYUP:
-		{
-			uint32 VKCode = WParam;
-			bool32 WasDown = ((LParam & (1 << 30)) != 0);
-			bool32 IsDown = ((LParam & (1 << 31)) == 0);
-			if (WasDown != IsDown)
-			{
-				if (VKCode == 'W')
-				{
-				}
-				else if (VKCode == 'A')
-				{
-				}
-				else if (VKCode == 'S')
-				{
-				}
-				else if (VKCode == 'D')
-				{
-				}
-				else if (VKCode == 'Q')
-				{
-				}
-				else if (VKCode == 'E')
-				{
-				}
-				else if (VKCode == VK_UP)
-				{
-				}
-				else if (VKCode == VK_LEFT)
-				{
-				}
-				else if (VKCode == VK_DOWN)
-				{
-				}
-				else if (VKCode == VK_RIGHT)
-				{
-				}
-				else if (VKCode == VK_ESCAPE)
-				{
-					/*OutputDebugStringA("ESCAPE: ");
-					if (IsDown)
-					{
-						OutputDebugStringA("IsDown ");
-					}
-					if (WasDown)
-					{
-						OutputDebugStringA("WasDown");
-					}
-					OutputDebugStringA("\n");*/
-					GlobalRunning = false;
-				}
-				else if (VKCode == VK_SPACE)
-				{
-				}
-			}
-
-			bool32 AltKeyWasDown = (LParam & (1 << 29));
-			if ((VKCode == VK_F4) && AltKeyWasDown)
-			{
-				GlobalRunning = false;
-			}
+			return HTCLIENT;
 		} break;
 
 		#pragma endregion
@@ -488,6 +544,56 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	}
 
 	return(Result);
+}
+
+void ImGui_NewFrame()
+{
+     if (!g_FontTexture)
+	 {
+        ImGuiIO& io = ImGui::GetIO();
+
+		// Build texture
+		unsigned char* pixels;
+		int width, height;
+		io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height);
+
+		// Create texture
+		glGenTextures(1, &g_FontTexture);
+		glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
+
+		// Store our identifier
+		io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
+
+		// Cleanup (don't clear the input data if you want to append new fonts later)
+		io.Fonts->ClearInputData();
+		io.Fonts->ClearTexData();
+	 }
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Setup display size (every frame to accommodate for window resizing)
+    io.DisplaySize = ImVec2((float)WindowWidth, (float)WindowHeight);
+
+
+	// Read keyboard modifiers inputs
+    io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+    // Setup time step
+    INT64 current_time;
+    QueryPerformanceCounter((LARGE_INTEGER *)&current_time); 
+    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
+    g_Time = current_time;
+
+	// Hide OS mouse cursor if ImGui is drawing it
+	SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+
+    // Start the frame
+    ImGui::NewFrame();
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
@@ -517,7 +623,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		0,																							// Extended window style
 		WindowClass.lpszClassName,																	// Class name,
 		"Papaya",																					// Name,
-		WS_POPUP | WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_VISIBLE,		// Style,
+		//WS_POPUP | WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_VISIBLE,		// Style,
+		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		CW_USEDEFAULT,																				// X,
 		CW_USEDEFAULT,																				// Y,
 		CW_USEDEFAULT,																				// Width,
@@ -543,8 +650,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
 	uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
 
-	//SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
-	SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
+	SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
+	//SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
 
 	GlobalRunning = true;
 
@@ -571,6 +678,42 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		return 0;
 	}
 
+	// IMGUI INIT <START>
+
+	QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond);
+    QueryPerformanceCounter((LARGE_INTEGER *)&g_Time);
+
+	WindowWidth = 1280;
+	WindowHeight = 720;
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.KeyMap[ImGuiKey_Tab] = VK_TAB;                              // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
+    io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
+    io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
+    io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
+    io.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
+    io.KeyMap[ImGuiKey_Home] = VK_HOME;
+    io.KeyMap[ImGuiKey_End] = VK_END;
+    io.KeyMap[ImGuiKey_Delete] = VK_DELETE;
+    io.KeyMap[ImGuiKey_Backspace] = VK_BACK;
+    io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
+    io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
+    io.KeyMap[ImGuiKey_A] = 'A';
+    io.KeyMap[ImGuiKey_C] = 'C';
+    io.KeyMap[ImGuiKey_V] = 'V';
+    io.KeyMap[ImGuiKey_X] = 'X';
+    io.KeyMap[ImGuiKey_Y] = 'Y';
+    io.KeyMap[ImGuiKey_Z] = 'Z';
+
+    io.RenderDrawListsFn = ImGui_RenderDrawLists;
+    io.ImeWindowHandle = Window;
+
+	bool show_test_window = true;
+    bool show_another_window = false;
+	ImVec4 clear_color = ImColor(114, 144, 154);
+
+	// IMGUI INIT <END>
+
 	LARGE_INTEGER LastCounter;
 	QueryPerformanceCounter(&LastCounter);
 	uint64 LastCycleCount = __rdtsc();
@@ -589,17 +732,50 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			DispatchMessageA(&Message);
 		}
 
-		game_offscreen_buffer Buffer = {};
+		/*game_offscreen_buffer Buffer = {};
 		Buffer.Memory = GlobalBackbuffer.Memory;
 		Buffer.Width = GlobalBackbuffer.Width;
 		Buffer.Height = GlobalBackbuffer.Height;
-		Buffer.Pitch = GlobalBackbuffer.Pitch;
-		//GameUpdateAndRender(&GameMemory, &Buffer);
+		Buffer.Pitch = GlobalBackbuffer.Pitch;*/
 
-		/*win32_window_dimension Dimension = Win32GetWindowDimension(Window);
-		Win32DisplayBufferInWindow(&GlobalBackbuffer, DeviceContext,
-			Dimension.Width, Dimension.Height);*/
-		Redraw();
+		//Redraw();
+		ImGui_NewFrame();
+		//=========================================
+		{
+			static float f = 0.0f;
+            ImGui::Text("Hello, world!");
+            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+            ImGui::ColorEdit3("clear color", (float*)&clear_color);
+            if (ImGui::Button("Test Window")) show_test_window ^= 1;
+            if (ImGui::Button("Another Window")) show_another_window ^= 1;
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		}
+
+		// 2. Show another simple window, this time using an explicit Begin/End pair
+        if (show_another_window)
+        {
+            ImGui::SetNextWindowSize(ImVec2(200,100), ImGuiSetCond_FirstUseEver);
+            ImGui::Begin("Another Window", &show_another_window);
+            ImGui::Text("Hello");
+            ImGui::End();
+        }
+
+        // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
+        if (show_test_window)
+        {
+            ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+            ImGui::ShowTestWindow(&show_test_window);
+        }
+
+        // Rendering
+        glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+        ImGui::Render();
+        SwapBuffers(DeviceContext);
+
+		//=========================================
+
 		uint64 EndCycleCount = __rdtsc();
 
 		LARGE_INTEGER EndCounter;
@@ -623,3 +799,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	return 0;
 }
+
+
+//char Buffer[256];
+//sprintf(Buffer, "%f\n", io.MousePos.x);
+//OutputDebugStringA(Buffer);
