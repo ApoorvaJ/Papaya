@@ -180,43 +180,94 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     glPopAttrib();
 }
 
+void ImGui_NewFrame(HWND Window)
+{
+     if (!g_FontTexture)
+	 {
+        ImGuiIO& io = ImGui::GetIO();
+
+		// Build texture
+		unsigned char* pixels;
+		int width, height;
+		io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height);
+
+		// Create texture
+		glGenTextures(1, &g_FontTexture);
+		glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
+
+		// Store our identifier
+		io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
+
+		// Cleanup (don't clear the input data if you want to append new fonts later)
+		io.Fonts->ClearInputData();
+		io.Fonts->ClearTexData();
+	 }
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Setup display size (every frame to accommodate for window resizing)
+	RECT rect;
+    GetClientRect(Window, &rect);
+    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+
+	// Read keyboard modifiers inputs
+    io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+    // Setup time step
+    INT64 current_time;
+    QueryPerformanceCounter((LARGE_INTEGER *)&current_time); 
+    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
+    g_Time = current_time;
+
+	// Hide OS mouse cursor if ImGui is drawing it
+	//SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+
+    // Start the frame
+    ImGui::NewFrame();
+}
+
 void Redraw(void)
 {
-	//// Clear color and depth buffers
- //   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// Clear color and depth buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
- //   // Draw six faces of a cube
-	//Time += 0.05f;
-	//float Size = sin(Time) * 0.2f + 0.8f;
-	//float HalfSize = Size * 0.5f;
+    // Draw six faces of a cube
+	Time += 0.05f;
+	float Size = sin(Time) * 0.2f + 0.8f;
+	float HalfSize = Size * 0.5f;
 
- //   glBegin(GL_QUADS);
- //   glNormal3f( 0.0F, 0.0F, Size);
- //   glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
- //   glVertex3f(-HalfSize,-HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
+    glBegin(GL_QUADS);
+    glNormal3f( 0.0F, 0.0F, Size);
+    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
+    glVertex3f(-HalfSize,-HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
 
- //   glNormal3f( 0.0F, 0.0F,-Size);
- //   glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
- //   glVertex3f( HalfSize, HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
+    glNormal3f( 0.0F, 0.0F,-Size);
+    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
+    glVertex3f( HalfSize, HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
 
- //   glNormal3f( 0.0F, Size, 0.0F);
- //   glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
- //   glVertex3f(-HalfSize, HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
+    glNormal3f( 0.0F, Size, 0.0F);
+    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
+    glVertex3f(-HalfSize, HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
 
- //   glNormal3f( 0.0F,-Size, 0.0F);
- //   glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
- //   glVertex3f( HalfSize,-HalfSize, HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
+    glNormal3f( 0.0F,-Size, 0.0F);
+    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
+    glVertex3f( HalfSize,-HalfSize, HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
 
- //   glNormal3f( Size, 0.0F, 0.0F);
- //   glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
- //   glVertex3f( HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
+    glNormal3f( Size, 0.0F, 0.0F);
+    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
+    glVertex3f( HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
 
- //   glNormal3f(-Size, 0.0F, 0.0F);
- //   glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
- //   glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
- //   glEnd();
+    glNormal3f(-Size, 0.0F, 0.0F);
+    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
+    glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
+    glEnd();
 
- //   SwapBuffers(DeviceContext);
+    SwapBuffers(DeviceContext);
 }
 
 internal LRESULT ImGui_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -467,11 +518,11 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			}
 			
 			//
-			Result = DefWindowProcA(Window, Message, WParam, LParam);
+			//Result = DefWindowProcA(Window, Message, WParam, LParam);
 
 		} break;
 
-		#pragma region WM_CHITTEST
+		#pragma region WM_NCHITTEST
 
 		case WM_NCHITTEST:
 		{
@@ -532,6 +583,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				return HTCAPTION;
 			}
 
+			SetCursor(LoadCursor(NULL, IDC_ARROW));
 			return HTCLIENT;
 		} break;
 
@@ -546,55 +598,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	return(Result);
 }
 
-void ImGui_NewFrame()
-{
-     if (!g_FontTexture)
-	 {
-        ImGuiIO& io = ImGui::GetIO();
-
-		// Build texture
-		unsigned char* pixels;
-		int width, height;
-		io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height);
-
-		// Create texture
-		glGenTextures(1, &g_FontTexture);
-		glBindTexture(GL_TEXTURE_2D, g_FontTexture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
-
-		// Store our identifier
-		io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
-
-		// Cleanup (don't clear the input data if you want to append new fonts later)
-		io.Fonts->ClearInputData();
-		io.Fonts->ClearTexData();
-	 }
-
-    ImGuiIO& io = ImGui::GetIO();
-
-    // Setup display size (every frame to accommodate for window resizing)
-    io.DisplaySize = ImVec2((float)WindowWidth, (float)WindowHeight);
-
-
-	// Read keyboard modifiers inputs
-    io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-    io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-    io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
-    // Setup time step
-    INT64 current_time;
-    QueryPerformanceCounter((LARGE_INTEGER *)&current_time); 
-    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
-    g_Time = current_time;
-
-	// Hide OS mouse cursor if ImGui is drawing it
-	SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
-
-    // Start the frame
-    ImGui::NewFrame();
-}
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
 {
@@ -739,7 +742,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		Buffer.Pitch = GlobalBackbuffer.Pitch;*/
 
 		//Redraw();
-		ImGui_NewFrame();
+#if 1
+		ImGui_NewFrame(Window);
 		//=========================================
 		{
 			static float f = 0.0f;
@@ -775,6 +779,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         SwapBuffers(DeviceContext);
 
 		//=========================================
+#endif
 
 		uint64 EndCycleCount = __rdtsc();
 
