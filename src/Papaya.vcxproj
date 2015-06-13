@@ -73,7 +73,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </ExcludedFromBuild>
     </ClInclude>
-    <ClCompile Include="imgui.cpp" />
+    <ClInclude Include="imgui.cpp" />
     <ClCompile Include="win32_papaya.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -1,7 +1,5 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_TRUETYPE_IMPLEMENTATION 
-#include "stb_truetype.h"
 
 #include <math.h>
 
@@ -17,16 +15,6 @@ internal void RenderWeirdGradient(
 	if (!Image)
 	{
 		//Image =	stbi_load("C:\\Users\\Apoorva\\Pictures\\ImageTest\\lenna.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
-
-		stbtt_fontinfo font;
-
-		int c = 0x0024F, s = 50;
-
-		fread(ttf_buffer, 1, 1<<25, fopen("c:/windows/fonts/arialbd.ttf", "rb"));
-
-		stbtt_InitFont(&font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
-		Image = stbtt_GetCodepointBitmap(&font, 0.0f,stbtt_ScaleForPixelHeight(&font, (float)s), c, &ImageWidth, &ImageHeight, &XOff, &YOff);
-
 	}
 	else
 	{

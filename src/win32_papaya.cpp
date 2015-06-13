@@ -20,10 +20,13 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
+#include "imgui.h"
+#include "imgui.cpp"
+
 #include "papaya.h"
 #include "papaya.cpp"
 
-#include "imgui.h"
+
 #include <windows.h>
 #include <windowsx.h>
 #include <gl/GL.h>
@@ -46,6 +49,7 @@ global_variable float Time = 0.0f;
 global_variable INT64 g_Time = 0;
 global_variable INT64 g_TicksPerSecond = 0;
 global_variable GLuint g_FontTexture = 0;
+global_variable ImVec4 clear_color = ImColor(114, 144, 154);
 
 internal win32_window_dimension Win32GetWindowDimension(HWND Window)
 {
@@ -231,6 +235,13 @@ void ImGui_NewFrame(HWND Window)
     ImGui::NewFrame();
 }
 
+void ClearAndSwap(void)
+{
+	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+	SwapBuffers(DeviceContext);
+}
+
 void Redraw(void)
 {
 	// Clear color and depth buffers
@@ -267,7 +278,7 @@ void Redraw(void)
     glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
     glEnd();
 
-    SwapBuffers(DeviceContext);
+    //SwapBuffers(DeviceContext);
 }
 
 internal LRESULT ImGui_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -510,8 +521,9 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			float FrustumX = (float)WindowWidth/(float)WindowHeight;
 			glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
 			glMatrixMode(GL_MODELVIEW);
+
 			//Win32ResizeDIBSection(&GlobalBackbuffer, NewWidth, NewHeight);
-			
+			ClearAndSwap();
 			if (RenderingContext)
 			{
 				glViewport(0, 0, WindowWidth, WindowHeight);
@@ -711,9 +723,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     io.RenderDrawListsFn = ImGui_RenderDrawLists;
     io.ImeWindowHandle = Window;
 
+	//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Ubuntu-Regular.ttf", 16.0f);
+
 	bool show_test_window = true;
     bool show_another_window = false;
-	ImVec4 clear_color = ImColor(114, 144, 154);
 
 	// IMGUI INIT <END>
 
@@ -740,8 +753,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		Buffer.Width = GlobalBackbuffer.Width;
 		Buffer.Height = GlobalBackbuffer.Height;
 		Buffer.Pitch = GlobalBackbuffer.Pitch;*/
-
 		//Redraw();
+
 #if 1
 		ImGui_NewFrame(Window);
 		//=========================================

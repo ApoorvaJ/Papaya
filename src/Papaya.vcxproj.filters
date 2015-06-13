@@ -18,9 +18,6 @@
     <ClCompile Include="win32_papaya.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="win32_papaya.h">
@@ -46,6 +43,9 @@
     </ClInclude>
     <ClInclude Include="imgui.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui.cpp">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
