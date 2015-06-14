@@ -50,10 +50,11 @@ global_variable float Time = 0.0f;
 global_variable INT64 g_Time = 0;
 global_variable INT64 g_TicksPerSecond = 0;
 global_variable GLuint g_FontTexture = 0;
-global_variable ImVec4 clear_color = ImColor(114, 144, 154);
+global_variable ImVec4 clear_color = ImColor(45, 45, 48);
 
 // title bar
 global_variable ImTextureID TitleBar_TexId = 0;
+const float TitleBarButtonsWidth = 109;
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
 {
@@ -478,7 +479,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			}
 
 			const uint32 TitleBarHeight = 30;
-			if (Y - WindowRect.top <= TitleBarHeight)
+			if (Y - WindowRect.top - (IsMaximized(Window) ? 8.0f : 0.0f) <= TitleBarHeight && X < WindowRect.right - (TitleBarButtonsWidth + 10))
 			{
 				return HTCAPTION;
 			}
@@ -657,10 +658,31 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		#pragma region Title Bar
 		{
+			BOOL IsMaximized = IsMaximized(Window);
+
+			ImGui::SetNextWindowSize(ImVec2(TitleBarButtonsWidth,24));
+			ImGui::SetNextWindowPos(ImVec2((float)WindowWidth-TitleBarButtonsWidth - (IsMaximized ? 8.0f:0.0f), (IsMaximized ? 8.0f:0.0f)));
+			
+			ImGuiWindowFlags WindowFlags = 0;
+			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+			WindowFlags |= ImGuiWindowFlags_NoResize;
+			WindowFlags |= ImGuiWindowFlags_NoMove;
+			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+			WindowFlags |= ImGuiWindowFlags_NoCollapse;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f,0.18f,0.19f,1));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f,0.25f,0.25f,1));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0,0.48f,0.8f,1));
+
 			bool Show = true;
-			ImGui::SetNextWindowSize(ImVec2(800,500));
-			ImGui::SetNextWindowPos(ImVec2((float)WindowWidth-800,100));
-			ImGui::Begin("Title Bar Buttons", &Show);
+			ImGui::Begin("Title Bar Buttons", &Show, WindowFlags);
 
 			// TODO: Make frame_padding = 0 once the ImGui issue has been resolved
 			ImGui::PushID(0);
@@ -668,10 +690,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			{
 				ShowWindow(Window, SW_MINIMIZE);
 			}
-
-			WINDOWPLACEMENT WindowPlacement;
-			GetWindowPlacement(Window, &WindowPlacement);
-			bool IsMaximized = (WindowPlacement.showCmd == SW_SHOWMAXIMIZED);
 
 			ImVec2 StartUV = IsMaximized ? ImVec2(0.0f,0.5f) : ImVec2(0.5f,0.5f);
 			ImVec2 EndUV   = IsMaximized ? ImVec2(0.5f,1.0f) : ImVec2(1.0f,1.0f);
@@ -704,13 +722,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PopID();
 
 			ImGui::End();
+			ImGui::PopStyleVar(5);
+			ImGui::PopStyleColor(4);
 		}
 		#pragma endregion
 
 		//AppUpdateAndRender();
 
 		//=========================================
-#if 1
+#if 0
 		{
 			static float f = 0.0f;
             ImGui::Text("Hello, world!");
@@ -741,13 +761,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::ShowTestWindow(&show_test_window);
         }
 
+#endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui::Render();
         SwapBuffers(DeviceContext);
-#endif
 		//=========================================
 
 		//Sleep(10);
