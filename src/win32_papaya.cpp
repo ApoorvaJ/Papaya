@@ -36,12 +36,13 @@ typedef double real64;
 
 #include "win32_papaya.h"
 
+// TODO: Put these into own memory buffer
 global_variable bool32 GlobalRunning;
 global_variable win32_offscreen_buffer GlobalBackbuffer;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable HPALETTE Palette;
-global_variable int32 WindowWidth, WindowHeight;
+global_variable uint32 WindowWidth, WindowHeight;
 
 global_variable float Time = 0.0f;
 
@@ -51,66 +52,8 @@ global_variable INT64 g_TicksPerSecond = 0;
 global_variable GLuint g_FontTexture = 0;
 global_variable ImVec4 clear_color = ImColor(114, 144, 154);
 
-internal win32_window_dimension Win32GetWindowDimension(HWND Window)
-{
-	win32_window_dimension Result;
-
-	RECT ClientRect;
-	GetClientRect(Window, &ClientRect);
-	Result.Width = ClientRect.right - ClientRect.left;
-	Result.Height = ClientRect.bottom - ClientRect.top;
-
-	return(Result);
-}
-
-internal void Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, int Height)
-{
-	// TODO: Bulletproof this.
-	// Maybe don't free first, free after, then free first if that fails.
-
-	if (Buffer->Memory)
-	{
-		VirtualFree(Buffer->Memory, 0, MEM_RELEASE);
-	}
-
-	Buffer->Width = Width;
-	Buffer->Height = Height;
-
-	int BytesPerPixel = 4;
-
-	// When the biHeight field is negative, this is the clue to
-	// Windows to treat this bitmap as top-down, not bottom-up, meaning that
-	// the first three bytes of the image are the color for the top left pixel
-	// in the bitmap, not the bottom left!
-	Buffer->Info.bmiHeader.biSize = sizeof(Buffer->Info.bmiHeader);
-	Buffer->Info.bmiHeader.biWidth = Buffer->Width;
-	Buffer->Info.bmiHeader.biHeight = -Buffer->Height;
-	Buffer->Info.bmiHeader.biPlanes = 1;
-	Buffer->Info.bmiHeader.biBitCount = 32;
-	Buffer->Info.bmiHeader.biCompression = BI_RGB;
-
-	int BitmapMemorySize = (Buffer->Width*Buffer->Height)*BytesPerPixel;
-	Buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	Buffer->Pitch = Width*BytesPerPixel;
-
-	// TODO: Probably clear this to black
-}
-
-internal void Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer, HDC DeviceContext, int WindowWidth, int WindowHeight)
-{
-	// TODO: Aspect ratio correction
-	// TODO: Play with stretch modes
-	StretchDIBits(DeviceContext,
-		/*
-		X, Y, Width, Height,
-		X, Y, Width, Height,
-		*/
-		0, 0, WindowWidth, WindowHeight,
-		0, 0, Buffer->Width, Buffer->Height,
-		Buffer->Memory,
-		&Buffer->Info,
-		DIB_RGB_COLORS, SRCCOPY);
-}
+// title bar
+global_variable ImTextureID TitleBar_TexId = 0;
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
 {
@@ -184,7 +127,7 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     glPopAttrib();
 }
 
-void ImGui_NewFrame(HWND Window)
+internal void ImGui_NewFrame(HWND Window)
 {
      if (!g_FontTexture)
 	 {
@@ -235,50 +178,11 @@ void ImGui_NewFrame(HWND Window)
     ImGui::NewFrame();
 }
 
-void ClearAndSwap(void)
+internal void ClearAndSwap(void)
 {
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SwapBuffers(DeviceContext);
-}
-
-void Redraw(void)
-{
-	// Clear color and depth buffers
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Draw six faces of a cube
-	Time += 0.05f;
-	float Size = sin(Time) * 0.2f + 0.8f;
-	float HalfSize = Size * 0.5f;
-
-    glBegin(GL_QUADS);
-    glNormal3f( 0.0F, 0.0F, Size);
-    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
-    glVertex3f(-HalfSize,-HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
-
-    glNormal3f( 0.0F, 0.0F,-Size);
-    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
-    glVertex3f( HalfSize, HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
-
-    glNormal3f( 0.0F, Size, 0.0F);
-    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
-    glVertex3f(-HalfSize, HalfSize,-HalfSize); glVertex3f(-HalfSize, HalfSize, HalfSize);
-
-    glNormal3f( 0.0F,-Size, 0.0F);
-    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize,-HalfSize,-HalfSize);
-    glVertex3f( HalfSize,-HalfSize, HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
-
-    glNormal3f( Size, 0.0F, 0.0F);
-    glVertex3f( HalfSize, HalfSize, HalfSize); glVertex3f( HalfSize,-HalfSize, HalfSize);
-    glVertex3f( HalfSize,-HalfSize,-HalfSize); glVertex3f( HalfSize, HalfSize,-HalfSize);
-
-    glNormal3f(-Size, 0.0F, 0.0F);
-    glVertex3f(-HalfSize,-HalfSize,-HalfSize); glVertex3f(-HalfSize,-HalfSize, HalfSize);
-    glVertex3f(-HalfSize, HalfSize, HalfSize); glVertex3f(-HalfSize, HalfSize,-HalfSize);
-    glEnd();
-
-    //SwapBuffers(DeviceContext);
 }
 
 internal LRESULT ImGui_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -463,7 +367,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				UnrealizeObject(Palette);
 				SelectPalette(DeviceContext, Palette, FALSE);
 				RealizePalette(DeviceContext);
-				Redraw();
 			}
 		} break;
 		case WM_QUERYNEWPALETTE:
@@ -474,7 +377,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				UnrealizeObject(Palette);
 				SelectPalette(DeviceContext, Palette, FALSE);
 				RealizePalette(DeviceContext);
-				Redraw();
 			}
 		} break;
 
@@ -482,12 +384,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		{
 			PAINTSTRUCT Paint;
 			BeginPaint(Window, &Paint);
-			// win32_window_dimension Dimension = Win32GetWindowDimension(Window);
-			// Win32DisplayBufferInWindow(&GlobalBackbuffer, DeviceContext, Dimension.Width, Dimension.Height);
-			if (RenderingContext)
-			{
-				Redraw();
-			}
+			// TODO: Redraw here
 			EndPaint(Window, &Paint);
 		} break;
 
@@ -522,16 +419,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
 			glMatrixMode(GL_MODELVIEW);
 
-			//Win32ResizeDIBSection(&GlobalBackbuffer, NewWidth, NewHeight);
 			ClearAndSwap();
-			if (RenderingContext)
-			{
-				glViewport(0, 0, WindowWidth, WindowHeight);
-			}
-			
-			//
-			//Result = DefWindowProcA(Window, Message, WParam, LParam);
-
 		} break;
 
 		#pragma region WM_NCHITTEST
@@ -610,14 +498,11 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	return(Result);
 }
 
-
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
 {
 	LARGE_INTEGER PerfCountFrequencyResult;
 	QueryPerformanceFrequency(&PerfCountFrequencyResult);
 	int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
-
-	Win32ResizeDIBSection(&GlobalBackbuffer, 1280, 720);
 
 	WNDCLASSA WindowClass = {};
 	WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -638,7 +523,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		0,																							// Extended window style
 		WindowClass.lpszClassName,																	// Class name,
 		"Papaya",																					// Name,
-		//WS_POPUP | WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_VISIBLE,		// Style,
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		CW_USEDEFAULT,																				// X,
 		CW_USEDEFAULT,																				// Y,
@@ -659,8 +543,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 	float WindowSize = 0.8f;
-	uint32 WindowWidth = (uint32)((float)ScreenWidth * WindowSize);
-	uint32 WindowHeight = (uint32)((float)ScreenHeight * WindowSize);
+	WindowWidth = (uint32)((float)ScreenWidth * WindowSize);
+	WindowHeight = (uint32)((float)ScreenHeight * WindowSize);
 
 	uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
 	uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
@@ -698,9 +582,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond);
     QueryPerformanceCounter((LARGE_INTEGER *)&g_Time);
 
-	WindowWidth = 1280;
-	WindowHeight = 720;
-
     ImGuiIO& io = ImGui::GetIO();
     io.KeyMap[ImGuiKey_Tab] = VK_TAB;                              // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
     io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
@@ -727,6 +608,23 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	bool show_test_window = true;
     bool show_another_window = false;
+
+	{
+		uint8* Image;
+		int32 ImageWidth, ImageHeight, ComponentsPerPixel;
+		Image = stbi_load("..\\res\\img\\win32_titlebar.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
+
+		// Create texture
+		GLuint TitleBar_GLuint;
+		glGenTextures(1, &TitleBar_GLuint);
+		glBindTexture(GL_TEXTURE_2D, TitleBar_GLuint);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+
+		// Store our identifier
+		TitleBar_TexId = (void *)(intptr_t)TitleBar_GLuint;
+	}
 
 	// IMGUI INIT <END>
 
@@ -755,9 +653,64 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		Buffer.Pitch = GlobalBackbuffer.Pitch;*/
 		//Redraw();
 
-#if 1
 		ImGui_NewFrame(Window);
+
+		#pragma region Title Bar
+		{
+			bool Show = true;
+			ImGui::SetNextWindowSize(ImVec2(800,500));
+			ImGui::SetNextWindowPos(ImVec2((float)WindowWidth-800,100));
+			ImGui::Begin("Title Bar Buttons", &Show);
+
+			// TODO: Make frame_padding = 0 once the ImGui issue has been resolved
+			ImGui::PushID(0);
+			if(ImGui::ImageButton(TitleBar_TexId, ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
+			{
+				ShowWindow(Window, SW_MINIMIZE);
+			}
+
+			WINDOWPLACEMENT WindowPlacement;
+			GetWindowPlacement(Window, &WindowPlacement);
+			bool IsMaximized = (WindowPlacement.showCmd == SW_SHOWMAXIMIZED);
+
+			ImVec2 StartUV = IsMaximized ? ImVec2(0.0f,0.5f) : ImVec2(0.5f,0.5f);
+			ImVec2 EndUV   = IsMaximized ? ImVec2(0.5f,1.0f) : ImVec2(1.0f,1.0f);
+			
+			ImGui::PopID();
+			ImGui::SameLine();
+			ImGui::PushID(1);
+
+			if(ImGui::ImageButton(TitleBar_TexId, ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
+			{
+				if (IsMaximized)
+				{
+					ShowWindow(Window, SW_RESTORE);
+				}
+				else
+				{
+					ShowWindow(Window, SW_MAXIMIZE);
+				}
+			}
+
+			ImGui::PopID();
+			ImGui::SameLine();
+			ImGui::PushID(2);
+
+			if(ImGui::ImageButton(TitleBar_TexId, ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
+			{
+				SendMessage(Window, WM_CLOSE, 0, 0);
+			}
+
+			ImGui::PopID();
+
+			ImGui::End();
+		}
+		#pragma endregion
+
+		//AppUpdateAndRender();
+
 		//=========================================
+#if 1
 		{
 			static float f = 0.0f;
             ImGui::Text("Hello, world!");
@@ -765,6 +718,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
             if (ImGui::Button("Test Window")) show_test_window ^= 1;
             if (ImGui::Button("Another Window")) show_another_window ^= 1;
+			if (ImGui::Button("Maximize")) { ShowWindow(Window, SW_MAXIMIZE); }
+			if (ImGui::Button("Restore")) { ShowWindow(Window, SW_RESTORE); }
+			if (ImGui::Button("Minimize")) { ShowWindow(Window, SW_MINIMIZE); }
+			if (ImGui::Button("Close")) { SendMessage(Window, WM_CLOSE, 0, 0); }
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		}
 
@@ -790,9 +747,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui::Render();
         SwapBuffers(DeviceContext);
-
-		//=========================================
 #endif
+		//=========================================
+
+		//Sleep(10);
 
 		uint64 EndCycleCount = __rdtsc();
 
@@ -817,8 +775,3 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	return 0;
 }
-
-
-//char Buffer[256];
-//sprintf(Buffer, "%f\n", io.MousePos.x);
-//OutputDebugStringA(Buffer);
