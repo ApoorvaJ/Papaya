@@ -26,13 +26,11 @@ typedef double real64;
 #include "papaya.h"
 #include "papaya.cpp"
 
-
 #include <windows.h>
 #include <windowsx.h>
 #include <gl/GL.h>
 #include <stdio.h>
 #include <malloc.h>
-
 
 #include "win32_papaya.h"
 
@@ -50,11 +48,22 @@ global_variable float Time = 0.0f;
 global_variable INT64 g_Time = 0;
 global_variable INT64 g_TicksPerSecond = 0;
 global_variable GLuint g_FontTexture = 0;
-global_variable ImVec4 clear_color = ImColor(45, 45, 48);
+global_variable bool bTrue = true;
+global_variable bool bFalse = false;
 
 // title bar
 global_variable ImTextureID TitleBar_TexId = 0;
+global_variable ImTextureID TitleBarIcon_TexId = 0;
 const float TitleBarButtonsWidth = 109;
+const uint32 TitleBarHeight = 30;
+
+// Colors
+
+global_variable ImVec4 ClearColor			= ImVec4(0.1764f, 0.1764f, 0.1882f, 1.0f); // Dark grey
+//global_variable ImVec4 ClearColor			= ImVec4(0.4470f, 0.5647f, 0.6039f, 1.0f); // Light blue
+global_variable ImVec4 WindowColor			= ImVec4(0.1764f, 0.1764f, 0.1882f, 10.0f); // TODO: Bug? Setting alpha to 1.0f still renders as partially transparent.
+global_variable ImVec4 ButtonHoverColor		= ImVec4(0.25f,   0.25f,   0.25f,   1.0f);
+global_variable ImVec4 ButtonActiveColor	= ImVec4(0.0f,    0.48f,   0.8f,    1.0f);
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
 {
@@ -82,7 +91,10 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0.0f, width, height, 0.0f, -1.0f, +1.0f);
+
+	// TODO: Adjust this if required to try and reduce font blurriness
+	float offset = 0.0f;
+    glOrtho(0.0f+offset, width+offset, height+offset, 0.0f+offset, -1.0f, +1.0f);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
@@ -181,7 +193,7 @@ internal void ImGui_NewFrame(HWND Window)
 
 internal void ClearAndSwap(void)
 {
-	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SwapBuffers(DeviceContext);
 }
@@ -478,8 +490,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				return HTTOP;
 			}
 
-			const uint32 TitleBarHeight = 30;
-			if (Y - WindowRect.top - (IsMaximized(Window) ? 8.0f : 0.0f) <= TitleBarHeight && X < WindowRect.right - (TitleBarButtonsWidth + 10))
+			if (Y - WindowRect.top - (IsMaximized(Window) ? 8.0f : 0.0f) <= TitleBarHeight && X > WindowRect.left + 200.0f && X < WindowRect.right - (TitleBarButtonsWidth + 10))
 			{
 				return HTCAPTION;
 			}
@@ -497,6 +508,24 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	}
 
 	return(Result);
+}
+
+internal ImTextureID LoadImage(char* Path)
+{
+	uint8* Image;
+	int32 ImageWidth, ImageHeight, ComponentsPerPixel;
+	Image = stbi_load(Path, &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
+
+	// Create texture
+	GLuint Id_GLuint;
+	glGenTextures(1, &Id_GLuint);
+	glBindTexture(GL_TEXTURE_2D, Id_GLuint);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+
+	// Store our identifier
+	return (void *)(intptr_t)Id_GLuint;
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
@@ -605,27 +634,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     io.RenderDrawListsFn = ImGui_RenderDrawLists;
     io.ImeWindowHandle = Window;
 
-	//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Ubuntu-Regular.ttf", 16.0f);
+	//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
+	//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 16.0f);
 
 	bool show_test_window = true;
     bool show_another_window = false;
 
-	{
-		uint8* Image;
-		int32 ImageWidth, ImageHeight, ComponentsPerPixel;
-		Image = stbi_load("..\\res\\img\\win32_titlebar.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
 
-		// Create texture
-		GLuint TitleBar_GLuint;
-		glGenTextures(1, &TitleBar_GLuint);
-		glBindTexture(GL_TEXTURE_2D, TitleBar_GLuint);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
-
-		// Store our identifier
-		TitleBar_TexId = (void *)(intptr_t)TitleBar_GLuint;
-	}
+	TitleBar_TexId = LoadImage("..\\res\\img\\win32_titlebar.png");
+	TitleBarIcon_TexId = LoadImage("..\\res\\img\\win32_titlebar_icon.png");
 
 	// IMGUI INIT <END>
 
@@ -656,9 +673,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		ImGui_NewFrame(Window);
 
-		#pragma region Title Bar
+		BOOL IsMaximized = IsMaximized(Window);
+		float IconWidth = 32.0f;
+		
+		#pragma region Title Bar Buttons
 		{
-			BOOL IsMaximized = IsMaximized(Window);
 
 			ImGui::SetNextWindowSize(ImVec2(TitleBarButtonsWidth,24));
 			ImGui::SetNextWindowPos(ImVec2((float)WindowWidth-TitleBarButtonsWidth - (IsMaximized ? 8.0f:0.0f), (IsMaximized ? 8.0f:0.0f)));
@@ -669,6 +688,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			WindowFlags |= ImGuiWindowFlags_NoMove;
 			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
 			WindowFlags |= ImGuiWindowFlags_NoCollapse;
+			WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
@@ -676,13 +696,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
+			ImGui::PushStyleColor(ImGuiCol_Button, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ButtonHoverColor);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ButtonActiveColor);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f,0.18f,0.19f,1));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f,0.25f,0.25f,1));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0,0.48f,0.8f,1));
 
-			bool Show = true;
-			ImGui::Begin("Title Bar Buttons", &Show, WindowFlags);
+			ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
 			// TODO: Make frame_padding = 0 once the ImGui issue has been resolved
 			ImGui::PushID(0);
@@ -722,8 +741,146 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PopID();
 
 			ImGui::End();
+
 			ImGui::PopStyleVar(5);
 			ImGui::PopStyleColor(4);
+		}
+		#pragma endregion
+
+		#pragma region Title Bar Icon
+		{
+			ImGui::SetNextWindowSize(ImVec2(IconWidth,(float)TitleBarHeight));
+			ImGui::SetNextWindowPos(ImVec2(1.0f + (IsMaximized ? 8.0f:0.0f), 1.0f + (IsMaximized ? 8.0f:0.0f)));
+
+			ImGuiWindowFlags WindowFlags = 0;
+			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+			WindowFlags |= ImGuiWindowFlags_NoResize;
+			WindowFlags |= ImGuiWindowFlags_NoMove;
+			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+			WindowFlags |= ImGuiWindowFlags_NoCollapse;
+			WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, WindowColor);
+
+			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
+			ImGui::Image(TitleBarIcon_TexId, ImVec2(28,28));
+			ImGui::End();
+
+			ImGui::PopStyleColor(1);
+			ImGui::PopStyleVar(5);
+		}
+		#pragma endregion
+
+		#pragma region Title Bar Menu
+		{
+			ImGui::SetNextWindowSize(ImVec2(WindowWidth - IconWidth - TitleBarButtonsWidth - 3.0f - (IsMaximized ? 16.0f:0.0f),(float)TitleBarHeight - 10.0f));
+			ImGui::SetNextWindowPos(ImVec2(2.0f + IconWidth + (IsMaximized ? 8.0f:0.0f), 1.0f + (IsMaximized ? 8.0f:0.0f) + 5.0f));
+
+			ImGuiWindowFlags WindowFlags = 0;
+			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+			WindowFlags |= ImGuiWindowFlags_NoResize;
+			WindowFlags |= ImGuiWindowFlags_NoMove;
+			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+			WindowFlags |= ImGuiWindowFlags_NoCollapse;
+			WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+			WindowFlags |= ImGuiWindowFlags_MenuBar;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,4));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
+
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ButtonHoverColor);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
+			ImGui::PushStyleColor(ImGuiCol_Header, WindowColor);
+
+			ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
+			bool foo;
+			if (ImGui::BeginMenuBar())
+			{
+				if (ImGui::BeginMenu("FILE"))
+				{
+					#pragma region File Menu
+					{
+						if (ImGui::MenuItem("New")) {}
+						if (ImGui::MenuItem("Open", "Ctrl+O")) {}
+						if (ImGui::BeginMenu("Open Recent"))
+						{
+							ImGui::MenuItem("fish_hat.c");
+							ImGui::MenuItem("fish_hat.inl");
+							ImGui::MenuItem("fish_hat.h");
+							if (ImGui::BeginMenu("More.."))
+							{
+								ImGui::MenuItem("Hello");
+								ImGui::MenuItem("Sailor");
+								if (ImGui::BeginMenu("Recurse.."))
+								{
+									ShowExampleMenuFile();
+									ImGui::EndMenu();
+								}
+								ImGui::EndMenu();
+							}
+							ImGui::EndMenu();
+						}
+						if (ImGui::MenuItem("Save", "Ctrl+S")) {}
+						if (ImGui::MenuItem("Save As..")) {}
+						ImGui::Separator();
+						if (ImGui::BeginMenu("Options"))
+						{
+							static bool enabled = true;
+							ImGui::MenuItem("Enabled", "", &enabled);
+							ImGui::BeginChild("child", ImVec2(0, 60), true);
+							for (int i = 0; i < 10; i++)
+								ImGui::Text("Scrolling Text %d", i);
+							ImGui::EndChild();
+							static float f = 0.5f;
+							ImGui::SliderFloat("Value", &f, 0.0f, 1.0f);
+							ImGui::InputFloat("Input", &f, 0.1f);
+							ImGui::EndMenu();
+						}
+						if (ImGui::BeginMenu("Colors"))
+						{
+							for (int i = 0; i < ImGuiCol_COUNT; i++)
+								ImGui::MenuItem(ImGui::GetStyleColName((ImGuiCol)i));
+							ImGui::EndMenu();
+						}
+						if (ImGui::BeginMenu("Disabled", false)) // Disabled
+						{
+							IM_ASSERT(0);
+						}
+						if (ImGui::MenuItem("Checked", NULL, true)) {}
+						if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+					}
+					#pragma endregion
+					ImGui::EndMenu();
+				}
+				if (ImGui::BeginMenu("EDIT"))
+				{
+					ImGui::MenuItem("Metrics", NULL, &foo);
+					ImGui::MenuItem("Main menu bar", NULL, &foo);
+					ImGui::MenuItem("Console", NULL, &foo);
+					ImGui::MenuItem("Simple layout", NULL, &foo);
+					ImGui::MenuItem("Long text display", NULL, &foo);
+					ImGui::MenuItem("Auto-resizing window", NULL, &foo);
+					ImGui::MenuItem("Simple overlay", NULL, &foo);
+					ImGui::MenuItem("Manipulating window title", NULL, &foo);
+					ImGui::MenuItem("Custom rendering", NULL, &foo);
+					ImGui::EndMenu();
+				}
+				ImGui::EndMenuBar();
+			}
+			ImGui::End();
+
+			ImGui::PopStyleColor(4);
+			ImGui::PopStyleVar(5);
 		}
 		#pragma endregion
 
@@ -733,9 +890,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #if 0
 		{
 			static float f = 0.0f;
-            ImGui::Text("Hello, world!");
+            ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("clear color", (float*)&clear_color);
+            ImGui::ColorEdit3("clear color", (float*)&ClearColor);
             if (ImGui::Button("Test Window")) show_test_window ^= 1;
             if (ImGui::Button("Another Window")) show_another_window ^= 1;
 			if (ImGui::Button("Maximize")) { ShowWindow(Window, SW_MAXIMIZE); }
@@ -764,7 +921,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui::Render();
         SwapBuffers(DeviceContext);
