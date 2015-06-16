@@ -59,9 +59,12 @@ const uint32 TitleBarHeight = 30;
 
 // Colors
 
+#if 1
 global_variable ImVec4 ClearColor			= ImVec4(0.1764f, 0.1764f, 0.1882f, 1.0f); // Dark grey
-//global_variable ImVec4 ClearColor			= ImVec4(0.4470f, 0.5647f, 0.6039f, 1.0f); // Light blue
-global_variable ImVec4 WindowColor			= ImVec4(0.1764f, 0.1764f, 0.1882f, 10.0f); // TODO: Bug? Setting alpha to 1.0f still renders as partially transparent.
+#else
+global_variable ImVec4 ClearColor			= ImVec4(0.4470f, 0.5647f, 0.6039f, 1.0f); // Light blue
+#endif
+global_variable ImVec4 TransparentColor		= ImVec4(0.0f,    0.0f,    0.0f,    0.0f);
 global_variable ImVec4 ButtonHoverColor		= ImVec4(0.25f,   0.25f,   0.25f,   1.0f);
 global_variable ImVec4 ButtonActiveColor	= ImVec4(0.0f,    0.48f,   0.8f,    1.0f);
 
@@ -696,7 +699,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-			ImGui::PushStyleColor(ImGuiCol_Button, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_Button, TransparentColor);
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ButtonHoverColor);
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ButtonActiveColor);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
@@ -766,7 +769,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, TransparentColor);
 
 			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
 			ImGui::Image(TitleBarIcon_TexId, ImVec2(28,28));
@@ -796,16 +799,17 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
 
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, WindowColor);
-			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, TransparentColor);
+			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, TransparentColor);
 			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ButtonHoverColor);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
-			ImGui::PushStyleColor(ImGuiCol_Header, WindowColor);
+			ImGui::PushStyleColor(ImGuiCol_Header, TransparentColor);
 
 			ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
 			bool foo;
 			if (ImGui::BeginMenuBar())
 			{
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, ClearColor);
 				if (ImGui::BeginMenu("FILE"))
 				{
 					#pragma region File Menu
@@ -876,6 +880,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenuBar();
+				ImGui::PopStyleColor();
 			}
 			ImGui::End();
 
@@ -927,7 +932,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         SwapBuffers(DeviceContext);
 		//=========================================
 
-		//Sleep(10);
+		//Sleep(15);
 
 		uint64 EndCycleCount = __rdtsc();
 
