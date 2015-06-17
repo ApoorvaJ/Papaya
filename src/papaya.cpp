@@ -3,18 +3,14 @@
 
 #include <math.h>
 
-global_variable uint8 *Image;
-
-void AppUpdateAndRender(
-	game_memory *Memory,  
-	game_offscreen_buffer *Buffer)
+void AppUpdateAndRender()
 {
-	game_state *GameState = (game_state *)Memory->PermanentStorage;
-	if (!Memory->IsInitialized)
-	{
-		// TODO: This may be more appropriate to do in the platform layer
-		Memory->IsInitialized = true;
-	}
+	//game_state *GameState = (game_state *)Memory->PermanentStorage;
+	//if (!Memory->IsInitialized)
+	//{
+	//	// TODO: This may be more appropriate to do in the platform layer
+	//	Memory->IsInitialized = true;
+	//}
 
 	
 }

@@ -54,6 +54,7 @@ global_variable bool bFalse = false;
 // title bar
 global_variable ImTextureID TitleBar_TexId = 0;
 global_variable ImTextureID TitleBarIcon_TexId = 0;
+global_variable ImTextureID TestImage_TexId = 0;
 const float TitleBarButtonsWidth = 109;
 const uint32 TitleBarHeight = 30;
 
@@ -536,56 +537,60 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	LARGE_INTEGER PerfCountFrequencyResult;
 	QueryPerformanceFrequency(&PerfCountFrequencyResult);
 	int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
-
-	WNDCLASSA WindowClass = {};
-	WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	WindowClass.lpfnWndProc = Win32MainWindowCallback;
-	WindowClass.hInstance = Instance;
-	// TODO: Add an icon
-	// WindowClass.hIcon;
-	WindowClass.lpszClassName = "PapayaWindowClass";
-
-	if (!RegisterClassA(&WindowClass))
-	{
-		// TODO: Log: Register window class failed
-		return 0;
-	}
-
-	HWND Window =
-		CreateWindowExA(
-		0,																							// Extended window style
-		WindowClass.lpszClassName,																	// Class name,
-		"Papaya",																					// Name,
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-		CW_USEDEFAULT,																				// X,
-		CW_USEDEFAULT,																				// Y,
-		CW_USEDEFAULT,																				// Width,
-		CW_USEDEFAULT,																				// Height,
-		0,																							// Window Parent,
-		0,																							// Menu,
-		Instance,																					// Handle to the instance,
-		0);																							// lpParam
-
-	if (!Window)
-	{
-		// TODO: Log: Create window failed
-		return 0;
-	}
-
-	uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-	uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-	float WindowSize = 0.8f;
-	WindowWidth = (uint32)((float)ScreenWidth * WindowSize);
-	WindowHeight = (uint32)((float)ScreenHeight * WindowSize);
-
-	uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
-	uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
-
-	SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
-	//SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
-
 	GlobalRunning = true;
+
+	HWND Window;
+	#pragma region Create Window
+	{
+		WNDCLASSA WindowClass = {};
+		WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		WindowClass.lpfnWndProc = Win32MainWindowCallback;
+		WindowClass.hInstance = Instance;
+		// TODO: Add an icon
+		// WindowClass.hIcon;
+		WindowClass.lpszClassName = "PapayaWindowClass";
+
+		if (!RegisterClassA(&WindowClass))
+		{
+			// TODO: Log: Register window class failed
+			return 0;
+		}
+
+		Window =
+			CreateWindowExA(
+			0,																							// Extended window style
+			WindowClass.lpszClassName,																	// Class name,
+			"Papaya",																					// Name,
+			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+			CW_USEDEFAULT,																				// X,
+			CW_USEDEFAULT,																				// Y,
+			CW_USEDEFAULT,																				// Width,
+			CW_USEDEFAULT,																				// Height,
+			0,																							// Window Parent,
+			0,																							// Menu,
+			Instance,																					// Handle to the instance,
+			0);																							// lpParam
+
+		if (!Window)
+		{
+			// TODO: Log: Create window failed
+			return 0;
+		}
+
+		uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
+		uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+		float WindowSize = 0.8f;
+		WindowWidth = (uint32)((float)ScreenWidth * WindowSize);
+		WindowHeight = (uint32)((float)ScreenHeight * WindowSize);
+
+		uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
+		uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
+
+		SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
+		//SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
+	}
+	#pragma endregion
 
 #if PAPAYA_INTERNAL
 	LPVOID BaseAddress = (LPVOID)Terabytes(2);
@@ -610,44 +615,44 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		return 0;
 	}
 
-	// IMGUI INIT <START>
+	#pragma region Initialize ImGui
+	{
+		QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond);
+		QueryPerformanceCounter((LARGE_INTEGER *)&g_Time);
 
-	QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond);
-    QueryPerformanceCounter((LARGE_INTEGER *)&g_Time);
+		ImGuiIO& io = ImGui::GetIO();
+		io.KeyMap[ImGuiKey_Tab] = VK_TAB;                              // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
+		io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
+		io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
+		io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
+		io.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
+		io.KeyMap[ImGuiKey_Home] = VK_HOME;
+		io.KeyMap[ImGuiKey_End] = VK_END;
+		io.KeyMap[ImGuiKey_Delete] = VK_DELETE;
+		io.KeyMap[ImGuiKey_Backspace] = VK_BACK;
+		io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
+		io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
+		io.KeyMap[ImGuiKey_A] = 'A';
+		io.KeyMap[ImGuiKey_C] = 'C';
+		io.KeyMap[ImGuiKey_V] = 'V';
+		io.KeyMap[ImGuiKey_X] = 'X';
+		io.KeyMap[ImGuiKey_Y] = 'Y';
+		io.KeyMap[ImGuiKey_Z] = 'Z';
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.KeyMap[ImGuiKey_Tab] = VK_TAB;                              // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
-    io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
-    io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
-    io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
-    io.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
-    io.KeyMap[ImGuiKey_Home] = VK_HOME;
-    io.KeyMap[ImGuiKey_End] = VK_END;
-    io.KeyMap[ImGuiKey_Delete] = VK_DELETE;
-    io.KeyMap[ImGuiKey_Backspace] = VK_BACK;
-    io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
-    io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
-    io.KeyMap[ImGuiKey_A] = 'A';
-    io.KeyMap[ImGuiKey_C] = 'C';
-    io.KeyMap[ImGuiKey_V] = 'V';
-    io.KeyMap[ImGuiKey_X] = 'X';
-    io.KeyMap[ImGuiKey_Y] = 'Y';
-    io.KeyMap[ImGuiKey_Z] = 'Z';
+		io.RenderDrawListsFn = ImGui_RenderDrawLists;
+		io.ImeWindowHandle = Window;
 
-    io.RenderDrawListsFn = ImGui_RenderDrawLists;
-    io.ImeWindowHandle = Window;
-
-	//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
-	//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 16.0f);
-
+		//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
+		//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 16.0f);
+	}
+	#pragma endregion
+	
 	bool show_test_window = true;
     bool show_another_window = false;
 
-
 	TitleBar_TexId = LoadImage("..\\res\\img\\win32_titlebar.png");
 	TitleBarIcon_TexId = LoadImage("..\\res\\img\\win32_titlebar_icon.png");
-
-	// IMGUI INIT <END>
+	TestImage_TexId = LoadImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png");
 
 	LARGE_INTEGER LastCounter;
 	QueryPerformanceCounter(&LastCounter);
@@ -889,7 +894,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		}
 		#pragma endregion
 
-		//AppUpdateAndRender();
+		// AppUpdateAndRender();
 
 		//=========================================
 #if 0
@@ -928,6 +933,70 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
+
+		#pragma region Render canvas
+		{
+			glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_DEPTH_TEST);
+			glEnable(GL_SCISSOR_TEST);
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glEnableClientState(GL_COLOR_ARRAY);
+			glEnable(GL_TEXTURE_2D);
+
+			// Setup orthographic projection matrix
+			const float width = ImGui::GetIO().DisplaySize.x;
+			const float height = ImGui::GetIO().DisplaySize.y;
+			glMatrixMode(GL_PROJECTION);
+			glPushMatrix();
+			glLoadIdentity();
+
+			// TODO: Adjust this if required to try and reduce font blurriness
+			float offset = 0.0f;
+			glOrtho(0.0f+offset, width+offset, height+offset, 0.0f+offset, -1.0f, +1.0f);
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			glLoadIdentity();
+
+			// Render command lists
+			//#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+
+			{
+				ImVec2 Position = ImVec2((WindowWidth - 512.0f)/2.0f, (WindowHeight - 512.0f)/2.0f);
+				ImVec2 Vertices[]  = 
+				{ 
+					ImVec2(Position.x, Position.y), ImVec2(512.0f + Position.x, Position.y), ImVec2(512.0f + Position.x, 512.0f + Position.y),
+					ImVec2(Position.x, Position.y), ImVec2(512.0f + Position.x, 512.0f + Position.y), ImVec2(Position.x, 512.0f + Position.y) 
+				};
+				ImVec2 UVs[]  = { ImVec2(0.0f, 0.0f), ImVec2(1.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(0.0f, 1.0f) };
+				uint32 Cols[] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
+				glVertexPointer(2, GL_FLOAT, sizeof(ImVec2), (void*)Vertices);
+				glTexCoordPointer(2, GL_FLOAT, sizeof(ImVec2), (void*)UVs);
+				glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(uint32), (void*)Cols);
+
+				glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)TestImage_TexId);
+				glScissor(0, 0, 2000, 2000);
+				glDrawArrays(GL_TRIANGLES, 0, 6);
+
+			}
+			//#undef OFFSETOF
+
+			// Restore modified state
+			glDisableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_VERTEX_ARRAY);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+			glMatrixMode(GL_PROJECTION);
+			glPopMatrix();
+			glPopAttrib();
+		}
+		#pragma endregion
+
         ImGui::Render();
         SwapBuffers(DeviceContext);
 		//=========================================
