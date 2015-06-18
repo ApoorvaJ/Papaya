@@ -20,9 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="win32_papaya.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="papaya.h">
       <Filter>Header Files</Filter>
     </ClInclude>

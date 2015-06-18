@@ -14,6 +14,3 @@ void AppUpdateAndRender()
 
 	
 }
-
-
-//Image =	stbi_load("C:\\Users\\Apoorva\\Pictures\\ImageTest\\lenna.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);

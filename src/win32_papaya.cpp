@@ -32,11 +32,8 @@ typedef double real64;
 #include <stdio.h>
 #include <malloc.h>
 
-#include "win32_papaya.h"
-
 // TODO: Put these into own memory buffer
 global_variable bool32 GlobalRunning;
-global_variable win32_offscreen_buffer GlobalBackbuffer;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable HPALETTE Palette;
@@ -52,8 +49,6 @@ global_variable bool bTrue = true;
 global_variable bool bFalse = false;
 
 // title bar
-global_variable ImTextureID TitleBar_TexId = 0;
-global_variable ImTextureID TitleBarIcon_TexId = 0;
 global_variable ImTextureID TestImage_TexId = 0;
 const float TitleBarButtonsWidth = 109;
 const uint32 TitleBarHeight = 30;
@@ -529,6 +524,7 @@ internal ImTextureID LoadImage(char* Path)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
 
 	// Store our identifier
+	free(Image);
 	return (void *)(intptr_t)Id_GLuint;
 }
 
@@ -598,22 +594,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	LPVOID BaseAddress = 0;
 #endif
 
-	game_memory GameMemory = {};
-	GameMemory.PermanentStorageSize = Megabytes(64);
-	GameMemory.TransientStorageSize = Megabytes(512);
+	PapayaMemory Memory = {};
 
-	// TODO: Handle various memory footprints (USING SYSTEM METRICS)
-	uint64 TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
-	GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
-		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	GameMemory.TransientStorage = ((uint8 *)GameMemory.PermanentStorage +
-		GameMemory.PermanentStorageSize);
-
-	if (!GameMemory.PermanentStorage || !GameMemory.TransientStorage)
-	{
-		// TODO: Log: Initial memory allocation failed
-		return 0;
-	}
+	Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons] = (uint32)LoadImage("..\\res\\img\\win32_titlebar_buttons.png");
+	Memory.TextureIDs[PapayaInterfaceImage_TitleBarIcon] = (uint32)LoadImage("..\\res\\img\\win32_titlebar_icon.png");
+	TestImage_TexId = LoadImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png");
 
 	#pragma region Initialize ImGui
 	{
@@ -650,10 +635,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	bool show_test_window = true;
     bool show_another_window = false;
 
-	TitleBar_TexId = LoadImage("..\\res\\img\\win32_titlebar.png");
-	TitleBarIcon_TexId = LoadImage("..\\res\\img\\win32_titlebar_icon.png");
-	TestImage_TexId = LoadImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png");
-
 	LARGE_INTEGER LastCounter;
 	QueryPerformanceCounter(&LastCounter);
 	uint64 LastCycleCount = __rdtsc();
@@ -672,11 +653,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			DispatchMessageA(&Message);
 		}
 
-		/*game_offscreen_buffer Buffer = {};
-		Buffer.Memory = GlobalBackbuffer.Memory;
-		Buffer.Width = GlobalBackbuffer.Width;
-		Buffer.Height = GlobalBackbuffer.Height;
-		Buffer.Pitch = GlobalBackbuffer.Pitch;*/
 		//Redraw();
 
 		ImGui_NewFrame(Window);
@@ -713,7 +689,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			// TODO: Make frame_padding = 0 once the ImGui issue has been resolved
 			ImGui::PushID(0);
-			if(ImGui::ImageButton(TitleBar_TexId, ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
+			if(ImGui::ImageButton((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
 			{
 				ShowWindow(Window, SW_MINIMIZE);
 			}
@@ -725,7 +701,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::SameLine();
 			ImGui::PushID(1);
 
-			if(ImGui::ImageButton(TitleBar_TexId, ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
+			if(ImGui::ImageButton((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
 			{
 				if (IsMaximized)
 				{
@@ -741,7 +717,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::SameLine();
 			ImGui::PushID(2);
 
-			if(ImGui::ImageButton(TitleBar_TexId, ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
+			if(ImGui::ImageButton((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
 			{
 				SendMessage(Window, WM_CLOSE, 0, 0);
 			}
@@ -777,7 +753,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, TransparentColor);
 
 			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-			ImGui::Image(TitleBarIcon_TexId, ImVec2(28,28));
+			ImGui::Image((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarIcon], ImVec2(28,28));
 			ImGui::End();
 
 			ImGui::PopStyleColor(1);
@@ -866,22 +842,26 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 							IM_ASSERT(0);
 						}
 						if (ImGui::MenuItem("Checked", NULL, true)) {}
-						if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+						if (ImGui::MenuItem("Quit", "Alt+F4")) { GlobalRunning = false; }
 					}
 					#pragma endregion
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("EDIT"))
 				{
-					ImGui::MenuItem("Metrics", NULL, &foo);
-					ImGui::MenuItem("Main menu bar", NULL, &foo);
-					ImGui::MenuItem("Console", NULL, &foo);
-					ImGui::MenuItem("Simple layout", NULL, &foo);
-					ImGui::MenuItem("Long text display", NULL, &foo);
-					ImGui::MenuItem("Auto-resizing window", NULL, &foo);
-					ImGui::MenuItem("Simple overlay", NULL, &foo);
-					ImGui::MenuItem("Manipulating window title", NULL, &foo);
-					ImGui::MenuItem("Custom rendering", NULL, &foo);
+					#pragma region Edit Menu
+					{
+						ImGui::MenuItem("Metrics", NULL, &foo);
+						ImGui::MenuItem("Main menu bar", NULL, &foo);
+						ImGui::MenuItem("Console", NULL, &foo);
+						ImGui::MenuItem("Simple layout", NULL, &foo);
+						ImGui::MenuItem("Long text display", NULL, &foo);
+						ImGui::MenuItem("Auto-resizing window", NULL, &foo);
+						ImGui::MenuItem("Simple overlay", NULL, &foo);
+						ImGui::MenuItem("Manipulating window title", NULL, &foo);
+						ImGui::MenuItem("Custom rendering", NULL, &foo);
+					}
+					#pragma endregion
 					ImGui::EndMenu();
 				}
 				ImGui::EndMenuBar();
@@ -893,8 +873,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PopStyleVar(5);
 		}
 		#pragma endregion
-
-		// AppUpdateAndRender();
 
 		//=========================================
 #if 0
@@ -933,6 +911,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
+
+		//AppUpdateAndRender();
 
 		#pragma region Render canvas
 		{

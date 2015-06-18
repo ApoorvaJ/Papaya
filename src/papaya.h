@@ -7,37 +7,14 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
-
-struct game_offscreen_buffer
+enum PapayaInterfaceImage_
 {
-	// Pixels are alwasy 32-bits wide, Memory Order BB GG RR XX
-	void *Memory;
-	int Width;
-	int Height;
-	int Pitch;
+	PapayaInterfaceImage_TitleBarButtons,
+	PapayaInterfaceImage_TitleBarIcon,
+	PapayaInterfaceImage_COUNT
 };
 
-struct game_memory
+struct PapayaMemory
 {
-	bool32 IsInitialized;
-
-	uint64 PermanentStorageSize;
-	void *PermanentStorage; // REQUIRED to be cleared to zero at startup
-
-	uint64 TransientStorageSize;
-	void *TransientStorage; // REQUIRED to be cleared to zero at startup
-};
-
-void GameUpdateAndRender(
-	game_memory *Memory, 
-	game_offscreen_buffer *Buffer);
-
-//
-//
-//
-
-struct game_state
-{
-	int GreenOffset;
-	int BlueOffset;
+	uint32 TextureIDs[PapayaInterfaceImage_COUNT];
 };
