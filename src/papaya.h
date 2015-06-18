@@ -7,14 +7,23 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
-enum PapayaInterfaceImage_
+enum PapayaInterfaceTexture_
 {
-	PapayaInterfaceImage_TitleBarButtons,
-	PapayaInterfaceImage_TitleBarIcon,
-	PapayaInterfaceImage_COUNT
+	PapayaInterfaceTexture_TitleBarButtons,
+	PapayaInterfaceTexture_TitleBarIcon,
+	PapayaInterfaceTexture_COUNT
+};
+
+struct PapayaDocument
+{
+	uint8* Texture;
+	int32 Width, Height;
+	int32 ComponentsPerPixel;
+	uint32 TextureID;
 };
 
 struct PapayaMemory
 {
-	uint32 TextureIDs[PapayaInterfaceImage_COUNT];
+	uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
+	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer
 };

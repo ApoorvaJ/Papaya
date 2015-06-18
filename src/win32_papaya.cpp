@@ -23,12 +23,13 @@ typedef double real64;
 #include "imgui.h"
 #include "imgui.cpp"
 
+#include <gl/GL.h>
+
 #include "papaya.h"
 #include "papaya.cpp"
 
 #include <windows.h>
 #include <windowsx.h>
-#include <gl/GL.h>
 #include <stdio.h>
 #include <malloc.h>
 
@@ -49,7 +50,6 @@ global_variable bool bTrue = true;
 global_variable bool bFalse = false;
 
 // title bar
-global_variable ImTextureID TestImage_TexId = 0;
 const float TitleBarButtonsWidth = 109;
 const uint32 TitleBarHeight = 30;
 
@@ -509,25 +509,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	return(Result);
 }
 
-internal ImTextureID LoadImage(char* Path)
-{
-	uint8* Image;
-	int32 ImageWidth, ImageHeight, ComponentsPerPixel;
-	Image = stbi_load(Path, &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
-
-	// Create texture
-	GLuint Id_GLuint;
-	glGenTextures(1, &Id_GLuint);
-	glBindTexture(GL_TEXTURE_2D, Id_GLuint);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
-
-	// Store our identifier
-	free(Image);
-	return (void *)(intptr_t)Id_GLuint;
-}
-
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
 {
 	LARGE_INTEGER PerfCountFrequencyResult;
@@ -596,9 +577,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	PapayaMemory Memory = {};
 
-	Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons] = (uint32)LoadImage("..\\res\\img\\win32_titlebar_buttons.png");
-	Memory.TextureIDs[PapayaInterfaceImage_TitleBarIcon] = (uint32)LoadImage("..\\res\\img\\win32_titlebar_icon.png");
-	TestImage_TexId = LoadImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png");
+	Papaya_Initialize(&Memory);
 
 	#pragma region Initialize ImGui
 	{
@@ -687,9 +666,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
-			// TODO: Make frame_padding = 0 once the ImGui issue has been resolved
 			ImGui::PushID(0);
-			if(ImGui::ImageButton((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
+			if(ImGui::ImageButton((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
 			{
 				ShowWindow(Window, SW_MINIMIZE);
 			}
@@ -701,7 +679,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::SameLine();
 			ImGui::PushID(1);
 
-			if(ImGui::ImageButton((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
+			if(ImGui::ImageButton((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
 			{
 				if (IsMaximized)
 				{
@@ -717,7 +695,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::SameLine();
 			ImGui::PushID(2);
 
-			if(ImGui::ImageButton((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
+			if(ImGui::ImageButton((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
 			{
 				SendMessage(Window, WM_CLOSE, 0, 0);
 			}
@@ -753,7 +731,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, TransparentColor);
 
 			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-			ImGui::Image((void*)Memory.TextureIDs[PapayaInterfaceImage_TitleBarIcon], ImVec2(28,28));
+			ImGui::Image((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
 			ImGui::End();
 
 			ImGui::PopStyleColor(1);
@@ -912,70 +890,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-		//AppUpdateAndRender();
-
-		#pragma region Render canvas
-		{
-			glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_SCISSOR_TEST);
-			glEnableClientState(GL_VERTEX_ARRAY);
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-			glEnableClientState(GL_COLOR_ARRAY);
-			glEnable(GL_TEXTURE_2D);
-
-			// Setup orthographic projection matrix
-			const float width = ImGui::GetIO().DisplaySize.x;
-			const float height = ImGui::GetIO().DisplaySize.y;
-			glMatrixMode(GL_PROJECTION);
-			glPushMatrix();
-			glLoadIdentity();
-
-			// TODO: Adjust this if required to try and reduce font blurriness
-			float offset = 0.0f;
-			glOrtho(0.0f+offset, width+offset, height+offset, 0.0f+offset, -1.0f, +1.0f);
-			glMatrixMode(GL_MODELVIEW);
-			glPushMatrix();
-			glLoadIdentity();
-
-			// Render command lists
-			//#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-
-			{
-				ImVec2 Position = ImVec2((WindowWidth - 512.0f)/2.0f, (WindowHeight - 512.0f)/2.0f);
-				ImVec2 Vertices[]  = 
-				{ 
-					ImVec2(Position.x, Position.y), ImVec2(512.0f + Position.x, Position.y), ImVec2(512.0f + Position.x, 512.0f + Position.y),
-					ImVec2(Position.x, Position.y), ImVec2(512.0f + Position.x, 512.0f + Position.y), ImVec2(Position.x, 512.0f + Position.y) 
-				};
-				ImVec2 UVs[]  = { ImVec2(0.0f, 0.0f), ImVec2(1.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(0.0f, 1.0f) };
-				uint32 Cols[] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
-				glVertexPointer(2, GL_FLOAT, sizeof(ImVec2), (void*)Vertices);
-				glTexCoordPointer(2, GL_FLOAT, sizeof(ImVec2), (void*)UVs);
-				glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(uint32), (void*)Cols);
-
-				glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)TestImage_TexId);
-				glScissor(0, 0, 2000, 2000);
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-
-			}
-			//#undef OFFSETOF
-
-			// Restore modified state
-			glDisableClientState(GL_COLOR_ARRAY);
-			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-			glDisableClientState(GL_VERTEX_ARRAY);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glMatrixMode(GL_MODELVIEW);
-			glPopMatrix();
-			glMatrixMode(GL_PROJECTION);
-			glPopMatrix();
-			glPopAttrib();
-		}
-		#pragma endregion
+		Papaya_UpdateAndRender(&Memory);
 
         ImGui::Render();
         SwapBuffers(DeviceContext);
@@ -1003,6 +918,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		LastCounter = EndCounter;
 		LastCycleCount = EndCycleCount;
 	}
+
+	Papaya_Shutdown(&Memory);
 
 	return 0;
 }
