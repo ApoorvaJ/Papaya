@@ -51,6 +51,23 @@ void Papaya_Shutdown(PapayaMemory* Memory)
 
 void Papaya_UpdateAndRender(PapayaMemory* Memory)
 {
+	local_persist float TimeX;
+	TimeX += 0.1f;
+	for (int32 i = 0; i < Memory->Documents[0].Width * Memory->Documents[0].Width; i++)
+	{
+		*((uint8*)(Memory->Documents[0].Texture + i*4)) = 128 + (uint8)(128.0f * sin(TimeX));
+	}
+	glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+
+	int32 XOffset = 128, YOffset = 128;
+	int32 UpdateWidth = 256, UpdateHeight = 256;
+
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, Memory->Documents[0].Width);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, XOffset);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, YOffset);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+
 	#pragma region Render canvas
 	{
 		glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
