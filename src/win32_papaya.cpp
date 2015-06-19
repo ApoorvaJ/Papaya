@@ -23,7 +23,10 @@ typedef double real64;
 #include "imgui.h"
 #include "imgui.cpp"
 
-#include <gl/GL.h>
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GL/wglew.h>
+#include <glew.c>
 
 #include "papaya.h"
 #include "papaya.cpp"
@@ -575,8 +578,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	LPVOID BaseAddress = 0;
 #endif
 
-	PapayaMemory Memory = {};
+	glewInit();
 
+	PapayaMemory Memory = {};
 	Papaya_Initialize(&Memory);
 
 	#pragma region Initialize ImGui
@@ -853,7 +857,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		//=========================================
-#if 0
+#if 1
 		{
 			static float f = 0.0f;
             ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");
