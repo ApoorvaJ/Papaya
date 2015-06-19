@@ -10,6 +10,20 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\glew.c" />
+    <ClInclude Include="..\..\src\GL\glew.h" />
+    <ClInclude Include="..\..\src\GL\wglew.h" />
+    <ClInclude Include="..\..\src\imgui.cpp" />
+    <ClInclude Include="..\..\src\imgui.h" />
+    <ClInclude Include="..\..\src\papaya.cpp" />
+    <ClCompile Include="..\..\src\win32_papaya.cpp" />
+    <ClInclude Include="..\..\src\papaya.h" />
+    <ClInclude Include="..\..\src\stb_image.h" />
+    <ClInclude Include="..\..\src\stb_rect_pack.h" />
+    <ClInclude Include="..\..\src\stb_textedit.h" />
+    <ClInclude Include="..\..\src\stb_truetype.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C4753FA5-30E7-4C42-A14E-2C3EFFC213D4}</ProjectGuid>
     <RootNamespace>Papaya</RootNamespace>
@@ -47,7 +61,7 @@
       <PreprocessorDefinitions>PAPAYA_INTERNAL;_MBCS;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -61,7 +75,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -70,25 +84,6 @@
       <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="GL\glew.h" />
-    <ClInclude Include="GL\wglew.h" />
-    <ClInclude Include="imgui.h" />
-    <ClInclude Include="papaya.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="imgui.cpp" />
-    <ClInclude Include="glew.c" />
-    <ClCompile Include="win32_papaya.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="papaya.h" />
-    <ClInclude Include="stb_image.h" />
-    <ClInclude Include="stb_rect_pack.h" />
-    <ClInclude Include="stb_textedit.h" />
-    <ClInclude Include="stb_truetype.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

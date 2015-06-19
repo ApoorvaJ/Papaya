@@ -36,8 +36,8 @@ internal void LoadImageIntoDocument(char* Path, PapayaDocument* Document)
 
 void Papaya_Initialize(PapayaMemory* Memory)
 {
-	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons] = (uint32)LoadAndBindImage("../res/img/win32_titlebar_buttons.png");
-	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon] = (uint32)LoadAndBindImage("../res/img/win32_titlebar_icon.png");
+	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons] = (uint32)LoadAndBindImage("../../img/win32_titlebar_buttons.png");
+	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon] = (uint32)LoadAndBindImage("../../img/win32_titlebar_icon.png");
 
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png", Memory->Documents);
