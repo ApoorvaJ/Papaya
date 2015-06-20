@@ -70,6 +70,70 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory)
 
 	#pragma region Render canvas
 	{
+#if 1
+		// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+		GLint last_program, last_texture;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_SCISSOR_TEST);
+		glActiveTexture(GL_TEXTURE0);
+
+		// Setup orthographic projection matrix
+		const float width = ImGui::GetIO().DisplaySize.x;
+		const float height = ImGui::GetIO().DisplaySize.y;
+		const float ortho_projection[4][4] =
+		{
+			{ 2.0f/width,	0.0f,			0.0f,		0.0f },
+			{ 0.0f,			2.0f/-height,	0.0f,		0.0f },
+			{ 0.0f,			0.0f,			-1.0f,		0.0f },
+			{ -1.0f,		1.0f,			0.0f,		1.0f },
+		};
+		glUseProgram(Memory->DefaultShader.Handle);
+		glUniform1i(Memory->DefaultShader.Texture, 0);
+		glUniformMatrix4fv(Memory->DefaultShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
+
+		// Grow our buffer according to what we need
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->GraphicsBuffers.VboHandle);
+		size_t needed_vtx_size = 6 * sizeof(ImDrawVert);
+		if (Memory->GraphicsBuffers.VboSize < needed_vtx_size)
+		{
+			Memory->GraphicsBuffers.VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
+			glBufferData(GL_ARRAY_BUFFER, Memory->GraphicsBuffers.VboSize, NULL, GL_STREAM_DRAW);
+		}
+
+		// Copy and convert all vertices into a single contiguous buffer
+		ImVec2 Position = ImVec2((width - 512.0f)/2.0f, (height - 512.0f)/2.0f);
+		ImDrawVert Verts[6];
+		Verts[0] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
+		Verts[1] = {ImVec2(512.0f + Position.x, Position.y),			ImVec2(1.0f, 0.0f), 0xffffffff};
+		Verts[2] = {ImVec2(512.0f + Position.x, 512.0f + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
+		Verts[3] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
+		Verts[4] = {ImVec2(512.0f + Position.x, 512.0f + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
+		Verts[5] = {ImVec2(Position.x, 512.0f + Position.y),			ImVec2(0.0f, 1.0f), 0xffffffff};
+
+		unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert));
+		buffer_data += 6 * sizeof(ImDrawVert);
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(Memory->GraphicsBuffers.VaoHandle);
+
+		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
+		glScissor(0, 0, 2000, 2000);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+		// Restore modified state
+		glBindVertexArray(0);
+		glUseProgram(last_program);
+		glDisable(GL_SCISSOR_TEST);
+		glBindTexture(GL_TEXTURE_2D, last_texture);
+#else
 		glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -121,6 +185,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory)
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glPopAttrib();
+#endif
 	}
 	#pragma endregion
 }

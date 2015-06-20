@@ -37,6 +37,7 @@ typedef double real64;
 #include <malloc.h>
 
 // TODO: Put these into own memory buffer
+global_variable PapayaMemory Memory = {};
 global_variable bool32 GlobalRunning;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
@@ -53,6 +54,7 @@ global_variable INT64 g_TicksPerSecond = 0;
 global_variable GLuint g_FontTexture = 0;
 global_variable bool bTrue = true;
 global_variable bool bFalse = false;
+
 
 // title bar
 const float TitleBarButtonsWidth = 109;
@@ -73,7 +75,89 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
 {
     if (cmd_lists_count == 0)
         return;
+#if 1
+	// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+    GLint last_program, last_texture;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_SCISSOR_TEST);
+    glActiveTexture(GL_TEXTURE0);
 
+    // Setup orthographic projection matrix
+    const float width = ImGui::GetIO().DisplaySize.x;
+    const float height = ImGui::GetIO().DisplaySize.y;
+    const float ortho_projection[4][4] =
+    {
+        { 2.0f/width,	0.0f,			0.0f,		0.0f },
+        { 0.0f,			2.0f/-height,	0.0f,		0.0f },
+        { 0.0f,			0.0f,			-1.0f,		0.0f },
+        { -1.0f,		1.0f,			0.0f,		1.0f },
+    };
+    glUseProgram(Memory.DefaultShader.Handle);
+    glUniform1i(Memory.DefaultShader.Texture, 0);
+    glUniformMatrix4fv(Memory.DefaultShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
+
+    // Grow our buffer according to what we need
+    size_t total_vtx_count = 0;
+    for (int n = 0; n < cmd_lists_count; n++)
+        total_vtx_count += cmd_lists[n]->vtx_buffer.size();
+    glBindBuffer(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboHandle);
+    size_t needed_vtx_size = total_vtx_count * sizeof(ImDrawVert);
+    if (Memory.GraphicsBuffers.VboSize < needed_vtx_size)
+    {
+        Memory.GraphicsBuffers.VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
+        glBufferData(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboSize, NULL, GL_STREAM_DRAW);
+    }
+
+    // Copy and convert all vertices into a single contiguous buffer
+    unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    if (!buffer_data)
+        return;
+    for (int n = 0; n < cmd_lists_count; n++)
+    {
+        const ImDrawList* cmd_list = cmd_lists[n];
+        memcpy(buffer_data, &cmd_list->vtx_buffer[0], cmd_list->vtx_buffer.size() * sizeof(ImDrawVert));
+        buffer_data += cmd_list->vtx_buffer.size() * sizeof(ImDrawVert);
+    }
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(Memory.GraphicsBuffers.VaoHandle);
+
+    int cmd_offset = 0;
+    for (int n = 0; n < cmd_lists_count; n++)
+    {
+        const ImDrawList* cmd_list = cmd_lists[n];
+        int vtx_offset = cmd_offset;
+        const ImDrawCmd* pcmd_end = cmd_list->commands.end();
+        for (const ImDrawCmd* pcmd = cmd_list->commands.begin(); pcmd != pcmd_end; pcmd++)
+        {
+            if (pcmd->user_callback)
+            {
+                pcmd->user_callback(cmd_list, pcmd);
+            }
+            else
+            {
+                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->texture_id);
+                glScissor((int)pcmd->clip_rect.x, (int)(height - pcmd->clip_rect.w), (int)(pcmd->clip_rect.z - pcmd->clip_rect.x), (int)(pcmd->clip_rect.w - pcmd->clip_rect.y));
+                glDrawArrays(GL_TRIANGLES, vtx_offset, pcmd->vtx_count);
+            }
+            vtx_offset += pcmd->vtx_count;
+        }
+        cmd_offset = vtx_offset;
+    }
+
+    // Restore modified state
+    glBindVertexArray(0);
+    glUseProgram(last_program);
+    glDisable(GL_SCISSOR_TEST);
+    glBindTexture(GL_TEXTURE_2D, last_texture);
+
+#else 
     // We are using the OpenGL fixed pipeline to make the example code simpler to read!
     // A probable faster way to render would be to collate all vertices from all cmd_lists into a single vertex buffer.
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, vertex/texcoord/color pointers.
@@ -142,10 +226,122 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glPopAttrib();
+#endif
 }
 
 internal void ImGui_NewFrame(HWND Window)
 {
+#if 1
+
+	if (!g_FontTexture)
+	{
+		// Create device objects
+		const GLchar *vertex_shader =
+			"#version 330\n"
+			"uniform mat4 ProjMtx;\n"
+			"in vec2 Position;\n"
+			"in vec2 UV;\n"
+			"in vec4 Color;\n"
+			"out vec2 Frag_UV;\n"
+			"out vec4 Frag_Color;\n"
+			"void main()\n"
+			"{\n"
+			"	Frag_UV = UV;\n"
+			"	Frag_Color = Color;\n"
+			"	gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
+			"}\n";
+
+		const GLchar* fragment_shader =
+			"#version 330\n"
+			"uniform sampler2D Texture;\n"
+			"in vec2 Frag_UV;\n"
+			"in vec4 Frag_Color;\n"
+			"out vec4 Out_Color;\n"
+			"void main()\n"
+			"{\n"
+			"	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
+			"}\n";
+
+		Memory.DefaultShader.Handle = glCreateProgram();
+		int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
+		int32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
+		glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
+		glCompileShader(g_VertHandle);
+		glCompileShader(g_FragHandle);
+		glAttachShader(Memory.DefaultShader.Handle, g_VertHandle);
+		glAttachShader(Memory.DefaultShader.Handle, g_FragHandle);
+		glLinkProgram(Memory.DefaultShader.Handle);
+
+		Memory.DefaultShader.Texture			= glGetUniformLocation(Memory.DefaultShader.Handle, "Texture");
+		Memory.DefaultShader.ProjectionMatrix	= glGetUniformLocation(Memory.DefaultShader.Handle, "ProjMtx");
+		Memory.DefaultShader.Position			= glGetAttribLocation (Memory.DefaultShader.Handle, "Position");
+		Memory.DefaultShader.UV					= glGetAttribLocation (Memory.DefaultShader.Handle, "UV");
+		Memory.DefaultShader.Color				= glGetAttribLocation (Memory.DefaultShader.Handle, "Color");
+
+		glGenBuffers(1, &Memory.GraphicsBuffers.VboHandle);
+
+		glGenVertexArrays(1, &Memory.GraphicsBuffers.VaoHandle);
+		glBindVertexArray(Memory.GraphicsBuffers.VaoHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboHandle);
+		glEnableVertexAttribArray(Memory.DefaultShader.Position);
+		glEnableVertexAttribArray(Memory.DefaultShader.UV);
+		glEnableVertexAttribArray(Memory.DefaultShader.Color);
+
+	#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+		glVertexAttribPointer(Memory.DefaultShader.Position, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
+		glVertexAttribPointer(Memory.DefaultShader.UV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
+		glVertexAttribPointer(Memory.DefaultShader.Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
+	#undef OFFSETOF
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		// Create fonts texture
+		ImGuiIO& io = ImGui::GetIO();
+
+		unsigned char* pixels;
+		int width, height;
+		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
+
+		glGenTextures(1, &g_FontTexture);
+		glBindTexture(GL_TEXTURE_2D, g_FontTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+		// Store our identifier
+		io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
+
+		// Cleanup (don't clear the input data if you want to append new fonts later)
+		io.Fonts->ClearInputData();
+		io.Fonts->ClearTexData();
+	}
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Setup display size (every frame to accommodate for window resizing)
+	RECT rect;
+    GetClientRect(Window, &rect);
+    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+
+	// Read keyboard modifiers inputs
+    io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+    // Setup time step
+    INT64 current_time;
+    QueryPerformanceCounter((LARGE_INTEGER *)&current_time); 
+    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
+    g_Time = current_time;
+
+    // Hide OS mouse cursor if ImGui is drawing it
+    //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+
+    // Start the frame
+    ImGui::NewFrame();
+
+#else
      if (!g_FontTexture)
 	 {
         ImGuiIO& io = ImGui::GetIO();
@@ -193,6 +389,7 @@ internal void ImGui_NewFrame(HWND Window)
 
     // Start the frame
     ImGui::NewFrame();
+#endif
 }
 
 internal void ClearAndSwap(void)
@@ -310,7 +507,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			int InitAttributes[] =
 			{
 				WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-				WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+				WGL_CONTEXT_MINOR_VERSION_ARB, 2,
 				WGL_CONTEXT_FLAGS_ARB, 0,
 				0
 			};
@@ -554,13 +751,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	}
 	#pragma endregion
 
-#if PAPAYA_INTERNAL
-	LPVOID BaseAddress = (LPVOID)Terabytes(2);
-#else
-	LPVOID BaseAddress = 0;
-#endif
-
-	PapayaMemory Memory = {};
 	Papaya_Initialize(&Memory);
 
 	#pragma region Initialize ImGui

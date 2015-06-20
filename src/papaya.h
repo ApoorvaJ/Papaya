@@ -22,8 +22,22 @@ struct PapayaDocument
 	uint32 TextureID;
 };
 
+struct PapayaShader
+{
+	int32 Handle;
+	int32 Texture, ProjectionMatrix, Position, UV, Color;
+};
+
+struct PapayaGraphicsBuffers
+{
+	size_t VboSize;
+	uint32 VboHandle, VaoHandle;
+};
+
 struct PapayaMemory
 {
 	uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
-	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer
+	PapayaGraphicsBuffers GraphicsBuffers;
+	PapayaShader DefaultShader;
+	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
 };
