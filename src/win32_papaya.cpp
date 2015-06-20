@@ -42,6 +42,8 @@ global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable HPALETTE Palette;
 global_variable uint32 WindowWidth, WindowHeight;
+global_variable int32 OpenGLVersion[2];
+
 
 global_variable float Time = 0.0f;
 
@@ -266,13 +268,13 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 					PFD_DRAW_TO_WINDOW |			
 					PFD_DOUBLEBUFFER,				// support double-buffering
 					PFD_TYPE_RGBA,					// color type
-					16,								// prefered color depth
+					32,								// prefered color depth // TODO: What is the optimal value for color depth?
 					0, 0, 0, 0, 0, 0,				// color bits (ignored)
 					0,								// no alpha buffer
 					0,								// alpha bits (ignored)
 					0,								// no accumulation buffer
 					0, 0, 0, 0,						// accum bits (ignored)
-					16,								// depth buffer
+					32,								// depth buffer // TODO: What is the optimal value for depth buffer depth?
 					0,								// no stencil buffer
 					0,								// no auxiliary buffers
 					PFD_MAIN_PLANE,					// main layer
@@ -295,66 +297,46 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			}
 			#pragma endregion
 
-			#pragma region Setup palette
+			HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
+			wglMakeCurrent(DeviceContext, TempRenderingContext);
+
+			GLenum GlewInitResult = glewInit();
+			if (GlewInitResult != GLEW_OK)
 			{
-				if (PixelFormatDescriptor.dwFlags & PFD_NEED_PALETTE) 
-				{
-					int32 PaletteSize = 1 << PixelFormatDescriptor.cColorBits;
-
-					LOGPALETTE* LogicalPalette = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + PaletteSize * sizeof(PALETTEENTRY)); // TODO: Switch to game memory?
-					LogicalPalette->palVersion = 0x300;
-					LogicalPalette->palNumEntries = PaletteSize;
-
-					// Build a simple RGB color palette
-					{
-						int32 RedMask =		(1 << PixelFormatDescriptor.cRedBits)	- 1;
-						int32 GreenMask =	(1 << PixelFormatDescriptor.cGreenBits) - 1;
-						int32 BlueMask =	(1 << PixelFormatDescriptor.cBlueBits)	- 1;
-
-						for (int32 i=0; i < PaletteSize; i++) 
-						{
-							LogicalPalette->palPalEntry[i].peRed	= (((i >> PixelFormatDescriptor.cRedShift) & RedMask)		* 255) / RedMask;
-							LogicalPalette->palPalEntry[i].peGreen	= (((i >> PixelFormatDescriptor.cGreenShift) & GreenMask)	* 255) / GreenMask;
-							LogicalPalette->palPalEntry[i].peBlue	= (((i >> PixelFormatDescriptor.cBlueShift) & BlueMask)		* 255) / BlueMask;
-							LogicalPalette->palPalEntry[i].peFlags	= 0;
-						}
-					}
-
-					Palette = CreatePalette(LogicalPalette);
-					free(LogicalPalette); // TODO: Adapt for game memory?
-
-					if (Palette) 
-					{
-						SelectPalette(DeviceContext, Palette, FALSE);
-						RealizePalette(DeviceContext);
-					}
-				}
+				// TODO: Log: GLEW Init failed
+				exit(1);
 			}
-			#pragma endregion
 
-			RenderingContext = wglCreateContext(DeviceContext);
-			wglMakeCurrent(DeviceContext, RenderingContext);
-
-			#pragma region GL Initialization
+			int InitAttributes[] =
 			{
-				//// set viewing projection
-				//glMatrixMode(GL_PROJECTION);
-				//float FrustumX = 16.0f/9.0f;
-				//glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
+				WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+				WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+				WGL_CONTEXT_FLAGS_ARB, 0,
+				0
+			};
 
-				//// position viewer
-				//glMatrixMode(GL_MODELVIEW);
-				//glTranslatef(0.0F, 0.0F, -2.0F);
-
-				//// position object
-				//glRotatef(30.0F, 1.0F, 0.0F, 0.0F);
-				//glRotatef(30.0F, 0.0F, 1.0F, 0.0F);
-
-				//glEnable(GL_DEPTH_TEST);
-				//glEnable(GL_LIGHTING);
-				//glEnable(GL_LIGHT0);
+			if(wglewIsSupported("WGL_ARB_create_context") == 1)
+			{
+				RenderingContext = wglCreateContextAttribsARB(DeviceContext, 0, InitAttributes);
+				wglMakeCurrent(NULL,NULL);
+				wglDeleteContext(TempRenderingContext);
+				wglMakeCurrent(DeviceContext, RenderingContext);
 			}
-			#pragma endregion
+			else
+			{
+				// It is not possible to make a GL 3.x context.
+				// TODO: Handle this using a message box or something
+				exit(1);
+			}
+
+			if (!RenderingContext)
+			{
+				// TODO: Log: Failed to create rendering context
+				exit(1);
+			}
+
+			glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
+			glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 		} break;
 
 		case WM_DESTROY:
@@ -577,8 +559,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #else
 	LPVOID BaseAddress = 0;
 #endif
-
-	glewInit();
 
 	PapayaMemory Memory = {};
 	Papaya_Initialize(&Memory);
