@@ -53,6 +53,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png", Memory->Documents);
+	Memory->Documents[0].CanvasPosition = ImVec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f);
+	Memory->Documents[0].CanvasScale = 1.0f;
 }
 
 void Papaya_Shutdown(PapayaMemory* Memory)
@@ -123,6 +125,13 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	}
 	#pragma endregion
 
+	// Panning
+	Memory->Documents[0].CanvasPosition += ImGui::GetMouseDragDelta(2);
+	ImGui::ResetMouseDragDelta(2);
+
+	// Zooming
+	Memory->Documents[0].CanvasScale += ImGui::GetIO().MouseWheel * 0.1f;
+
 	#pragma region Render canvas
 	{
 		// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
@@ -161,14 +170,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		}
 
 		// Copy and convert all vertices into a single contiguous buffer
-		ImVec2 Position = ImVec2((width - 512.0f)/2.0f, (height - 512.0f)/2.0f);
+		ImVec2 Position = Memory->Documents[0].CanvasPosition;
+		ImVec2 Size = ImVec2(512.0f * Memory->Documents[0].CanvasScale, 512.0f * Memory->Documents[0].CanvasScale);
 		ImDrawVert Verts[6];
 		Verts[0] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
-		Verts[1] = {ImVec2(512.0f + Position.x, Position.y),			ImVec2(1.0f, 0.0f), 0xffffffff};
-		Verts[2] = {ImVec2(512.0f + Position.x, 512.0f + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
+		Verts[1] = {ImVec2(Size.x + Position.x, Position.y),			ImVec2(1.0f, 0.0f), 0xffffffff};
+		Verts[2] = {ImVec2(Size.x + Position.x, Size.y + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
 		Verts[3] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
-		Verts[4] = {ImVec2(512.0f + Position.x, 512.0f + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
-		Verts[5] = {ImVec2(Position.x, 512.0f + Position.y),			ImVec2(0.0f, 1.0f), 0xffffffff};
+		Verts[4] = {ImVec2(Size.x + Position.x, Size.y + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
+		Verts[5] = {ImVec2(Position.x, Size.y + Position.y),			ImVec2(0.0f, 1.0f), 0xffffffff};
 
 		unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.
