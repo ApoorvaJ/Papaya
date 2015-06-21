@@ -12,7 +12,17 @@ enum PapayaInterfaceTexture_
 	PapayaInterfaceTexture_Font,
 	PapayaInterfaceTexture_TitleBarButtons,
 	PapayaInterfaceTexture_TitleBarIcon,
+	PapayaInterfaceTexture_InterfaceIcons,
 	PapayaInterfaceTexture_COUNT
+};
+
+enum PapayaInterfaceColor_
+{
+	PapayaInterfaceColor_Clear,
+	PapayaInterfaceColor_Transparent,
+	PapayaInterfaceColor_ButtonHover,
+	PapayaInterfaceColor_ButtonActive,
+	PapayaInterfaceColor_COUNT
 };
 
 struct PapayaDocument
@@ -35,10 +45,24 @@ struct PapayaGraphicsBuffers
 	uint32 VboHandle, VaoHandle;
 };
 
+struct PapayaWindow
+{
+	uint32 Width, Height;
+	float MaximizeOffset; // Used to cancel Windows' weirdness when windows are maximized. Refer: http://stackoverflow.com/questions/14667558/why-is-a-maximized-delphi-form-8-pixels-wider-and-higher-than-the-getsystemmetri
+};
+
 struct PapayaMemory
 {
 	uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
+	ImVec4 InterfaceColors[PapayaInterfaceColor_COUNT];
+	PapayaWindow Window;
 	PapayaGraphicsBuffers GraphicsBuffers;
 	PapayaShader DefaultShader;
 	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
+};
+
+struct PapayaDebugMemory
+{
+	int64 Time;
+	int64 TicksPerSecond;
 };

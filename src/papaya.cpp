@@ -36,8 +36,20 @@ internal void LoadImageIntoDocument(char* Path, PapayaDocument* Document)
 
 void Papaya_Initialize(PapayaMemory* Memory)
 {
+	// Texture IDs
 	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons] = (uint32)LoadAndBindImage("../../img/win32_titlebar_buttons.png");
 	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon] = (uint32)LoadAndBindImage("../../img/win32_titlebar_icon.png");
+	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons] = (uint32)LoadAndBindImage("../../img/interface_icons.png");
+
+	// Colors
+#if 1
+	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= ImVec4(0.1764f, 0.1764f, 0.1882f, 1.0f); // Dark grey
+#else
+	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= ImVec4(0.4470f, 0.5647f, 0.6039f, 1.0f); // Light blue
+#endif
+	Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= ImVec4(0.0f,    0.0f,    0.0f,    0.0f);
+	Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= ImVec4(0.25f,   0.25f,   0.25f,   1.0f);
+	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= ImVec4(0.0f,    0.48f,   0.8f,    1.0f);
 
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png", Memory->Documents);
@@ -49,24 +61,67 @@ void Papaya_Shutdown(PapayaMemory* Memory)
 	free(Memory->Documents);
 }
 
-void Papaya_UpdateAndRender(PapayaMemory* Memory)
+void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 {
-	local_persist float TimeX;
-	TimeX += 0.1f;
-	for (int32 i = 0; i < Memory->Documents[0].Width * Memory->Documents[0].Width; i++)
-	{
-		*((uint8*)(Memory->Documents[0].Texture + i*4)) = 128 + (uint8)(128.0f * sin(TimeX));
-	}
-	glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+	//local_persist float TimeX;
+	//TimeX += 0.1f;
+	//for (int32 i = 0; i < Memory->Documents[0].Width * Memory->Documents[0].Width; i++)
+	//{
+	//	*((uint8*)(Memory->Documents[0].Texture + i*4)) = 128 + (uint8)(128.0f * sin(TimeX));
+	//}
+	//glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
 
-	int32 XOffset = 128, YOffset = 128;
-	int32 UpdateWidth = 256, UpdateHeight = 256;
+	//int32 XOffset = 128, YOffset = 128;
+	//int32 UpdateWidth = 256, UpdateHeight = 256;
 
-	glPixelStorei(GL_UNPACK_ROW_LENGTH, Memory->Documents[0].Width);
-	glPixelStorei(GL_UNPACK_SKIP_PIXELS, XOffset);
-	glPixelStorei(GL_UNPACK_SKIP_ROWS, YOffset);
+	//glPixelStorei(GL_UNPACK_ROW_LENGTH, Memory->Documents[0].Width);
+	//glPixelStorei(GL_UNPACK_SKIP_PIXELS, XOffset);
+	//glPixelStorei(GL_UNPACK_SKIP_ROWS, YOffset);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+
+	#pragma region Left toolbar
+	{
+		ImGui::SetNextWindowSize(ImVec2(36,650));
+		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 70.0f + Memory->Window.MaximizeOffset));
+			
+		ImGuiWindowFlags WindowFlags = 0;
+		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+		WindowFlags |= ImGuiWindowFlags_NoResize;
+		WindowFlags |= ImGuiWindowFlags_NoMove;
+		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+		WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
+		bool Show = true;
+		ImGui::Begin("Left toolbar", &Show, WindowFlags);
+
+		ImGui::PushID(0);
+		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
+		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
+		{
+			
+		}
+		#undef CALCUV
+		ImGui::PopID();
+
+		ImGui::End();
+
+		ImGui::PopStyleVar(5);
+		ImGui::PopStyleColor(4);
+	}
+	#pragma endregion
 
 	#pragma region Render canvas
 	{

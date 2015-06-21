@@ -37,31 +37,19 @@ typedef double real64;
 #include <malloc.h>
 
 global_variable PapayaMemory Memory = {};
+global_variable PapayaDebugMemory DebugMemory = {};
 global_variable bool32 GlobalRunning;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
-global_variable uint32 WindowWidth, WindowHeight;
 global_variable int32 OpenGLVersion[2];
 
 // ImGui
-global_variable INT64 g_Time = 0;
-global_variable INT64 g_TicksPerSecond = 0;
 global_variable bool bTrue = true;
 global_variable bool bFalse = false;
 
 // Title bar
 const float TitleBarButtonsWidth = 109;
 const uint32 TitleBarHeight = 30;
-
-// Colors
-#if 1
-global_variable ImVec4 ClearColor			= ImVec4(0.1764f, 0.1764f, 0.1882f, 1.0f); // Dark grey
-#else
-global_variable ImVec4 ClearColor			= ImVec4(0.4470f, 0.5647f, 0.6039f, 1.0f); // Light blue
-#endif
-global_variable ImVec4 TransparentColor		= ImVec4(0.0f,    0.0f,    0.0f,    0.0f);
-global_variable ImVec4 ButtonHoverColor		= ImVec4(0.25f,   0.25f,   0.25f,   1.0f);
-global_variable ImVec4 ButtonActiveColor	= ImVec4(0.0f,    0.48f,   0.8f,    1.0f);
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
 {
@@ -167,8 +155,8 @@ internal void ImGui_NewFrame(HWND Window)
     // Setup time step
     INT64 current_time;
     QueryPerformanceCounter((LARGE_INTEGER *)&current_time); 
-    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
-    g_Time = current_time;
+    io.DeltaTime = (float)(current_time - DebugMemory.Time) / DebugMemory.TicksPerSecond;
+    DebugMemory.Time = current_time;
 
     // Hide OS mouse cursor if ImGui is drawing it
     //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
@@ -179,7 +167,10 @@ internal void ImGui_NewFrame(HWND Window)
 
 internal void ClearAndSwap(void)
 {
-	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+	glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].x, 
+				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].y, 
+				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].z, 
+				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SwapBuffers(DeviceContext);
 }
@@ -277,12 +268,12 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		{
 			/*uint32 NewWidth = LParam & 0xFFFF;
 			uint32 NewHeight = LParam >> 16;*/
-			WindowWidth = (int32) LOWORD(LParam);
-			WindowHeight = (int32) HIWORD(LParam);
+			Memory.Window.Width = (int32) LOWORD(LParam);
+			Memory.Window.Height = (int32) HIWORD(LParam);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 
-			float FrustumX = (float)WindowWidth/(float)WindowHeight;
+			float FrustumX = (float)Memory.Window.Width/(float)Memory.Window.Height;
 			glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
 			glMatrixMode(GL_MODELVIEW);
 
@@ -413,13 +404,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 		float WindowSize = 0.8f;
-		WindowWidth = (uint32)((float)ScreenWidth * WindowSize);
-		WindowHeight = (uint32)((float)ScreenHeight * WindowSize);
+		Memory.Window.Width = (uint32)((float)ScreenWidth * WindowSize);
+		Memory.Window.Height = (uint32)((float)ScreenHeight * WindowSize);
 
-		uint32 WindowX = (ScreenWidth - WindowWidth) / 2;
-		uint32 WindowY = (ScreenHeight - WindowHeight) / 2;
+		uint32 WindowX = (ScreenWidth - Memory.Window.Width) / 2;
+		uint32 WindowY = (ScreenHeight - Memory.Window.Height) / 2;
 
-		SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
+		SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Memory.Window.Width, Memory.Window.Height, NULL);
 		//SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
 	}
 	#pragma endregion
@@ -610,8 +601,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	#pragma region Initialize ImGui
 	{
-		QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond);
-		QueryPerformanceCounter((LARGE_INTEGER *)&g_Time);
+		QueryPerformanceFrequency((LARGE_INTEGER *)&DebugMemory.TicksPerSecond);
+		QueryPerformanceCounter((LARGE_INTEGER *)&DebugMemory.Time);
 
 		ImGuiIO& io = ImGui::GetIO();
 		io.KeyMap[ImGuiKey_Tab] = VK_TAB;                              // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
@@ -648,31 +639,32 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	uint64 LastCycleCount = __rdtsc();
 	while (GlobalRunning)
 	{
-		MSG Message;
-
-		while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
+		#pragma region Windows message handling
 		{
-			if (Message.message == WM_QUIT)
+			MSG Message;
+			while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
 			{
-				GlobalRunning = false;
+				if (Message.message == WM_QUIT)
+				{
+					GlobalRunning = false;
+				}
+
+				TranslateMessage(&Message);
+				DispatchMessageA(&Message);
 			}
-
-			TranslateMessage(&Message);
-			DispatchMessageA(&Message);
 		}
-
-		//Redraw();
-
-		ImGui_NewFrame(Window);
+		#pragma endregion
 
 		BOOL IsMaximized = IsMaximized(Window);
+		Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f;
 		float IconWidth = 32.0f;
+		
+		ImGui_NewFrame(Window);
 		
 		#pragma region Title Bar Buttons
 		{
-
 			ImGui::SetNextWindowSize(ImVec2(TitleBarButtonsWidth,24));
-			ImGui::SetNextWindowPos(ImVec2((float)WindowWidth-TitleBarButtonsWidth - (IsMaximized ? 8.0f:0.0f), (IsMaximized ? 8.0f:0.0f)));
+			ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width-TitleBarButtonsWidth - Memory.Window.MaximizeOffset, Memory.Window.MaximizeOffset));
 			
 			ImGuiWindowFlags WindowFlags = 0;
 			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -688,10 +680,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-			ImGui::PushStyleColor(ImGuiCol_Button, TransparentColor);
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ButtonHoverColor);
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ButtonActiveColor);
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0,0,0,0));
+			ImGui::PushStyleColor(ImGuiCol_Button, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory.InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory.InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
 
 			ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
@@ -741,7 +733,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma region Title Bar Icon
 		{
 			ImGui::SetNextWindowSize(ImVec2(IconWidth,(float)TitleBarHeight));
-			ImGui::SetNextWindowPos(ImVec2(1.0f + (IsMaximized ? 8.0f:0.0f), 1.0f + (IsMaximized ? 8.0f:0.0f)));
+			ImGui::SetNextWindowPos(ImVec2(1.0f + Memory.Window.MaximizeOffset, 1.0f + Memory.Window.MaximizeOffset));
 
 			ImGuiWindowFlags WindowFlags = 0;
 			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -757,7 +749,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, TransparentColor);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
 
 			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
 			ImGui::Image((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
@@ -770,8 +762,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		#pragma region Title Bar Menu
 		{
-			ImGui::SetNextWindowSize(ImVec2(WindowWidth - IconWidth - TitleBarButtonsWidth - 3.0f - (IsMaximized ? 16.0f:0.0f),(float)TitleBarHeight - 10.0f));
-			ImGui::SetNextWindowPos(ImVec2(2.0f + IconWidth + (IsMaximized ? 8.0f:0.0f), 1.0f + (IsMaximized ? 8.0f:0.0f) + 5.0f));
+			ImGui::SetNextWindowSize(ImVec2(Memory.Window.Width - IconWidth - TitleBarButtonsWidth - 3.0f - (2.0f * Memory.Window.MaximizeOffset),(float)TitleBarHeight - 10.0f));
+			ImGui::SetNextWindowPos(ImVec2(2.0f + IconWidth + Memory.Window.MaximizeOffset, 1.0f + Memory.Window.MaximizeOffset + 5.0f));
 
 			ImGuiWindowFlags WindowFlags = 0;
 			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -787,17 +779,17 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
 
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, TransparentColor);
-			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, TransparentColor);
-			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ButtonHoverColor);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
+			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Memory.InterfaceColors[PapayaInterfaceColor_ButtonHover]);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
-			ImGui::PushStyleColor(ImGuiCol_Header, TransparentColor);
+			ImGui::PushStyleColor(ImGuiCol_Header, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
 
 			ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
 			bool foo;
 			if (ImGui::BeginMenuBar())
 			{
-				ImGui::PushStyleColor(ImGuiCol_WindowBg, ClearColor);
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
 				if (ImGui::BeginMenu("FILE"))
 				{
 					#pragma region File Menu
@@ -882,12 +874,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		//=========================================
-#if 1
+#if 0
 		{
 			static float f = 0.0f;
             ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("clear color", (float*)&ClearColor);
+            ImGui::ColorEdit3("clear color", (float*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
             if (ImGui::Button("Test Window")) show_test_window ^= 1;
             if (ImGui::Button("Another Window")) show_another_window ^= 1;
 			if (ImGui::Button("Maximize")) { ShowWindow(Window, SW_MAXIMIZE); }
@@ -916,10 +908,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+        glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].x, 
+					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].y, 
+					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].z, 
+					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-		Papaya_UpdateAndRender(&Memory);
+		Papaya_UpdateAndRender(&Memory, &DebugMemory);
 
         ImGui::Render();
         SwapBuffers(DeviceContext);
