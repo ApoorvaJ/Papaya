@@ -36,32 +36,24 @@ typedef double real64;
 #include <stdio.h>
 #include <malloc.h>
 
-// TODO: Put these into own memory buffer
 global_variable PapayaMemory Memory = {};
 global_variable bool32 GlobalRunning;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
-global_variable HPALETTE Palette;
 global_variable uint32 WindowWidth, WindowHeight;
 global_variable int32 OpenGLVersion[2];
 
-
-global_variable float Time = 0.0f;
-
-// imgui
+// ImGui
 global_variable INT64 g_Time = 0;
 global_variable INT64 g_TicksPerSecond = 0;
-global_variable GLuint g_FontTexture = 0;
 global_variable bool bTrue = true;
 global_variable bool bFalse = false;
 
-
-// title bar
+// Title bar
 const float TitleBarButtonsWidth = 109;
 const uint32 TitleBarHeight = 30;
 
 // Colors
-
 #if 1
 global_variable ImVec4 ClearColor			= ImVec4(0.1764f, 0.1764f, 0.1882f, 1.0f); // Dark grey
 #else
@@ -233,90 +225,6 @@ internal void ImGui_NewFrame(HWND Window)
 {
 #if 1
 
-	if (!g_FontTexture)
-	{
-		// Create device objects
-		const GLchar *vertex_shader =
-			"#version 330\n"
-			"uniform mat4 ProjMtx;\n"
-			"in vec2 Position;\n"
-			"in vec2 UV;\n"
-			"in vec4 Color;\n"
-			"out vec2 Frag_UV;\n"
-			"out vec4 Frag_Color;\n"
-			"void main()\n"
-			"{\n"
-			"	Frag_UV = UV;\n"
-			"	Frag_Color = Color;\n"
-			"	gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
-			"}\n";
-
-		const GLchar* fragment_shader =
-			"#version 330\n"
-			"uniform sampler2D Texture;\n"
-			"in vec2 Frag_UV;\n"
-			"in vec4 Frag_Color;\n"
-			"out vec4 Out_Color;\n"
-			"void main()\n"
-			"{\n"
-			"	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
-			"}\n";
-
-		Memory.DefaultShader.Handle = glCreateProgram();
-		int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-		int32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-		glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-		glCompileShader(g_VertHandle);
-		glCompileShader(g_FragHandle);
-		glAttachShader(Memory.DefaultShader.Handle, g_VertHandle);
-		glAttachShader(Memory.DefaultShader.Handle, g_FragHandle);
-		glLinkProgram(Memory.DefaultShader.Handle);
-
-		Memory.DefaultShader.Texture			= glGetUniformLocation(Memory.DefaultShader.Handle, "Texture");
-		Memory.DefaultShader.ProjectionMatrix	= glGetUniformLocation(Memory.DefaultShader.Handle, "ProjMtx");
-		Memory.DefaultShader.Position			= glGetAttribLocation (Memory.DefaultShader.Handle, "Position");
-		Memory.DefaultShader.UV					= glGetAttribLocation (Memory.DefaultShader.Handle, "UV");
-		Memory.DefaultShader.Color				= glGetAttribLocation (Memory.DefaultShader.Handle, "Color");
-
-		glGenBuffers(1, &Memory.GraphicsBuffers.VboHandle);
-
-		glGenVertexArrays(1, &Memory.GraphicsBuffers.VaoHandle);
-		glBindVertexArray(Memory.GraphicsBuffers.VaoHandle);
-		glBindBuffer(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboHandle);
-		glEnableVertexAttribArray(Memory.DefaultShader.Position);
-		glEnableVertexAttribArray(Memory.DefaultShader.UV);
-		glEnableVertexAttribArray(Memory.DefaultShader.Color);
-
-	#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-		glVertexAttribPointer(Memory.DefaultShader.Position, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
-		glVertexAttribPointer(Memory.DefaultShader.UV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
-		glVertexAttribPointer(Memory.DefaultShader.Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
-	#undef OFFSETOF
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		// Create fonts texture
-		ImGuiIO& io = ImGui::GetIO();
-
-		unsigned char* pixels;
-		int width, height;
-		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
-
-		glGenTextures(1, &g_FontTexture);
-		glBindTexture(GL_TEXTURE_2D, g_FontTexture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-		// Store our identifier
-		io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
-
-		// Cleanup (don't clear the input data if you want to append new fonts later)
-		io.Fonts->ClearInputData();
-		io.Fonts->ClearTexData();
-	}
-
     ImGuiIO& io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
@@ -449,93 +357,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
 	switch (Message)
 	{
-		case WM_CREATE:
-		{
-			DeviceContext = GetDC(Window);
-			PIXELFORMATDESCRIPTOR PixelFormatDescriptor;
-			int32 PixelFormat;
-
-			#pragma region Setup pixel format
-			{
-				PixelFormatDescriptor = 
-				{
-					sizeof(PIXELFORMATDESCRIPTOR),	// size
-					1,								// version
-					PFD_SUPPORT_OPENGL |			
-					PFD_DRAW_TO_WINDOW |			
-					PFD_DOUBLEBUFFER,				// support double-buffering
-					PFD_TYPE_RGBA,					// color type
-					32,								// prefered color depth // TODO: What is the optimal value for color depth?
-					0, 0, 0, 0, 0, 0,				// color bits (ignored)
-					0,								// no alpha buffer
-					0,								// alpha bits (ignored)
-					0,								// no accumulation buffer
-					0, 0, 0, 0,						// accum bits (ignored)
-					32,								// depth buffer // TODO: What is the optimal value for depth buffer depth?
-					0,								// no stencil buffer
-					0,								// no auxiliary buffers
-					PFD_MAIN_PLANE,					// main layer
-					0,								// reserved
-					0, 0, 0,						// no layer, visible, damage masks
-				};
-
-				PixelFormat = ChoosePixelFormat(DeviceContext, &PixelFormatDescriptor);
-				if (!PixelFormat)
-				{
-					// TODO: Log: Choose pixel format failed
-					exit(1);
-				}
-
-				if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDescriptor)) 
-				{
-				    // TODO: Log: Set pixel format failed
-				    exit(1);
-				}
-			}
-			#pragma endregion
-
-			HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
-			wglMakeCurrent(DeviceContext, TempRenderingContext);
-
-			GLenum GlewInitResult = glewInit();
-			if (GlewInitResult != GLEW_OK)
-			{
-				// TODO: Log: GLEW Init failed
-				exit(1);
-			}
-
-			int InitAttributes[] =
-			{
-				WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-				WGL_CONTEXT_MINOR_VERSION_ARB, 2,
-				WGL_CONTEXT_FLAGS_ARB, 0,
-				0
-			};
-
-			if(wglewIsSupported("WGL_ARB_create_context") == 1)
-			{
-				RenderingContext = wglCreateContextAttribsARB(DeviceContext, 0, InitAttributes);
-				wglMakeCurrent(NULL,NULL);
-				wglDeleteContext(TempRenderingContext);
-				wglMakeCurrent(DeviceContext, RenderingContext);
-			}
-			else
-			{
-				// It is not possible to make a GL 3.x context.
-				// TODO: Handle this using a message box or something
-				exit(1);
-			}
-
-			if (!RenderingContext)
-			{
-				// TODO: Log: Failed to create rendering context
-				exit(1);
-			}
-
-			glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
-			glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
-		} break;
-
 		case WM_DESTROY:
 		{
 			// TODO: Handle this as an error - recreate window?
@@ -545,33 +366,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			    wglMakeCurrent(NULL, NULL);
 			    wglDeleteContext(RenderingContext);
 			}
-			if (Palette) 
-			{
-			    DeleteObject(Palette);
-			}
 			ReleaseDC(Window, DeviceContext);
 			PostQuitMessage(0);
-		} break;
-
-		case WM_PALETTECHANGED:
-		{
-			// Realize palette if this is *not* the current window
-			if (RenderingContext && Palette && (HWND) WParam != Window) 
-			{
-				UnrealizeObject(Palette);
-				SelectPalette(DeviceContext, Palette, FALSE);
-				RealizePalette(DeviceContext);
-			}
-		} break;
-		case WM_QUERYNEWPALETTE:
-		{
-			// Realize palette if this is the current window
-			if (RenderingContext && Palette) 
-			{
-				UnrealizeObject(Palette);
-				SelectPalette(DeviceContext, Palette, FALSE);
-				RealizePalette(DeviceContext);
-			}
 		} break;
 
 		case WM_PAINT:
@@ -748,6 +544,188 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		SetWindowPos(Window, HWND_TOP, WindowX, WindowY, WindowWidth, WindowHeight, NULL);
 		//SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
+	}
+	#pragma endregion
+
+	#pragma region Initialize OpenGL
+	{
+		DeviceContext = GetDC(Window);
+		PIXELFORMATDESCRIPTOR PixelFormatDescriptor;
+		int32 PixelFormat;
+
+		#pragma region Setup pixel format
+		{
+			PixelFormatDescriptor = 
+			{
+				sizeof(PIXELFORMATDESCRIPTOR),	// size
+				1,								// version
+				PFD_SUPPORT_OPENGL |			
+				PFD_DRAW_TO_WINDOW |			
+				PFD_DOUBLEBUFFER,				// support double-buffering
+				PFD_TYPE_RGBA,					// color type
+				32,								// prefered color depth // TODO: What is the optimal value for color depth?
+				0, 0, 0, 0, 0, 0,				// color bits (ignored)
+				0,								// no alpha buffer
+				0,								// alpha bits (ignored)
+				0,								// no accumulation buffer
+				0, 0, 0, 0,						// accum bits (ignored)
+				32,								// depth buffer // TODO: What is the optimal value for depth buffer depth?
+				0,								// no stencil buffer
+				0,								// no auxiliary buffers
+				PFD_MAIN_PLANE,					// main layer
+				0,								// reserved
+				0, 0, 0,						// no layer, visible, damage masks
+			};
+
+			PixelFormat = ChoosePixelFormat(DeviceContext, &PixelFormatDescriptor);
+			if (!PixelFormat)
+			{
+				// TODO: Log: Choose pixel format failed
+				exit(1);
+			}
+
+			if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDescriptor)) 
+			{
+				// TODO: Log: Set pixel format failed
+				exit(1);
+			}
+		}
+		#pragma endregion
+
+		#pragma region Create rendering context
+		{
+			HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
+			wglMakeCurrent(DeviceContext, TempRenderingContext);
+
+			GLenum GlewInitResult = glewInit();
+			if (GlewInitResult != GLEW_OK)
+			{
+				// TODO: Log: GLEW Init failed
+				exit(1);
+			}
+
+			int InitAttributes[] =
+			{
+				WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+				WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+				WGL_CONTEXT_FLAGS_ARB, 0,
+				0
+			};
+
+			if(wglewIsSupported("WGL_ARB_create_context") == 1)
+			{
+				RenderingContext = wglCreateContextAttribsARB(DeviceContext, 0, InitAttributes);
+				wglMakeCurrent(NULL,NULL);
+				wglDeleteContext(TempRenderingContext);
+				wglMakeCurrent(DeviceContext, RenderingContext);
+			}
+			else
+			{
+				// It is not possible to make a GL 3.x context.
+				// TODO: Handle this using a message box or something
+				exit(1);
+			}
+
+			if (!RenderingContext)
+			{
+				// TODO: Log: Failed to create rendering context
+				exit(1);
+			}
+
+			glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
+			glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
+		}
+		#pragma endregion
+
+		#pragma region Setup for ImGui
+		{
+			// Create device objects
+			const GLchar *vertex_shader =
+				"#version 330\n"
+				"uniform mat4 ProjMtx;\n"
+				"in vec2 Position;\n"
+				"in vec2 UV;\n"
+				"in vec4 Color;\n"
+				"out vec2 Frag_UV;\n"
+				"out vec4 Frag_Color;\n"
+				"void main()\n"
+				"{\n"
+				"	Frag_UV = UV;\n"
+				"	Frag_Color = Color;\n"
+				"	gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
+				"}\n";
+
+			const GLchar* fragment_shader =
+				"#version 330\n"
+				"uniform sampler2D Texture;\n"
+				"in vec2 Frag_UV;\n"
+				"in vec4 Frag_Color;\n"
+				"out vec4 Out_Color;\n"
+				"void main()\n"
+				"{\n"
+				"	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
+	#if 0
+				"   Out_Color.x = 1.0 - Out_Color.x;\n"
+				"   Out_Color.y = 1.0 - Out_Color.y;\n"
+				"   Out_Color.z = 1.0 - Out_Color.z;\n"
+	#endif
+				"}\n";
+
+			Memory.DefaultShader.Handle = glCreateProgram();
+			int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
+			int32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+			glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
+			glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
+			glCompileShader(g_VertHandle);
+			glCompileShader(g_FragHandle);
+			glAttachShader(Memory.DefaultShader.Handle, g_VertHandle);
+			glAttachShader(Memory.DefaultShader.Handle, g_FragHandle);
+			glLinkProgram(Memory.DefaultShader.Handle);
+
+			Memory.DefaultShader.Texture			= glGetUniformLocation(Memory.DefaultShader.Handle, "Texture");
+			Memory.DefaultShader.ProjectionMatrix	= glGetUniformLocation(Memory.DefaultShader.Handle, "ProjMtx");
+			Memory.DefaultShader.Position			= glGetAttribLocation (Memory.DefaultShader.Handle, "Position");
+			Memory.DefaultShader.UV					= glGetAttribLocation (Memory.DefaultShader.Handle, "UV");
+			Memory.DefaultShader.Color				= glGetAttribLocation (Memory.DefaultShader.Handle, "Color");
+
+			glGenBuffers(1, &Memory.GraphicsBuffers.VboHandle);
+
+			glGenVertexArrays(1, &Memory.GraphicsBuffers.VaoHandle);
+			glBindVertexArray(Memory.GraphicsBuffers.VaoHandle);
+			glBindBuffer(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboHandle);
+			glEnableVertexAttribArray(Memory.DefaultShader.Position);
+			glEnableVertexAttribArray(Memory.DefaultShader.UV);
+			glEnableVertexAttribArray(Memory.DefaultShader.Color);
+
+		#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+			glVertexAttribPointer(Memory.DefaultShader.Position, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
+			glVertexAttribPointer(Memory.DefaultShader.UV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
+			glVertexAttribPointer(Memory.DefaultShader.Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
+		#undef OFFSETOF
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+			// Create fonts texture
+			ImGuiIO& io = ImGui::GetIO();
+
+			unsigned char* pixels;
+			int width, height;
+			io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
+
+			glGenTextures(1, &Memory.InterfaceTextureIDs[PapayaInterfaceTexture_Font]);
+			glBindTexture(GL_TEXTURE_2D, Memory.InterfaceTextureIDs[PapayaInterfaceTexture_Font]);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+			// Store our identifier
+			io.Fonts->TexID = (void *)(intptr_t)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_Font];
+
+			// Cleanup (don't clear the input data if you want to append new fonts later)
+			io.Fonts->ClearInputData();
+			io.Fonts->ClearTexData();
+		}
+		#pragma endregion
 	}
 	#pragma endregion
 
@@ -1094,6 +1072,5 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	}
 
 	Papaya_Shutdown(&Memory);
-
 	return 0;
 }

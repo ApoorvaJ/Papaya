@@ -117,7 +117,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory)
 		Verts[5] = {ImVec2(Position.x, 512.0f + Position.y),			ImVec2(0.0f, 1.0f), 0xffffffff};
 
 		unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert));
+		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.
 		buffer_data += 6 * sizeof(ImDrawVert);
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

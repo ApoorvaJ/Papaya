@@ -9,6 +9,7 @@
 
 enum PapayaInterfaceTexture_
 {
+	PapayaInterfaceTexture_Font,
 	PapayaInterfaceTexture_TitleBarButtons,
 	PapayaInterfaceTexture_TitleBarIcon,
 	PapayaInterfaceTexture_COUNT
