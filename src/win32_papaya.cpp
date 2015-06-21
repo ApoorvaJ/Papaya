@@ -508,36 +508,35 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma region Setup for ImGui
 		{
 			// Create device objects
-			const GLchar *vertex_shader =
-				"#version 330\n"
-				"uniform mat4 ProjMtx;\n"
-				"in vec2 Position;\n"
-				"in vec2 UV;\n"
-				"in vec4 Color;\n"
-				"out vec2 Frag_UV;\n"
-				"out vec4 Frag_Color;\n"
-				"void main()\n"
-				"{\n"
-				"	Frag_UV = UV;\n"
-				"	Frag_Color = Color;\n"
-				"	gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
-				"}\n";
+			const GLchar *vertex_shader = 
+			R"(
+				#version 330
+				uniform mat4 ProjMtx;
+				in vec2 Position;
+				in vec2 UV;
+				in vec4 Color;
+				out vec2 Frag_UV;
+				out vec4 Frag_Color;
+				void main()
+				{
+					Frag_UV = UV;
+					Frag_Color = Color;
+					gl_Position = ProjMtx * vec4(Position.xy,0,1);
+				}
+			)";
 
-			const GLchar* fragment_shader =
-				"#version 330\n"
-				"uniform sampler2D Texture;\n"
-				"in vec2 Frag_UV;\n"
-				"in vec4 Frag_Color;\n"
-				"out vec4 Out_Color;\n"
-				"void main()\n"
-				"{\n"
-				"	Out_Color = Frag_Color * texture( Texture, Frag_UV.st);\n"
-	#if 0
-				"   Out_Color.x = 1.0 - Out_Color.x;\n"
-				"   Out_Color.y = 1.0 - Out_Color.y;\n"
-				"   Out_Color.z = 1.0 - Out_Color.z;\n"
-	#endif
-				"}\n";
+			const GLchar* fragment_shader = 
+			R"(
+				#version 330
+				uniform sampler2D Texture;
+				in vec2 Frag_UV;
+				in vec4 Frag_Color;
+				out vec4 Out_Color;
+				void main()
+				{
+					Out_Color = Frag_Color * texture( Texture, Frag_UV.st);
+				}
+			)";
 
 			Memory.DefaultShader.Handle = glCreateProgram();
 			int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
