@@ -70,7 +70,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory)
 
 	#pragma region Render canvas
 	{
-#if 1
 		// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
 		GLint last_program, last_texture;
 		glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
@@ -133,59 +132,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory)
 		glUseProgram(last_program);
 		glDisable(GL_SCISSOR_TEST);
 		glBindTexture(GL_TEXTURE_2D, last_texture);
-#else
-		glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_SCISSOR_TEST);
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
-		glEnable(GL_TEXTURE_2D);
-
-		// Setup orthographic projection matrix
-		const float width = ImGui::GetIO().DisplaySize.x;
-		const float height = ImGui::GetIO().DisplaySize.y;
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-
-		// TODO: Adjust this if required to try and reduce font blurriness
-		float offset = 0.0f;
-		glOrtho(0.0f+offset, width+offset, height+offset, 0.0f+offset, -1.0f, +1.0f);
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-
-		ImVec2 Position = ImVec2((width - 512.0f)/2.0f, (height - 512.0f)/2.0f);
-		ImVec2 Vertices[]  = 
-		{ 
-			ImVec2(Position.x, Position.y), ImVec2(512.0f + Position.x, Position.y), ImVec2(512.0f + Position.x, 512.0f + Position.y),
-			ImVec2(Position.x, Position.y), ImVec2(512.0f + Position.x, 512.0f + Position.y), ImVec2(Position.x, 512.0f + Position.y) 
-		};
-		ImVec2 UVs[]  = { ImVec2(0.0f, 0.0f), ImVec2(1.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(0.0f, 1.0f) };
-		uint32 Cols[] = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
-		glVertexPointer(2, GL_FLOAT, sizeof(ImVec2), (void*)Vertices);
-		glTexCoordPointer(2, GL_FLOAT, sizeof(ImVec2), (void*)UVs);
-		glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(uint32), (void*)Cols);
-
-		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
-		glScissor(0, 0, 2000, 2000);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		// Restore modified state
-		glDisableClientState(GL_COLOR_ARRAY);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glPopAttrib();
-#endif
 	}
 	#pragma endregion
 }
