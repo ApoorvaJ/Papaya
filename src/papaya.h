@@ -32,7 +32,7 @@ struct PapayaDocument
 	int32 ComponentsPerPixel;
 	uint32 TextureID;
 	ImVec2 CanvasPosition;
-	float CanvasScale;
+	float CanvasZoom;
 };
 
 struct PapayaShader

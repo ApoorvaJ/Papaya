@@ -54,7 +54,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png", Memory->Documents);
 	Memory->Documents[0].CanvasPosition = ImVec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f);
-	Memory->Documents[0].CanvasScale = 1.0f;
+	Memory->Documents[0].CanvasZoom = 1.0f;
 }
 
 void Papaya_Shutdown(PapayaMemory* Memory)
@@ -132,22 +132,21 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	// Zooming
 	if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
 	{
-		float ZoomSpeed = 0.1f; // TODO: Adjust zoom speed based on current scale, for easy sub-pixel zooming
-		float ScaleDelta = ImGui::GetIO().MouseWheel * ZoomSpeed;
-		ImVec2 OldCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasScale;
+		float MinZoom = 0.01f, MaxZoom = 32.0f;
+		float ZoomSpeed = 0.2f * Memory->Documents[0].CanvasZoom;
+		float ScaleDelta = min(MaxZoom - Memory->Documents[0].CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
+		ImVec2 OldCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
 
-		Memory->Documents[0].CanvasScale += ScaleDelta;
-		Memory->Documents[0].CanvasScale =  ImClamp(Memory->Documents[0].CanvasScale, 0.01f, 32.0f); // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels
-		ImVec2 NewCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasScale;
-
-
-		if (NewCanvasSize.x > Memory->Window.Width || 
-			NewCanvasSize.y > Memory->Window.Height)
+		Memory->Documents[0].CanvasZoom += ScaleDelta;
+		if (Memory->Documents[0].CanvasZoom < MinZoom) { Memory->Documents[0].CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
+		ImVec2 NewCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
+		
+		if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
 		{
 			ImVec2 MouseUV = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) / OldCanvasSize;
 			Memory->Documents[0].CanvasPosition -= MouseUV * ScaleDelta * 512.0f;
 		}
-		else
+		else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
 		{
 			ImVec2 WindowSize = ImVec2((float)Memory->Window.Width, (float)Memory->Window.Height);
 			Memory->Documents[0].CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
@@ -193,7 +192,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		// Copy and convert all vertices into a single contiguous buffer
 		ImVec2 Position = Memory->Documents[0].CanvasPosition;
-		ImVec2 Size = ImVec2(512.0f * Memory->Documents[0].CanvasScale, 512.0f * Memory->Documents[0].CanvasScale);
+		ImVec2 Size = ImVec2(512.0f * Memory->Documents[0].CanvasZoom, 512.0f * Memory->Documents[0].CanvasZoom);
 		ImDrawVert Verts[6];
 		Verts[0] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
 		Verts[1] = {ImVec2(Size.x + Position.x, Position.y),			ImVec2(1.0f, 0.0f), 0xffffffff};
