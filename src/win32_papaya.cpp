@@ -879,7 +879,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		//=========================================
-#if 1
+#if 0
 		{
 			static float f = 0.0;
             ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");

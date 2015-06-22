@@ -166,6 +166,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_SCISSOR_TEST);
 		glActiveTexture(GL_TEXTURE0);
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Memory->Documents[0].CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR);
 
 		// Setup orthographic projection matrix
 		const float width = ImGui::GetIO().DisplaySize.x;
@@ -209,7 +211,10 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glBindVertexArray(Memory->GraphicsBuffers.VaoHandle);
 
 		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
-		glScissor(0, 0, 2000, 2000);
+		glScissor(34 + (int)Memory->Window.MaximizeOffset, 
+				  1 + (int)Memory->Window.MaximizeOffset, 
+				  (int)Memory->Window.Width - 68 - (2 * (int)Memory->Window.MaximizeOffset), 
+				  (int)Memory->Window.Height - 34 - (2 * (int)Memory->Window.MaximizeOffset));
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
