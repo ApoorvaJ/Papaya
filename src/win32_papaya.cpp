@@ -45,7 +45,6 @@ global_variable int32 OpenGLVersion[2];
 
 // ImGui
 global_variable bool bTrue = true;
-global_variable bool bFalse = false;
 
 // Title bar
 const float TitleBarButtonsWidth = 109;
@@ -202,9 +201,16 @@ internal LRESULT ImGui_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 			io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
 			return true;
 		case WM_MOUSEMOVE:
+		{
+			TRACKMOUSEEVENT TrackParam = {};
+			TrackParam.dwFlags |= TME_LEAVE;
+			TrackParam.hwndTrack = hWnd;
+			TrackParam.cbSize = sizeof(TrackParam);
+			TrackMouseEvent(&TrackParam);
 			io.MousePos.x = (signed short)(lParam);
 			io.MousePos.y = (signed short)(lParam >> 16); 
 			return true;
+		} break;
 		case WM_KEYDOWN:
 			if (wParam < 256)
 				io.KeysDown[wParam] = 1;
@@ -231,6 +237,14 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
 	switch (Message)
 	{
+		case WM_MOUSELEAVE:
+		{
+			ImGui::GetIO().MouseDown[0] = false;
+			ImGui::GetIO().MouseDown[1] = false;
+			ImGui::GetIO().MouseDown[2] = false;
+			return true;
+		} break;
+
 		case WM_DESTROY:
 		{
 			// TODO: Handle this as an error - recreate window?
@@ -879,7 +893,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		//=========================================
-#if 0
+#if 1
 		{
 			static float f = 0.0;
             ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");
@@ -893,7 +907,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			if (ImGui::Button("Close")) { SendMessage(Window, WM_CLOSE, 0, 0); }
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-            ImGui::Text("Scale: %f", Memory.Documents[0].CanvasZoom);
+            ImGui::Text("Scale: %f %f", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
 		}
 
 		// 2. Show another simple window, this time using an explicit Begin/End pair
