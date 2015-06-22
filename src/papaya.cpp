@@ -130,7 +130,29 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	ImGui::ResetMouseDragDelta(2);
 
 	// Zooming
-	Memory->Documents[0].CanvasScale += ImGui::GetIO().MouseWheel * 0.1f;
+	if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
+	{
+		float ZoomSpeed = 0.1f; // TODO: Adjust zoom speed based on current scale, for easy sub-pixel zooming
+		float ScaleDelta = ImGui::GetIO().MouseWheel * ZoomSpeed;
+		ImVec2 OldCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasScale;
+
+		Memory->Documents[0].CanvasScale += ScaleDelta;
+		Memory->Documents[0].CanvasScale =  ImClamp(Memory->Documents[0].CanvasScale, 0.01f, 32.0f); // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels
+		ImVec2 NewCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasScale;
+
+
+		if (NewCanvasSize.x > Memory->Window.Width || 
+			NewCanvasSize.y > Memory->Window.Height)
+		{
+			ImVec2 MouseUV = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) / OldCanvasSize;
+			Memory->Documents[0].CanvasPosition -= MouseUV * ScaleDelta * 512.0f;
+		}
+		else
+		{
+			ImVec2 WindowSize = ImVec2((float)Memory->Window.Width, (float)Memory->Window.Height);
+			Memory->Documents[0].CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
+		}
+	}
 
 	#pragma region Render canvas
 	{

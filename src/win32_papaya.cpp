@@ -892,6 +892,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			if (ImGui::Button("Minimize")) { ShowWindow(Window, SW_MINIMIZE); }
 			if (ImGui::Button("Close")) { SendMessage(Window, WM_CLOSE, 0, 0); }
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+			ImVec2 CanvasSize = ImVec2((float)Memory.Documents[0].Width, (float)Memory.Documents[0].Height) * Memory.Documents[0].CanvasScale;
+			ImVec2 MouseUV = (ImGui::GetMousePos() - Memory.Documents[0].CanvasPosition) / CanvasSize;
+            ImGui::Text("Mouse: %f %f", MouseUV.x, MouseUV.y);
 		}
 
 		// 2. Show another simple window, this time using an explicit Begin/End pair
