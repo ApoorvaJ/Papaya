@@ -43,6 +43,9 @@ global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2];
 
+// Needed because WS_POPUP by default maximizes to cover task bar
+global_variable RECT WindowsWorkArea;
+
 // ImGui
 global_variable bool bTrue = true;
 
@@ -277,19 +280,21 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			OutputDebugStringA("WM_ACTIVATEAPP\n");
 		} break;
 
-		case WM_NCCALCSIZE:
-		{
-			//this kills the window frame and title bar we added with
-			//WS_THICKFRAME and WS_CAPTION
-			return 0;
-		} break;
-
 		case WM_SIZE:
 		{
-			/*uint32 NewWidth = LParam & 0xFFFF;
-			uint32 NewHeight = LParam >> 16;*/
-			Memory.Window.Width = (int32) LOWORD(LParam);
-			Memory.Window.Height = (int32) HIWORD(LParam);
+			if (WParam == SIZE_MAXIMIZED)
+			{
+				float WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
+				float WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
+				SetWindowPos(Window, HWND_TOP, WindowsWorkArea.left, WindowsWorkArea.top, WorkAreaWidth, WorkAreaHeight, NULL);
+				Memory.Window.Width = WorkAreaWidth;
+				Memory.Window.Height = WorkAreaHeight;
+			}
+			else
+			{
+				Memory.Window.Width = (int32) LOWORD(LParam);
+				Memory.Window.Height = (int32) HIWORD(LParam);
+			}
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 
@@ -310,49 +315,52 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			long X = GET_X_LPARAM(LParam);
 			long Y = GET_Y_LPARAM(LParam);
 
-			//bottom left corner
-			if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
-				Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+			if (!IsMaximized(Window))
 			{
-				return HTBOTTOMLEFT;
-			}
-			//bottom right corner
-			if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
-				Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
-			{
-				return HTBOTTOMRIGHT;
-			}
-			//top left corner
-			if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
-				Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
-			{
-				return HTTOPLEFT;
-			}
-			//top right corner
-			if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
-				Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
-			{
-				return HTTOPRIGHT;
-			}
-			//left border
-			if (X >= WindowRect.left && X < WindowRect.left + BorderWidth)
-			{
-				return HTLEFT;
-			}
-			//right border
-			if (X < WindowRect.right && X >= WindowRect.right - BorderWidth)
-			{
-				return HTRIGHT;
-			}
-			//bottom border
-			if (Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
-			{
-				return HTBOTTOM;
-			}
-			//top border
-			if (Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
-			{
-				return HTTOP;
+				//bottom left corner
+				if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
+					Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+				{
+					return HTBOTTOMLEFT;
+				}
+				//bottom right corner
+				if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
+					Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+				{
+					return HTBOTTOMRIGHT;
+				}
+				//top left corner
+				if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
+					Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
+				{
+					return HTTOPLEFT;
+				}
+				//top right corner
+				if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
+					Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
+				{
+					return HTTOPRIGHT;
+				}
+				//left border
+				if (X >= WindowRect.left && X < WindowRect.left + BorderWidth)
+				{
+					return HTLEFT;
+				}
+				//right border
+				if (X < WindowRect.right && X >= WindowRect.right - BorderWidth)
+				{
+					return HTRIGHT;
+				}
+				//bottom border
+				if (Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
+				{
+					return HTBOTTOM;
+				}
+				//top border
+				if (Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
+				{
+					return HTTOP;
+				}
 			}
 
 			if (Y - WindowRect.top - (IsMaximized(Window) ? 8.0f : 0.0f) <= TitleBarHeight && X > WindowRect.left + 200.0f && X < WindowRect.right - (TitleBarButtonsWidth + 10))
@@ -404,7 +412,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			0,																							// Extended window style
 			WindowClass.lpszClassName,																	// Class name,
 			"Papaya",																					// Name,
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+			WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,
 			CW_USEDEFAULT,																				// X,
 			CW_USEDEFAULT,																				// Y,
 			CW_USEDEFAULT,																				// Width,
@@ -419,6 +427,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			// TODO: Log: Create window failed
 			return 0;
 		}
+
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &WindowsWorkArea, 0);
 
 		uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 		uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
@@ -657,7 +667,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		BOOL IsMaximized = IsMaximized(Window);
-		Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f;
+		// Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f; // TODO: Might have to turn this on when activating WS_THICKFRAME for aero snapping to work
 		float IconWidth = 32.0f;
 		
 		ImGui_NewFrame(Window);
