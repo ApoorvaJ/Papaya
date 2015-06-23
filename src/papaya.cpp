@@ -196,12 +196,12 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImVec2 Position = Memory->Documents[0].CanvasPosition;
 		ImVec2 Size = ImVec2(512.0f * Memory->Documents[0].CanvasZoom, 512.0f * Memory->Documents[0].CanvasZoom);
 		ImDrawVert Verts[6];
-		Verts[0] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
-		Verts[1] = {ImVec2(Size.x + Position.x, Position.y),			ImVec2(1.0f, 0.0f), 0xffffffff};
-		Verts[2] = {ImVec2(Size.x + Position.x, Size.y + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
-		Verts[3] = {ImVec2(Position.x, Position.y),						ImVec2(0.0f, 0.0f), 0xffffffff};
-		Verts[4] = {ImVec2(Size.x + Position.x, Size.y + Position.y),	ImVec2(1.0f, 1.0f), 0xffffffff};
-		Verts[5] = {ImVec2(Position.x, Size.y + Position.y),			ImVec2(0.0f, 1.0f), 0xffffffff};
+		Verts[0].pos = ImVec2(Position.x, Position.y);						Verts[0].uv = ImVec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+		Verts[1].pos = ImVec2(Size.x + Position.x, Position.y);				Verts[1].uv = ImVec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+		Verts[2].pos = ImVec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = ImVec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+		Verts[3].pos = ImVec2(Position.x, Position.y);						Verts[3].uv = ImVec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+		Verts[4].pos = ImVec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = ImVec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+		Verts[5].pos = ImVec2(Position.x, Size.y + Position.y);				Verts[5].uv = ImVec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
 
 		unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.

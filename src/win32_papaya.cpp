@@ -438,32 +438,18 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	#pragma region Initialize OpenGL
 	{
 		DeviceContext = GetDC(Window);
-		PIXELFORMATDESCRIPTOR PixelFormatDescriptor;
+		PIXELFORMATDESCRIPTOR PixelFormatDescriptor = {};
 		int32 PixelFormat;
 
 		#pragma region Setup pixel format
 		{
-			PixelFormatDescriptor = 
-			{
-				sizeof(PIXELFORMATDESCRIPTOR),	// size
-				1,								// version
-				PFD_SUPPORT_OPENGL |			
-				PFD_DRAW_TO_WINDOW |			
-				PFD_DOUBLEBUFFER,				// support double-buffering
-				PFD_TYPE_RGBA,					// color type
-				32,								// prefered color depth // TODO: What is the optimal value for color depth?
-				0, 0, 0, 0, 0, 0,				// color bits (ignored)
-				0,								// no alpha buffer
-				0,								// alpha bits (ignored)
-				0,								// no accumulation buffer
-				0, 0, 0, 0,						// accum bits (ignored)
-				32,								// depth buffer // TODO: What is the optimal value for depth buffer depth?
-				0,								// no stencil buffer
-				0,								// no auxiliary buffers
-				PFD_MAIN_PLANE,					// main layer
-				0,								// reserved
-				0, 0, 0,						// no layer, visible, damage masks
-			};
+			PixelFormatDescriptor.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+			PixelFormatDescriptor.nVersion = 1;
+			PixelFormatDescriptor.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+			PixelFormatDescriptor.iPixelType = PFD_TYPE_RGBA;
+			PixelFormatDescriptor.cColorBits = 32;
+			PixelFormatDescriptor.cDepthBits = 32;
+			PixelFormatDescriptor.dwLayerMask = PFD_MAIN_PLANE;
 
 			PixelFormat = ChoosePixelFormat(DeviceContext, &PixelFormatDescriptor);
 			if (!PixelFormat)
@@ -529,34 +515,30 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		{
 			// Create device objects
 			const GLchar *vertex_shader = 
-			R"(
-				#version 330
-				uniform mat4 ProjMtx;
-				in vec2 Position;
-				in vec2 UV;
-				in vec4 Color;
-				out vec2 Frag_UV;
-				out vec4 Frag_Color;
-				void main()
-				{
-					Frag_UV = UV;
-					Frag_Color = Color;
-					gl_Position = ProjMtx * vec4(Position.xy,0,1);
-				}
-			)";
+"				#version 330                                                      \n"
+"				uniform mat4 ProjMtx;                                             \n"
+"				in vec2 Position;                                                 \n"
+"				in vec2 UV;                                                       \n"
+"				in vec4 Color;                                                    \n"
+"				out vec2 Frag_UV;                                                 \n"
+"				out vec4 Frag_Color;                                              \n"
+"				void main()                                                       \n"
+"				{                                                                 \n"
+"					Frag_UV = UV;                                                 \n"
+"					Frag_Color = Color;                                           \n"
+"					gl_Position = ProjMtx * vec4(Position.xy,0,1);                \n"
+"				}                                                                 \n";
 
 			const GLchar* fragment_shader = 
-			R"(
-				#version 330
-				uniform sampler2D Texture;
-				in vec2 Frag_UV;
-				in vec4 Frag_Color;
-				out vec4 Out_Color;
-				void main()
-				{
-					Out_Color = Frag_Color * texture( Texture, Frag_UV.st);
-				}
-			)";
+"				#version 330													  \n"
+"				uniform sampler2D Texture;										  \n"
+"				in vec2 Frag_UV;												  \n"
+"				in vec4 Frag_Color;												  \n"
+"				out vec4 Out_Color;												  \n"
+"				void main()														  \n"
+"				{																  \n"
+"					Out_Color = Frag_Color * texture( Texture, Frag_UV.st);		  \n"
+"				}																  \n";
 
 			Memory.DefaultShader.Handle = glCreateProgram();
 			int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
