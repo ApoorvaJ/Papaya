@@ -82,48 +82,23 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 
-	#pragma region Left toolbar
+	// Brush
 	{
-		ImGui::SetNextWindowSize(ImVec2(36,650));
-		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 70.0f + Memory->Window.MaximizeOffset));
-			
-		ImGuiWindowFlags WindowFlags = 0;
-		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-		WindowFlags |= ImGuiWindowFlags_NoResize;
-		WindowFlags |= ImGuiWindowFlags_NoMove;
-		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-		WindowFlags |= ImGuiWindowFlags_NoCollapse;
-		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-
-		ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-		bool Show = true;
-		ImGui::Begin("Left toolbar", &Show, WindowFlags);
-
-		ImGui::PushID(0);
-		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
-		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
+		if (ImGui::IsMouseDown(0))
 		{
-			
+			ImVec2 MousePixelPos = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+			int32 MouseX = (int32)(MousePixelPos.x);
+			int32 MouseY = (int32)(MousePixelPos.y);
+			if (MouseX >= 0 && MouseX < Memory->Documents[0].Width &&
+				MouseY >= 0 && MouseY < Memory->Documents[0].Height)
+			{
+				*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * MouseY * sizeof(uint32)) + MouseX * sizeof(uint32))) = 0xffff0000; // 0xAABBGGRR
+				glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+			}
 		}
-		#undef CALCUV
-		ImGui::PopID();
-
-		ImGui::End();
-
-		ImGui::PopStyleVar(5);
-		ImGui::PopStyleColor(4);
 	}
-	#pragma endregion
+
 
 	// Panning
 	Memory->Documents[0].CanvasPosition += ImGui::GetMouseDragDelta(2);
@@ -135,7 +110,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		float MinZoom = 0.01f, MaxZoom = 32.0f;
 		float ZoomSpeed = 0.2f * Memory->Documents[0].CanvasZoom;
 		float ScaleDelta = min(MaxZoom - Memory->Documents[0].CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
-		ImVec2 OldCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
+		ImVec2 OldCanvasZoom = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
 
 		Memory->Documents[0].CanvasZoom += ScaleDelta;
 		if (Memory->Documents[0].CanvasZoom < MinZoom) { Memory->Documents[0].CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
@@ -143,7 +118,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		
 		if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
 		{
-			ImVec2 MouseUV = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) / OldCanvasSize;
+			ImVec2 MouseUV = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
 			Memory->Documents[0].CanvasPosition -= MouseUV * ScaleDelta * 512.0f;
 		}
 		else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
@@ -223,6 +198,49 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glUseProgram(last_program);
 		glDisable(GL_SCISSOR_TEST);
 		glBindTexture(GL_TEXTURE_2D, last_texture);
+	}
+	#pragma endregion
+
+	#pragma region Left toolbar
+	{
+		ImGui::SetNextWindowSize(ImVec2(36,650));
+		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 70.0f + Memory->Window.MaximizeOffset));
+			
+		ImGuiWindowFlags WindowFlags = 0;
+		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+		WindowFlags |= ImGuiWindowFlags_NoResize;
+		WindowFlags |= ImGuiWindowFlags_NoMove;
+		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+		WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
+		bool Show = true;
+		ImGui::Begin("Left toolbar", &Show, WindowFlags);
+
+		ImGui::PushID(0);
+		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
+		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
+		{
+			
+		}
+		#undef CALCUV
+		ImGui::PopID();
+
+		ImGui::End();
+
+		ImGui::PopStyleVar(5);
+		ImGui::PopStyleColor(4);
 	}
 	#pragma endregion
 }

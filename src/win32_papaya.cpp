@@ -284,8 +284,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		{
 			if (WParam == SIZE_MAXIMIZED)
 			{
-				float WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
-				float WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
+				int32 WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
+				int32 WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
 				SetWindowPos(Window, HWND_TOP, WindowsWorkArea.left, WindowsWorkArea.top, WorkAreaWidth, WorkAreaHeight, NULL);
 				Memory.Window.Width = WorkAreaWidth;
 				Memory.Window.Height = WorkAreaHeight;
@@ -885,7 +885,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		//=========================================
-#if 1
+#if 0
 		{
 			static float f = 0.0;
             ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");

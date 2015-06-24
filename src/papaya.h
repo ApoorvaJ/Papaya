@@ -57,6 +57,7 @@ struct PapayaMemory
 {
 	uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
 	ImVec4 InterfaceColors[PapayaInterfaceColor_COUNT];
+	uint32 CurrentColor;
 	PapayaWindow Window;
 	PapayaGraphicsBuffers GraphicsBuffers;
 	PapayaShader DefaultShader;
