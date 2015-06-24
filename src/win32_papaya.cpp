@@ -280,17 +280,23 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			OutputDebugStringA("WM_ACTIVATEAPP\n");
 		} break;
 
+		case WM_NCCALCSIZE:
+		{
+			return 0;
+		} break;
+
 		case WM_SIZE:
 		{
-			if (WParam == SIZE_MAXIMIZED)
+		/*	if (WParam == SIZE_MAXIMIZED)
 			{
-				float WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
-				float WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
+				SystemParametersInfo(SPI_GETWORKAREA, 0, &WindowsWorkArea, 0);
+				uint32 WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
+				uint32 WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
 				SetWindowPos(Window, HWND_TOP, WindowsWorkArea.left, WindowsWorkArea.top, WorkAreaWidth, WorkAreaHeight, NULL);
 				Memory.Window.Width = WorkAreaWidth;
 				Memory.Window.Height = WorkAreaHeight;
 			}
-			else
+			else*/
 			{
 				Memory.Window.Width = (int32) LOWORD(LParam);
 				Memory.Window.Height = (int32) HIWORD(LParam);
@@ -412,7 +418,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			0,																							// Extended window style
 			WindowClass.lpszClassName,																	// Class name,
 			"Papaya",																					// Name,
-			WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,
+			WS_OVERLAPPED | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,
 			CW_USEDEFAULT,																				// X,
 			CW_USEDEFAULT,																				// Y,
 			CW_USEDEFAULT,																				// Width,
@@ -427,8 +433,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			// TODO: Log: Create window failed
 			return 0;
 		}
-
-		SystemParametersInfo(SPI_GETWORKAREA, 0, &WindowsWorkArea, 0);
 
 		uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 		uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
