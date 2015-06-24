@@ -6,7 +6,7 @@
 
 #pragma once
 
-//#include "imconfig.h"       // User-editable configuration file
+#include "imconfig.h"       // User-editable configuration file
 #include <float.h>          // FLT_MAX
 #include <stdarg.h>         // va_list
 #include <stddef.h>         // ptrdiff_t, NULL

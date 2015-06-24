@@ -14,11 +14,13 @@
     <ClInclude Include="..\..\src\glew.c" />
     <ClInclude Include="..\..\src\GL\glew.h" />
     <ClInclude Include="..\..\src\GL\wglew.h" />
+    <ClInclude Include="..\..\src\imconfig.h" />
     <ClInclude Include="..\..\src\imgui.cpp" />
     <ClInclude Include="..\..\src\imgui.h" />
     <ClInclude Include="..\..\src\papaya.cpp" />
     <ClCompile Include="..\..\src\win32_papaya.cpp" />
     <ClInclude Include="..\..\src\papaya.h" />
+    <ClInclude Include="..\..\src\papaya_math.h" />
     <ClInclude Include="..\..\src\stb_image.h" />
     <ClInclude Include="..\..\src\stb_rect_pack.h" />
     <ClInclude Include="..\..\src\stb_textedit.h" />

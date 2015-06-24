@@ -1,5 +1,13 @@
 #pragma once
 
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <glew.c>
+
+#include "papaya_math.h"
+#include "imgui.h"
+#include "imgui.cpp"
+
 #define Kilobytes(Value) ((Value)*1024LL)
 #define Megabytes(Value) (Kilobytes(Value)*1024LL)
 #define Gigabytes(Value) (Megabytes(Value)*1024LL)
@@ -51,6 +59,11 @@ struct PapayaWindow
 {
 	uint32 Width, Height;
 	float MaximizeOffset; // Used to cancel Windows' weirdness when windows are maximized. Refer: http://stackoverflow.com/questions/14667558/why-is-a-maximized-delphi-form-8-pixels-wider-and-higher-than-the-getsystemmetri
+};
+
+struct MouseInfo
+{
+	
 };
 
 struct PapayaMemory
