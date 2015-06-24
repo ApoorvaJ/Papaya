@@ -39,7 +39,7 @@ struct PapayaDocument
 	int32 Width, Height;
 	int32 ComponentsPerPixel;
 	uint32 TextureID;
-	ImVec2 CanvasPosition;
+	Vec2 CanvasPosition;
 	float CanvasZoom;
 };
 
@@ -63,17 +63,21 @@ struct PapayaWindow
 
 struct MouseInfo
 {
-	
+	Vec2 Pos;
+	Vec2 LastPos;
+	bool IsDown[3];
+	bool WasDown[3];
 };
 
 struct PapayaMemory
 {
 	uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
-	ImVec4 InterfaceColors[PapayaInterfaceColor_COUNT];
+	Color InterfaceColors[PapayaInterfaceColor_COUNT];
 	uint32 CurrentColor;
 	PapayaWindow Window;
 	PapayaGraphicsBuffers GraphicsBuffers;
 	PapayaShader DefaultShader;
+	MouseInfo Mouse;
 	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
 };
 

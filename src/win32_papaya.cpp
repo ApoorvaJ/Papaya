@@ -161,10 +161,10 @@ internal void ImGui_NewFrame(HWND Window)
 
 internal void ClearAndSwap(void)
 {
-	glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].x, 
-				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].y, 
-				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].z, 
-				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].w);
+	glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
+				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
+				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 
+				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].a);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SwapBuffers(DeviceContext);
 }
@@ -913,10 +913,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].x, 
-					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].y, 
-					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].z, 
-					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].w);
+        glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
+					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
+					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 
+					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].a);
         glClear(GL_COLOR_BUFFER_BIT);
 
 		Papaya_UpdateAndRender(&Memory, &DebugMemory);

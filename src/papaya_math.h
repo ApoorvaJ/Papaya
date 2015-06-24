@@ -23,6 +23,7 @@ inline Vec2& operator/=(Vec2& lhs, const float rhs)			{ lhs.x /= rhs; lhs.y /= r
 struct Color
 {
 	float r, g, b, a;
+	Color()													{ r = 0.0f, g = 0.0f, b = 0.0f; }
 	Color(int _r, int _g, int _b, int _a = 255)				{ r = (float)_r / 255.0f; g = (float)_g / 255.0f; b = (float)_b / 255.0f; a = (float)_a / 255.0f; }
 	Color(float _r, float _g, float _b, float _a = 1.0f)	{ r = _r; g = _g; b = _b; a = _a; }
 	operator uint32() const									{ return ((uint32)(r*255.f)) |(((uint32)(g*255.f)) << 8) | (((uint32)(b*255.f)) << 16) | (((uint32)(a*255.f)) << 24); }

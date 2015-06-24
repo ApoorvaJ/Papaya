@@ -43,17 +43,17 @@ void Papaya_Initialize(PapayaMemory* Memory)
 
 	// Colors
 #if 1
-	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= ImVec4(0.1764f, 0.1764f, 0.1882f, 1.0f); // Dark grey
+	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(45,45,48); // Dark grey
 #else
-	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= ImVec4(0.4470f, 0.5647f, 0.6039f, 1.0f); // Light blue
+	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(114,144,154); // Light blue
 #endif
-	Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= ImVec4(0.0f,    0.0f,    0.0f,    0.0f);
-	Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= ImVec4(0.25f,   0.25f,   0.25f,   1.0f);
-	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= ImVec4(0.0f,    0.48f,   0.8f,    1.0f);
+	Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= Color(0,0,0,0);
+	Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= Color(64,64,64);
+	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
 
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png", Memory->Documents);
-	Memory->Documents[0].CanvasPosition = ImVec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f);
+	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f);
 	Memory->Documents[0].CanvasZoom = 1.0f;
 }
 
@@ -65,6 +65,15 @@ void Papaya_Shutdown(PapayaMemory* Memory)
 
 void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 {
+	#pragma region Current mouse info
+	{
+		Memory->Mouse.Pos = ImGui::GetMousePos();
+		Memory->Mouse.IsDown[0] = ImGui::IsMouseDown(0);
+		Memory->Mouse.IsDown[1] = ImGui::IsMouseDown(1);
+		Memory->Mouse.IsDown[2] = ImGui::IsMouseDown(2);
+	}
+	#pragma endregion
+
 	//local_persist float TimeX;
 	//TimeX += 0.1f;
 	//for (int32 i = 0; i < Memory->Documents[0].Width * Memory->Documents[0].Width; i++)
@@ -86,7 +95,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	{
 		if (ImGui::IsMouseDown(0))
 		{
-			ImVec2 MousePixelPos = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+			Vec2 MousePixelPos = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 			int32 MouseX = (int32)(MousePixelPos.x);
 			int32 MouseY = (int32)(MousePixelPos.y);
 			if (MouseX >= 0 && MouseX < Memory->Documents[0].Width &&
@@ -110,20 +119,20 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		float MinZoom = 0.01f, MaxZoom = 32.0f;
 		float ZoomSpeed = 0.2f * Memory->Documents[0].CanvasZoom;
 		float ScaleDelta = min(MaxZoom - Memory->Documents[0].CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
-		ImVec2 OldCanvasZoom = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
+		Vec2 OldCanvasZoom = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
 
 		Memory->Documents[0].CanvasZoom += ScaleDelta;
 		if (Memory->Documents[0].CanvasZoom < MinZoom) { Memory->Documents[0].CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-		ImVec2 NewCanvasSize = ImVec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
+		Vec2 NewCanvasSize = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
 		
 		if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
 		{
-			ImVec2 MouseUV = (ImGui::GetMousePos() - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
+			Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
 			Memory->Documents[0].CanvasPosition -= MouseUV * ScaleDelta * 512.0f;
 		}
 		else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
 		{
-			ImVec2 WindowSize = ImVec2((float)Memory->Window.Width, (float)Memory->Window.Height);
+			Vec2 WindowSize = Vec2((float)Memory->Window.Width, (float)Memory->Window.Height);
 			Memory->Documents[0].CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
 		}
 	}
@@ -168,15 +177,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		}
 
 		// Copy and convert all vertices into a single contiguous buffer
-		ImVec2 Position = Memory->Documents[0].CanvasPosition;
-		ImVec2 Size = ImVec2(512.0f * Memory->Documents[0].CanvasZoom, 512.0f * Memory->Documents[0].CanvasZoom);
+		Vec2 Position = Memory->Documents[0].CanvasPosition;
+		Vec2 Size = Vec2(512.0f * Memory->Documents[0].CanvasZoom, 512.0f * Memory->Documents[0].CanvasZoom);
 		ImDrawVert Verts[6];
-		Verts[0].pos = ImVec2(Position.x, Position.y);						Verts[0].uv = ImVec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-		Verts[1].pos = ImVec2(Size.x + Position.x, Position.y);				Verts[1].uv = ImVec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-		Verts[2].pos = ImVec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = ImVec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-		Verts[3].pos = ImVec2(Position.x, Position.y);						Verts[3].uv = ImVec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-		Verts[4].pos = ImVec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = ImVec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-		Verts[5].pos = ImVec2(Position.x, Size.y + Position.y);				Verts[5].uv = ImVec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+		Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+		Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+		Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+		Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+		Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+		Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
 
 		unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.
@@ -241,6 +250,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		ImGui::PopStyleVar(5);
 		ImGui::PopStyleColor(4);
+	}
+	#pragma endregion
+
+	#pragma region Last mouse info
+	{
+		Memory->Mouse.LastPos = ImGui::GetMousePos();
+		Memory->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
+		Memory->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
+		Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
 	}
 	#pragma endregion
 }
