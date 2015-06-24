@@ -129,8 +129,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 						y >= 0 && y < Memory->Documents[0].Height)
 					{
 						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * y * sizeof(uint32)) + x * sizeof(uint32))) = 0xffff0000; // 0xAABBGGRR
-						glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 					}
 
 					numerator += shortest;
@@ -146,6 +144,9 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 						y += dy2;
 					}
 				}
+
+				glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 			}
 		}
 	}
