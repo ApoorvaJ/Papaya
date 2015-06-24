@@ -28,3 +28,28 @@ struct Color
 	Color(float _r, float _g, float _b, float _a = 1.0f)	{ r = _r; g = _g; b = _b; a = _a; }
 	operator uint32() const									{ return ((uint32)(r*255.f)) |(((uint32)(g*255.f)) << 8) | (((uint32)(b*255.f)) << 16) | (((uint32)(a*255.f)) << 24); }
 };
+
+//==================================================================================================
+
+namespace Math
+{
+	float Min(float a, float b)
+	{
+		return (a < b ? a : b);
+	}
+
+	float Max(float a, float b)
+	{
+		return (a > b ? a : b);
+	}
+
+	float Abs(float a)
+	{
+		return (a < 0.0f ? a * -1.0f : a);
+	}
+
+	int32 Abs(int32 a)
+	{
+		return (a < 0 ? a * -1 : a);
+	}
+}

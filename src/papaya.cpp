@@ -1,8 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include <math.h>
-
 internal ImTextureID LoadAndBindImage(char* Path)
 {
 	uint8* Image;
@@ -95,15 +93,59 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	{
 		if (ImGui::IsMouseDown(0))
 		{
-			Vec2 MousePixelPos = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
-			int32 MouseX = (int32)(MousePixelPos.x);
-			int32 MouseY = (int32)(MousePixelPos.y);
-			if (MouseX >= 0 && MouseX < Memory->Documents[0].Width &&
-				MouseY >= 0 && MouseY < Memory->Documents[0].Height)
+			Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+			Vec2 MLast = (Memory->Mouse.LastPos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+
+			// TODO: Optimize and clean
+			// Bresenham's line
 			{
-				*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * MouseY * sizeof(uint32)) + MouseX * sizeof(uint32))) = 0xffff0000; // 0xAABBGGRR
-				glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+				int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
+				int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
+				int32 w = x2 - x;
+				int32 h = y2 - y;
+				int32 dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0 ;
+				if		(w<0) { dx1 = -1; }
+				else if (w>0) { dx1 =  1; }
+				if		(h<0) { dy1 = -1; }
+				else if (h>0) { dy1 =  1; }
+				if		(w<0) { dx2 = -1; }
+				else if (w>0) { dx2 =  1; }
+
+				int32 longest = Math::Abs(w);
+				int32 shortest = Math::Abs(h);
+				if (longest <= shortest)
+				{
+					longest = Math::Abs(h);
+					shortest = Math::Abs(w);
+					if		(h<0) { dy2 = -1; }
+					else if (h>0) { dy2 =  1; }
+					dx2 = 0;            
+				}
+				int32 numerator = longest >> 1;
+
+				for (int32 i=0; i<=longest; i++) 
+				{
+					if (x >= 0 && x < Memory->Documents[0].Width &&
+						y >= 0 && y < Memory->Documents[0].Height)
+					{
+						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * y * sizeof(uint32)) + x * sizeof(uint32))) = 0xffff0000; // 0xAABBGGRR
+						glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+					}
+
+					numerator += shortest;
+					if (numerator >= longest) 
+					{
+						numerator -= longest;
+						x += dx1;
+						y += dy1;
+					} 
+					else 
+					{
+						x += dx2;
+						y += dy2;
+					}
+				}
 			}
 		}
 	}
