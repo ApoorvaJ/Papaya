@@ -7,6 +7,7 @@
 #include "papaya_math.h"
 #include "imgui.h"
 #include "imgui.cpp"
+#include "papaya_util.h"
 
 #define Kilobytes(Value) ((Value)*1024LL)
 #define Megabytes(Value) (Kilobytes(Value)*1024LL)
@@ -79,10 +80,4 @@ struct PapayaMemory
 	PapayaShader DefaultShader;
 	MouseInfo Mouse;
 	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
-};
-
-struct PapayaDebugMemory
-{
-	int64 Time;
-	int64 TicksPerSecond;
 };

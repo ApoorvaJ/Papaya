@@ -891,7 +891,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			if (ImGui::Button("Close")) { SendMessage(Window, WM_CLOSE, 0, 0); }
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-            ImGui::Text("Scale: %f %f", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
+            ImGui::Text("Scale: %f %f", Memory.Documents[0].CanvasZoom);
 		}
 
 		// 2. Show another simple window, this time using an explicit Begin/End pair
@@ -913,11 +913,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
-					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
-					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 
-					 Memory.InterfaceColors[PapayaInterfaceColor_Clear].a);
-        glClear(GL_COLOR_BUFFER_BIT);
+      //  glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
+					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
+					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 
+					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].a);
+      //  glClear(GL_COLOR_BUFFER_BIT);
+		glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
 
 		Papaya_UpdateAndRender(&Memory, &DebugMemory);
 

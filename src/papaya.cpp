@@ -22,7 +22,7 @@ internal ImTextureID LoadAndBindImage(char* Path)
 
 internal void LoadImageIntoDocument(char* Path, PapayaDocument* Document)
 {
-	Document->Texture = stbi_load(Path, &Document->Width, &Document->Height, &Document->ComponentsPerPixel, 0);
+	Document->Texture = stbi_load(Path, &Document->Width, &Document->Height, &Document->ComponentsPerPixel, 4);
 
 	// Create texture
 	glGenTextures(1, &Document->TextureID);
@@ -50,8 +50,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
 
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
-	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\Fruits.png", Memory->Documents);
-	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f);
+	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
+	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f); // TODO: Center image on init
 	Memory->Documents[0].CanvasZoom = 1.0f;
 }
 
@@ -89,18 +89,23 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 
-	// Brush
+
+	#pragma region CPU Bresenham
 	{
-		if (ImGui::IsMouseDown(0))
+		if (Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0])
 		{
+			Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
+
 			Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 			Vec2 MLast = (Memory->Mouse.LastPos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 
 			// TODO: Optimize and clean
 			// Bresenham's line
 			{
-				int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
-				int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
+				//int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
+				//int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
+				int32 x = 0;				int32 y = 0;
+				int32 x2 = 4095;			int32 y2 = 4095;
 				int32 w = x2 - x;
 				int32 h = y2 - y;
 				int32 dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0 ;
@@ -145,13 +150,23 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 					}
 				}
 
+				Util::StopTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 				glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+				
 			}
 		}
 	}
+	#pragma endregion
 
 
+	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
+	{
+		Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
+		Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
+	}
+
+	Util::DisplayTimes(DebugMemory);
 	// Panning
 	Memory->Documents[0].CanvasPosition += ImGui::GetMouseDragDelta(2);
 	ImGui::ResetMouseDragDelta(2);
@@ -171,7 +186,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
 		{
 			Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
-			Memory->Documents[0].CanvasPosition -= MouseUV * ScaleDelta * 512.0f;
+			Memory->Documents[0].CanvasPosition -= Vec2(MouseUV.x * ScaleDelta * (float)Memory->Documents[0].Width, MouseUV.y * ScaleDelta * (float)Memory->Documents[0].Height);
 		}
 		else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
 		{
@@ -221,7 +236,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		// Copy and convert all vertices into a single contiguous buffer
 		Vec2 Position = Memory->Documents[0].CanvasPosition;
-		Vec2 Size = Vec2(512.0f * Memory->Documents[0].CanvasZoom, 512.0f * Memory->Documents[0].CanvasZoom);
+		Vec2 Size = Vec2(Memory->Documents[0].Width * Memory->Documents[0].CanvasZoom, Memory->Documents[0].Height * Memory->Documents[0].CanvasZoom);
 		ImDrawVert Verts[6];
 		Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
 		Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
