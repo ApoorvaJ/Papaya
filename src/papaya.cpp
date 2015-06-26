@@ -163,7 +163,76 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
 	{
 		Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
+
+		Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+		Vec2 MLast = (Memory->Mouse.LastPos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+
+		// Extremely Fast Line Algorithm Var A (Division)
+		// Copyright 2001-2, By Po-Han Lin
+		{
+			//int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
+			//int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
+
+			int32 x = 4095;				int32 y = 4095;
+			int32 x2 = 0;				int32 y2 = 0;
+
+			int32 px = x;
+			int32 py = y;
+			if (px >= 0 && px < Memory->Documents[0].Width &&
+				py >= 0 && py < Memory->Documents[0].Height)
+			{
+				*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * py * sizeof(uint32)) + px * sizeof(uint32))) = 0xff0000ff; // 0xAABBGGRR
+			}
+
+			bool yLonger=false;
+			int32 incrementVal;
+
+			int32 shortLen=y2-y;
+			int32 longLen=x2-x;
+			if (abs(shortLen)>abs(longLen)) 
+			{
+				int32 swap=shortLen;
+				shortLen=longLen;
+				longLen=swap;
+				yLonger=true;
+			}
+
+			if (longLen<0) incrementVal=-1;
+			else incrementVal=1;
+
+			double divDiff;
+			if (shortLen==0) { divDiff = longLen; }
+			else			 { divDiff = (double)longLen / (double)shortLen; }
+			if (yLonger) 
+			{
+				for (int i=0; i != longLen; i += incrementVal) 
+				{
+					int32 px = x + (int)((double)i / divDiff);
+					int32 py = y + i;
+					if (px >= 0 && px < Memory->Documents[0].Width &&
+						py >= 0 && py < Memory->Documents[0].Height)
+					{
+						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * py * sizeof(uint32)) + px * sizeof(uint32))) = 0xff0000ff; // 0xAABBGGRR
+					}
+				}
+			} else 
+			{
+				for (int i=0; i != longLen; i += incrementVal) 
+				{
+					int32 px = x + i;
+					int32 py = y + (int)((double)i / divDiff);
+					if (px >= 0 && px < Memory->Documents[0].Width &&
+						py >= 0 && py < Memory->Documents[0].Height)
+					{
+						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * py * sizeof(uint32)) + px * sizeof(uint32))) = 0xff0000ff; // 0xAABBGGRR
+					}
+				}
+			}
+		}
+
 		Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
+		glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	}
 
 	Util::DisplayTimes(DebugMemory);
