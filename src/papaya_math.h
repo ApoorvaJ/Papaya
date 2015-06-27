@@ -1,5 +1,7 @@
 #pragma once
 
+#include <math.h>
+
 struct ImVec2;
 
 struct Vec2
@@ -51,5 +53,15 @@ namespace Math
 	int32 Abs(int32 a)
 	{
 		return (a < 0 ? a * -1 : a);
+	}
+
+	float Distance(Vec2 a, Vec2 b)
+	{
+		return sqrtf( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
+	}
+
+	float DistanceSquared(Vec2 a, Vec2 b)
+	{
+		return ( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
 	}
 }

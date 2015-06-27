@@ -61,6 +61,69 @@ void Papaya_Shutdown(PapayaMemory* Memory)
 	free(Memory->Documents);
 }
 
+internal void PaintPixel(int32 x, int32 y, uint32 Color, PapayaMemory* Memory)
+{
+	if (x >= 0 && x < Memory->Documents[0].Width &&
+		y >= 0 && y < Memory->Documents[0].Height)
+	{
+		*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * y * sizeof(uint32)) + x * sizeof(uint32))) = Color; // 0xAABBGGRR
+	}
+}
+
+internal void PaintCircle(int32 x0, int32 y0, int32 Diameter, uint32 Color, PapayaMemory* Memory)
+{
+	//float x = (float)Diameter / 2.0f;
+	//float y = 0;
+	//int32 decisionOver2 = 1 - (int32)x;   // Decision criterion divided by 2 evaluated at x=r, y=0
+
+	//while(x >= y)
+	//{
+	//	PaintPixel((int32)( x + x0), (int32)( y + y0), Color, Memory);
+	//	PaintPixel((int32)( y + x0), (int32)( x + y0), Color, Memory);
+	//	PaintPixel((int32)(-x + x0), (int32)( y + y0), Color, Memory);
+	//	PaintPixel((int32)(-y + x0), (int32)( x + y0), Color, Memory);
+	//	PaintPixel((int32)(-x + x0), (int32)(-y + y0), Color, Memory);
+	//	PaintPixel((int32)(-y + x0), (int32)(-x + y0), Color, Memory);
+	//	PaintPixel((int32)( x + x0), (int32)(-y + y0), Color, Memory);
+	//	PaintPixel((int32)( y + x0), (int32)(-x + y0), Color, Memory);
+	//	y++;
+	//	if (decisionOver2<=0)
+	//	{
+	//		decisionOver2 += 2 * y + 1;   // Change in decision criterion for y -> y+1
+	//	}
+	//	else
+	//	{
+	//		x--;
+	//		decisionOver2 += 2 * (y - x) + 1;   // Change for y -> y+1, x -> x-1
+	//	}
+	//}
+
+	int32 Min = -Diameter/2; 
+	int32 Max =  Diameter/2 - (Diameter%2 == 0 ? 1 : 0);
+	Vec2 Center = Vec2((float)x0 - (Diameter%2 == 0 ? 0.5f : 0.0f),
+		               (float)y0 - (Diameter%2 == 0 ? 0.5f : 0.0f));
+	float Range = (float)Diameter/2.0f;
+
+	for (int32 i = x0 + Min; i <= x0 + Max; i++)
+	{
+		for (int32 j = y0 + Min; j <= y0 + Max; j++)
+		{
+			Vec2 Current = Vec2((float)i, (float)j);
+
+			if(Math::DistanceSquared(Center, Current) <= Range * Range)
+			{
+				PaintPixel(i, j, Color, Memory);
+			}
+		}
+	}
+}
+
+internal void RefreshTexture(PapayaMemory* Memory)
+{
+	glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+}
+
 void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 {
 	#pragma region Current mouse info
@@ -89,10 +152,28 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 
+	local_persist int32 BrushSize = 4;
+
+	if (ImGui::IsKeyPressed(VK_UP, false))
+	{
+		BrushSize++;
+	}
+	if (ImGui::IsKeyPressed(VK_DOWN, false))
+	{
+		BrushSize--;
+	}
+	//ImGui::Text("%d", BrushSize);
+
+	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
+	{
+		Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
+		PaintCircle((int32)MCurr.x, (int32)MCurr.y, BrushSize, 0xff0000ff, Memory);
+		RefreshTexture(Memory);
+	}
 
 	#pragma region CPU Bresenham
 	{
-		if (Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0])
+		if (Memory->Mouse.IsDown[0])// && !Memory->Mouse.WasDown[0])
 		{
 			Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 
@@ -102,10 +183,10 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			// TODO: Optimize and clean
 			// Bresenham's line
 			{
-				//int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
-				//int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
-				int32 x = 0;				int32 y = 0;
-				int32 x2 = 4095;			int32 y2 = 4095;
+				int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
+				int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
+				/*int32 x = 0;				int32 y = 0;
+				int32 x2 = 4095;			int32 y2 = 4095;*/
 				int32 w = x2 - x;
 				int32 h = y2 - y;
 				int32 dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0 ;
@@ -130,11 +211,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 				for (int32 i=0; i<=longest; i++) 
 				{
-					if (x >= 0 && x < Memory->Documents[0].Width &&
-						y >= 0 && y < Memory->Documents[0].Height)
-					{
-						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * y * sizeof(uint32)) + x * sizeof(uint32))) = 0xffff0000; // 0xAABBGGRR
-					}
+					PaintPixel(x,y,0xffff0000, Memory);
 
 					numerator += shortest;
 					if (numerator >= longest) 
@@ -176,13 +253,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			int32 x = 4095;				int32 y = 4095;
 			int32 x2 = 0;				int32 y2 = 0;
 
-			int32 px = x;
-			int32 py = y;
-			if (px >= 0 && px < Memory->Documents[0].Width &&
-				py >= 0 && py < Memory->Documents[0].Height)
-			{
-				*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * py * sizeof(uint32)) + px * sizeof(uint32))) = 0xff0000ff; // 0xAABBGGRR
-			}
+			PaintPixel(x, y, 0xff0000ff, Memory);
 
 			bool yLonger=false;
 			int32 incrementVal;
@@ -207,25 +278,13 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			{
 				for (int i=0; i != longLen; i += incrementVal) 
 				{
-					int32 px = x + (int)((double)i / divDiff);
-					int32 py = y + i;
-					if (px >= 0 && px < Memory->Documents[0].Width &&
-						py >= 0 && py < Memory->Documents[0].Height)
-					{
-						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * py * sizeof(uint32)) + px * sizeof(uint32))) = 0xff0000ff; // 0xAABBGGRR
-					}
+					PaintPixel(x + (int)((double)i / divDiff), y + i, 0xff0000ff, Memory);
 				}
 			} else 
 			{
 				for (int i=0; i != longLen; i += incrementVal) 
 				{
-					int32 px = x + i;
-					int32 py = y + (int)((double)i / divDiff);
-					if (px >= 0 && px < Memory->Documents[0].Width &&
-						py >= 0 && py < Memory->Documents[0].Height)
-					{
-						*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * py * sizeof(uint32)) + px * sizeof(uint32))) = 0xff0000ff; // 0xAABBGGRR
-					}
+					PaintPixel(x + i, y + (int)((double)i / divDiff), 0xff0000ff, Memory);
 				}
 			}
 		}
