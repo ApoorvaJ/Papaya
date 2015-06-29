@@ -46,7 +46,7 @@ struct PapayaDocument
 
 struct PapayaShader
 {
-	int32 Handle;
+	uint32 Handle;
 	int32 Texture, ProjectionMatrix, Position, UV, Color;
 };
 
@@ -85,4 +85,5 @@ struct PapayaMemory
 	uint32 FrameBufferObject;
 	uint32 FboColorTexture;
 	uint32 FboDepthTexture;
+	uint32 BrushShaderHandle;
 };

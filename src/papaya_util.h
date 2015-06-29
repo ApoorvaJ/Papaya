@@ -112,4 +112,17 @@ namespace Util
 		}
 	}
 
+	void PrintGlShaderCompilationStatus(uint32 ShaderHandle)
+	{
+		int32 CompilationStatus;
+		glGetShaderiv(ShaderHandle, GL_COMPILE_STATUS, &CompilationStatus);
+		if (CompilationStatus == GL_TRUE)
+		{
+			OutputDebugString("Compilation successful\n");
+		}
+		else
+		{
+			OutputDebugString("Compilation failed\n");
+		}
+	}
 }

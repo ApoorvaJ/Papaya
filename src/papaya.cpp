@@ -138,7 +138,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 	if (Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0])
 	{
-		
+		glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
+		glViewport(0, 0, 512, 512);
+		GLfloat col[4] = { 1.0, 0.0, 0.0, 1.0 };
+		glClearBufferfv(GL_COLOR, 0, col);		glUseProgram(Memory->BrushShaderHandle);		glDrawArrays(GL_TRIANGLES, 0, 6);
+		Memory->Documents[0].TextureID = Memory->FboColorTexture;
+
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 	}
 
 	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])

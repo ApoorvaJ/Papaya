@@ -513,24 +513,65 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		}
 		#pragma endregion
 
-		// Create a framebuffer object and bind it
-		glGenFramebuffers(1, &Memory.FrameBufferObject);
-		glBindFramebuffer(GL_FRAMEBUFFER, Memory.FrameBufferObject);
-		// Create a texture for our color buffer
-		glGenTextures(1, &Memory.FboColorTexture);
-		glBindTexture(GL_TEXTURE_2D, Memory.FboColorTexture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 512, 512, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);		// Now, attach the color texture to the FBO
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory.FboColorTexture, 0);		static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, draw_buffers);		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		#pragma region Set up the frame buffer
 		{
-			// TODO: Log: Frame buffer not initialized correctly
-			exit(1);
+			// Create a framebuffer object and bind it
+			glGenFramebuffers(1, &Memory.FrameBufferObject);
+			glBindFramebuffer(GL_FRAMEBUFFER, Memory.FrameBufferObject);
+			// Create a texture for our color buffer
+			glGenTextures(1, &Memory.FboColorTexture);
+			glBindTexture(GL_TEXTURE_2D, Memory.FboColorTexture);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 512, 512, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);			// Now, attach the color texture to the FBO
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory.FboColorTexture, 0);			static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+			glDrawBuffers(1, draw_buffers);			if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			{
+				// TODO: Log: Frame buffer not initialized correctly
+				exit(1);
+			}
+
+			// Create device objects
+			const GLchar *vertex_shader = 
+"				#version 330															\n"
+"				out vec4 Frag_Color;													\n"
+"				void main()																\n"
+"				{																		\n"
+"					const vec4 Positions[6] = vec4[6](									\n"
+"						vec4( -1.0 , -1.0, 0.0, 1.0 ),									\n"
+"						vec4(  1.0 , -1.0, 0.0, 1.0 ),									\n"
+"						vec4(  1.0 ,  1.0, 0.0, 1.0 ),									\n"
+"						vec4( -1.0 , -1.0, 0.0, 1.0 ),									\n"
+"						vec4(  1.0 ,  1.0, 0.0, 1.0 ),									\n"
+"						vec4( -1.0 ,  1.0, 0.0, 1.0 ));									\n"
+"					Frag_Color = vec4(1.0, 1.0, 1.0, 1.0);								\n"
+"					gl_Position = Positions[gl_VertexID];								\n"
+"				}																		\n";
+
+			const GLchar* fragment_shader = 
+"				#version 330															\n"
+"				layout (location = 0) out vec4 Out_Color;								\n"
+"				void main()																\n"
+"				{																		\n"
+"					Out_Color = vec4(0.0, 1.0, 0.0, 1.0);								\n"
+"				}																		\n";
+
+			Memory.BrushShaderHandle = glCreateProgram();
+			uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
+			uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+			glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
+			glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
+			glCompileShader(g_VertHandle);
+			glCompileShader(g_FragHandle);
+			
+			glAttachShader(Memory.BrushShaderHandle, g_VertHandle);
+			glAttachShader(Memory.BrushShaderHandle, g_FragHandle);
+			glLinkProgram(Memory.BrushShaderHandle);
 		}
-		//Bind the default frame buffer		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		#pragma endregion
 
 		#pragma region Setup for ImGui
 		{
+			// TODO: Write shader compilation wrapper
 			// Create device objects
 			const GLchar *vertex_shader = 
 "				#version 330                                                      \n"
@@ -614,6 +655,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		}
 		#pragma endregion
 
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	#pragma endregion
 
@@ -657,6 +699,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	LARGE_INTEGER LastCounter;
 	QueryPerformanceCounter(&LastCounter);
 	uint64 LastCycleCount = __rdtsc();
+
+
 	while (GlobalRunning)
 	{
 		#pragma region Windows message handling
@@ -930,7 +974,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
       //  glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
 					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
