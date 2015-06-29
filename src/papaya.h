@@ -80,4 +80,9 @@ struct PapayaMemory
 	PapayaShader DefaultShader;
 	MouseInfo Mouse;
 	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
+
+	// TODO: Refactor
+	uint32 FrameBufferObject;
+	uint32 FboColorTexture;
+	uint32 FboDepthTexture;
 };

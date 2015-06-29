@@ -513,6 +513,22 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		}
 		#pragma endregion
 
+		// Create a framebuffer object and bind it
+		glGenFramebuffers(1, &Memory.FrameBufferObject);
+		glBindFramebuffer(GL_FRAMEBUFFER, Memory.FrameBufferObject);
+		// Create a texture for our color buffer
+		glGenTextures(1, &Memory.FboColorTexture);
+		glBindTexture(GL_TEXTURE_2D, Memory.FboColorTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 512, 512, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);		// Now, attach the color texture to the FBO
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory.FboColorTexture, 0);		static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, draw_buffers);		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			// TODO: Log: Frame buffer not initialized correctly
+			exit(1);
+		}
+		//Bind the default frame buffer		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		#pragma region Setup for ImGui
 		{
 			// Create device objects
@@ -597,6 +613,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			io.Fonts->ClearTexData();
 		}
 		#pragma endregion
+
 	}
 	#pragma endregion
 
@@ -913,6 +930,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 #endif
         // Rendering
         glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
       //  glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
 					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
 					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 

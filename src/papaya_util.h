@@ -24,6 +24,7 @@ struct PapayaDebugMemory
 
 namespace Util
 {
+	// Timer
 	void StartTime(TimerScope_ TimerScope, PapayaDebugMemory* DebugMemory)
 	{
 		int32 i = TimerScope;
@@ -57,4 +58,58 @@ namespace Util
 		}
 		ImGui::End();
 	}
+
+	// OpenGL
+	void PrintGlError()
+	{
+		GLenum Error = glGetError();
+		switch (Error)
+		{
+			case GL_NO_ERROR:
+			{
+				OutputDebugString("No error\n");
+			} break;
+
+			case GL_INVALID_ENUM:
+			{
+				OutputDebugString("Invalid enum\n");
+			} break;
+
+			case GL_INVALID_VALUE:
+			{
+				OutputDebugString("Invalid value\n");
+			} break;
+
+			case GL_INVALID_OPERATION:
+			{
+				OutputDebugString("Invalid operation\n");
+			} break;
+
+			case GL_INVALID_FRAMEBUFFER_OPERATION:
+			{
+				OutputDebugString("Invalid framebuffer operation\n");
+			} break;
+
+			case GL_OUT_OF_MEMORY:
+			{
+				OutputDebugString("Out of memory\n");
+			} break;
+
+			case GL_STACK_UNDERFLOW:
+			{
+				OutputDebugString("Stack underflow\n");
+			} break;
+
+			case GL_STACK_OVERFLOW:
+			{
+				OutputDebugString("Stack overflow\n");
+			} break;
+
+			default:
+			{
+				OutputDebugString("Undefined error\n");
+			} break;
+		}
+	}
+
 }

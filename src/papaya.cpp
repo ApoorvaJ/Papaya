@@ -50,7 +50,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
 
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
-	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
+	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
 	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f); // TODO: Center image on init
 	Memory->Documents[0].CanvasZoom = 1.0f;
 }
@@ -72,32 +72,6 @@ internal void PaintPixel(int32 x, int32 y, uint32 Color, PapayaMemory* Memory)
 
 internal void PaintCircle(int32 x0, int32 y0, int32 Diameter, uint32 Color, PapayaMemory* Memory)
 {
-	//float x = (float)Diameter / 2.0f;
-	//float y = 0;
-	//int32 decisionOver2 = 1 - (int32)x;   // Decision criterion divided by 2 evaluated at x=r, y=0
-
-	//while(x >= y)
-	//{
-	//	PaintPixel((int32)( x + x0), (int32)( y + y0), Color, Memory);
-	//	PaintPixel((int32)( y + x0), (int32)( x + y0), Color, Memory);
-	//	PaintPixel((int32)(-x + x0), (int32)( y + y0), Color, Memory);
-	//	PaintPixel((int32)(-y + x0), (int32)( x + y0), Color, Memory);
-	//	PaintPixel((int32)(-x + x0), (int32)(-y + y0), Color, Memory);
-	//	PaintPixel((int32)(-y + x0), (int32)(-x + y0), Color, Memory);
-	//	PaintPixel((int32)( x + x0), (int32)(-y + y0), Color, Memory);
-	//	PaintPixel((int32)( y + x0), (int32)(-x + y0), Color, Memory);
-	//	y++;
-	//	if (decisionOver2<=0)
-	//	{
-	//		decisionOver2 += 2 * y + 1;   // Change in decision criterion for y -> y+1
-	//	}
-	//	else
-	//	{
-	//		x--;
-	//		decisionOver2 += 2 * (y - x) + 1;   // Change for y -> y+1, x -> x-1
-	//	}
-	//}
-
 	int32 Min = -Diameter/2; 
 	int32 Max =  Diameter/2 - (Diameter%2 == 0 ? 1 : 0);
 	Vec2 Center = Vec2((float)x0 - (Diameter%2 == 0 ? 0.5f : 0.0f),
@@ -142,10 +116,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	//	*((uint8*)(Memory->Documents[0].Texture + i*4)) = 128 + (uint8)(128.0f * sin(TimeX));
 	//}
 	//glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-
 	//int32 XOffset = 128, YOffset = 128;
 	//int32 UpdateWidth = 256, UpdateHeight = 256;
-
 	//glPixelStorei(GL_UNPACK_ROW_LENGTH, Memory->Documents[0].Width);
 	//glPixelStorei(GL_UNPACK_SKIP_PIXELS, XOffset);
 	//glPixelStorei(GL_UNPACK_SKIP_ROWS, YOffset);
@@ -164,6 +136,11 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	}
 	//ImGui::Text("%d", BrushSize);
 
+	if (Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0])
+	{
+		
+	}
+
 	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
 	{
 		Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
@@ -171,157 +148,101 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		RefreshTexture(Memory);
 	}
 
-	#pragma region CPU Bresenham
+	/*
+	#pragma region EFLA
 	{
-		if (Memory->Mouse.IsDown[0])// && !Memory->Mouse.WasDown[0])
+		if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
 		{
-			Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
+			Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
 
 			Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 			Vec2 MLast = (Memory->Mouse.LastPos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 
-			// TODO: Optimize and clean
-			// Bresenham's line
+			// Extremely Fast Line Algorithm Var A (Division)
+			// Copyright 2001-2, By Po-Han Lin
 			{
-				int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
-				int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
-				/*int32 x = 0;				int32 y = 0;
-				int32 x2 = 4095;			int32 y2 = 4095;*/
-				int32 w = x2 - x;
-				int32 h = y2 - y;
-				int32 dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0 ;
-				if		(w<0) { dx1 = -1; }
-				else if (w>0) { dx1 =  1; }
-				if		(h<0) { dy1 = -1; }
-				else if (h>0) { dy1 =  1; }
-				if		(w<0) { dx2 = -1; }
-				else if (w>0) { dx2 =  1; }
+				//int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
+				//int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
 
-				int32 longest = Math::Abs(w);
-				int32 shortest = Math::Abs(h);
-				if (longest <= shortest)
+				int32 x = 4095;				int32 y = 4095;
+				int32 x2 = 0;				int32 y2 = 0;
+
+				PaintPixel(x, y, 0xff0000ff, Memory);
+
+				bool yLonger=false;
+				int32 incrementVal;
+
+				int32 shortLen=y2-y;
+				int32 longLen=x2-x;
+				if (abs(shortLen)>abs(longLen)) 
 				{
-					longest = Math::Abs(h);
-					shortest = Math::Abs(w);
-					if		(h<0) { dy2 = -1; }
-					else if (h>0) { dy2 =  1; }
-					dx2 = 0;            
+					int32 swap=shortLen;
+					shortLen=longLen;
+					longLen=swap;
+					yLonger=true;
 				}
-				int32 numerator = longest >> 1;
 
-				for (int32 i=0; i<=longest; i++) 
+				if (longLen<0) incrementVal=-1;
+				else incrementVal=1;
+
+				double divDiff;
+				if (shortLen==0) { divDiff = longLen; }
+				else			 { divDiff = (double)longLen / (double)shortLen; }
+				if (yLonger) 
 				{
-					PaintPixel(x,y,0xffff0000, Memory);
-
-					numerator += shortest;
-					if (numerator >= longest) 
+					for (int i=0; i != longLen; i += incrementVal) 
 					{
-						numerator -= longest;
-						x += dx1;
-						y += dy1;
-					} 
-					else 
+						PaintPixel(x + (int)((double)i / divDiff), y + i, 0xff0000ff, Memory);
+					}
+				} else 
+				{
+					for (int i=0; i != longLen; i += incrementVal) 
 					{
-						x += dx2;
-						y += dy2;
+						PaintPixel(x + i, y + (int)((double)i / divDiff), 0xff0000ff, Memory);
 					}
 				}
+			}
 
-				Util::StopTime(TimerScope_CPU_BRESENHAM, DebugMemory);
-				glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-				
+			Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
+			glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+		}
+	#pragma endregion
+	*/
+
+	Util::DisplayTimes(DebugMemory);
+
+	#pragma region Canvas zooming and panning
+	{
+		// Panning
+		Memory->Documents[0].CanvasPosition += ImGui::GetMouseDragDelta(2);
+		ImGui::ResetMouseDragDelta(2);
+
+		// Zooming
+		if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
+		{
+			float MinZoom = 0.01f, MaxZoom = 32.0f;
+			float ZoomSpeed = 0.2f * Memory->Documents[0].CanvasZoom;
+			float ScaleDelta = min(MaxZoom - Memory->Documents[0].CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
+			Vec2 OldCanvasZoom = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
+
+			Memory->Documents[0].CanvasZoom += ScaleDelta;
+			if (Memory->Documents[0].CanvasZoom < MinZoom) { Memory->Documents[0].CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
+			Vec2 NewCanvasSize = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
+		
+			if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
+			{
+				Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
+				Memory->Documents[0].CanvasPosition -= Vec2(MouseUV.x * ScaleDelta * (float)Memory->Documents[0].Width, MouseUV.y * ScaleDelta * (float)Memory->Documents[0].Height);
+			}
+			else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
+			{
+				Vec2 WindowSize = Vec2((float)Memory->Window.Width, (float)Memory->Window.Height);
+				Memory->Documents[0].CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
 			}
 		}
 	}
 	#pragma endregion
-
-
-	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
-	{
-		Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
-
-		Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
-		Vec2 MLast = (Memory->Mouse.LastPos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
-
-		// Extremely Fast Line Algorithm Var A (Division)
-		// Copyright 2001-2, By Po-Han Lin
-		{
-			//int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
-			//int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
-
-			int32 x = 4095;				int32 y = 4095;
-			int32 x2 = 0;				int32 y2 = 0;
-
-			PaintPixel(x, y, 0xff0000ff, Memory);
-
-			bool yLonger=false;
-			int32 incrementVal;
-
-			int32 shortLen=y2-y;
-			int32 longLen=x2-x;
-			if (abs(shortLen)>abs(longLen)) 
-			{
-				int32 swap=shortLen;
-				shortLen=longLen;
-				longLen=swap;
-				yLonger=true;
-			}
-
-			if (longLen<0) incrementVal=-1;
-			else incrementVal=1;
-
-			double divDiff;
-			if (shortLen==0) { divDiff = longLen; }
-			else			 { divDiff = (double)longLen / (double)shortLen; }
-			if (yLonger) 
-			{
-				for (int i=0; i != longLen; i += incrementVal) 
-				{
-					PaintPixel(x + (int)((double)i / divDiff), y + i, 0xff0000ff, Memory);
-				}
-			} else 
-			{
-				for (int i=0; i != longLen; i += incrementVal) 
-				{
-					PaintPixel(x + i, y + (int)((double)i / divDiff), 0xff0000ff, Memory);
-				}
-			}
-		}
-
-		Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
-		glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-	}
-
-	Util::DisplayTimes(DebugMemory);
-	// Panning
-	Memory->Documents[0].CanvasPosition += ImGui::GetMouseDragDelta(2);
-	ImGui::ResetMouseDragDelta(2);
-
-	// Zooming
-	if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
-	{
-		float MinZoom = 0.01f, MaxZoom = 32.0f;
-		float ZoomSpeed = 0.2f * Memory->Documents[0].CanvasZoom;
-		float ScaleDelta = min(MaxZoom - Memory->Documents[0].CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
-		Vec2 OldCanvasZoom = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
-
-		Memory->Documents[0].CanvasZoom += ScaleDelta;
-		if (Memory->Documents[0].CanvasZoom < MinZoom) { Memory->Documents[0].CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-		Vec2 NewCanvasSize = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height) * Memory->Documents[0].CanvasZoom;
-		
-		if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
-		{
-			Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
-			Memory->Documents[0].CanvasPosition -= Vec2(MouseUV.x * ScaleDelta * (float)Memory->Documents[0].Width, MouseUV.y * ScaleDelta * (float)Memory->Documents[0].Height);
-		}
-		else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
-		{
-			Vec2 WindowSize = Vec2((float)Memory->Window.Width, (float)Memory->Window.Height);
-			Memory->Documents[0].CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
-		}
-	}
 
 	#pragma region Render canvas
 	{
