@@ -578,6 +578,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			glAttachShader(Memory.BrushShader.Handle, g_VertHandle);
 			glAttachShader(Memory.BrushShader.Handle, g_FragHandle);
 			glLinkProgram(Memory.BrushShader.Handle);
+
+			Memory.BrushShader.Texture			= glGetUniformLocation(Memory.BrushShader.Handle, "Texture");
+			Memory.BrushShader.ProjectionMatrix	= glGetUniformLocation(Memory.BrushShader.Handle, "ProjMtx");
+			Memory.BrushShader.Position			= glGetAttribLocation (Memory.BrushShader.Handle, "Position");
+			Memory.BrushShader.UV				= glGetAttribLocation (Memory.BrushShader.Handle, "UV");
+			Memory.BrushShader.Color			= glGetAttribLocation (Memory.BrushShader.Handle, "Color");
 		}
 		#pragma endregion
 

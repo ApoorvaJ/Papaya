@@ -54,6 +54,31 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
 	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f); // TODO: Center image on init
 	Memory->Documents[0].CanvasZoom = 1.0f;
+
+	glGenBuffers(1, &Memory->RTTBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
+	glGenVertexArrays(1, &Memory->RTTVao);
+	glBindVertexArray(Memory->RTTVao);
+	glEnableVertexAttribArray(Memory->BrushShader.Position);
+	glEnableVertexAttribArray(Memory->BrushShader.UV);
+	glEnableVertexAttribArray(Memory->BrushShader.Color);
+#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+	glVertexAttribPointer(Memory->BrushShader.Position, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
+	glVertexAttribPointer(Memory->BrushShader.UV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
+	glVertexAttribPointer(Memory->BrushShader.Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
+#undef OFFSETOF
+	Vec2 Position = Vec2(0,0);
+	Vec2 Size = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height);
+	ImDrawVert Verts[6];
+	Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+	Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+	Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+	Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+	Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+	Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
+	//glBindVertexArray(0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void Papaya_Shutdown(PapayaMemory* Memory)
@@ -159,35 +184,12 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			{ -1.0f,		1.0f,			0.0f,		1.0f },
 		};
 		glUseProgram(Memory->BrushShader.Handle);
-		glUniform1i(Memory->BrushShader.Texture, 0);
+		glUniform1i(Memory->DefaultShader.Texture, 0);
 		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
-		// Grow our buffer according to what we need
-		glBindBuffer(GL_ARRAY_BUFFER, Memory->GraphicsBuffers.VboHandle);
-		size_t needed_vtx_size = 6 * sizeof(ImDrawVert);
-		if (Memory->GraphicsBuffers.VboSize < needed_vtx_size)
-		{
-			Memory->GraphicsBuffers.VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
-			glBufferData(GL_ARRAY_BUFFER, Memory->GraphicsBuffers.VboSize, NULL, GL_STREAM_DRAW);
-		}
-
-		Vec2 Position = Vec2(0,0);
-		Vec2 Size = Vec2(width, height);
-		ImDrawVert Verts[6];
-		Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-		Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-		Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-		Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-		Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-		Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
-
-		unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY); // TODO: Optimize this! Taking the bulk of the time right now.
-		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.
-		buffer_data += 6 * sizeof(ImDrawVert);
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(Memory->GraphicsBuffers.VaoHandle);
-
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
+		glBindVertexArray(Memory->RTTVao);
+		
 		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -197,6 +199,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 
 		Util::StopTime(TimerScope_CPU_BRESENHAM, DebugMemory);
+	Util::PrintGlError();
 	}
 
 	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])

@@ -86,4 +86,6 @@ struct PapayaMemory
 	uint32 FboColorTexture;
 	uint32 FboDepthTexture;
 	PapayaShader BrushShader;
+	uint32 RTTBuffer;
+	uint32 RTTVao;
 };
