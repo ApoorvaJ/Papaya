@@ -49,8 +49,8 @@ namespace Util
 
 	void DisplayTimes(PapayaDebugMemory* DebugMemory)
 	{
-		ImGui::SetNextWindowPos(Vec2(0, ImGui::GetIO().DisplaySize.y - 300));
-		ImGui::SetNextWindowSize(Vec2(300, 300));
+		ImGui::SetNextWindowPos(Vec2(0, ImGui::GetIO().DisplaySize.y - 75));
+		ImGui::SetNextWindowSize(Vec2(300, 75));
 		ImGui::Begin("Profiler");
 		for (int32 i = 0; i < TimerScope_COUNT; i++)
 		{
