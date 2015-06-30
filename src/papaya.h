@@ -88,4 +88,6 @@ struct PapayaMemory
 	PapayaShader BrushShader;
 	uint32 RTTBuffer;
 	uint32 RTTVao;
+	int32 BrushThickness;
+	int32 BrushPosX, BrushPosY;
 };

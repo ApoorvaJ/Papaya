@@ -557,12 +557,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			const GLchar* fragment_shader = 
 "				#version 330													  \n"
 "				uniform sampler2D Texture;										  \n"
+"				uniform float Thickness;										  \n"
+"				uniform float PosX;												  \n" // 
+"				uniform float PosY;												  \n" // TODO: Convert to vec2
 "				in vec2 Frag_UV;												  \n"
 "				in vec4 Frag_Color;												  \n"
 "				out vec4 Out_Color;												  \n"
 "				void main()														  \n"
 "				{																  \n"
-"					if (distance(Frag_UV, vec2(0.5,0.5)) < 0.25)				  \n"
+"					if (distance(Frag_UV, vec2(PosX,PosY)) < (Thickness/8192.0))  \n"
 "						Out_Color = vec4(0.0, 1.0, 0.0, 1.0);					  \n"
 "					else														  \n"
 "						Out_Color = Frag_Color * texture( Texture, Frag_UV.st);	  \n"
@@ -584,6 +587,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Memory.BrushShader.Position			= glGetAttribLocation (Memory.BrushShader.Handle, "Position");
 			Memory.BrushShader.UV				= glGetAttribLocation (Memory.BrushShader.Handle, "UV");
 			Memory.BrushShader.Color			= glGetAttribLocation (Memory.BrushShader.Handle, "Color");
+			Memory.BrushThickness				= glGetUniformLocation(Memory.BrushShader.Handle, "Thickness");
+			Memory.BrushPosX					= glGetUniformLocation(Memory.BrushShader.Handle, "PosX");
+			Memory.BrushPosY					= glGetUniformLocation(Memory.BrushShader.Handle, "PosY");
 		}
 		#pragma endregion
 

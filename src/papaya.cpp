@@ -162,7 +162,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	}
 	//ImGui::Text("%d", BrushSize);
 
-	if (Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0])
+
+	if (Memory->Mouse.IsDown[0])
 	{
 		Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 
@@ -184,7 +185,11 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			{ -1.0f,		1.0f,			0.0f,		1.0f },
 		};
 		glUseProgram(Memory->BrushShader.Handle);
-		glUniform1i(Memory->DefaultShader.Texture, 0);
+		glUniform1i(Memory->BrushShader.Texture, 0);
+		glUniform1f(Memory->BrushThickness, 2048.0f);
+		Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / (Memory->Documents[0].CanvasZoom * 4096.0f);
+		glUniform1f(Memory->BrushPosX, MouseUV.x);
+		glUniform1f(Memory->BrushPosY, MouseUV.y);
 		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
@@ -193,13 +198,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		Memory->Documents[0].TextureID = Memory->FboColorTexture;
+		uint32 Temp = Memory->FboColorTexture;
+		Memory->FboColorTexture = Memory->Documents[0].TextureID;
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboColorTexture, 0);
+		Memory->Documents[0].TextureID = Temp;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 
 		Util::StopTime(TimerScope_CPU_BRESENHAM, DebugMemory);
-	Util::PrintGlError();
 	}
 
 	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
