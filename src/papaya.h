@@ -85,5 +85,5 @@ struct PapayaMemory
 	uint32 FrameBufferObject;
 	uint32 FboColorTexture;
 	uint32 FboDepthTexture;
-	uint32 BrushShaderHandle;
+	PapayaShader BrushShader;
 };
