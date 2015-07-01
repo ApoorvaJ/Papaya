@@ -66,6 +66,7 @@ struct MouseInfo
 {
 	Vec2 Pos;
 	Vec2 LastPos;
+	Vec2 UV;
 	bool IsDown[3];
 	bool WasDown[3];
 };

@@ -132,6 +132,10 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		Memory->Mouse.IsDown[0] = ImGui::IsMouseDown(0);
 		Memory->Mouse.IsDown[1] = ImGui::IsMouseDown(1);
 		Memory->Mouse.IsDown[2] = ImGui::IsMouseDown(2);
+		Vec2 MousePixelPos = Vec2((int32)((Memory->Mouse.Pos.x - Memory->Documents[0].CanvasPosition.x) / Memory->Documents[0].CanvasZoom),
+								  (int32)((Memory->Mouse.Pos.y - Memory->Documents[0].CanvasPosition.y) / Memory->Documents[0].CanvasZoom));
+		Memory->Mouse.UV = Vec2(MousePixelPos.x / (float) Memory->Documents[0].Width,
+								MousePixelPos.y / (float) Memory->Documents[0].Height);
 	}
 	#pragma endregion
 
@@ -150,7 +154,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 
-	local_persist int32 BrushSize = 4;
+	local_persist int32 BrushSize = 1024;
 
 	if (ImGui::IsKeyPressed(VK_UP, false))
 	{
@@ -186,10 +190,10 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		};
 		glUseProgram(Memory->BrushShader.Handle);
 		glUniform1i(Memory->BrushShader.Texture, 0);
-		glUniform1f(Memory->BrushThickness, 2048.0f);
-		Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / (Memory->Documents[0].CanvasZoom * 4096.0f);
-		glUniform1f(Memory->BrushPosX, MouseUV.x);
-		glUniform1f(Memory->BrushPosY, MouseUV.y);
+		glUniform1f(Memory->BrushThickness, (float)BrushSize);
+
+		glUniform1f(Memory->BrushPosX, Memory->Mouse.UV.x + (BrushSize % 2 == 0 ? 0.0f : 0.5f/width));
+		glUniform1f(Memory->BrushPosY, Memory->Mouse.UV.y + (BrushSize % 2 == 0 ? 0.0f : 0.5f/height));
 		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
@@ -208,11 +212,18 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		Util::StopTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 	}
-
-	if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
+	if (!Memory->Mouse.IsDown[0] && Memory->Mouse.WasDown[0])
 	{
+		glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
+	}
+
+	if (Memory->Mouse.IsDown[1])
+	{
+		Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
 		Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 		PaintCircle((int32)MCurr.x, (int32)MCurr.y, BrushSize, 0xff0000ff, Memory);
+		Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
 		RefreshTexture(Memory);
 	}
 
@@ -300,8 +311,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		
 			if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
 			{
-				Vec2 MouseUV = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
-				Memory->Documents[0].CanvasPosition -= Vec2(MouseUV.x * ScaleDelta * (float)Memory->Documents[0].Width, MouseUV.y * ScaleDelta * (float)Memory->Documents[0].Height);
+				Vec2 PreScaleMousePos = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) / OldCanvasZoom;
+				Memory->Documents[0].CanvasPosition -= Vec2(PreScaleMousePos.x * ScaleDelta * (float)Memory->Documents[0].Width, PreScaleMousePos.y * ScaleDelta * (float)Memory->Documents[0].Height);
 			}
 			else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
 			{
