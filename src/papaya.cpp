@@ -154,20 +154,20 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 
-	local_persist int32 BrushSize = 1024;
+	local_persist int32 BrushSize = 400;
 
 	if (ImGui::IsKeyPressed(VK_UP, false))
 	{
-		BrushSize++;
+		BrushSize*=2;
 	}
 	if (ImGui::IsKeyPressed(VK_DOWN, false))
 	{
-		BrushSize--;
+		BrushSize/=2;
 	}
 	//ImGui::Text("%d", BrushSize);
 
 
-	if (Memory->Mouse.IsDown[0])
+	if (Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0])
 	{
 		Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 
@@ -191,9 +191,18 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glUseProgram(Memory->BrushShader.Handle);
 		glUniform1i(Memory->BrushShader.Texture, 0);
 		glUniform1f(Memory->BrushThickness, (float)BrushSize);
+		//
+		Memory->Mouse.UV		= Vec2(500.0f	, 2500.0f	) / 4096.0f;
+		Memory->Mouse.LastUV	= Vec2(800.0f	, 2200.0f	) / 4096.0f;
+		//
+		Vec2 CorrectedPos		= Vec2(Memory->Mouse.UV.x + (BrushSize % 2 == 0 ? 0.0f : 0.5f/width ), 
+									   Memory->Mouse.UV.y + (BrushSize % 2 == 0 ? 0.0f : 0.5f/height));
+		Vec2 CorrectedLastPos	= Vec2(Memory->Mouse.LastUV.x + (BrushSize % 2 == 0 ? 0.0f : 0.5f/width ), 
+									   Memory->Mouse.LastUV.y + (BrushSize % 2 == 0 ? 0.0f : 0.5f/height));
 
-		glUniform1f(Memory->BrushPosX, Memory->Mouse.UV.x + (BrushSize % 2 == 0 ? 0.0f : 0.5f/width));
-		glUniform1f(Memory->BrushPosY, Memory->Mouse.UV.y + (BrushSize % 2 == 0 ? 0.0f : 0.5f/height));
+		glUniform2f(Memory->BrushPos, CorrectedPos.x, CorrectedPos.y);
+		glUniform2f(Memory->BrushLastPos, CorrectedLastPos.x, CorrectedLastPos.y);
+
 		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
@@ -442,6 +451,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	#pragma region Last mouse info
 	{
 		Memory->Mouse.LastPos = ImGui::GetMousePos();
+		Memory->Mouse.LastUV = Memory->Mouse.UV;
 		Memory->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
 		Memory->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
 		Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);

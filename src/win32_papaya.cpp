@@ -540,36 +540,67 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			// Create device objects
 			const GLchar *vertex_shader = 
-"				#version 330                                                      \n"
-"				uniform mat4 ProjMtx;                                             \n"
-"				in vec2 Position;                                                 \n"
-"				in vec2 UV;                                                       \n"
-"				in vec4 Color;                                                    \n"
-"				out vec2 Frag_UV;                                                 \n"
-"				out vec4 Frag_Color;                                              \n"
-"				void main()                                                       \n"
-"				{                                                                 \n"
-"					Frag_UV = UV;                                                 \n"
-"					Frag_Color = Color;                                           \n"
-"					gl_Position = ProjMtx * vec4(Position.xy,0,1);                \n"
-"				}                                                                 \n";
+"				#version 330																						\n"
+"				uniform mat4 ProjMtx;																				\n"
+"				in vec2 Position;																					\n"
+"				in vec2 UV;																							\n"
+"				in vec4 Color;																						\n"
+"				out vec2 Frag_UV;																					\n"
+"				out vec4 Frag_Color;																				\n"
+"				void main()																							\n"
+"				{																									\n"
+"					Frag_UV = UV;																					\n"
+"					Frag_Color = Color;																				\n"
+"					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
+"				}																									\n";
 
 			const GLchar* fragment_shader = 
-"				#version 330													  \n"
-"				uniform sampler2D Texture;										  \n"
-"				uniform float Thickness;										  \n"
-"				uniform float PosX;												  \n" // 
-"				uniform float PosY;												  \n" // TODO: Convert to vec2
-"				in vec2 Frag_UV;												  \n"
-"				in vec4 Frag_Color;												  \n"
-"				out vec4 Out_Color;												  \n"
-"				void main()														  \n"
-"				{																  \n"
-"					if (distance(Frag_UV, vec2(PosX,PosY)) < (Thickness/8192.0))  \n"
-"						Out_Color = vec4(0.0, 1.0, 0.0, 1.0);					  \n"
-"					else														  \n"
-"						Out_Color = Frag_Color * texture( Texture, Frag_UV.st);	  \n"
-"				}																  \n";
+"				#version 330																						\n"
+"				uniform sampler2D Texture;																			\n"
+"				uniform float Thickness;																			\n"
+"				uniform vec2 Pos;																					\n"
+"				uniform vec2 LastPos;																				\n"
+"				in vec2 Frag_UV;																					\n"
+"				in vec4 Frag_Color;																					\n"
+"				out vec4 Out_Color;																					\n"
+"																													\n"
+"				float line(vec2 p1, vec2 p2, vec2 uv, float thickness)												\n"
+"				{																									\n"
+"					float a = abs(distance(p1, uv));																\n"
+"					float b = abs(distance(p2, uv));																\n"
+"					float c = abs(distance(p1, p2));																\n"
+"					float PaddedDistance = c * (1.0 + 0.15 * thickness);											\n"
+"																													\n"
+"					if (a >= PaddedDistance || b >= PaddedDistance)													\n"
+"					{																								\n"
+"						if (a <= thickness || b <= thickness)														\n"
+"							return 1.0;																				\n"
+"						else																						\n"
+"							return 0.0;																				\n"
+"					}																								\n"
+"																													\n"
+"					float p = (a + b + c) * 0.5;																	\n"
+"					float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );											\n"
+"																													\n"
+"					if (isnan(h) || h <= thickness)																	\n"
+"						return 1.0;																					\n"
+"					else																							\n"
+"						return 0.0;																					\n"
+"				}																									\n"
+"																													\n"
+"				void main()																							\n"
+"				{																									\n"
+"					vec4 TextureColor = Frag_Color * texture(Texture, Frag_UV.st);									\n"
+"					float ScaledThickness = (Thickness/8192.0);														\n"
+"																													\n"
+"					float val = line(LastPos, Pos, Frag_UV, ScaledThickness);										\n"
+"					if (val >= 1.0)																					\n"
+"						Out_Color = vec4(0.0, 1.0, 0.0, 1.0);														\n"
+"					else if (val < -0.1)																			\n"
+"						Out_Color = vec4(1.0, 0.0, 1.0, 1.0);														\n"
+"					else																							\n"
+"						Out_Color = TextureColor;																	\n"
+"				}																									\n";
 
 			Memory.BrushShader.Handle = glCreateProgram();
 			uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -588,8 +619,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Memory.BrushShader.UV				= glGetAttribLocation (Memory.BrushShader.Handle, "UV");
 			Memory.BrushShader.Color			= glGetAttribLocation (Memory.BrushShader.Handle, "Color");
 			Memory.BrushThickness				= glGetUniformLocation(Memory.BrushShader.Handle, "Thickness");
-			Memory.BrushPosX					= glGetUniformLocation(Memory.BrushShader.Handle, "PosX");
-			Memory.BrushPosY					= glGetUniformLocation(Memory.BrushShader.Handle, "PosY");
+			Memory.BrushPos						= glGetUniformLocation(Memory.BrushShader.Handle, "Pos");
+			Memory.BrushLastPos					= glGetUniformLocation(Memory.BrushShader.Handle, "LastPos");
 		}
 		#pragma endregion
 

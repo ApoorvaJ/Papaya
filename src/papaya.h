@@ -67,6 +67,7 @@ struct MouseInfo
 	Vec2 Pos;
 	Vec2 LastPos;
 	Vec2 UV;
+	Vec2 LastUV;
 	bool IsDown[3];
 	bool WasDown[3];
 };
@@ -90,5 +91,5 @@ struct PapayaMemory
 	uint32 RTTBuffer;
 	uint32 RTTVao;
 	int32 BrushThickness;
-	int32 BrushPosX, BrushPosY;
+	int32 BrushPos, BrushLastPos;
 };
