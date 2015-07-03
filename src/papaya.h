@@ -92,4 +92,5 @@ struct PapayaMemory
 	uint32 RTTVao;
 	int32 BrushThickness;
 	int32 BrushPos, BrushLastPos;
+	int32 BrushColor;
 };

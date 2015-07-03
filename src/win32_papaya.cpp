@@ -560,6 +560,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 "				uniform float Thickness;																			\n"
 "				uniform vec2 Pos;																					\n"
 "				uniform vec2 LastPos;																				\n"
+"				uniform vec4 BrushColor;																			\n"
 "				in vec2 Frag_UV;																					\n"
 "				in vec4 Frag_Color;																					\n"
 "				out vec4 Out_Color;																					\n"
@@ -595,7 +596,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 "																													\n"
 "					float val = line(LastPos, Pos, Frag_UV, ScaledThickness);										\n"
 "					if (val >= 1.0)																					\n"
-"						Out_Color = vec4(0.0, 1.0, 0.0, 1.0);														\n"
+"						Out_Color = BrushColor;																		\n"
 "					else																							\n"
 "						Out_Color = TextureColor;																	\n"
 "				}																									\n";
@@ -619,6 +620,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Memory.BrushThickness				= glGetUniformLocation(Memory.BrushShader.Handle, "Thickness");
 			Memory.BrushPos						= glGetUniformLocation(Memory.BrushShader.Handle, "Pos");
 			Memory.BrushLastPos					= glGetUniformLocation(Memory.BrushShader.Handle, "LastPos");
+			Memory.BrushColor					= glGetUniformLocation(Memory.BrushShader.Handle, "BrushColor");
 		}
 		#pragma endregion
 

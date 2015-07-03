@@ -132,29 +132,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		Memory->Mouse.IsDown[0] = ImGui::IsMouseDown(0);
 		Memory->Mouse.IsDown[1] = ImGui::IsMouseDown(1);
 		Memory->Mouse.IsDown[2] = ImGui::IsMouseDown(2);
-		Vec2 MousePixelPos = Vec2((int32)((Memory->Mouse.Pos.x - Memory->Documents[0].CanvasPosition.x) / Memory->Documents[0].CanvasZoom),
-								  (int32)((Memory->Mouse.Pos.y - Memory->Documents[0].CanvasPosition.y) / Memory->Documents[0].CanvasZoom));
+		Vec2 MousePixelPos = Vec2(Math::Floor((Memory->Mouse.Pos.x - Memory->Documents[0].CanvasPosition.x) / Memory->Documents[0].CanvasZoom),
+								  Math::Floor((Memory->Mouse.Pos.y - Memory->Documents[0].CanvasPosition.y) / Memory->Documents[0].CanvasZoom));
 		Memory->Mouse.UV = Vec2(MousePixelPos.x / (float) Memory->Documents[0].Width,
 								MousePixelPos.y / (float) Memory->Documents[0].Height);
 	}
 	#pragma endregion
 
-	//local_persist float TimeX;
-	//TimeX += 0.1f;
-	//for (int32 i = 0; i < Memory->Documents[0].Width * Memory->Documents[0].Width; i++)
-	//{
-	//	*((uint8*)(Memory->Documents[0].Texture + i*4)) = 128 + (uint8)(128.0f * sin(TimeX));
-	//}
-	//glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-	//int32 XOffset = 128, YOffset = 128;
-	//int32 UpdateWidth = 256, UpdateHeight = 256;
-	//glPixelStorei(GL_UNPACK_ROW_LENGTH, Memory->Documents[0].Width);
-	//glPixelStorei(GL_UNPACK_SKIP_PIXELS, XOffset);
-	//glPixelStorei(GL_UNPACK_SKIP_ROWS, YOffset);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-	//glTexSubImage2D(GL_TEXTURE_2D, 0, XOffset, YOffset, UpdateWidth, UpdateHeight, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-
-	local_persist int32 BrushSize = 2;
+	local_persist int32 BrushSize = 1;
+	local_persist Color BrushCol = Color(0.0f,1.0f,0.0f);
 
 	if (ImGui::IsKeyPressed(VK_UP, false))
 	{
@@ -164,11 +150,12 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	{
 		BrushSize/=2;
 	}
-	//ImGui::Text("%d", BrushSize);
 
 
-	if (Memory->Mouse.IsDown[0])
+	if (Memory->Mouse.IsDown[0] || Memory->Mouse.IsDown[1])
 	{
+		BrushCol = (Memory->Mouse.IsDown[0]) ? Color(0.0f,1.0f,0.0f) : Color(1.0f,0.0f,0.0f);
+
 		Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
@@ -199,6 +186,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		glUniform2f(Memory->BrushPos, CorrectedPos.x, CorrectedPos.y);
 		glUniform2f(Memory->BrushLastPos, CorrectedLastPos.x, CorrectedLastPos.y);
+		glUniform4f(Memory->BrushColor, BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
 
 		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
@@ -224,78 +212,16 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
 	}
 
-	if (Memory->Mouse.IsDown[1])
+	/*if (Memory->Mouse.IsDown[1])
 	{
 		Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
 		Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
 		PaintCircle((int32)MCurr.x, (int32)MCurr.y, BrushSize, 0xff0000ff, Memory);
 		Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
 		RefreshTexture(Memory);
-	}
+	}*/
 
-	/*
-	#pragma region EFLA
-	{
-		if (Memory->Mouse.IsDown[1] && !Memory->Mouse.WasDown[1])
-		{
-			Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
-
-			Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
-			Vec2 MLast = (Memory->Mouse.LastPos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
-
-			// Extremely Fast Line Algorithm Var A (Division)
-			// Copyright 2001-2, By Po-Han Lin
-			{
-				//int32 x = (int32)MCurr.x;	int32 y = (int32)MCurr.y;
-				//int32 x2 = (int32)MLast.x;	int32 y2 = (int32)MLast.y;
-
-				int32 x = 4095;				int32 y = 4095;
-				int32 x2 = 0;				int32 y2 = 0;
-
-				PaintPixel(x, y, 0xff0000ff, Memory);
-
-				bool yLonger=false;
-				int32 incrementVal;
-
-				int32 shortLen=y2-y;
-				int32 longLen=x2-x;
-				if (abs(shortLen)>abs(longLen)) 
-				{
-					int32 swap=shortLen;
-					shortLen=longLen;
-					longLen=swap;
-					yLonger=true;
-				}
-
-				if (longLen<0) incrementVal=-1;
-				else incrementVal=1;
-
-				double divDiff;
-				if (shortLen==0) { divDiff = longLen; }
-				else			 { divDiff = (double)longLen / (double)shortLen; }
-				if (yLonger) 
-				{
-					for (int i=0; i != longLen; i += incrementVal) 
-					{
-						PaintPixel(x + (int)((double)i / divDiff), y + i, 0xff0000ff, Memory);
-					}
-				} else 
-				{
-					for (int i=0; i != longLen; i += incrementVal) 
-					{
-						PaintPixel(x + i, y + (int)((double)i / divDiff), 0xff0000ff, Memory);
-					}
-				}
-			}
-
-			Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
-			glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-		}
-	#pragma endregion
-	*/
-
-	Util::DisplayTimes(DebugMemory);
+	//Util::DisplayTimes(DebugMemory);
 
 	#pragma region Canvas zooming and panning
 	{
