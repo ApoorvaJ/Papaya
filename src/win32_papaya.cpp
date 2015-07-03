@@ -80,12 +80,12 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     size_t total_vtx_count = 0;
     for (int n = 0; n < cmd_lists_count; n++)
         total_vtx_count += cmd_lists[n]->vtx_buffer.size();
-    glBindBuffer(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
     size_t needed_vtx_size = total_vtx_count * sizeof(ImDrawVert);
-    if (Memory.GraphicsBuffers.VboSize < needed_vtx_size)
+    if (Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboSize < needed_vtx_size)
     {
-        Memory.GraphicsBuffers.VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
-        glBufferData(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboSize, NULL, GL_STREAM_DRAW);
+        Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
+        glBufferData(GL_ARRAY_BUFFER, Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboSize, NULL, GL_STREAM_DRAW);
     }
 
     // Copy and convert all vertices into a single contiguous buffer
@@ -100,7 +100,7 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(Memory.GraphicsBuffers.VaoHandle);
+    glBindVertexArray(Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 
     int cmd_offset = 0;
     for (int n = 0; n < cmd_lists_count; n++)
@@ -671,11 +671,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Memory.DefaultShader.UV					= glGetAttribLocation (Memory.DefaultShader.Handle, "UV");
 			Memory.DefaultShader.Color				= glGetAttribLocation (Memory.DefaultShader.Handle, "Color");
 
-			glGenBuffers(1, &Memory.GraphicsBuffers.VboHandle);
+			glGenBuffers(1, &Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
 
-			glGenVertexArrays(1, &Memory.GraphicsBuffers.VaoHandle);
-			glBindVertexArray(Memory.GraphicsBuffers.VaoHandle);
-			glBindBuffer(GL_ARRAY_BUFFER, Memory.GraphicsBuffers.VboHandle);
+			glGenVertexArrays(1, &Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
+			glBindVertexArray(Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
+			glBindBuffer(GL_ARRAY_BUFFER, Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
 			glEnableVertexAttribArray(Memory.DefaultShader.Position);
 			glEnableVertexAttribArray(Memory.DefaultShader.UV);
 			glEnableVertexAttribArray(Memory.DefaultShader.Color);

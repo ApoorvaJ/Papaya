@@ -34,6 +34,14 @@ enum PapayaInterfaceColor_
 	PapayaInterfaceColor_COUNT
 };
 
+enum PapayaVertexBuffer_
+{
+	PapayaVertexBuffer_ImGui,
+	PapayaVertexBuffer_Canvas,
+	PapayaVertexBuffer_RenderToTexture,
+	PapayaVertexBuffer_COUNT
+};
+
 struct PapayaDocument
 {
 	uint8* Texture;
@@ -50,7 +58,7 @@ struct PapayaShader
 	int32 Texture, ProjectionMatrix, Position, UV, Color;
 };
 
-struct PapayaGraphicsBuffers
+struct PapayaVertexBuffer
 {
 	size_t VboSize;
 	uint32 VboHandle, VaoHandle;
@@ -78,7 +86,7 @@ struct PapayaMemory
 	Color InterfaceColors[PapayaInterfaceColor_COUNT];
 	uint32 CurrentColor;
 	PapayaWindow Window;
-	PapayaGraphicsBuffers GraphicsBuffers;
+	PapayaVertexBuffer VertexBuffers[PapayaVertexBuffer_COUNT];
 	PapayaShader DefaultShader;
 	MouseInfo Mouse;
 	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
@@ -88,8 +96,6 @@ struct PapayaMemory
 	uint32 FboColorTexture;
 	uint32 FboDepthTexture;
 	PapayaShader BrushShader;
-	uint32 RTTBuffer;
-	uint32 RTTVao;
 	int32 BrushThickness;
 	int32 BrushPos, BrushLastPos;
 	int32 BrushColor;

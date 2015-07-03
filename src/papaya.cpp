@@ -55,10 +55,10 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f); // TODO: Center image on init
 	Memory->Documents[0].CanvasZoom = 1.0f;
 
-	glGenBuffers(1, &Memory->RTTBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
-	glGenVertexArrays(1, &Memory->RTTVao);
-	glBindVertexArray(Memory->RTTVao);
+	glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);
+	glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);
+	glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
+	glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
 	glEnableVertexAttribArray(Memory->BrushShader.Position);
 	glEnableVertexAttribArray(Memory->BrushShader.UV);
 	glEnableVertexAttribArray(Memory->BrushShader.Color);
@@ -144,11 +144,11 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 	if (ImGui::IsKeyPressed(VK_UP, false))
 	{
-		BrushSize*=2;
+		BrushSize++;
 	}
 	if (ImGui::IsKeyPressed(VK_DOWN, false))
 	{
-		BrushSize/=2;
+		BrushSize--;
 	}
 
 
@@ -190,8 +190,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
-		glBindBuffer(GL_ARRAY_BUFFER, Memory->RTTBuffer);
-		glBindVertexArray(Memory->RTTVao);
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
 		
 		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -286,12 +286,12 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glUniformMatrix4fv(Memory->DefaultShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
 
 		// Grow our buffer according to what we need
-		glBindBuffer(GL_ARRAY_BUFFER, Memory->GraphicsBuffers.VboHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
 		size_t needed_vtx_size = 6 * sizeof(ImDrawVert);
-		if (Memory->GraphicsBuffers.VboSize < needed_vtx_size)
+		if (Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VboSize < needed_vtx_size)
 		{
-			Memory->GraphicsBuffers.VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
-			glBufferData(GL_ARRAY_BUFFER, Memory->GraphicsBuffers.VboSize, NULL, GL_STREAM_DRAW);
+			Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
+			glBufferData(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VboSize, NULL, GL_STREAM_DRAW);
 		}
 
 		// Copy and convert all vertices into a single contiguous buffer
@@ -310,7 +310,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		buffer_data += 6 * sizeof(ImDrawVert);
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(Memory->GraphicsBuffers.VaoHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 
 		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
 		glScissor(34 + (int)Memory->Window.MaximizeOffset, 
