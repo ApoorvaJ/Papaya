@@ -59,13 +59,13 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);
 	glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
 	glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
-	glEnableVertexAttribArray(Memory->BrushShader.Position);
-	glEnableVertexAttribArray(Memory->BrushShader.UV);
-	glEnableVertexAttribArray(Memory->BrushShader.Color);
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[0]); // Position attribute
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[1]); // UV attribute
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[2]); // Color attribute
 #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-	glVertexAttribPointer(Memory->BrushShader.Position, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
-	glVertexAttribPointer(Memory->BrushShader.UV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
-	glVertexAttribPointer(Memory->BrushShader.Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));	 // Color attribute
 #undef OFFSETOF
 	Vec2 Position = Vec2(0,0);
 	Vec2 Size = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height);
@@ -175,20 +175,17 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			{ 0.0f,			0.0f,			-1.0f,		0.0f },
 			{ -1.0f,		1.0f,			0.0f,		1.0f },
 		};
-		glUseProgram(Memory->BrushShader.Handle);
-		glUniform1i(Memory->BrushShader.Texture, 0);
-		glUniform1f(Memory->BrushThickness, (float)BrushSize);
+		glUseProgram(Memory->Shaders[PapayaShader_Brush].Handle);
+		
+		Vec2 CorrectedPos		= Memory->Mouse.UV     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
-		Vec2 CorrectedPos		= Vec2(Memory->Mouse.UV.x + (BrushSize % 2 == 0 ? 0.0f : 0.5f/width ), 
-									   Memory->Mouse.UV.y + (BrushSize % 2 == 0 ? 0.0f : 0.5f/height));
-		Vec2 CorrectedLastPos	= Vec2(Memory->Mouse.LastUV.x + (BrushSize % 2 == 0 ? 0.0f : 0.5f/width ), 
-									   Memory->Mouse.LastUV.y + (BrushSize % 2 == 0 ? 0.0f : 0.5f/height));
-
-		glUniform2f(Memory->BrushPos, CorrectedPos.x, CorrectedPos.y);
-		glUniform2f(Memory->BrushLastPos, CorrectedLastPos.x, CorrectedLastPos.y);
-		glUniform4f(Memory->BrushColor, BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
-
-		glUniformMatrix4fv(Memory->BrushShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
+		glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+		glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], 0); // Texture uniform
+		glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y); // Pos uniform
+		glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
+		glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)BrushSize);
+		glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
 
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
@@ -281,9 +278,10 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			{ 0.0f,			0.0f,			-1.0f,		0.0f },
 			{ -1.0f,		1.0f,			0.0f,		1.0f },
 		};
-		glUseProgram(Memory->DefaultShader.Handle);
-		glUniform1i(Memory->DefaultShader.Texture, 0);
-		glUniformMatrix4fv(Memory->DefaultShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
+		glUseProgram(Memory->Shaders[PapayaShader_ImGui].Handle);
+
+		glUniformMatrix4fv(Memory->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+		glUniform1i(Memory->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
 		// Grow our buffer according to what we need
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);

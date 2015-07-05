@@ -72,9 +72,9 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
         { 0.0f,			0.0f,			-1.0f,		0.0f },
         { -1.0f,		1.0f,			0.0f,		1.0f },
     };
-    glUseProgram(Memory.DefaultShader.Handle);
-    glUniform1i(Memory.DefaultShader.Texture, 0);
-    glUniformMatrix4fv(Memory.DefaultShader.ProjectionMatrix, 1, GL_FALSE, &ortho_projection[0][0]);
+    glUseProgram(Memory.Shaders[PapayaShader_ImGui].Handle);
+    glUniformMatrix4fv(Memory.Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+    glUniform1i(Memory.Shaders[PapayaShader_ImGui].Uniforms[1], 0);
 
     // Grow our buffer according to what we need
     size_t total_vtx_count = 0;
@@ -519,14 +519,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			glGenFramebuffers(1, &Memory.FrameBufferObject);
 			glBindFramebuffer(GL_FRAMEBUFFER, Memory.FrameBufferObject);
 
-			// Create a texture for our color buffer
+			// Create a color texture
 			glGenTextures(1, &Memory.FboColorTexture);
 			glBindTexture(GL_TEXTURE_2D, Memory.FboColorTexture);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 4096, 4096, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
-			// Now, attach the color texture to the FBO
+			// Attach the color texture to the FBO
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory.FboColorTexture, 0);
 
 			static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
@@ -538,13 +538,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				exit(1);
 			}
 
-			// Create device objects
 			const GLchar *vertex_shader = 
 "				#version 330																						\n"
-"				uniform mat4 ProjMtx;																				\n"
-"				in vec2 Position;																					\n"
-"				in vec2 UV;																							\n"
-"				in vec4 Color;																						\n"
+"				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
+"																													\n"
+"				in vec2 Position;																					\n" // Attributes[0]
+"				in vec2 UV;																							\n" // Attributes[1]
+"				in vec4 Color;																						\n" // Attributes[2]
+"																													\n"
 "				out vec2 Frag_UV;																					\n"
 "				out vec4 Frag_Color;																				\n"
 "				void main()																							\n"
@@ -556,11 +557,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			const GLchar* fragment_shader = 
 "				#version 330																						\n"
-"				uniform sampler2D Texture;																			\n"
-"				uniform float Thickness;																			\n"
-"				uniform vec2 Pos;																					\n"
-"				uniform vec2 LastPos;																				\n"
-"				uniform vec4 BrushColor;																			\n"
+"				uniform sampler2D	Texture;																		\n" // Uniforms[1]
+"				uniform vec2		Pos;																			\n" // Uniforms[2]
+"				uniform vec2		LastPos;																		\n" // Uniforms[3]
+"				uniform float		Thickness;																		\n" // Uniforms[4]
+"				uniform vec4		BrushColor;																		\n" // Uniforms[5]
+"																													\n"
 "				in vec2 Frag_UV;																					\n"
 "				in vec4 Frag_Color;																					\n"
 "				out vec4 Out_Color;																					\n"
@@ -601,26 +603,27 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 "						Out_Color = TextureColor;																	\n"
 "				}																									\n";
 
-			Memory.BrushShader.Handle = glCreateProgram();
+			Memory.Shaders[PapayaShader_Brush].Handle = glCreateProgram();
 			uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
 			uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
 			glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
 			glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
 			glCompileShader(g_VertHandle);
 			glCompileShader(g_FragHandle);
-			glAttachShader(Memory.BrushShader.Handle, g_VertHandle);
-			glAttachShader(Memory.BrushShader.Handle, g_FragHandle);
-			glLinkProgram(Memory.BrushShader.Handle);
+			glAttachShader(Memory.Shaders[PapayaShader_Brush].Handle, g_VertHandle);
+			glAttachShader(Memory.Shaders[PapayaShader_Brush].Handle, g_FragHandle);
+			glLinkProgram (Memory.Shaders[PapayaShader_Brush].Handle);
 
-			Memory.BrushShader.Texture			= glGetUniformLocation(Memory.BrushShader.Handle, "Texture");
-			Memory.BrushShader.ProjectionMatrix	= glGetUniformLocation(Memory.BrushShader.Handle, "ProjMtx");
-			Memory.BrushShader.Position			= glGetAttribLocation (Memory.BrushShader.Handle, "Position");
-			Memory.BrushShader.UV				= glGetAttribLocation (Memory.BrushShader.Handle, "UV");
-			Memory.BrushShader.Color			= glGetAttribLocation (Memory.BrushShader.Handle, "Color");
-			Memory.BrushThickness				= glGetUniformLocation(Memory.BrushShader.Handle, "Thickness");
-			Memory.BrushPos						= glGetUniformLocation(Memory.BrushShader.Handle, "Pos");
-			Memory.BrushLastPos					= glGetUniformLocation(Memory.BrushShader.Handle, "LastPos");
-			Memory.BrushColor					= glGetUniformLocation(Memory.BrushShader.Handle, "BrushColor");
+			Memory.Shaders[PapayaShader_Brush].Attributes[0] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "Position");
+			Memory.Shaders[PapayaShader_Brush].Attributes[1] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "UV");
+			Memory.Shaders[PapayaShader_Brush].Attributes[2] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "Color");
+
+			Memory.Shaders[PapayaShader_Brush].Uniforms[0]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "ProjMtx");
+			Memory.Shaders[PapayaShader_Brush].Uniforms[1]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Texture");
+			Memory.Shaders[PapayaShader_Brush].Uniforms[2]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Pos");
+			Memory.Shaders[PapayaShader_Brush].Uniforms[3]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "LastPos");
+			Memory.Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Thickness");
+			Memory.Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "BrushColor");
 		}
 		#pragma endregion
 
@@ -630,10 +633,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			// Create device objects
 			const GLchar *vertex_shader = 
 "				#version 330                                                      \n"
-"				uniform mat4 ProjMtx;                                             \n"
-"				in vec2 Position;                                                 \n"
-"				in vec2 UV;                                                       \n"
-"				in vec4 Color;                                                    \n"
+"				uniform mat4 ProjMtx;                                             \n" // Uniforms[0]
+"																				  \n"
+"				in vec2 Position;                                                 \n" // Attributes[0]
+"				in vec2 UV;                                                       \n" // Attributes[1]
+"				in vec4 Color;                                                    \n" // Attributes[2]
+"																				  \n"
 "				out vec2 Frag_UV;                                                 \n"
 "				out vec4 Frag_Color;                                              \n"
 "				void main()                                                       \n"
@@ -645,45 +650,48 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			const GLchar* fragment_shader = 
 "				#version 330													  \n"
-"				uniform sampler2D Texture;										  \n"
+"				uniform sampler2D Texture;										  \n" // Uniforms[1]
+"																				  \n"
 "				in vec2 Frag_UV;												  \n"
 "				in vec4 Frag_Color;												  \n"
+"																				  \n"
 "				out vec4 Out_Color;												  \n"
 "				void main()														  \n"
 "				{																  \n"
 "					Out_Color = Frag_Color * texture( Texture, Frag_UV.st);		  \n"
 "				}																  \n";
 
-			Memory.DefaultShader.Handle = glCreateProgram();
+			Memory.Shaders[PapayaShader_ImGui].Handle = glCreateProgram();
 			int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
 			int32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
 			glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
 			glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
 			glCompileShader(g_VertHandle);
 			glCompileShader(g_FragHandle);
-			glAttachShader(Memory.DefaultShader.Handle, g_VertHandle);
-			glAttachShader(Memory.DefaultShader.Handle, g_FragHandle);
-			glLinkProgram(Memory.DefaultShader.Handle);
+			glAttachShader(Memory.Shaders[PapayaShader_ImGui].Handle, g_VertHandle);
+			glAttachShader(Memory.Shaders[PapayaShader_ImGui].Handle, g_FragHandle);
+			glLinkProgram (Memory.Shaders[PapayaShader_ImGui].Handle);
 
-			Memory.DefaultShader.Texture			= glGetUniformLocation(Memory.DefaultShader.Handle, "Texture");
-			Memory.DefaultShader.ProjectionMatrix	= glGetUniformLocation(Memory.DefaultShader.Handle, "ProjMtx");
-			Memory.DefaultShader.Position			= glGetAttribLocation (Memory.DefaultShader.Handle, "Position");
-			Memory.DefaultShader.UV					= glGetAttribLocation (Memory.DefaultShader.Handle, "UV");
-			Memory.DefaultShader.Color				= glGetAttribLocation (Memory.DefaultShader.Handle, "Color");
+			Memory.Shaders[PapayaShader_ImGui].Attributes[0] = glGetAttribLocation (Memory.Shaders[PapayaShader_ImGui].Handle, "Position");
+			Memory.Shaders[PapayaShader_ImGui].Attributes[1] = glGetAttribLocation (Memory.Shaders[PapayaShader_ImGui].Handle, "UV");
+			Memory.Shaders[PapayaShader_ImGui].Attributes[2] = glGetAttribLocation (Memory.Shaders[PapayaShader_ImGui].Handle, "Color");
+
+			Memory.Shaders[PapayaShader_ImGui].Uniforms[0]	 = glGetUniformLocation(Memory.Shaders[PapayaShader_ImGui].Handle, "ProjMtx");
+			Memory.Shaders[PapayaShader_ImGui].Uniforms[1]	 = glGetUniformLocation(Memory.Shaders[PapayaShader_ImGui].Handle, "Texture");
 
 			glGenBuffers(1, &Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
 
 			glGenVertexArrays(1, &Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 			glBindVertexArray(Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 			glBindBuffer(GL_ARRAY_BUFFER, Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
-			glEnableVertexAttribArray(Memory.DefaultShader.Position);
-			glEnableVertexAttribArray(Memory.DefaultShader.UV);
-			glEnableVertexAttribArray(Memory.DefaultShader.Color);
+			glEnableVertexAttribArray(Memory.Shaders[PapayaShader_ImGui].Attributes[0]);
+			glEnableVertexAttribArray(Memory.Shaders[PapayaShader_ImGui].Attributes[1]);
+			glEnableVertexAttribArray(Memory.Shaders[PapayaShader_ImGui].Attributes[2]);
 
 		#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-			glVertexAttribPointer(Memory.DefaultShader.Position, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
-			glVertexAttribPointer(Memory.DefaultShader.UV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
-			glVertexAttribPointer(Memory.DefaultShader.Color, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
+			glVertexAttribPointer(Memory.Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
+			glVertexAttribPointer(Memory.Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
+			glVertexAttribPointer(Memory.Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
 		#undef OFFSETOF
 			glBindVertexArray(0);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
