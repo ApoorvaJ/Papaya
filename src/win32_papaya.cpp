@@ -544,14 +544,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 "																													\n"
 "				in vec2 Position;																					\n" // Attributes[0]
 "				in vec2 UV;																							\n" // Attributes[1]
-"				in vec4 Color;																						\n" // Attributes[2]
 "																													\n"
 "				out vec2 Frag_UV;																					\n"
-"				out vec4 Frag_Color;																				\n"
 "				void main()																							\n"
 "				{																									\n"
 "					Frag_UV = UV;																					\n"
-"					Frag_Color = Color;																				\n"
 "					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
 "				}																									\n";
 
@@ -564,7 +561,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 "				uniform vec4		BrushColor;																		\n" // Uniforms[5]
 "																													\n"
 "				in vec2 Frag_UV;																					\n"
-"				in vec4 Frag_Color;																					\n"
 "				out vec4 Out_Color;																					\n"
 "																													\n"
 "				float line(vec2 p1, vec2 p2, vec2 uv, float thickness)												\n"
@@ -593,7 +589,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
-"					vec4 TextureColor = Frag_Color * texture(Texture, Frag_UV.st);									\n"
+"					vec4 TextureColor = texture(Texture, Frag_UV.st);									\n"
 "					float ScaledThickness = (Thickness/8192.0);														\n"
 "																													\n"
 "					float val = line(LastPos, Pos, Frag_UV, ScaledThickness);										\n"
@@ -616,7 +612,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			Memory.Shaders[PapayaShader_Brush].Attributes[0] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "Position");
 			Memory.Shaders[PapayaShader_Brush].Attributes[1] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "UV");
-			Memory.Shaders[PapayaShader_Brush].Attributes[2] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "Color");
 
 			Memory.Shaders[PapayaShader_Brush].Uniforms[0]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "ProjMtx");
 			Memory.Shaders[PapayaShader_Brush].Uniforms[1]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Texture");
