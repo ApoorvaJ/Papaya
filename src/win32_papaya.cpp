@@ -164,11 +164,10 @@ internal void ImGui_NewFrame(HWND Window)
 
 internal void ClearAndSwap(void)
 {
-	glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
-				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
-				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 
-				 Memory.InterfaceColors[PapayaInterfaceColor_Clear].a);
-	glClear(GL_COLOR_BUFFER_BIT);
+	if(Memory.InterfaceColors[PapayaInterfaceColor_Clear])
+	{
+		glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
+	}
 	SwapBuffers(DeviceContext);
 }
 
@@ -290,12 +289,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				Memory.Window.Width = (int32) LOWORD(LParam);
 				Memory.Window.Height = (int32) HIWORD(LParam);
 			}
-			glMatrixMode(GL_PROJECTION);
-			glLoadIdentity();
-
-			float FrustumX = (float)Memory.Window.Width/(float)Memory.Window.Height;
-			glFrustum(-0.5f * FrustumX, 0.5f *FrustumX, -0.5F, 0.5F, 1.0F, 3.0F);
-			glMatrixMode(GL_MODELVIEW);
 
 			ClearAndSwap();
 		} break;
@@ -478,40 +471,29 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
 			wglMakeCurrent(DeviceContext, TempRenderingContext);
 
-			GLenum GlewInitResult = glewInit();
-			if (GlewInitResult != GLEW_OK)
+			if (gl3wInit() != 0)
 			{
-				// TODO: Log: GLEW Init failed
+				// TODO: Log: GL3W Init failed
 				exit(1);
 			}
 
-			int InitAttributes[] =
+			if (!gl3wIsSupported(3,2))
 			{
-				WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-				WGL_CONTEXT_MINOR_VERSION_ARB, 2,
-				WGL_CONTEXT_FLAGS_ARB, 0,
-				0
-			};
-
-			if(wglewIsSupported("WGL_ARB_create_context") == 1)
-			{
-				RenderingContext = wglCreateContextAttribsARB(DeviceContext, 0, InitAttributes);
-				wglMakeCurrent(NULL,NULL);
-				wglDeleteContext(TempRenderingContext);
-				wglMakeCurrent(DeviceContext, RenderingContext);
-			}
-			else
-			{
-				// It is not possible to make a GL 3.x context.
-				// TODO: Handle this using a message box or something
+				// TODO: Log: Required OpenGL version not supported
 				exit(1);
 			}
+
+			RenderingContext = wglCreateContext(DeviceContext); // This creates a context of the latest supported version
 
 			if (!RenderingContext)
 			{
 				// TODO: Log: Failed to create rendering context
 				exit(1);
 			}
+
+			wglMakeCurrent(NULL,NULL);
+			wglDeleteContext(TempRenderingContext);
+			wglMakeCurrent(DeviceContext, RenderingContext);
 
 			glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
 			glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);

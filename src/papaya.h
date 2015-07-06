@@ -1,8 +1,8 @@
 #pragma once
 
 #define GLEW_STATIC
-#include <GL/glew.h>
-#include <glew.c>
+#include <gl3w.h>
+#include <gl3w.c>
 
 #include "papaya_platform.h"
 #include "papaya_math.h"
