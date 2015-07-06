@@ -77,6 +77,7 @@ struct PapayaWindow
 {
 	uint32 Width, Height;
 	float MaximizeOffset; // Used to cancel Windows' weirdness when windows are maximized. Refer: http://stackoverflow.com/questions/14667558/why-is-a-maximized-delphi-form-8-pixels-wider-and-higher-than-the-getsystemmetri
+	uint32 IconWidth, TitleBarButtonsWidth, TitleBarHeight;
 };
 
 struct MouseInfo
@@ -91,6 +92,7 @@ struct MouseInfo
 
 struct PapayaMemory
 {
+	bool IsRunning;
 	uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
 	Color InterfaceColors[PapayaInterfaceColor_COUNT];
 	uint32 CurrentColor;

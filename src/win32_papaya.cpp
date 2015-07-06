@@ -30,7 +30,6 @@ typedef double real64;
 
 global_variable PapayaMemory Memory = {};
 global_variable PapayaDebugMemory DebugMemory = {};
-global_variable bool32 GlobalRunning;
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2];
@@ -39,10 +38,6 @@ global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maxi
 
 // ImGui
 global_variable bool bTrue = true;
-
-// Title bar
-const float TitleBarButtonsWidth = 109;
-const uint32 TitleBarHeight = 30;
 
 // =================================================================================================
 
@@ -251,7 +246,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		case WM_DESTROY:
 		{
 			// TODO: Handle this as an error - recreate window?
-			GlobalRunning = false;
+			Memory.IsRunning = false;
 			if (RenderingContext) 
 			{
 			    wglMakeCurrent(NULL, NULL);
@@ -272,7 +267,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		case WM_CLOSE:
 		{
 			// TODO: Handle this with a message to the user?
-			GlobalRunning = false;
+			Memory.IsRunning = false;
 		} break;
 
 		case WM_ACTIVATEAPP:
@@ -363,7 +358,9 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				}
 			}
 
-			if (Y - WindowRect.top - (IsMaximized(Window) ? 8.0f : 0.0f) <= TitleBarHeight && X > WindowRect.left + 200.0f && X < WindowRect.right - (TitleBarButtonsWidth + 10))
+			if (Y - WindowRect.top - (IsMaximized(Window) ? Memory.Window.MaximizeOffset : 0.0f) <= (float)Memory.Window.TitleBarHeight && 
+				X > WindowRect.left + 200.0f && 
+				X < WindowRect.right - (float)(Memory.Window.TitleBarButtonsWidth + 10))
 			{
 				return HTCAPTION;
 			}
@@ -388,7 +385,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	LARGE_INTEGER PerfCountFrequencyResult;
 	QueryPerformanceFrequency(&PerfCountFrequencyResult);
 	int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
-	GlobalRunning = true;
+	Memory.IsRunning = true;
 
 	HWND Window;
 	#pragma region Create Window
@@ -520,208 +517,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 		}
 		#pragma endregion
-
-		#pragma region Set up the frame buffer
-		{
-			// Create a framebuffer object and bind it
-			glGenFramebuffers(1, &Memory.FrameBufferObject);
-			glBindFramebuffer(GL_FRAMEBUFFER, Memory.FrameBufferObject);
-
-			// Create a color texture
-			glGenTextures(1, &Memory.FboColorTexture);
-			glBindTexture(GL_TEXTURE_2D, Memory.FboColorTexture);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 4096, 4096, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-
-			// Attach the color texture to the FBO
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory.FboColorTexture, 0);
-
-			static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-			glDrawBuffers(1, draw_buffers);
-
-			if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			{
-				// TODO: Log: Frame buffer not initialized correctly
-				exit(1);
-			}
-
-			const GLchar *vertex_shader = 
-"				#version 330																						\n"
-"				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
-"																													\n"
-"				in vec2 Position;																					\n" // Attributes[0]
-"				in vec2 UV;																							\n" // Attributes[1]
-"																													\n"
-"				out vec2 Frag_UV;																					\n"
-"				void main()																							\n"
-"				{																									\n"
-"					Frag_UV = UV;																					\n"
-"					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
-"				}																									\n";
-
-			const GLchar* fragment_shader = 
-"				#version 330																						\n"
-"				uniform sampler2D	Texture;																		\n" // Uniforms[1]
-"				uniform vec2		Pos;																			\n" // Uniforms[2]
-"				uniform vec2		LastPos;																		\n" // Uniforms[3]
-"				uniform float		Thickness;																		\n" // Uniforms[4]
-"				uniform vec4		BrushColor;																		\n" // Uniforms[5]
-"																													\n"
-"				in vec2 Frag_UV;																					\n"
-"				out vec4 Out_Color;																					\n"
-"																													\n"
-"				float line(vec2 p1, vec2 p2, vec2 uv, float thickness)												\n"
-"				{																									\n"
-"					float a = abs(distance(p1, uv));																\n"
-"					float b = abs(distance(p2, uv));																\n"
-"					float c = abs(distance(p1, p2));																\n"
-"					float d = sqrt(c*c + thickness*thickness);														\n"
-"																													\n"
-"					if (a >= d || b >= d)																			\n"
-"					{																								\n"
-"						if (a <= thickness || b <= thickness)														\n"
-"							return 1.0;																				\n"
-"						else																						\n"
-"							return 0.0;																				\n"
-"					}																								\n"
-"																													\n"
-"					float p = (a + b + c) * 0.5;																	\n"
-"					float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );											\n"
-"																													\n"
-"					if (isnan(h) || h <= thickness)																	\n"
-"						return 1.0;																					\n"
-"					else																							\n"
-"						return 0.0;																					\n"
-"				}																									\n"
-"																													\n"
-"				void main()																							\n"
-"				{																									\n"
-"					vec4 TextureColor = texture(Texture, Frag_UV.st);									\n"
-"					float ScaledThickness = (Thickness/8192.0);														\n"
-"																													\n"
-"					float val = line(LastPos, Pos, Frag_UV, ScaledThickness);										\n"
-"					if (val >= 1.0)																					\n"
-"						Out_Color = BrushColor;																		\n"
-"					else																							\n"
-"						Out_Color = TextureColor;																	\n"
-"				}																									\n";
-
-			Memory.Shaders[PapayaShader_Brush].Handle = glCreateProgram();
-			uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-			uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-			glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-			glCompileShader(g_VertHandle);
-			glCompileShader(g_FragHandle);
-			glAttachShader(Memory.Shaders[PapayaShader_Brush].Handle, g_VertHandle);
-			glAttachShader(Memory.Shaders[PapayaShader_Brush].Handle, g_FragHandle);
-			glLinkProgram (Memory.Shaders[PapayaShader_Brush].Handle);
-
-			Memory.Shaders[PapayaShader_Brush].Attributes[0] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "Position");
-			Memory.Shaders[PapayaShader_Brush].Attributes[1] = glGetAttribLocation (Memory.Shaders[PapayaShader_Brush].Handle, "UV");
-
-			Memory.Shaders[PapayaShader_Brush].Uniforms[0]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "ProjMtx");
-			Memory.Shaders[PapayaShader_Brush].Uniforms[1]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Texture");
-			Memory.Shaders[PapayaShader_Brush].Uniforms[2]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Pos");
-			Memory.Shaders[PapayaShader_Brush].Uniforms[3]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "LastPos");
-			Memory.Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "Thickness");
-			Memory.Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Memory.Shaders[PapayaShader_Brush].Handle, "BrushColor");
-		}
-		#pragma endregion
-
-		#pragma region Setup for ImGui
-		{
-			// TODO: Write shader compilation wrapper
-			// Create device objects
-			const GLchar *vertex_shader = 
-"				#version 330                                                      \n"
-"				uniform mat4 ProjMtx;                                             \n" // Uniforms[0]
-"																				  \n"
-"				in vec2 Position;                                                 \n" // Attributes[0]
-"				in vec2 UV;                                                       \n" // Attributes[1]
-"				in vec4 Color;                                                    \n" // Attributes[2]
-"																				  \n"
-"				out vec2 Frag_UV;                                                 \n"
-"				out vec4 Frag_Color;                                              \n"
-"				void main()                                                       \n"
-"				{                                                                 \n"
-"					Frag_UV = UV;                                                 \n"
-"					Frag_Color = Color;                                           \n"
-"					gl_Position = ProjMtx * vec4(Position.xy,0,1);                \n"
-"				}                                                                 \n";
-
-			const GLchar* fragment_shader = 
-"				#version 330													  \n"
-"				uniform sampler2D Texture;										  \n" // Uniforms[1]
-"																				  \n"
-"				in vec2 Frag_UV;												  \n"
-"				in vec4 Frag_Color;												  \n"
-"																				  \n"
-"				out vec4 Out_Color;												  \n"
-"				void main()														  \n"
-"				{																  \n"
-"					Out_Color = Frag_Color * texture( Texture, Frag_UV.st);		  \n"
-"				}																  \n";
-
-			Memory.Shaders[PapayaShader_ImGui].Handle = glCreateProgram();
-			int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-			int32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-			glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-			glCompileShader(g_VertHandle);
-			glCompileShader(g_FragHandle);
-			glAttachShader(Memory.Shaders[PapayaShader_ImGui].Handle, g_VertHandle);
-			glAttachShader(Memory.Shaders[PapayaShader_ImGui].Handle, g_FragHandle);
-			glLinkProgram (Memory.Shaders[PapayaShader_ImGui].Handle);
-
-			Memory.Shaders[PapayaShader_ImGui].Attributes[0] = glGetAttribLocation (Memory.Shaders[PapayaShader_ImGui].Handle, "Position");
-			Memory.Shaders[PapayaShader_ImGui].Attributes[1] = glGetAttribLocation (Memory.Shaders[PapayaShader_ImGui].Handle, "UV");
-			Memory.Shaders[PapayaShader_ImGui].Attributes[2] = glGetAttribLocation (Memory.Shaders[PapayaShader_ImGui].Handle, "Color");
-
-			Memory.Shaders[PapayaShader_ImGui].Uniforms[0]	 = glGetUniformLocation(Memory.Shaders[PapayaShader_ImGui].Handle, "ProjMtx");
-			Memory.Shaders[PapayaShader_ImGui].Uniforms[1]	 = glGetUniformLocation(Memory.Shaders[PapayaShader_ImGui].Handle, "Texture");
-
-			glGenBuffers(1, &Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
-
-			glGenVertexArrays(1, &Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
-			glBindVertexArray(Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
-			glBindBuffer(GL_ARRAY_BUFFER, Memory.VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
-			glEnableVertexAttribArray(Memory.Shaders[PapayaShader_ImGui].Attributes[0]);
-			glEnableVertexAttribArray(Memory.Shaders[PapayaShader_ImGui].Attributes[1]);
-			glEnableVertexAttribArray(Memory.Shaders[PapayaShader_ImGui].Attributes[2]);
-
-		#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-			glVertexAttribPointer(Memory.Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));
-			glVertexAttribPointer(Memory.Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));
-			glVertexAttribPointer(Memory.Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
-		#undef OFFSETOF
-			glBindVertexArray(0);
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-			// Create fonts texture
-			ImGuiIO& io = ImGui::GetIO();
-
-			unsigned char* pixels;
-			int width, height;
-			io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bits for OpenGL3 demo because it is more likely to be compatible with user's existing shader.
-
-			glGenTextures(1, &Memory.InterfaceTextureIDs[PapayaInterfaceTexture_Font]);
-			glBindTexture(GL_TEXTURE_2D, Memory.InterfaceTextureIDs[PapayaInterfaceTexture_Font]);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-			// Store our identifier
-			io.Fonts->TexID = (void *)(intptr_t)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_Font];
-
-			// Cleanup (don't clear the input data if you want to append new fonts later)
-			io.Fonts->ClearInputData();
-			io.Fonts->ClearTexData();
-		}
-		#pragma endregion
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	#pragma endregion
 
@@ -753,21 +548,19 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		io.RenderDrawListsFn = ImGui_RenderDrawLists;
 		io.ImeWindowHandle = Window;
-
-		//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
-		//ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 16.0f);
 	}
 	#pragma endregion
 	
-	bool show_test_window = true;
-    bool show_another_window = false;
+	Memory.Window.IconWidth = 32;
+	Memory.Window.TitleBarButtonsWidth = 109;
+	Memory.Window.TitleBarHeight = 30;
 
 	LARGE_INTEGER LastCounter;
 	QueryPerformanceCounter(&LastCounter);
 	uint64 LastCycleCount = __rdtsc();
 
 
-	while (GlobalRunning)
+	while (Memory.IsRunning)
 	{
 		#pragma region Windows message handling
 		{
@@ -776,7 +569,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			{
 				if (Message.message == WM_QUIT)
 				{
-					GlobalRunning = false;
+					Memory.IsRunning = false;
 				}
 
 				TranslateMessage(&Message);
@@ -787,14 +580,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		BOOL IsMaximized = IsMaximized(Window);
 		// Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f; // TODO: Might have to turn this on when activating WS_THICKFRAME for aero snapping to work
-		float IconWidth = 32.0f;
 		
 		ImGui_NewFrame(Window);
 		
+		Papaya_UpdateAndRender(&Memory, &DebugMemory);
+
 		#pragma region Title Bar Buttons
 		{
-			ImGui::SetNextWindowSize(ImVec2(TitleBarButtonsWidth,24));
-			ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width-TitleBarButtonsWidth - Memory.Window.MaximizeOffset, Memory.Window.MaximizeOffset));
+			ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.TitleBarButtonsWidth,24.0f));
+			ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width - Memory.Window.TitleBarButtonsWidth - Memory.Window.MaximizeOffset, Memory.Window.MaximizeOffset));
 			
 			ImGuiWindowFlags WindowFlags = 0;
 			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -815,6 +609,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory.InterfaceColors[PapayaInterfaceColor_ButtonActive]);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
 
+			bool bTrue = true;
 			ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
 			ImGui::PushID(0);
@@ -859,196 +654,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PopStyleColor(4);
 		}
 		#pragma endregion
-
-		#pragma region Title Bar Icon
-		{
-			ImGui::SetNextWindowSize(ImVec2(IconWidth,(float)TitleBarHeight));
-			ImGui::SetNextWindowPos(ImVec2(1.0f + Memory.Window.MaximizeOffset, 1.0f + Memory.Window.MaximizeOffset));
-
-			ImGuiWindowFlags WindowFlags = 0;
-			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-			WindowFlags |= ImGuiWindowFlags_NoResize;
-			WindowFlags |= ImGuiWindowFlags_NoMove;
-			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-			WindowFlags |= ImGuiWindowFlags_NoCollapse;
-			WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-			ImGui::Image((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
-			ImGui::End();
-
-			ImGui::PopStyleColor(1);
-			ImGui::PopStyleVar(5);
-		}
-		#pragma endregion
-
-		#pragma region Title Bar Menu
-		{
-			ImGui::SetNextWindowSize(ImVec2(Memory.Window.Width - IconWidth - TitleBarButtonsWidth - 3.0f - (2.0f * Memory.Window.MaximizeOffset),(float)TitleBarHeight - 10.0f));
-			ImGui::SetNextWindowPos(ImVec2(2.0f + IconWidth + Memory.Window.MaximizeOffset, 1.0f + Memory.Window.MaximizeOffset + 5.0f));
-
-			ImGuiWindowFlags WindowFlags = 0;
-			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-			WindowFlags |= ImGuiWindowFlags_NoResize;
-			WindowFlags |= ImGuiWindowFlags_NoMove;
-			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-			WindowFlags |= ImGuiWindowFlags_NoCollapse;
-			WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-			WindowFlags |= ImGuiWindowFlags_MenuBar;
-
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,4));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
-
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
-			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
-			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Memory.InterfaceColors[PapayaInterfaceColor_ButtonHover]);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
-			ImGui::PushStyleColor(ImGuiCol_Header, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-			ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
-			bool foo;
-			if (ImGui::BeginMenuBar())
-			{
-				ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
-				if (ImGui::BeginMenu("FILE"))
-				{
-					#pragma region File Menu
-					{
-						if (ImGui::MenuItem("New")) {}
-						if (ImGui::MenuItem("Open", "Ctrl+O")) {}
-						if (ImGui::BeginMenu("Open Recent"))
-						{
-							ImGui::MenuItem("fish_hat.c");
-							ImGui::MenuItem("fish_hat.inl");
-							ImGui::MenuItem("fish_hat.h");
-							if (ImGui::BeginMenu("More.."))
-							{
-								ImGui::MenuItem("Hello");
-								ImGui::MenuItem("Sailor");
-								if (ImGui::BeginMenu("Recurse.."))
-								{
-									ShowExampleMenuFile();
-									ImGui::EndMenu();
-								}
-								ImGui::EndMenu();
-							}
-							ImGui::EndMenu();
-						}
-						if (ImGui::MenuItem("Save", "Ctrl+S")) {}
-						if (ImGui::MenuItem("Save As..")) {}
-						ImGui::Separator();
-						if (ImGui::BeginMenu("Options"))
-						{
-							static bool enabled = true;
-							ImGui::MenuItem("Enabled", "", &enabled);
-							ImGui::BeginChild("child", ImVec2(0, 60), true);
-							for (int i = 0; i < 10; i++)
-								ImGui::Text("Scrolling Text %d", i);
-							ImGui::EndChild();
-							static float f = 0.5f;
-							ImGui::SliderFloat("Value", &f, 0.0f, 1.0f);
-							ImGui::InputFloat("Input", &f, 0.1f);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu("Colors"))
-						{
-							for (int i = 0; i < ImGuiCol_COUNT; i++)
-								ImGui::MenuItem(ImGui::GetStyleColName((ImGuiCol)i));
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu("Disabled", false)) // Disabled
-						{
-							IM_ASSERT(0);
-						}
-						if (ImGui::MenuItem("Checked", NULL, true)) {}
-						if (ImGui::MenuItem("Quit", "Alt+F4")) { GlobalRunning = false; }
-					}
-					#pragma endregion
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("EDIT"))
-				{
-					#pragma region Edit Menu
-					{
-						ImGui::MenuItem("Metrics", NULL, &foo);
-						ImGui::MenuItem("Main menu bar", NULL, &foo);
-						ImGui::MenuItem("Console", NULL, &foo);
-						ImGui::MenuItem("Simple layout", NULL, &foo);
-						ImGui::MenuItem("Long text display", NULL, &foo);
-						ImGui::MenuItem("Auto-resizing window", NULL, &foo);
-						ImGui::MenuItem("Simple overlay", NULL, &foo);
-						ImGui::MenuItem("Manipulating window title", NULL, &foo);
-						ImGui::MenuItem("Custom rendering", NULL, &foo);
-					}
-					#pragma endregion
-					ImGui::EndMenu();
-				}
-				ImGui::EndMenuBar();
-				ImGui::PopStyleColor();
-			}
-			ImGui::End();
-
-			ImGui::PopStyleColor(4);
-			ImGui::PopStyleVar(5);
-		}
-		#pragma endregion
-
-		//=========================================
-#if 0
-		{
-			static float f = 0.0;
-            ImGui::Text("FILE EDIT IMAGE LAYER TYPE SELECT");
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-            ImGui::ColorEdit3("clear color", (float*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
-            if (ImGui::Button("Test Window")) show_test_window ^= 1;
-            if (ImGui::Button("Another Window")) show_another_window ^= 1;
-			if (ImGui::Button("Maximize")) { ShowWindow(Window, SW_MAXIMIZE); }
-			if (ImGui::Button("Restore")) { ShowWindow(Window, SW_RESTORE); }
-			if (ImGui::Button("Minimize")) { ShowWindow(Window, SW_MINIMIZE); }
-			if (ImGui::Button("Close")) { SendMessage(Window, WM_CLOSE, 0, 0); }
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-            ImGui::Text("Scale: %f %f", Memory.Documents[0].CanvasZoom);
-		}
-
-		// 2. Show another simple window, this time using an explicit Begin/End pair
-        if (show_another_window)
-        {
-            ImGui::SetNextWindowSize(ImVec2(200,100), ImGuiSetCond_FirstUseEver);
-            ImGui::Begin("Another Window", &show_another_window);
-            ImGui::Text("Hello");
-            ImGui::End();
-        }
-
-        // 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-        if (show_test_window)
-        {
-            ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-            ImGui::ShowTestWindow(&show_test_window);
-        }
-
-#endif
-        // Rendering
-        glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-
-      //  glClearColor(Memory.InterfaceColors[PapayaInterfaceColor_Clear].r, 
-					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].g, 
-					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].b, 
-					 //Memory.InterfaceColors[PapayaInterfaceColor_Clear].a);
-      //  glClear(GL_COLOR_BUFFER_BIT);
-		glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
-
-		Papaya_UpdateAndRender(&Memory, &DebugMemory);
 
         ImGui::Render();
         SwapBuffers(DeviceContext);
