@@ -4,8 +4,6 @@
 #define local_persist static 
 #define global_variable static
 
-#define Pi32 3.14159265359f
-
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
@@ -28,6 +26,8 @@ typedef double real64;
 #include <stdio.h>
 #include <malloc.h>
 
+// =================================================================================================
+
 global_variable PapayaMemory Memory = {};
 global_variable PapayaDebugMemory DebugMemory = {};
 global_variable bool32 GlobalRunning;
@@ -35,8 +35,7 @@ global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2];
 
-// Needed because WS_POPUP by default maximizes to cover task bar
-global_variable RECT WindowsWorkArea;
+global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
 
 // ImGui
 global_variable bool bTrue = true;
@@ -44,6 +43,15 @@ global_variable bool bTrue = true;
 // Title bar
 const float TitleBarButtonsWidth = 109;
 const uint32 TitleBarHeight = 30;
+
+// =================================================================================================
+
+void Platform::Print(char* Message)
+{
+	OutputDebugString((LPCSTR)Message);
+}
+
+// =================================================================================================
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
 {

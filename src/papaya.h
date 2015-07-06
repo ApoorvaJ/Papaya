@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <glew.c>
 
+#include "papaya_platform.h"
 #include "papaya_math.h"
 #include "imgui.h"
 #include "imgui.cpp"
