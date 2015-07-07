@@ -258,8 +258,11 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 	//LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
 	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
-	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width - 512.0f)/2.0f, (Memory->Window.Height - 512.0f)/2.0f); // TODO: Center image on init
-	Memory->Documents[0].CanvasZoom = 1.0f;
+
+	Memory->Documents[0].CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Documents[0].Width, (float)Memory->Window.Height/(float)Memory->Documents[0].Height);
+	if (Memory->Documents[0].CanvasZoom > 1.0f) { Memory->Documents[0].CanvasZoom = 1.0f; }
+	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Documents[0].Width  * Memory->Documents[0].CanvasZoom)/2.0f, 
+											   (Memory->Window.Height - (float)Memory->Documents[0].Height * Memory->Documents[0].CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
 
 	glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);
 	glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VboHandle);

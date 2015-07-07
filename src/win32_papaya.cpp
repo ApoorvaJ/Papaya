@@ -36,8 +36,6 @@ global_variable int32 OpenGLVersion[2];
 
 global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
 
-// ImGui
-global_variable bool bTrue = true;
 
 // =================================================================================================
 
