@@ -91,6 +91,12 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "				void line(vec2 p1, vec2 p2, vec2 uv, float thickness, out float distanceFromLine)					\n"
 "				{																									\n"
+"					if (distance(p1,p2) <= 0.0)																			\n"
+"					{																								\n"
+"						distanceFromLine = distance(uv, p1);																		\n"
+"						return;																						\n"
+"					}																								\n"
+"																													\n"
 "					float a = abs(distance(p1, uv));																\n"
 "					float b = abs(distance(p2, uv));																\n"
 "					float c = abs(distance(p1, p2));																\n"
@@ -127,7 +133,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "					float distanceFromLine;																			\n"
 "					line(LastPos, Pos, Frag_UV, ScaledThickness, distanceFromLine);									\n"
-"					float delta = fwidth(distanceFromLine);															\n"
+"					float delta = fwidth(distanceFromLine) * 2.0;															\n"
 "					float alpha = smoothstep(ScaledThickness-delta, ScaledThickness, distanceFromLine);				\n"
 "					alpha = 1.0 - alpha;																			\n"
 "																													\n"
@@ -370,9 +376,12 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	{
 		BrushSize--;
 	}
+	if (ImGui::IsKeyPressed(VK_NUMPAD1, false))
+	{
+		Memory->Documents[0].CanvasZoom = 1.0;
+	}
 
-
-	if ((Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0]) || Memory->Mouse.IsDown[1])
+	if ((Memory->Mouse.IsDown[0]) || Memory->Mouse.IsDown[1])
 	{
 		BrushCol = (Memory->Mouse.IsDown[0]) ? Color(0.0f,1.0f,0.0f) : Color(1.0f,0.0f,0.0f);
 
@@ -397,11 +406,11 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		};
 		glUseProgram(Memory->Shaders[PapayaShader_Brush].Handle);
 		
-		//Vec2 CorrectedPos		= Memory->Mouse.UV     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-		//Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		Vec2 CorrectedPos		= Memory->Mouse.UV     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
-		Vec2 CorrectedPos		= Vec2(0.4f, 0.5f)     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-		Vec2 CorrectedLastPos	= Vec2(0.6f, 0.5f) + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		/*Vec2 CorrectedPos		= Vec2(0.6f, 0.5f)     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		Vec2 CorrectedLastPos	= Vec2(0.6f, 0.5f) + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));*/
 
 		glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
 		glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], 0); // Texture uniform
