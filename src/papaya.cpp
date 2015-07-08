@@ -89,40 +89,49 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				in vec2 Frag_UV;																					\n"
 "				out vec4 Out_Color;																					\n"
 "																													\n"
-"				float line(vec2 p1, vec2 p2, vec2 uv, float thickness)												\n"
+"				void line(vec2 p1, vec2 p2, vec2 uv, float thickness, out float distanceFromLine)					\n"
 "				{																									\n"
 "					float a = abs(distance(p1, uv));																\n"
 "					float b = abs(distance(p2, uv));																\n"
 "					float c = abs(distance(p1, p2));																\n"
 "					float d = sqrt(c*c + thickness*thickness);														\n"
 "																													\n"
-"					if (a >= d || b >= d)																			\n"
+"					vec2 a1 = normalize(uv - p1);																	\n"
+"					vec2 b1 = normalize(uv - p2);																	\n"
+"					vec2 c1 = normalize(p2 - p1);																	\n"
+"					if (dot(a1,c1) < 0.0)																			\n"
 "					{																								\n"
-"						if (a <= thickness || b <= thickness)														\n"
-"							return 1.0;																				\n"
-"						else																						\n"
-"							return 0.0;																				\n"
+"						distanceFromLine = a;																		\n"
+"						return;																						\n"
+"					}																								\n"
+"																													\n"
+"					if (dot(b1,c1) > 0.0)																			\n"
+"					{																								\n"
+"						distanceFromLine = b;																		\n"
+"						return;																						\n"
 "					}																								\n"
 "																													\n"
 "					float p = (a + b + c) * 0.5;																	\n"
 "					float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );											\n"
 "																													\n"
-"					if (isnan(h) || h <= thickness)																	\n"
-"						return 1.0;																					\n"
+"					if (isnan(h))																					\n"
+"						distanceFromLine = 0.0;																		\n"
 "					else																							\n"
-"						return 0.0;																					\n"
+"						distanceFromLine = h;																		\n"
 "				}																									\n"
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
-"					vec4 TextureColor = texture(Texture, Frag_UV.st);									\n"
+"					vec4 TextureColor = texture(Texture, Frag_UV.st);												\n"
 "					float ScaledThickness = (Thickness/8192.0);														\n"
 "																													\n"
-"					float val = line(LastPos, Pos, Frag_UV, ScaledThickness);										\n"
-"					if (val >= 1.0)																					\n"
-"						Out_Color = BrushColor;																		\n"
-"					else																							\n"
-"						Out_Color = TextureColor;																	\n"
+"					float distanceFromLine;																			\n"
+"					line(LastPos, Pos, Frag_UV, ScaledThickness, distanceFromLine);									\n"
+"					float delta = fwidth(distanceFromLine);															\n"
+"					float alpha = smoothstep(ScaledThickness-delta, ScaledThickness, distanceFromLine);				\n"
+"					alpha = 1.0 - alpha;																			\n"
+"																													\n"
+"					Out_Color = mix(TextureColor, BrushColor, alpha);												\n"
 "				}																									\n";
 
 		Memory->Shaders[PapayaShader_Brush].Handle = glCreateProgram();
@@ -134,6 +143,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		glCompileShader(g_FragHandle);
 		glAttachShader(Memory->Shaders[PapayaShader_Brush].Handle, g_VertHandle);
 		glAttachShader(Memory->Shaders[PapayaShader_Brush].Handle, g_FragHandle);
+		Util::PrintGlShaderCompilationStatus(g_FragHandle);
 		glLinkProgram (Memory->Shaders[PapayaShader_Brush].Handle);
 
 		Memory->Shaders[PapayaShader_Brush].Attributes[0] = glGetAttribLocation (Memory->Shaders[PapayaShader_Brush].Handle, "Position");
@@ -151,7 +161,6 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	#pragma region Setup for ImGui
 	{
 		// TODO: Write shader compilation wrapper
-		// Create device objects
 		const GLchar *vertex_shader = 
 "				#version 330                                                      \n"
 "				uniform mat4 ProjMtx;                                             \n" // Uniforms[0]
@@ -350,7 +359,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
 
 
-	local_persist int32 BrushSize = 2048;
+	local_persist int32 BrushSize = 1024;
 	local_persist Color BrushCol = Color(0.0f,1.0f,0.0f);
 
 	if (ImGui::IsKeyPressed(VK_UP, false))
@@ -363,7 +372,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	}
 
 
-	if (Memory->Mouse.IsDown[0] || Memory->Mouse.IsDown[1])
+	if ((Memory->Mouse.IsDown[0] && !Memory->Mouse.WasDown[0]) || Memory->Mouse.IsDown[1])
 	{
 		BrushCol = (Memory->Mouse.IsDown[0]) ? Color(0.0f,1.0f,0.0f) : Color(1.0f,0.0f,0.0f);
 
@@ -388,8 +397,11 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		};
 		glUseProgram(Memory->Shaders[PapayaShader_Brush].Handle);
 		
-		Vec2 CorrectedPos		= Memory->Mouse.UV     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-		Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		//Vec2 CorrectedPos		= Memory->Mouse.UV     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		//Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+
+		Vec2 CorrectedPos		= Vec2(0.4f, 0.5f)     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+		Vec2 CorrectedLastPos	= Vec2(0.6f, 0.5f) + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 		glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
 		glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], 0); // Texture uniform

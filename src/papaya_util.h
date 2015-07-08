@@ -67,47 +67,47 @@ namespace Util
 		{
 			case GL_NO_ERROR:
 			{
-				OutputDebugString("No error\n");
+				Platform::Print("No error\n");
 			} break;
 
 			case GL_INVALID_ENUM:
 			{
-				OutputDebugString("Invalid enum\n");
+				Platform::Print("Invalid enum\n");
 			} break;
 
 			case GL_INVALID_VALUE:
 			{
-				OutputDebugString("Invalid value\n");
+				Platform::Print("Invalid value\n");
 			} break;
 
 			case GL_INVALID_OPERATION:
 			{
-				OutputDebugString("Invalid operation\n");
+				Platform::Print("Invalid operation\n");
 			} break;
 
 			case GL_INVALID_FRAMEBUFFER_OPERATION:
 			{
-				OutputDebugString("Invalid framebuffer operation\n");
+				Platform::Print("Invalid framebuffer operation\n");
 			} break;
 
 			case GL_OUT_OF_MEMORY:
 			{
-				OutputDebugString("Out of memory\n");
+				Platform::Print("Out of memory\n");
 			} break;
 
 			case GL_STACK_UNDERFLOW:
 			{
-				OutputDebugString("Stack underflow\n");
+				Platform::Print("Stack underflow\n");
 			} break;
 
 			case GL_STACK_OVERFLOW:
 			{
-				OutputDebugString("Stack overflow\n");
+				Platform::Print("Stack overflow\n");
 			} break;
 
 			default:
 			{
-				OutputDebugString("Undefined error\n");
+				Platform::Print("Undefined error\n");
 			} break;
 		}
 	}
@@ -118,11 +118,17 @@ namespace Util
 		glGetShaderiv(ShaderHandle, GL_COMPILE_STATUS, &CompilationStatus);
 		if (CompilationStatus == GL_TRUE)
 		{
-			OutputDebugString("Compilation successful\n");
+			Platform::Print("Compilation successful\n");
 		}
 		else
 		{
-			OutputDebugString("Compilation failed\n");
+			Platform::Print("Compilation failed\n");
+			const int32 BufferLength = 4096; 
+			int32 OutLength; 
+			char ErrorLog[BufferLength];
+
+			glGetShaderInfoLog(ShaderHandle, BufferLength, &OutLength, ErrorLog);
+			Platform::Print(ErrorLog);
 		}
 	}
 }
