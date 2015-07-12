@@ -104,5 +104,7 @@ struct PapayaMemory
 
 	// TODO: Refactor
 	uint32 FrameBufferObject;
-	uint32 FboColorTexture;
+	uint32 FboRenderTexture, FboSampleTexture;
+	bool DrawOverlay = false;
+	bool DrawCanvas = true;
 };
