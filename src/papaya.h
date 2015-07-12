@@ -40,6 +40,7 @@ enum PapayaVertexBuffer_
 	PapayaVertexBuffer_ImGui,
 	PapayaVertexBuffer_Canvas,
 	PapayaVertexBuffer_RenderToTexture,
+	PapayaVertexBuffer_RTTAdd,
 	PapayaVertexBuffer_COUNT
 };
 

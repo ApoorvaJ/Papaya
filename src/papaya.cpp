@@ -72,6 +72,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "				in vec2 Position;																					\n" // Attributes[0]
 "				in vec2 UV;																							\n" // Attributes[1]
+"				in vec4 Color;																						\n" // Attributes[2]
 "																													\n"
 "				out vec2 Frag_UV;																					\n"
 "				void main()																							\n"
@@ -160,6 +161,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 
 		Memory->Shaders[PapayaShader_Brush].Attributes[0] = glGetAttribLocation (Memory->Shaders[PapayaShader_Brush].Handle, "Position");
 		Memory->Shaders[PapayaShader_Brush].Attributes[1] = glGetAttribLocation (Memory->Shaders[PapayaShader_Brush].Handle, "UV");
+		Memory->Shaders[PapayaShader_Brush].Attributes[2] = glGetAttribLocation (Memory->Shaders[PapayaShader_Brush].Handle, "Color");
 
 		Memory->Shaders[PapayaShader_Brush].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "ProjMtx");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Texture");
@@ -266,7 +268,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon] = LoadAndBindImage("../../img/win32_titlebar_icon.png");
 	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons] = LoadAndBindImage("../../img/interface_icons.png");
 
-	Memory->FboSampleTexture = LoadAndBindImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\transparent4k.png");
+	Memory->FboSampleTexture = LoadAndBindImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\green4k.png");
+	//Memory->FboRenderTexture = LoadAndBindImage("C:\\Users\\Apoorva\\Pictures\\ImageTest\\green4k.png");
 
 	// Colors
 #if 1
@@ -293,19 +296,35 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RenderToTexture].VaoHandle);
 	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[0]); // Position attribute
 	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[1]); // UV attribute
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[2]); // Vertex color attribute
 #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
 	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
 	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
 #undef OFFSETOF
 	Vec2 Position = Vec2(0,0);
 	Vec2 Size = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height);
 	ImDrawVert Verts[6];
-	Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f);
-	Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f);
-	Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 0.0f);
-	Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 1.0f);
-	Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 0.0f);
-	Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 0.0f);
+	Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f);		Verts[0].col = 0xffffffff;
+	Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f);		Verts[1].col = 0xffffffff;
+	Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 0.0f);		Verts[2].col = 0xffffffff;
+	Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 1.0f);		Verts[3].col = 0xffffffff;
+	Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 0.0f);		Verts[4].col = 0xffffffff;
+	Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 0.0f);		Verts[5].col = 0xffffffff;
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+	glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+	glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+	glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[0]); // Position attribute
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[1]); // UV attribute
+	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[2]); // Vertex color attribute
+#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
+	glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
+#undef OFFSETOF
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
 	//glBindVertexArray(0);
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -373,7 +392,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
 
 
-	local_persist int32 BrushSize = 1024;
+	local_persist int32 BrushSize = 256;
 	local_persist Color BrushCol = Color(0.0f,1.0f,0.0f);
 
 	if (ImGui::IsKeyPressed(VK_UP, false))
@@ -409,8 +428,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
 		}
 		glViewport(0, 0, Memory->Documents[0].Width, Memory->Documents[0].Height);
-		//GLfloat col[4] = { 0.0, 0.0, 0.0, 0.0 };
-		//glClearBufferfv(GL_COLOR, 0, col);
 
 		glDisable(GL_BLEND);
 		glDisable(GL_SCISSOR_TEST);
@@ -460,9 +477,55 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	}
 	if (!Memory->Mouse.IsDown[0] && Memory->Mouse.WasDown[0]) // Mouse released
 	{
+		glDisable(GL_SCISSOR_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
+
+		glViewport(0, 0, Memory->Documents[0].Width, Memory->Documents[0].Height);
+
+		// Setup orthographic projection matrix
+		const float width = (float)Memory->Documents[0].Width;
+		const float height = (float)Memory->Documents[0].Height;
+		const float ortho_projection[4][4] =						// TODO: Separate out all ortho projection matrices into a single variable in PapayaMemory
+		{
+			{ 2.0f/width,	0.0f,			0.0f,		0.0f },
+			{ 0.0f,			2.0f/-height,	0.0f,		0.0f },
+			{ 0.0f,			0.0f,			-1.0f,		0.0f },
+			{ -1.0f,		1.0f,			0.0f,		1.0f },
+		};
+		glUseProgram(Memory->Shaders[PapayaShader_ImGui].Handle);
+		
+
+		glUniformMatrix4fv(Memory->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+		//glUniform1i(Memory->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+
+		glEnable(GL_BLEND);
+		glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->FboSampleTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+		uint32 Temp = Memory->FboRenderTexture;
+		Memory->FboRenderTexture = Memory->Documents[0].TextureID;
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
+		Memory->Documents[0].TextureID = Temp;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+
+		glDisable(GL_BLEND);
+		//====
+
 		glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-		//Memory->DrawOverlay = false;
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture); // TODO: Do we even need a local texture copy?
+		Memory->DrawOverlay = false;
 	}
 
 	/*if (Memory->Mouse.IsDown[1])
