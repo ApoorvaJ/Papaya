@@ -279,6 +279,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 #else
 	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(114,144,154); // Light blue
 #endif
+	Memory->InterfaceColors[PapayaInterfaceColor_Workspace]		= Color(30,30,30); // Light blue
 	Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= Color(0,0,0,0);
 	Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= Color(64,64,64);
 	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
@@ -632,9 +633,12 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 
 		glScissor(34 + (int)Memory->Window.MaximizeOffset, 
-				  1 + (int)Memory->Window.MaximizeOffset, 
-				  (int)Memory->Window.Width - 68 - (2 * (int)Memory->Window.MaximizeOffset), 
-				  (int)Memory->Window.Height - 34 - (2 * (int)Memory->Window.MaximizeOffset));
+				  3 + (int)Memory->Window.MaximizeOffset, 
+				  (int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset), 
+				  (int)Memory->Window.Height - 58 - (2 * (int)Memory->Window.MaximizeOffset));
+
+		glClearBufferfv(GL_COLOR, 0, (float*)&Memory->InterfaceColors[PapayaInterfaceColor_Workspace]);
+
 		if (Memory->DrawCanvas)
 		{
 			glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Documents[0].TextureID);
@@ -807,7 +811,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	#pragma region Left toolbar
 	{
 		ImGui::SetNextWindowSize(ImVec2(36,650));
-		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 70.0f + Memory->Window.MaximizeOffset));
+		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 55.0f + Memory->Window.MaximizeOffset));
 			
 		ImGuiWindowFlags WindowFlags = 0;
 		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
