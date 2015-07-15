@@ -635,6 +635,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		}
 		#pragma endregion
 
+		//ImGui::ShowTestWindow();
         ImGui::Render();
         SwapBuffers(DeviceContext);
 		//=========================================

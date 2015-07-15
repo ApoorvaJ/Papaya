@@ -281,6 +281,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 #endif
 	Memory->InterfaceColors[PapayaInterfaceColor_Workspace]		= Color(30,30,30); // Light blue
 	Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= Color(0,0,0,0);
+	Memory->InterfaceColors[PapayaInterfaceColor_Button]		= Color(92,92,94);
 	Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= Color(64,64,64);
 	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
 
@@ -394,6 +395,58 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 	glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
+
+	#pragma region Tool Param Bar
+	{
+		ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.Width - 37, 30));
+		ImGui::SetNextWindowPos(ImVec2(34, 30));
+			
+		ImGuiWindowFlags WindowFlags = 0;
+		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+		WindowFlags |= ImGuiWindowFlags_NoResize;
+		WindowFlags |= ImGuiWindowFlags_NoMove;
+		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+		WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse; // TODO: Once the overall look has been established, make commonly used templates
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(30,0));
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Button]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+		ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+
+		bool Show = true;
+		ImGui::Begin("Tool param bar", &Show, WindowFlags);
+		ImGui::PushItemWidth(85);
+
+		static float Hardness = 100.0f;
+		static float Opacity = 100.0f;
+		static float Flow = 100.0f;
+		static int32 Diameter = 50;
+		//ImGui::InputFloat("Hardness", &Hardness);
+		ImGui::InputInt("Diameter", &Diameter);
+		Diameter = Math::Clamp(Diameter, 0, 99999);
+		
+		ImGui::PopItemWidth();
+		ImGui::PushItemWidth(80);
+		ImGui::SameLine();
+		ImGui::SliderFloat("Hardness", &Hardness, 0.0f, 100.0f, "%.0f");
+		ImGui::SameLine();
+		ImGui::SliderFloat("Opacity", &Opacity, 0.0f, 100.0f, "%.0f");
+		ImGui::SameLine();
+		ImGui::SliderFloat("Flow", &Flow, 0.0f, 100.0f, "%.0f");
+
+		ImGui::PopItemWidth();
+		ImGui::End();
+
+		ImGui::PopStyleVar(3);
+		ImGui::PopStyleColor(5);
+	}
+	#pragma endregion
 
 	#pragma region Brush tool
 	{

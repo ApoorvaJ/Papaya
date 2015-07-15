@@ -60,6 +60,16 @@ namespace Math
 		int32 i = (int32)a;
 		return (float)(i - (i > a));
 	}
+
+	int32 Clamp(int32 a, int32 min, int32 max)
+	{
+		int32 result;
+		if (a < min)		{ result = min; }
+		else if (a > max)	{ result = max; }
+		else				{ result = a;   }
+
+		return result;
+	}
 	
 	float Distance(Vec2 a, Vec2 b)
 	{

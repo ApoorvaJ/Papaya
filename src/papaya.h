@@ -31,6 +31,7 @@ enum PapayaInterfaceColor_
 	PapayaInterfaceColor_Clear,
 	PapayaInterfaceColor_Workspace,
 	PapayaInterfaceColor_Transparent,
+	PapayaInterfaceColor_Button,
 	PapayaInterfaceColor_ButtonHover,
 	PapayaInterfaceColor_ButtonActive,
 	PapayaInterfaceColor_COUNT
