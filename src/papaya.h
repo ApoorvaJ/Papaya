@@ -29,6 +29,7 @@ enum PapayaInterfaceTexture_
 enum PapayaInterfaceColor_
 {
 	PapayaInterfaceColor_Clear,
+	PapayaInterfaceColor_Workspace,
 	PapayaInterfaceColor_Transparent,
 	PapayaInterfaceColor_ButtonHover,
 	PapayaInterfaceColor_ButtonActive,
@@ -39,7 +40,7 @@ enum PapayaVertexBuffer_
 {
 	PapayaVertexBuffer_ImGui,
 	PapayaVertexBuffer_Canvas,
-	PapayaVertexBuffer_RenderToTexture,
+	PapayaVertexBuffer_RTTBrush,
 	PapayaVertexBuffer_RTTAdd,
 	PapayaVertexBuffer_COUNT
 };
