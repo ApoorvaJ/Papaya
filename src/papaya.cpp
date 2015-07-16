@@ -847,15 +847,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			{
 				#pragma region Edit Menu
 				{
-					ImGui::MenuItem("Metrics", NULL, &foo);
-					ImGui::MenuItem("Main menu bar", NULL, &foo);
-					ImGui::MenuItem("Console", NULL, &foo);
-					ImGui::MenuItem("Simple layout", NULL, &foo);
-					ImGui::MenuItem("Long text display", NULL, &foo);
-					ImGui::MenuItem("Auto-resizing window", NULL, &foo);
-					ImGui::MenuItem("Simple overlay", NULL, &foo);
-					ImGui::MenuItem("Manipulating window title", NULL, &foo);
-					ImGui::MenuItem("Custom rendering", NULL, &foo);
+					ImGui::MenuItem("Dummy", NULL, &foo);
 				}
 				#pragma endregion
 				ImGui::EndMenu();
