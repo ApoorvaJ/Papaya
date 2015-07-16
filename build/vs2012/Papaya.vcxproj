@@ -70,6 +70,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\gl3w.h" />
     <ClInclude Include="..\..\src\glcorearb.h" />
+    <ClInclude Include="..\..\src\imconfig.h" />
     <ClInclude Include="..\..\src\imgui.h" />
     <ClInclude Include="..\..\src\papaya.h" />
     <ClInclude Include="..\..\src\papaya_math.h" />

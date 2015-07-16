@@ -333,6 +333,11 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
 	//glBindVertexArray(0);
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	Memory->Tools.BrushDiameter = 50;
+	Memory->Tools.BrushOpacity = 100.0f;
+	Memory->DrawCanvas = true;
+	Memory->DrawOverlay = false;
 }
 
 void Papaya_Shutdown(PapayaMemory* Memory)

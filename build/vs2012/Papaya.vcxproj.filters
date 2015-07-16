@@ -57,6 +57,9 @@
     <ClInclude Include="..\..\src\gl3w.c">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\imconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\win32_papaya.cpp">

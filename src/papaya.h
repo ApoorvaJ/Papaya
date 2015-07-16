@@ -95,8 +95,8 @@ struct MouseInfo
 
 struct ToolParams
 {
-	int32 BrushDiameter = 50;
-	float BrushOpacity = 100.0f; // Range: 0.0 - 100.0
+	int32 BrushDiameter;
+	float BrushOpacity; // Range: 0.0 - 100.0
 };
 
 struct PapayaMemory
@@ -115,6 +115,6 @@ struct PapayaMemory
 	// TODO: Refactor
 	uint32 FrameBufferObject;
 	uint32 FboRenderTexture, FboSampleTexture;
-	bool DrawOverlay = false;
-	bool DrawCanvas = true;
+	bool DrawOverlay;
+	bool DrawCanvas;
 };
