@@ -424,19 +424,16 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImGui::PushItemWidth(85);
 
 		static float Hardness = 100.0f;
-		static float Opacity = 100.0f;
 		static float Flow = 100.0f;
-		static int32 Diameter = 50;
-		//ImGui::InputFloat("Hardness", &Hardness);
-		ImGui::InputInt("Diameter", &Diameter);
-		Diameter = Math::Clamp(Diameter, 0, 99999);
+		ImGui::InputInt("Diameter", &Memory->Tools.BrushDiameter);
+		Memory->Tools.BrushDiameter = Math::Clamp(Memory->Tools.BrushDiameter, 1, 99999);
 		
 		ImGui::PopItemWidth();
 		ImGui::PushItemWidth(80);
 		ImGui::SameLine();
 		ImGui::SliderFloat("Hardness", &Hardness, 0.0f, 100.0f, "%.0f");
 		ImGui::SameLine();
-		ImGui::SliderFloat("Opacity", &Opacity, 0.0f, 100.0f, "%.0f");
+		ImGui::SliderFloat("Opacity", &Memory->Tools.BrushOpacity, 0.0f, 100.0f, "%.0f");
 		ImGui::SameLine();
 		ImGui::SliderFloat("Flow", &Flow, 0.0f, 100.0f, "%.0f");
 
@@ -450,17 +447,16 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 	#pragma region Brush tool
 	{
-		local_persist int32 BrushSize = 256;
 		local_persist Color BrushCol = Color(0.0f,1.0f,0.0f);
 
 		if (ImGui::IsKeyPressed(VK_UP, false))
 		{
-			BrushSize++;
+			Memory->Tools.BrushDiameter++;
 			Memory->DrawCanvas = !Memory->DrawCanvas;
 		}
 		if (ImGui::IsKeyPressed(VK_DOWN, false))
 		{
-			BrushSize--;
+			Memory->Tools.BrushDiameter--;
 			Memory->DrawOverlay = !Memory->DrawOverlay;
 		}
 		if (ImGui::IsKeyPressed(VK_NUMPAD1, false))
@@ -501,8 +497,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			};
 			glUseProgram(Memory->Shaders[PapayaShader_Brush].Handle);
 		
-			Vec2 CorrectedPos		= Memory->Mouse.UV     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+			Vec2 CorrectedPos		= Memory->Mouse.UV     + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 			/*Vec2 CorrectedPos		= Vec2(0.6f, 0.5f)     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 			Vec2 CorrectedLastPos	= Vec2(0.6f, 0.5f) + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));*/
@@ -511,7 +507,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			//glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], Memory->Documents[0].TextureID); // Texture uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y); // Pos uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
-			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)BrushSize);
+			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter);
 			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
 
 			glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);

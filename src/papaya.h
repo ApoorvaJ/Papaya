@@ -93,6 +93,12 @@ struct MouseInfo
 	bool WasDown[3];
 };
 
+struct ToolParams
+{
+	int32 BrushDiameter = 50;
+	float BrushOpacity = 100.0f; // Range: 0.0 - 100.0
+};
+
 struct PapayaMemory
 {
 	bool IsRunning;
@@ -103,6 +109,7 @@ struct PapayaMemory
 	PapayaVertexBuffer VertexBuffers[PapayaVertexBuffer_COUNT];
 	PapayaShader Shaders[PapayaShader_COUNT];
 	MouseInfo Mouse;
+	ToolParams Tools;
 	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
 
 	// TODO: Refactor
