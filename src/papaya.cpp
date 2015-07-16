@@ -566,20 +566,28 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->FboSampleTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 
-
 			uint32 Temp = Memory->FboRenderTexture;
 			Memory->FboRenderTexture = Memory->Documents[0].TextureID;
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
 			Memory->Documents[0].TextureID = Temp;
-
+			
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 
 			glDisable(GL_BLEND);
-			//====
 
+//==================================================================================================
+// NOTE: On AMD drivers, the following is causing texture corruption (black spots) and crashes.
+// Why, though? I added a glFinish() call, plus generous sleep before the call to GetTexImage.
+// Didn't make a difference. Needs more investigation.
+//
+#if 0
+			//glFinish();
+			//Sleep(5000);
 			glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
 			glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture); // TODO: Do we even need a local texture copy?
+#endif
+//==================================================================================================
 			Memory->DrawOverlay = false;
 		}
 
