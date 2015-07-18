@@ -35,6 +35,8 @@ struct Color
 
 namespace Math
 {
+	const double Pi = 3.14159265358979323846;
+
 	float Min(float a, float b)
 	{
 		return (a < b ? a : b);

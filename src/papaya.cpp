@@ -93,15 +93,17 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				uniform vec2		LastPos;																		\n" // Uniforms[3]
 "				uniform float		Thickness;																		\n" // Uniforms[4]
 "				uniform vec4		BrushColor;																		\n" // Uniforms[5]
+"				uniform float		Opacity;																		\n" // Uniforms[6]
+"				uniform float		Hardness;																		\n" // Uniforms[7]
 "																													\n"
 "				in vec2 Frag_UV;																					\n"
 "				out vec4 Out_Color;																					\n"
 "																													\n"
 "				void line(vec2 p1, vec2 p2, vec2 uv, float thickness, out float distanceFromLine)					\n"
 "				{																									\n"
-"					if (distance(p1,p2) <= 0.0)																			\n"
+"					if (distance(p1,p2) <= 0.0)																		\n"
 "					{																								\n"
-"						distanceFromLine = distance(uv, p1);																		\n"
+"						distanceFromLine = distance(uv, p1);														\n"
 "						return;																						\n"
 "					}																								\n"
 "																													\n"
@@ -144,7 +146,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					float delta = fwidth(distanceFromLine) * 2.0;													\n"
 "					float alpha = smoothstep(ScaledThickness-delta, ScaledThickness, distanceFromLine);				\n"
 "					alpha = 1.0 - alpha;																			\n"
-"					if (alpha > 0.0) alpha = 0.5;																	\n"
+"					if (alpha > 0.0) alpha = Opacity;																\n"
 "																													\n"
 "					//Out_Color = vec4(0.0,1.0,0.0,0.5);			\n"
 "					//Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 0.5);			\n"
@@ -174,6 +176,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		Memory->Shaders[PapayaShader_Brush].Uniforms[3]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "LastPos");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Thickness");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "BrushColor");
+		Memory->Shaders[PapayaShader_Brush].Uniforms[6]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Opacity");
+		Memory->Shaders[PapayaShader_Brush].Uniforms[7]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Hardness");
 	}
 	#pragma endregion
 
@@ -334,8 +338,9 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	//glBindVertexArray(0);
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	Memory->Tools.BrushDiameter = 50;
+	Memory->Tools.BrushDiameter = 256;
 	Memory->Tools.BrushOpacity = 100.0f;
+	Memory->Tools.BrushHardness = 100.0f;
 	Memory->DrawCanvas = true;
 	Memory->DrawOverlay = false;
 }
@@ -436,7 +441,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImGui::PopItemWidth();
 		ImGui::PushItemWidth(80);
 		ImGui::SameLine();
-		ImGui::SliderFloat("Hardness", &Hardness, 0.0f, 100.0f, "%.0f");
+		ImGui::SliderFloat("Hardness", &Memory->Tools.BrushHardness, 0.0f, 100.0f, "%.0f");
 		ImGui::SameLine();
 		ImGui::SliderFloat("Opacity", &Memory->Tools.BrushOpacity, 0.0f, 100.0f, "%.0f");
 		ImGui::SameLine();
@@ -473,8 +478,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		{
 			Memory->DrawOverlay = true;
 			BrushCol = (Memory->Mouse.IsDown[0]) ? Color(0.0f,1.0f,0.0f) : Color(1.0f,0.0f,0.0f);
-
-			Util::StartTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
 
@@ -514,6 +517,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter);
 			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
+			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushOpacity / 100.0f);
 
 			glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
 			glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
@@ -528,7 +532,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-			Util::StopTime(TimerScope_CPU_BRESENHAM, DebugMemory);
 		}
 		if (!Memory->Mouse.IsDown[0] && Memory->Mouse.WasDown[0]) // Mouse released
 		{
@@ -591,16 +594,30 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Memory->DrawOverlay = false;
 		}
 
-		/*if (Memory->Mouse.IsDown[1])
-		{
-			Util::StartTime(TimerScope_CPU_EFLA, DebugMemory);
-			Vec2 MCurr = (Memory->Mouse.Pos - Memory->Documents[0].CanvasPosition) * (1.0f / Memory->Documents[0].CanvasZoom);
-			PaintCircle((int32)MCurr.x, (int32)MCurr.y, BrushSize, 0xff0000ff, Memory);
-			Util::StopTime(TimerScope_CPU_EFLA, DebugMemory);
-			RefreshTexture(Memory);
-		}*/
+		// =========================================================================================
+		// TEMP: Brush falloff visualization
 
-		//Util::DisplayTimes(DebugMemory);
+		const int32 ArraySize = 256;
+		local_persist float Opacities[ArraySize] = { 0 };
+
+		const float MaxScale = 30.0f;
+		float t = Memory->Tools.BrushHardness / 100.0f;
+		float a = t*t*t*t*t*t;
+		float Scale = 1.0f + (a * (MaxScale - 1.0f));
+		float Phase = (1.0f - Scale) * (float)Math::Pi;
+		float Period = (float)Math::Pi * Scale / (float)ArraySize;
+
+		for (int32 i = 0; i < ArraySize; i++)
+		{
+			Opacities[i] = (cosf(((float)i * Period) + Phase) + 1.0f) * 0.5f;
+			if ((float)i < (float)ArraySize - ((float)ArraySize / Scale)) { Opacities[i] = 1.0f; }
+		}
+
+		ImGui::Begin("Brush falloff");
+		ImGui::PlotLines("", Opacities, ArraySize, 0, 0, FLT_MIN, FLT_MAX, Vec2(256,256));
+		ImGui::Text("%.2f - %.2f", Opacities[0], Opacities[ArraySize - 1]);
+		ImGui::End();
+		// =========================================================================================
 	}
 	#pragma endregion
 

@@ -97,6 +97,7 @@ struct ToolParams
 {
 	int32 BrushDiameter;
 	float BrushOpacity; // Range: 0.0 - 100.0
+	float BrushHardness; // Range: 0.0 - 100.0
 };
 
 struct PapayaMemory

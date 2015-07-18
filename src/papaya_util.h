@@ -3,8 +3,8 @@
 
 enum TimerScope_
 {
-	TimerScope_CPU_BRESENHAM,
-	TimerScope_CPU_EFLA,
+	TimerScope_1,
+	TimerScope_2,
 	TimerScope_COUNT
 };
 
