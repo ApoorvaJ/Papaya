@@ -181,6 +181,74 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
+	#pragma region Set up brush cursor shader
+	{
+		const GLchar *vertex_shader = 
+"				#version 330																						\n"
+"				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
+"																													\n"
+"				in vec2 Position;																					\n" // Attributes[0]
+"																													\n"
+"				void main()																							\n"
+"				{																									\n"
+"					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
+"				}																									\n";
+
+		const GLchar* fragment_shader = 
+"				#version 330																						\n"
+"				uniform float		Thickness;																		\n" // Uniforms[1]
+"				uniform vec4		BrushColor;																		\n" // Uniforms[2]
+"				uniform float		Hardness;																		\n" // Uniforms[3]
+"																													\n"
+"				out vec4 Out_Color;																					\n"
+"																													\n"
+"				void main()																							\n"
+"				{																									\n"
+"					float ScaledThickness = (Thickness/8192.0);														\n"
+"																													\n"
+"					Out_Color = BrushColor;																			\n"
+"				}																									\n";
+
+		Memory->Shaders[PapayaShader_BrushCursor].Handle = glCreateProgram();
+		uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
+		uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
+		glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
+		glCompileShader(g_VertHandle);
+		glCompileShader(g_FragHandle);
+		glAttachShader(Memory->Shaders[PapayaShader_BrushCursor].Handle, g_VertHandle);
+		glAttachShader(Memory->Shaders[PapayaShader_BrushCursor].Handle, g_FragHandle);
+		Util::PrintGlShaderCompilationStatus(g_FragHandle);
+		glLinkProgram (Memory->Shaders[PapayaShader_BrushCursor].Handle);
+
+		Memory->Shaders[PapayaShader_BrushCursor].Attributes[0] = glGetAttribLocation (Memory->Shaders[PapayaShader_BrushCursor].Handle, "Position");
+
+		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "ProjMtx");
+		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "Thickness");
+		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "BrushColor");
+		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[3]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "Hardness");
+
+		// Vertex buffer
+		glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);
+		glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_BrushCursor].Attributes[0]); // Position attribute
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(Vec2), 0);
+
+		Vec2 Position = Vec2(40,60);
+		Vec2 Size = Vec2(30,30);
+		Vec2 Verts[6];
+		Verts[0] = Vec2(Position.x, Position.y);		
+		Verts[1] = Vec2(Size.x + Position.x, Position.y);	
+		Verts[2] = Vec2(Size.x + Position.x, Size.y + Position.y);
+		Verts[3] = Vec2(Position.x, Position.y);
+		Verts[4] = Vec2(Size.x + Position.x, Size.y + Position.y);
+		Verts[5] = Vec2(Position.x, Size.y + Position.y);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_DYNAMIC_DRAW);
+	}
+	#pragma endregion
+
 	#pragma region Setup for ImGui
 	{
 		// TODO: Write shader compilation wrapper
@@ -272,74 +340,87 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	// Texture IDs
-	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons] = LoadAndBindImage("../../img/win32_titlebar_buttons.png");
-	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon] = LoadAndBindImage("../../img/win32_titlebar_icon.png");
-	Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons] = LoadAndBindImage("../../img/interface_icons.png");
+	#pragma region Load interface textures and colors
+	{
+		// Texture IDs
+		Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons] = LoadAndBindImage("../../img/win32_titlebar_buttons.png");
+		Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon] = LoadAndBindImage("../../img/win32_titlebar_icon.png");
+		Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons] = LoadAndBindImage("../../img/interface_icons.png");
 
-	// Colors
+		// Colors
 #if 1
-	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(45,45,48); // Dark grey
+		Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(45,45,48); // Dark grey
 #else
-	Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(114,144,154); // Light blue
+		Memory->InterfaceColors[PapayaInterfaceColor_Clear]			= Color(114,144,154); // Light blue
 #endif
-	Memory->InterfaceColors[PapayaInterfaceColor_Workspace]		= Color(30,30,30); // Light blue
-	Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= Color(0,0,0,0);
-	Memory->InterfaceColors[PapayaInterfaceColor_Button]		= Color(92,92,94);
-	Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= Color(64,64,64);
-	Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
+		Memory->InterfaceColors[PapayaInterfaceColor_Workspace]		= Color(30,30,30); // Light blue
+		Memory->InterfaceColors[PapayaInterfaceColor_Transparent]	= Color(0,0,0,0);
+		Memory->InterfaceColors[PapayaInterfaceColor_Button]		= Color(92,92,94);
+		Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]	= Color(64,64,64);
+		Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]	= Color(0,122,204);
+	}
+	#pragma endregion
 
-	Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
-	//LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
-	LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
+	#pragma region Load document
+	{
+		Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
+		//LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
+		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
 
-	Memory->Documents[0].CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Documents[0].Width, (float)Memory->Window.Height/(float)Memory->Documents[0].Height);
-	if (Memory->Documents[0].CanvasZoom > 1.0f) { Memory->Documents[0].CanvasZoom = 1.0f; }
-	Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Documents[0].Width  * Memory->Documents[0].CanvasZoom)/2.0f, 
-											   (Memory->Window.Height - (float)Memory->Documents[0].Height * Memory->Documents[0].CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
+		Memory->Documents[0].CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Documents[0].Width, (float)Memory->Window.Height/(float)Memory->Documents[0].Height);
+		if (Memory->Documents[0].CanvasZoom > 1.0f) { Memory->Documents[0].CanvasZoom = 1.0f; }
+		Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Documents[0].Width  * Memory->Documents[0].CanvasZoom)/2.0f, 
+												   (Memory->Window.Height - (float)Memory->Documents[0].Height * Memory->Documents[0].CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
+	}
+	#pragma endregion
 
-	glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
-	glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
-	glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
-	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[0]); // Position attribute
-	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[1]); // UV attribute
-	//glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[2]); // Vertex color attribute // TODO: Remove unused vertex color attributes from shaders
+	#pragma region Set up vertex buffers
+	{
+		// TODO: Needs a lot of refactoring
+		glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
+		glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[0]); // Position attribute
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[1]); // UV attribute
+		//glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[2]); // Vertex color attribute // TODO: Remove unused vertex color attributes from shaders
 	
-#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
-	glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
-	//glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
-#undef OFFSETOF
-	Vec2 Position = Vec2(0,0);
-	Vec2 Size = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height);
-	ImDrawVert Verts[6];
-	Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f);		Verts[0].col = 0xffffffff;
-	Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f);		Verts[1].col = 0xffffffff;
-	Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 0.0f);		Verts[2].col = 0xffffffff;
-	Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 1.0f);		Verts[3].col = 0xffffffff;
-	Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 0.0f);		Verts[4].col = 0xffffffff;
-	Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 0.0f);		Verts[5].col = 0xffffffff;
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
+	#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
+		//glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
+	#undef OFFSETOF
+		Vec2 Position = Vec2(0,0);
+		Vec2 Size = Vec2((float)Memory->Documents[0].Width, (float)Memory->Documents[0].Height);
+		ImDrawVert Verts[6];
+		Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f);		Verts[0].col = 0xffffffff;
+		Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f);		Verts[1].col = 0xffffffff;
+		Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 0.0f);		Verts[2].col = 0xffffffff;
+		Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 1.0f);		Verts[3].col = 0xffffffff;
+		Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 0.0f);		Verts[4].col = 0xffffffff;
+		Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 0.0f);		Verts[5].col = 0xffffffff;
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
 
-	glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
-	glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
-	glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
-	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[0]); // Position attribute
-	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[1]); // UV attribute
-	glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[2]); // Vertex color attribute
-#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-	glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
-	glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
-	glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
-#undef OFFSETOF
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
-	//glBindVertexArray(0);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+		glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[0]); // Position attribute
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[1]); // UV attribute
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[2]); // Vertex color attribute
+	#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
+	#undef OFFSETOF
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_STATIC_DRAW);
+		//glBindVertexArray(0);
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	#pragma endregion
 
 	Memory->Tools.BrushDiameter = 256;
-	Memory->Tools.BrushOpacity = 100.0f;
+	Memory->Tools.BrushOpacity = 50.0f;
 	Memory->Tools.BrushHardness = 100.0f;
 	Memory->DrawCanvas = true;
 	Memory->DrawOverlay = false;
@@ -653,7 +734,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	}
 	#pragma endregion
 
-	#pragma region Render canvas
+	#pragma region Draw canvas
 	{
 		// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
 		GLint last_program, last_texture;
@@ -730,6 +811,57 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
+
+		// Restore modified state
+		glBindVertexArray(0);
+		glUseProgram(last_program);
+		glDisable(GL_SCISSOR_TEST);
+		glDisable(GL_BLEND);
+		glBindTexture(GL_TEXTURE_2D, last_texture);
+	}
+	#pragma endregion
+
+	#pragma region Draw brush cursor
+	{
+		// Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+		GLint last_program, last_texture;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_SCISSOR_TEST);
+
+		// Setup orthographic projection matrix
+		const float width = ImGui::GetIO().DisplaySize.x;
+		const float height = ImGui::GetIO().DisplaySize.y;
+		const float ortho_projection[4][4] =
+		{
+			{ 2.0f/width,	0.0f,			0.0f,		0.0f },
+			{ 0.0f,			2.0f/-height,	0.0f,		0.0f },
+			{ 0.0f,			0.0f,			-1.0f,		0.0f },
+			{ -1.0f,		1.0f,			0.0f,		1.0f },
+		};
+		glUseProgram(Memory->Shaders[PapayaShader_BrushCursor].Handle);
+		glUniformMatrix4fv(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1], 100.0f);					// Thickness
+		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2], 1.0f, 0.0f, 0.0f, 0.5f); // Brush color 
+		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[3], 1.0f);					// Hardness
+
+		// Grow our buffer according to what we need
+		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);
+		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
+
+		/*glScissor(34 + (int)Memory->Window.MaximizeOffset, 
+				  3 + (int)Memory->Window.MaximizeOffset, 
+				  (int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset), 
+				  (int)Memory->Window.Height - 58 - (2 * (int)Memory->Window.MaximizeOffset));*/
+
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 
 		// Restore modified state
 		glBindVertexArray(0);

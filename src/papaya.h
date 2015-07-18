@@ -42,6 +42,7 @@ enum PapayaVertexBuffer_
 	PapayaVertexBuffer_ImGui,
 	PapayaVertexBuffer_Canvas,
 	PapayaVertexBuffer_RTTBrush,
+	PapayaVertexBuffer_BrushCursor,
 	PapayaVertexBuffer_RTTAdd,
 	PapayaVertexBuffer_COUNT
 };
@@ -50,6 +51,7 @@ enum PapayaShader_
 {
 	PapayaShader_ImGui,
 	PapayaShader_Brush,
+	PapayaShader_BrushCursor,
 	PapayaShader_COUNT
 };
 
