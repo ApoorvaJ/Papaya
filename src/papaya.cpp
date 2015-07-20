@@ -188,9 +188,13 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
 "																													\n"
 "				in vec2 Position;																					\n" // Attributes[0]
+"				in vec2 UV;																							\n" // Attributes[1]
+"																													\n"
+"				out vec2 Frag_UV;																					\n"
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
+"					Frag_UV = UV;																					\n"
 "					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
 "				}																									\n";
 
@@ -200,13 +204,18 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				uniform vec4		BrushColor;																		\n" // Uniforms[2]
 "				uniform float		Hardness;																		\n" // Uniforms[3]
 "																													\n"
+"				in vec2 Frag_UV;																					\n"
+"																													\n"
 "				out vec4 Out_Color;																					\n"
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
 "					float ScaledThickness = (Thickness/8192.0);														\n"
 "																													\n"
-"					Out_Color = BrushColor;																			\n"
+"					if (distance(Frag_UV,vec2(0.5,0.5)) <= 0.5)														\n"
+"						Out_Color = BrushColor;																		\n"
+"					else																							\n"
+"						Out_Color = vec4(0.0);																		\n"
 "				}																									\n";
 
 		Memory->Shaders[PapayaShader_BrushCursor].Handle = glCreateProgram();
@@ -218,10 +227,12 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		glCompileShader(g_FragHandle);
 		glAttachShader(Memory->Shaders[PapayaShader_BrushCursor].Handle, g_VertHandle);
 		glAttachShader(Memory->Shaders[PapayaShader_BrushCursor].Handle, g_FragHandle);
+		Util::PrintGlShaderCompilationStatus(g_VertHandle);
 		Util::PrintGlShaderCompilationStatus(g_FragHandle);
 		glLinkProgram (Memory->Shaders[PapayaShader_BrushCursor].Handle);
 
 		Memory->Shaders[PapayaShader_BrushCursor].Attributes[0] = glGetAttribLocation (Memory->Shaders[PapayaShader_BrushCursor].Handle, "Position");
+		Memory->Shaders[PapayaShader_BrushCursor].Attributes[1] = glGetAttribLocation (Memory->Shaders[PapayaShader_BrushCursor].Handle, "UV");
 
 		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "ProjMtx");
 		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "Thickness");
@@ -234,17 +245,22 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
 		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_BrushCursor].Attributes[0]); // Position attribute
-		glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(Vec2), 0);
+		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_BrushCursor].Attributes[1]); // Position attribute
+#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_BrushCursor].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
+		glVertexAttribPointer(Memory->Shaders[PapayaShader_BrushCursor].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
+		//glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));  // Vertex color attribute
+#undef OFFSETOF
 
 		Vec2 Position = Vec2(40,60);
 		Vec2 Size = Vec2(30,30);
-		Vec2 Verts[6];
-		Verts[0] = Vec2(Position.x, Position.y);		
-		Verts[1] = Vec2(Size.x + Position.x, Position.y);	
-		Verts[2] = Vec2(Size.x + Position.x, Size.y + Position.y);
-		Verts[3] = Vec2(Position.x, Position.y);
-		Verts[4] = Vec2(Size.x + Position.x, Size.y + Position.y);
-		Verts[5] = Vec2(Position.x, Size.y + Position.y);
+		ImDrawVert Verts[6];
+		Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
+		Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
+		Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 0.0f); Verts[2].col = 0xffffffff;
+		Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 1.0f); Verts[3].col = 0xffffffff;
+		Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
+		Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
 		glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_DYNAMIC_DRAW);
 	}
 	#pragma endregion
@@ -789,7 +805,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.
 		buffer_data += 6 * sizeof(ImDrawVert);
 		glUnmapBuffer(GL_ARRAY_BUFFER);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // TODO: Remove?
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 
 		glScissor(34 + (int)Memory->Window.MaximizeOffset, 
@@ -852,6 +868,19 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		// Grow our buffer according to what we need
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);
+
+		ImDrawVert* buffer_data = (ImDrawVert*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		float ScaledDiameter = Memory->Tools.BrushDiameter * Memory->Documents[0].CanvasZoom;
+		Vec2 Size = Vec2(ScaledDiameter,ScaledDiameter);
+		Vec2 Position = Memory->Mouse.Pos - (Size * 0.5f);
+		buffer_data[0].pos = Vec2(Position.x, Position.y);		
+		buffer_data[1].pos = Vec2(Size.x + Position.x, Position.y);	
+		buffer_data[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
+		buffer_data[3].pos = Vec2(Position.x, Position.y);
+		buffer_data[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
+		buffer_data[5].pos = Vec2(Position.x, Size.y + Position.y);
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
 
 		/*glScissor(34 + (int)Memory->Window.MaximizeOffset, 
