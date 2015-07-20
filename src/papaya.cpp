@@ -580,6 +580,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 					Memory->Tools.RightClickDragStartPos = Memory->Mouse.Pos;
 					Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
 					Platform::StartMouseCapture();
+					Platform::SetCursorVisibility(false);
 				}
 				else // Mouse dragged
 				{
@@ -590,6 +591,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			if (!Memory->Mouse.IsDown[1] && Memory->Mouse.WasDown[1]) // Mouse released
 			{
 				Platform::ReleaseMouseCapture();
+				Platform::SetMousePosition(Memory->Tools.RightClickDragStartPos);
+				Platform::SetCursorVisibility(true);
 			}
 		}
 		#pragma endregion
@@ -714,8 +717,9 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Memory->DrawOverlay = false;
 		}
 
+#if 0
 		// =========================================================================================
-		// TEMP: Brush falloff visualization
+		// Brush falloff visualization
 
 		const int32 ArraySize = 256;
 		local_persist float Opacities[ArraySize] = { 0 };
@@ -738,7 +742,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImGui::Text("%.2f - %.2f", Opacities[0], Opacities[ArraySize - 1]);
 		ImGui::End();
 		// =========================================================================================
-	}
+#endif
+}
 	#pragma endregion
 
 	#pragma region Canvas zooming and panning

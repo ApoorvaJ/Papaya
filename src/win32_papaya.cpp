@@ -54,6 +54,18 @@ void Platform::ReleaseMouseCapture()
 	ReleaseCapture();
 }
 
+void Platform::SetMousePosition(Vec2 Pos)
+{
+	RECT Rect;
+	GetWindowRect(GetActiveWindow(), &Rect);
+	SetCursorPos(Rect.left + (int32)Pos.x, Rect.top + (int32)Pos.y);
+}
+
+void Platform::SetCursorVisibility(bool Visible)
+{
+	ShowCursor(Visible);
+}
+
 // =================================================================================================
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)
