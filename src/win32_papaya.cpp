@@ -44,6 +44,16 @@ void Platform::Print(char* Message)
 	OutputDebugString((LPCSTR)Message);
 }
 
+void Platform::StartMouseCapture()
+{
+	SetCapture(GetActiveWindow());
+}
+
+void Platform::ReleaseMouseCapture()
+{
+	ReleaseCapture();
+}
+
 // =================================================================================================
 
 internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_count)

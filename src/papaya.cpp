@@ -533,7 +533,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		static float Hardness = 100.0f;
 		static float Flow = 100.0f;
 		ImGui::InputInt("Diameter", &Memory->Tools.BrushDiameter);
-		Memory->Tools.BrushDiameter = Math::Clamp(Memory->Tools.BrushDiameter, 1, 99999);
+		Memory->Tools.BrushDiameter = Math::Clamp(Memory->Tools.BrushDiameter, 1, Memory->Tools.MaxBrushDiameter);
 		
 		ImGui::PopItemWidth();
 		ImGui::PushItemWidth(80);
@@ -570,6 +570,29 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		{
 			Memory->Documents[0].CanvasZoom = 1.0;
 		}
+
+		#pragma region Right mouse dragging
+		{
+			if (Memory->Mouse.IsDown[1])
+			{
+				if (!Memory->Mouse.WasDown[1]) // Mouse pressed
+				{
+					Memory->Tools.RightClickDragStartPos = Memory->Mouse.Pos;
+					Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
+					Platform::StartMouseCapture();
+				}
+				else // Mouse dragged
+				{
+					float Diameter = Memory->Tools.RightClickDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Memory->Documents[0].CanvasZoom * 2.0f);
+					Memory->Tools.BrushDiameter = Math::Clamp((int32)Diameter , 1, Memory->Tools.MaxBrushDiameter);
+				}
+			}
+			if (!Memory->Mouse.IsDown[1] && Memory->Mouse.WasDown[1]) // Mouse released
+			{
+				Platform::ReleaseMouseCapture();
+			}
+		}
+		#pragma endregion
 
 		if (Memory->Mouse.IsDown[0])
 		{
@@ -872,7 +895,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImDrawVert* buffer_data = (ImDrawVert*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		float ScaledDiameter = Memory->Tools.BrushDiameter * Memory->Documents[0].CanvasZoom;
 		Vec2 Size = Vec2(ScaledDiameter,ScaledDiameter);
-		Vec2 Position = Memory->Mouse.Pos - (Size * 0.5f);
+		Vec2 Position = (Memory->Mouse.IsDown[1] || Memory->Mouse.WasDown[1] ? Memory->Tools.RightClickDragStartPos : Memory->Mouse.Pos) - (Size * 0.5f);
 		buffer_data[0].pos = Vec2(Position.x, Position.y);		
 		buffer_data[1].pos = Vec2(Size.x + Position.x, Position.y);	
 		buffer_data[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
