@@ -215,15 +215,14 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				{																									\n"
 "					float ScaledThickness = (Thickness/8192.0);														\n"
 "																													\n"
-"					float a = Hardness * Hardness * Hardness * Hardness * Hardness * Hardness;						\n"
-"					float Scale = (1.0 + (a * 89.0));																\n"
+"					float Scale = 1.0 / (1.0 - Hardness);															\n"
 "					float Period = M_PI * Scale;																	\n"
 "					float Phase = (1.0 - Scale) * M_PI * 0.5;														\n"
 "					float Dist = distance(Frag_UV,vec2(0.5,0.5));													\n"
 "					float Alpha = cos((Period * Dist) + Phase);														\n"
 "					if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;														\n"
 "					else if (Dist > 0.5)		  Alpha = 0.0;														\n"
-"					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha);								\n"
+"					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);				\n"
 "				}					 																				\n";
 
 		Memory->Shaders[PapayaShader_BrushCursor].Handle = glCreateProgram();
@@ -729,17 +728,16 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Memory->DrawOverlay = false;
 		}
 
-#if 0
+#if 1
 		// =========================================================================================
 		// Brush falloff visualization
 
 		const int32 ArraySize = 256;
 		local_persist float Opacities[ArraySize] = { 0 };
 
-		const float MaxScale = 30.0f;
+		const float MaxScale = 90.0f;
 		float t = Memory->Tools.BrushHardness / 100.0f;
-		float a = t*t*t*t*t*t;
-		float Scale = 1.0f + (a * (MaxScale - 1.0f));
+		float Scale = 1.0f / (1.0 - t);
 		float Phase = (1.0f - Scale) * (float)Math::Pi;
 		float Period = (float)Math::Pi * Scale / (float)ArraySize;
 
