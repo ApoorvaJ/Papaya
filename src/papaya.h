@@ -103,6 +103,7 @@ struct ToolParams
 	float BrushHardness; // Range: 0.0 - 100.0
 	Vec2 RightClickDragStartPos;
 	int32 RightClickDragStartDiameter;
+	float RightClickDragStartHardness;
 };
 
 struct PapayaMemory

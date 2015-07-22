@@ -200,6 +200,9 @@ void Papaya_Initialize(PapayaMemory* Memory)
 
 		const GLchar* fragment_shader = 
 "				#version 330																						\n"
+"																													\n"
+"				#define M_PI 3.1415926535897932384626433832795														\n"
+"																													\n"
 "				uniform float		Thickness;																		\n" // Uniforms[1]
 "				uniform vec4		BrushColor;																		\n" // Uniforms[2]
 "				uniform float		Hardness;																		\n" // Uniforms[3]
@@ -212,11 +215,16 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				{																									\n"
 "					float ScaledThickness = (Thickness/8192.0);														\n"
 "																													\n"
-"					if (distance(Frag_UV,vec2(0.5,0.5)) <= 0.5)														\n"
-"						Out_Color = BrushColor;																		\n"
-"					else																							\n"
-"						Out_Color = vec4(0.0);																		\n"
-"				}																									\n";
+"					float a = Hardness * Hardness * Hardness * Hardness * Hardness * Hardness;						\n"
+"					float Scale = (1.0 + (a * 89.0));																\n"
+"					float Period = M_PI * Scale;																	\n"
+"					float Phase = (1.0 - Scale) * M_PI * 0.5;														\n"
+"					float Dist = distance(Frag_UV,vec2(0.5,0.5));													\n"
+"					float Alpha = cos((Period * Dist) + Phase);														\n"
+"					if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;														\n"
+"					else if (Dist > 0.5)		  Alpha = 0.0;														\n"
+"					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha);								\n"
+"				}					 																				\n";
 
 		Memory->Shaders[PapayaShader_BrushCursor].Handle = glCreateProgram();
 		uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -436,8 +444,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	#pragma endregion
 
 	Memory->Tools.BrushDiameter = 256;
-	Memory->Tools.BrushOpacity = 50.0f;
-	Memory->Tools.BrushHardness = 100.0f;
+	Memory->Tools.BrushOpacity = 100.0f;
+	Memory->Tools.BrushHardness = 0.0f;
 	Memory->DrawCanvas = true;
 	Memory->DrawOverlay = false;
 }
@@ -579,6 +587,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 				{
 					Memory->Tools.RightClickDragStartPos = Memory->Mouse.Pos;
 					Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
+					Memory->Tools.RightClickDragStartHardness = Memory->Tools.BrushHardness;
 					Platform::StartMouseCapture();
 					Platform::SetCursorVisibility(false);
 				}
@@ -586,6 +595,9 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 				{
 					float Diameter = Memory->Tools.RightClickDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Memory->Documents[0].CanvasZoom * 2.0f);
 					Memory->Tools.BrushDiameter = Math::Clamp((int32)Diameter , 1, Memory->Tools.MaxBrushDiameter);
+
+					float Hardness = Memory->Tools.RightClickDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.25f);
+					Memory->Tools.BrushHardness = Math::Clamp(Hardness , 0.0f, 100.0f);
 				}
 			}
 			if (!Memory->Mouse.IsDown[1] && Memory->Mouse.WasDown[1]) // Mouse released
@@ -891,8 +903,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		glUseProgram(Memory->Shaders[PapayaShader_BrushCursor].Handle);
 		glUniformMatrix4fv(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
 		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1], 100.0f);					// Thickness
-		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2], 1.0f, 0.0f, 0.0f, 0.5f); // Brush color 
-		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[3], 1.0f);					// Hardness
+		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2], 1.0f, 0.0f, 0.0f, Memory->Tools.BrushOpacity / 100.0f); // Brush color 
+		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[3], Memory->Tools.BrushHardness / 100.0f);					// Hardness
 
 		// Grow our buffer according to what we need
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);

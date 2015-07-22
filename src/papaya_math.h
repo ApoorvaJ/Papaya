@@ -72,6 +72,16 @@ namespace Math
 
 		return result;
 	}
+
+	float Clamp(float a, float min, float max)
+	{
+		float result;
+		if (a < min)		{ result = min; }
+		else if (a > max)	{ result = max; }
+		else				{ result = a;   }
+
+		return result;
+	}
 	
 	float Distance(Vec2 a, Vec2 b)
 	{
