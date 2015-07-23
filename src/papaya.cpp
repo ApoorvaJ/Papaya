@@ -86,15 +86,17 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
 "				}																									\n";
 
-		const GLchar* fragment_shader = 
+		const GLchar* fragment_shader =
 "				#version 330																						\n"
+"																													\n"
+"				#define M_PI 3.1415926535897932384626433832795														\n"
+"																													\n"
 "				uniform sampler2D	Texture;																		\n" // Uniforms[1]
 "				uniform vec2		Pos;																			\n" // Uniforms[2]
 "				uniform vec2		LastPos;																		\n" // Uniforms[3]
 "				uniform float		Thickness;																		\n" // Uniforms[4]
 "				uniform vec4		BrushColor;																		\n" // Uniforms[5]
-"				uniform float		Opacity;																		\n" // Uniforms[6]
-"				uniform float		Hardness;																		\n" // Uniforms[7]
+"				uniform float		Hardness;																		\n" // Uniforms[6]
 "																													\n"
 "				in vec2 Frag_UV;																					\n"
 "				out vec4 Out_Color;																					\n"
@@ -142,15 +144,21 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "					float distanceFromLine;																			\n"
 "					line(LastPos, Pos, Frag_UV, Thickness, distanceFromLine);										\n"
-"					float delta = fwidth(distanceFromLine) * 2.0;													\n"
-"					float alpha = smoothstep(Thickness-delta, Thickness, distanceFromLine);							\n"
-"					alpha = 1.0 - alpha;																			\n"
-"					if (alpha > 0.0) alpha = Opacity;																\n"
 "																													\n"
-"					//Out_Color = vec4(0.0,1.0,0.0,0.5);															\n"
-"					//Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 0.5);								\n"
-"					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, max(TextureColor.a,alpha));			\n"
-"					//Out_Color = mix(TextureColor, BrushColor, 0.5);												\n"
+"					//float delta = fwidth(distanceFromLine) * 2.0;													\n"
+"					//float alpha = smoothstep(Thickness-delta, Thickness, distanceFromLine);						\n"
+"					//alpha = 1.0 - alpha;																			\n"
+"					//if (alpha > 0.0) alpha = Opacity;																\n"
+"																													\n"
+"					float Scale = 1.0 / (2.0 * Thickness * (1.0 - Hardness));										\n"
+"					float Period = M_PI * Scale;																	\n"
+"					float Phase = (1.0 - Scale * 2.0 * Thickness) * M_PI * 0.5;										\n"
+"					float Alpha = cos((Period * distanceFromLine) + Phase);											\n"
+"					if (distanceFromLine < Thickness - (0.5/Scale)) Alpha = 1.0;									\n"
+"					if (distanceFromLine > Thickness)		  Alpha = 0.0;											\n"
+"																													\n"
+"					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 										\n"
+"								max(TextureColor.a, Alpha * BrushColor.a));											\n" // TODO: Needs improvement. Self-intersection corners look weird.
 "				}																									\n";
 
 		Memory->Shaders[PapayaShader_Brush].Handle = glCreateProgram();
@@ -175,8 +183,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		Memory->Shaders[PapayaShader_Brush].Uniforms[3]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "LastPos");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Thickness");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "BrushColor");
-		Memory->Shaders[PapayaShader_Brush].Uniforms[6]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Opacity");
-		Memory->Shaders[PapayaShader_Brush].Uniforms[7]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Hardness");
+		Memory->Shaders[PapayaShader_Brush].Uniforms[6]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Hardness");
 	}
 	#pragma endregion
 
@@ -437,7 +444,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	Memory->Tools.BrushDiameter = 256;
+	Memory->Tools.BrushDiameter = 30;
 	Memory->Tools.BrushOpacity = 100.0f;
 	Memory->Tools.BrushHardness = 0.0f;
 	Memory->DrawCanvas = true;
@@ -648,16 +655,16 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Vec2 CorrectedPos		= Memory->Mouse.UV     + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
-			/*Vec2 CorrectedPos		= Vec2(0.6f, 0.5f)     + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-			Vec2 CorrectedLastPos	= Vec2(0.6f, 0.5f) + (BrushSize % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));*/
+			//Vec2 CorrectedPos		= Vec2(0.6f, 0.5f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+			//Vec2 CorrectedLastPos	= Vec2(0.3f, 0.3f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 			glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
 			//glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], Memory->Documents[0].TextureID); // Texture uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y); // Pos uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter / ((float)Memory->Documents[0].Width * 2.0f)); // TODO: Support non-square documents
-			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
-			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushOpacity / 100.0f);
+			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, Memory->Tools.BrushOpacity / 100.0f);
+			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushHardness / 100.0f);
 
 			glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
 			glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
