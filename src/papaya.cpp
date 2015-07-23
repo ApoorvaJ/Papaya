@@ -139,17 +139,16 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				void main()																							\n"
 "				{																									\n"
 "					vec4 TextureColor = texture(Texture, Frag_UV.st);												\n"
-"					float ScaledThickness = (Thickness/8192.0);														\n"
 "																													\n"
 "					float distanceFromLine;																			\n"
-"					line(LastPos, Pos, Frag_UV, ScaledThickness, distanceFromLine);									\n"
+"					line(LastPos, Pos, Frag_UV, Thickness, distanceFromLine);										\n"
 "					float delta = fwidth(distanceFromLine) * 2.0;													\n"
-"					float alpha = smoothstep(ScaledThickness-delta, ScaledThickness, distanceFromLine);				\n"
+"					float alpha = smoothstep(Thickness-delta, Thickness, distanceFromLine);							\n"
 "					alpha = 1.0 - alpha;																			\n"
 "					if (alpha > 0.0) alpha = Opacity;																\n"
 "																													\n"
-"					//Out_Color = vec4(0.0,1.0,0.0,0.5);			\n"
-"					//Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 0.5);			\n"
+"					//Out_Color = vec4(0.0,1.0,0.0,0.5);															\n"
+"					//Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 0.5);								\n"
 "					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, max(TextureColor.a,alpha));			\n"
 "					//Out_Color = mix(TextureColor, BrushColor, 0.5);												\n"
 "				}																									\n";
@@ -656,7 +655,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			//glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], Memory->Documents[0].TextureID); // Texture uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y); // Pos uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
-			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter);
+			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter / ((float)Memory->Documents[0].Width * 2.0f)); // TODO: Support non-square documents
 			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, BrushCol.a);
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushOpacity / 100.0f);
 
