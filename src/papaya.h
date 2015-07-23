@@ -104,8 +104,9 @@ struct ToolParams
 	float BrushOpacity; // Range: 0.0 - 100.0
 	float BrushHardness; // Range: 0.0 - 100.0
 	Vec2 RightClickDragStartPos;
+	bool RightClickShiftPressed;
 	int32 RightClickDragStartDiameter;
-	float RightClickDragStartHardness;
+	float RightClickDragStartHardness, RightClickDragStartOpacity;
 };
 
 struct PapayaMemory

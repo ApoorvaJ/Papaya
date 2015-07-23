@@ -496,7 +496,11 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 {
 	#pragma region Current mouse info
 	{
-		Memory->Mouse.Pos = ImGui::GetMousePos();
+		Memory->Mouse.Pos  = ImGui::GetMousePos();
+		Vec2 MousePixelPos = Vec2(Math::Floor((Memory->Mouse.Pos.x - Memory->Documents[0].CanvasPosition.x) / Memory->Documents[0].CanvasZoom),
+								  Math::Floor((Memory->Mouse.Pos.y - Memory->Documents[0].CanvasPosition.y) / Memory->Documents[0].CanvasZoom));
+		Memory->Mouse.UV   = Vec2(MousePixelPos.x / (float) Memory->Documents[0].Width,
+								  MousePixelPos.y / (float) Memory->Documents[0].Height);
 
 		for (int32 i = 0; i < 3; i++)
 		{
@@ -504,12 +508,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Memory->Mouse.Pressed[i]  = (Memory->Mouse.IsDown[i] && !Memory->Mouse.WasDown[i]);
 			Memory->Mouse.Released[i] = (!Memory->Mouse.IsDown[i] && Memory->Mouse.WasDown[i]);
 		}
-
-
-		Vec2 MousePixelPos = Vec2(Math::Floor((Memory->Mouse.Pos.x - Memory->Documents[0].CanvasPosition.x) / Memory->Documents[0].CanvasZoom),
-								  Math::Floor((Memory->Mouse.Pos.y - Memory->Documents[0].CanvasPosition.y) / Memory->Documents[0].CanvasZoom));
-		Memory->Mouse.UV = Vec2(MousePixelPos.x / (float) Memory->Documents[0].Width,
-								MousePixelPos.y / (float) Memory->Documents[0].Height);
 	}
 	#pragma endregion
 
@@ -591,16 +589,26 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 				Memory->Tools.RightClickDragStartPos = Memory->Mouse.Pos;
 				Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
 				Memory->Tools.RightClickDragStartHardness = Memory->Tools.BrushHardness;
+				Memory->Tools.RightClickDragStartOpacity = Memory->Tools.BrushOpacity;
+				Memory->Tools.RightClickShiftPressed = ImGui::IsKeyDown(VK_SHIFT);
 				Platform::StartMouseCapture();
 				Platform::SetCursorVisibility(false);
 			}
 			else if (Memory->Mouse.IsDown[1])
 			{
-				float Diameter = Memory->Tools.RightClickDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Memory->Documents[0].CanvasZoom * 2.0f);
-				Memory->Tools.BrushDiameter = Math::Clamp((int32)Diameter, 1, Memory->Tools.MaxBrushDiameter);
+				if (Memory->Tools.RightClickShiftPressed)
+				{
+					float Opacity = Memory->Tools.RightClickDragStartOpacity + (ImGui::GetMouseDragDelta(1).x * 0.25f);
+					Memory->Tools.BrushOpacity = Math::Clamp(Opacity, 0.0f, 100.0f);
+				}
+				else
+				{
+					float Diameter = Memory->Tools.RightClickDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Memory->Documents[0].CanvasZoom * 2.0f);
+					Memory->Tools.BrushDiameter = Math::Clamp((int32)Diameter, 1, Memory->Tools.MaxBrushDiameter);
 
-				float Hardness = Memory->Tools.RightClickDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.25f);
-				Memory->Tools.BrushHardness = Math::Clamp(Hardness, 0.0f, 100.0f);
+					float Hardness = Memory->Tools.RightClickDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.25f);
+					Memory->Tools.BrushHardness = Math::Clamp(Hardness, 0.0f, 100.0f);
+				}
 			}
 			else if (Memory->Mouse.Released[1])
 			{
@@ -731,7 +739,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Memory->DrawOverlay = false;
 		}
 
-#if 1
+#if 0
 		// =========================================================================================
 		// Brush falloff visualization
 
