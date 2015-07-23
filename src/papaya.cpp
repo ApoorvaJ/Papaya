@@ -203,9 +203,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "				#define M_PI 3.1415926535897932384626433832795														\n"
 "																													\n"
-"				uniform float		Thickness;																		\n" // Uniforms[1]
-"				uniform vec4		BrushColor;																		\n" // Uniforms[2]
-"				uniform float		Hardness;																		\n" // Uniforms[3]
+"				uniform vec4		BrushColor;																		\n" // Uniforms[1]
+"				uniform float		Hardness;																		\n" // Uniforms[2]
 "																													\n"
 "				in vec2 Frag_UV;																					\n"
 "																													\n"
@@ -213,8 +212,6 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
-"					float ScaledThickness = (Thickness/8192.0);														\n"
-"																													\n"
 "					float Scale = 1.0 / (1.0 - Hardness);															\n"
 "					float Period = M_PI * Scale;																	\n"
 "					float Phase = (1.0 - Scale) * M_PI * 0.5;														\n"
@@ -242,9 +239,8 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		Memory->Shaders[PapayaShader_BrushCursor].Attributes[1] = glGetAttribLocation (Memory->Shaders[PapayaShader_BrushCursor].Handle, "UV");
 
 		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "ProjMtx");
-		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "Thickness");
-		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "BrushColor");
-		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[3]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "Hardness");
+		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "BrushColor");
+		Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2]   = glGetUniformLocation(Memory->Shaders[PapayaShader_BrushCursor].Handle, "Hardness");
 
 		// Vertex buffer
 		glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);
@@ -911,9 +907,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		};
 		glUseProgram(Memory->Shaders[PapayaShader_BrushCursor].Handle);
 		glUniformMatrix4fv(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1], 100.0f);					// Thickness
-		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2], 1.0f, 0.0f, 0.0f, Memory->Tools.BrushOpacity / 100.0f); // Brush color 
-		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[3], Memory->Tools.BrushHardness / 100.0f);					// Hardness
+		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Memory->Tools.BrushOpacity / 100.0f); // Brush color 
+		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2], Memory->Tools.BrushHardness / 100.0f);					// Hardness
 
 		// Grow our buffer according to what we need
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VboHandle);
