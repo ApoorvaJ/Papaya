@@ -497,9 +497,15 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 	#pragma region Current mouse info
 	{
 		Memory->Mouse.Pos = ImGui::GetMousePos();
-		Memory->Mouse.IsDown[0] = ImGui::IsMouseDown(0);
-		Memory->Mouse.IsDown[1] = ImGui::IsMouseDown(1);
-		Memory->Mouse.IsDown[2] = ImGui::IsMouseDown(2);
+
+		for (int32 i = 0; i < 3; i++)
+		{
+			Memory->Mouse.IsDown[i]   = ImGui::IsMouseDown(i);
+			Memory->Mouse.Pressed[i]  = (Memory->Mouse.IsDown[i] && !Memory->Mouse.WasDown[i]);
+			Memory->Mouse.Released[i] = (!Memory->Mouse.IsDown[i] && Memory->Mouse.WasDown[i]);
+		}
+
+
 		Vec2 MousePixelPos = Vec2(Math::Floor((Memory->Mouse.Pos.x - Memory->Documents[0].CanvasPosition.x) / Memory->Documents[0].CanvasZoom),
 								  Math::Floor((Memory->Mouse.Pos.y - Memory->Documents[0].CanvasPosition.y) / Memory->Documents[0].CanvasZoom));
 		Memory->Mouse.UV = Vec2(MousePixelPos.x / (float) Memory->Documents[0].Width,
@@ -580,26 +586,23 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		#pragma region Right mouse dragging
 		{
-			if (Memory->Mouse.IsDown[1])
+			if (Memory->Mouse.Pressed[1])
 			{
-				if (!Memory->Mouse.WasDown[1]) // Mouse pressed
-				{
-					Memory->Tools.RightClickDragStartPos = Memory->Mouse.Pos;
-					Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
-					Memory->Tools.RightClickDragStartHardness = Memory->Tools.BrushHardness;
-					Platform::StartMouseCapture();
-					Platform::SetCursorVisibility(false);
-				}
-				else // Mouse dragged
-				{
-					float Diameter = Memory->Tools.RightClickDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Memory->Documents[0].CanvasZoom * 2.0f);
-					Memory->Tools.BrushDiameter = Math::Clamp((int32)Diameter , 1, Memory->Tools.MaxBrushDiameter);
-
-					float Hardness = Memory->Tools.RightClickDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.25f);
-					Memory->Tools.BrushHardness = Math::Clamp(Hardness , 0.0f, 100.0f);
-				}
+				Memory->Tools.RightClickDragStartPos = Memory->Mouse.Pos;
+				Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
+				Memory->Tools.RightClickDragStartHardness = Memory->Tools.BrushHardness;
+				Platform::StartMouseCapture();
+				Platform::SetCursorVisibility(false);
 			}
-			if (!Memory->Mouse.IsDown[1] && Memory->Mouse.WasDown[1]) // Mouse released
+			else if (Memory->Mouse.IsDown[1])
+			{
+				float Diameter = Memory->Tools.RightClickDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Memory->Documents[0].CanvasZoom * 2.0f);
+				Memory->Tools.BrushDiameter = Math::Clamp((int32)Diameter, 1, Memory->Tools.MaxBrushDiameter);
+
+				float Hardness = Memory->Tools.RightClickDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.25f);
+				Memory->Tools.BrushHardness = Math::Clamp(Hardness, 0.0f, 100.0f);
+			}
+			else if (Memory->Mouse.Released[1])
 			{
 				Platform::ReleaseMouseCapture();
 				Platform::SetMousePosition(Memory->Tools.RightClickDragStartPos);
@@ -615,7 +618,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 			glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
 
-			if (!Memory->Mouse.WasDown[0]) // Mouse pressed
+			if (Memory->Mouse.Pressed[0])
 			{
 				GLuint clearColor[4] = {0, 0, 0, 0};
 				glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboSampleTexture, 0);
@@ -667,7 +670,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 		}
-		if (!Memory->Mouse.IsDown[0] && Memory->Mouse.WasDown[0]) // Mouse released
+		else if (Memory->Mouse.Released[0])
 		{
 			glDisable(GL_SCISSOR_TEST);
 			glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
@@ -737,7 +740,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 
 		const float MaxScale = 90.0f;
 		float t = Memory->Tools.BrushHardness / 100.0f;
-		float Scale = 1.0f / (1.0 - t);
+		float Scale = 1.0f / (1.0f - t);
 		float Phase = (1.0f - Scale) * (float)Math::Pi;
 		float Period = (float)Math::Pi * Scale / (float)ArraySize;
 

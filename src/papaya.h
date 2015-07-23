@@ -93,6 +93,8 @@ struct MouseInfo
 	Vec2 LastUV;
 	bool IsDown[3];
 	bool WasDown[3];
+	bool Pressed[3];
+	bool Released[3];
 };
 
 struct ToolParams
