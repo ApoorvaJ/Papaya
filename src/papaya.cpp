@@ -94,14 +94,14 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				uniform sampler2D	Texture;																		\n" // Uniforms[1]
 "				uniform vec2		Pos;																			\n" // Uniforms[2]
 "				uniform vec2		LastPos;																		\n" // Uniforms[3]
-"				uniform float		Thickness;																		\n" // Uniforms[4]
+"				uniform float		Radius;																			\n" // Uniforms[4]
 "				uniform vec4		BrushColor;																		\n" // Uniforms[5]
 "				uniform float		Hardness;																		\n" // Uniforms[6]
 "																													\n"
 "				in vec2 Frag_UV;																					\n"
 "				out vec4 Out_Color;																					\n"
 "																													\n"
-"				void line(vec2 p1, vec2 p2, vec2 uv, float thickness, out float distanceFromLine)					\n"
+"				void line(vec2 p1, vec2 p2, vec2 uv, float radius, out float distanceFromLine)						\n"
 "				{																									\n"
 "					if (distance(p1,p2) <= 0.0)																		\n"
 "					{																								\n"
@@ -112,7 +112,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					float a = abs(distance(p1, uv));																\n"
 "					float b = abs(distance(p2, uv));																\n"
 "					float c = abs(distance(p1, p2));																\n"
-"					float d = sqrt(c*c + thickness*thickness);														\n"
+"					float d = sqrt(c*c + radius*radius);															\n"
 "																													\n"
 "					vec2 a1 = normalize(uv - p1);																	\n"
 "					vec2 b1 = normalize(uv - p2);																	\n"
@@ -143,19 +143,19 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					vec4 TextureColor = texture(Texture, Frag_UV.st);												\n"
 "																													\n"
 "					float distanceFromLine;																			\n"
-"					line(LastPos, Pos, Frag_UV, Thickness, distanceFromLine);										\n"
+"					line(LastPos, Pos, Frag_UV, Radius, distanceFromLine);											\n"
 "																													\n"
 "					//float delta = fwidth(distanceFromLine) * 2.0;													\n"
-"					//float alpha = smoothstep(Thickness-delta, Thickness, distanceFromLine);						\n"
+"					//float alpha = smoothstep(Radius-delta, Radius, distanceFromLine);								\n"
 "					//alpha = 1.0 - alpha;																			\n"
 "					//if (alpha > 0.0) alpha = Opacity;																\n"
 "																													\n"
-"					float Scale = 1.0 / (2.0 * Thickness * (1.0 - Hardness));										\n"
+"					float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));											\n"
 "					float Period = M_PI * Scale;																	\n"
-"					float Phase = (1.0 - Scale * 2.0 * Thickness) * M_PI * 0.5;										\n"
+"					float Phase = (1.0 - Scale * 2.0 * Radius) * M_PI * 0.5;										\n"
 "					float Alpha = cos((Period * distanceFromLine) + Phase);											\n"
-"					if (distanceFromLine < Thickness - (0.5/Scale)) Alpha = 1.0;									\n"
-"					if (distanceFromLine > Thickness)		  Alpha = 0.0;											\n"
+"					if (distanceFromLine < Radius - (0.5/Scale)) Alpha = 1.0;										\n"
+"					if (distanceFromLine > Radius)		  Alpha = 0.0;												\n"
 "																													\n"
 "					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 										\n"
 "								max(TextureColor.a, Alpha * BrushColor.a));											\n" // TODO: Needs improvement. Self-intersection corners look weird.
@@ -181,7 +181,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 		Memory->Shaders[PapayaShader_Brush].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Texture");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[2]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Pos");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[3]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "LastPos");
-		Memory->Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Thickness");
+		Memory->Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Radius");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "BrushColor");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[6]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Hardness");
 	}
