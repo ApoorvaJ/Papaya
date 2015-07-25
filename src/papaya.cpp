@@ -101,11 +101,12 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "				in vec2 Frag_UV;																					\n"
 "				out vec4 Out_Color;																					\n"
 "																													\n"
-"				void line(vec2 p1, vec2 p2, vec2 uv, float radius, out float distanceFromLine)						\n"
+"				void line(vec2 p1, vec2 p2, vec2 uv, float radius, out float distLine, out float distp1)			\n"
 "				{																									\n"
 "					if (distance(p1,p2) <= 0.0)																		\n"
 "					{																								\n"
-"						distanceFromLine = distance(uv, p1);														\n"
+"						distLine = distance(uv, p1);																\n"
+"						distp1 = 0.0;																				\n"
 "						return;																						\n"
 "					}																								\n"
 "																													\n"
@@ -119,13 +120,15 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					vec2 c1 = normalize(p2 - p1);																	\n"
 "					if (dot(a1,c1) < 0.0)																			\n"
 "					{																								\n"
-"						distanceFromLine = a;																		\n"
+"						distLine = a;																				\n"
+"						distp1 = 0.0;																				\n"
 "						return;																						\n"
 "					}																								\n"
 "																													\n"
 "					if (dot(b1,c1) > 0.0)																			\n"
 "					{																								\n"
-"						distanceFromLine = b;																		\n"
+"						distLine = b;																				\n"
+"						distp1 = 1.0;																				\n"
 "						return;																						\n"
 "					}																								\n"
 "																													\n"
@@ -133,29 +136,35 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );											\n"
 "																													\n"
 "					if (isnan(h))																					\n"
-"						distanceFromLine = 0.0;																		\n"
+"					{																								\n"
+"						distLine = 0.0;																				\n"
+"						distp1 = a / c;																				\n"
+"					}																								\n"
 "					else																							\n"
-"						distanceFromLine = h;																		\n"
+"					{																								\n"
+"						distLine = h;																				\n"
+"						distp1 = sqrt(a*a - h*h) / c;																\n"
+"					}																								\n"
 "				}																									\n"
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
 "					vec4 TextureColor = texture(Texture, Frag_UV.st);												\n"
 "																													\n"
-"					float distanceFromLine;																			\n"
-"					line(LastPos, Pos, Frag_UV, Radius, distanceFromLine);											\n"
+"					float distLine, distp1;																			\n"
+"					line(LastPos, Pos, Frag_UV, Radius, distLine, distp1);											\n"
 "																													\n"
-"					//float delta = fwidth(distanceFromLine) * 2.0;													\n"
-"					//float alpha = smoothstep(Radius-delta, Radius, distanceFromLine);								\n"
+"					//float delta = fwidth(distLine) * 2.0;															\n"
+"					//float alpha = smoothstep(Radius-delta, Radius, distLine);										\n"
 "					//alpha = 1.0 - alpha;																			\n"
 "					//if (alpha > 0.0) alpha = Opacity;																\n"
 "																													\n"
 "					float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));											\n"
 "					float Period = M_PI * Scale;																	\n"
 "					float Phase = (1.0 - Scale * 2.0 * Radius) * M_PI * 0.5;										\n"
-"					float Alpha = cos((Period * distanceFromLine) + Phase);											\n"
-"					if (distanceFromLine < Radius - (0.5/Scale)) Alpha = 1.0;										\n"
-"					if (distanceFromLine > Radius)		  Alpha = 0.0;												\n"
+"					float Alpha = cos((Period * distLine) + Phase);													\n"
+"					if (distLine < Radius - (0.5/Scale)) Alpha = 1.0;												\n"
+"					if (distLine > Radius)		  Alpha = 0.0;														\n"
 "																													\n"
 "					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 										\n"
 "								max(TextureColor.a, Alpha * BrushColor.a));											\n" // TODO: Needs improvement. Self-intersection corners look weird.
@@ -390,7 +399,7 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	{
 		Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
 		//LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
-		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg", Memory->Documents);
+		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\black4k.png", Memory->Documents);
 
 		Memory->Documents[0].CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Documents[0].Width, (float)Memory->Window.Height/(float)Memory->Documents[0].Height);
 		if (Memory->Documents[0].CanvasZoom > 1.0f) { Memory->Documents[0].CanvasZoom = 1.0f; }
@@ -444,9 +453,9 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	Memory->Tools.BrushDiameter = 30;
-	Memory->Tools.BrushOpacity = 100.0f;
-	Memory->Tools.BrushHardness = 0.0f;
+	Memory->Tools.BrushDiameter = 400;
+	Memory->Tools.BrushHardness = 90.0f;
+	Memory->Tools.BrushOpacity = 50.0f;
 	Memory->DrawCanvas = true;
 	Memory->DrawOverlay = false;
 }
@@ -543,8 +552,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImGui::Begin("Tool param bar", &Show, WindowFlags);
 		ImGui::PushItemWidth(85);
 
-		static float Hardness = 100.0f;
-		static float Flow = 100.0f;
 		ImGui::InputInt("Diameter", &Memory->Tools.BrushDiameter);
 		Memory->Tools.BrushDiameter = Math::Clamp(Memory->Tools.BrushDiameter, 1, Memory->Tools.MaxBrushDiameter);
 		
@@ -554,8 +561,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		ImGui::SliderFloat("Hardness", &Memory->Tools.BrushHardness, 0.0f, 100.0f, "%.0f");
 		ImGui::SameLine();
 		ImGui::SliderFloat("Opacity", &Memory->Tools.BrushOpacity, 0.0f, 100.0f, "%.0f");
-		ImGui::SameLine();
-		ImGui::SliderFloat("Flow", &Flow, 0.0f, 100.0f, "%.0f");
 
 		ImGui::PopItemWidth();
 		ImGui::End();
@@ -655,8 +660,10 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Vec2 CorrectedPos		= Memory->Mouse.UV     + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
-			//Vec2 CorrectedPos		= Vec2(0.6f, 0.5f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-			//Vec2 CorrectedLastPos	= Vec2(0.3f, 0.3f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+#if 0
+			CorrectedPos		= Vec2(0.6f, 0.5f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+			CorrectedLastPos	= Vec2(0.3f, 0.3f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+#endif
 
 			glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
 			//glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], Memory->Documents[0].TextureID); // Texture uniform
