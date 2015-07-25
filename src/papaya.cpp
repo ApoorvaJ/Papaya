@@ -149,15 +149,10 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "																													\n"
 "				void main()																							\n"
 "				{																									\n"
-"					vec4 TextureColor = texture(Texture, Frag_UV.st);												\n"
+"					vec4 t = texture(Texture, Frag_UV.st);															\n"
 "																													\n"
 "					float distLine, distp1;																			\n"
 "					line(LastPos, Pos, Frag_UV, Radius, distLine, distp1);											\n"
-"																													\n"
-"					//float delta = fwidth(distLine) * 2.0;															\n"
-"					//float alpha = smoothstep(Radius-delta, Radius, distLine);										\n"
-"					//alpha = 1.0 - alpha;																			\n"
-"					//if (alpha > 0.0) alpha = Opacity;																\n"
 "																													\n"
 "					float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));											\n"
 "					float Period = M_PI * Scale;																	\n"
@@ -166,8 +161,10 @@ void Papaya_Initialize(PapayaMemory* Memory)
 "					if (distLine < Radius - (0.5/Scale)) Alpha = 1.0;												\n"
 "					if (distLine > Radius)		  Alpha = 0.0;														\n"
 "																													\n"
+"					float FinalAlpha = max(t.a, Alpha * BrushColor.a);												\n"
+"																													\n"
 "					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 										\n"
-"								max(TextureColor.a, Alpha * BrushColor.a));											\n" // TODO: Needs improvement. Self-intersection corners look weird.
+"								clamp(FinalAlpha,0.0,1.0));															\n" // TODO: Needs improvement. Self-intersection corners look weird.
 "				}																									\n";
 
 		Memory->Shaders[PapayaShader_Brush].Handle = glCreateProgram();
@@ -453,9 +450,9 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	Memory->Tools.BrushDiameter = 400;
-	Memory->Tools.BrushHardness = 90.0f;
-	Memory->Tools.BrushOpacity = 50.0f;
+	Memory->Tools.BrushDiameter = 200;
+	Memory->Tools.BrushHardness = 0.0f;
+	Memory->Tools.BrushOpacity = 100.0f;
 	Memory->DrawCanvas = true;
 	Memory->DrawOverlay = false;
 }
@@ -661,8 +658,23 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 #if 0
-			CorrectedPos		= Vec2(0.6f, 0.5f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-			CorrectedLastPos	= Vec2(0.3f, 0.3f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+			local_persist int32 i = 0;
+
+			if (i%2)
+			{
+				local_persist int32 j = 0;
+				CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+				CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+				j++;
+			}
+			else
+			{
+				local_persist int32 k = 0;
+				CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+				CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+				k++;
+			}
+			i++;
 #endif
 
 			glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
@@ -670,7 +682,8 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y); // Pos uniform
 			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter / ((float)Memory->Documents[0].Width * 2.0f)); // TODO: Support non-square documents
-			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, Memory->Tools.BrushOpacity / 100.0f);
+			float Opacity = Memory->Tools.BrushOpacity / 100.0f; //(Math::Distance(CorrectedLastPos, CorrectedPos) > 0.0 ? Memory->Tools.BrushOpacity / 100.0f : 0.0f);
+			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, Opacity);
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushHardness / 100.0f);
 
 			glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
