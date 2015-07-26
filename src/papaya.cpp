@@ -1,6 +1,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+namespace Papaya
+{
+
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {
 	uint32 Tex;
@@ -43,7 +46,7 @@ internal void LoadImageIntoDocument(char* Path, PapayaDocument* Document)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Document->Width, Document->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Document->Texture);
 }
 
-void Papaya_Initialize(PapayaMemory* Memory)
+void Initialize(PapayaMemory* Memory)
 {
 	#pragma region Set up the frame buffer
 	{
@@ -450,57 +453,20 @@ void Papaya_Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	Memory->Tools.BrushDiameter = 200;
-	Memory->Tools.BrushHardness = 0.0f;
+	Memory->Tools.BrushDiameter = 50;
+	Memory->Tools.BrushHardness = 90.0f;
 	Memory->Tools.BrushOpacity = 100.0f;
 	Memory->DrawCanvas = true;
 	Memory->DrawOverlay = false;
 }
 
-void Papaya_Shutdown(PapayaMemory* Memory)
+void Shutdown(PapayaMemory* Memory)
 {
 	//TODO: Free document texture
 	free(Memory->Documents);
 }
 
-internal void PaintPixel(int32 x, int32 y, uint32 Color, PapayaMemory* Memory)
-{
-	if (x >= 0 && x < Memory->Documents[0].Width &&
-		y >= 0 && y < Memory->Documents[0].Height)
-	{
-		*((uint32*)(Memory->Documents[0].Texture + (Memory->Documents[0].Width * y * sizeof(uint32)) + x * sizeof(uint32))) = Color; // 0xAABBGGRR
-	}
-}
-
-internal void PaintCircle(int32 x0, int32 y0, int32 Diameter, uint32 Color, PapayaMemory* Memory)
-{
-	int32 Min = -Diameter/2; 
-	int32 Max =  Diameter/2 - (Diameter%2 == 0 ? 1 : 0);
-	Vec2 Center = Vec2((float)x0 - (Diameter%2 == 0 ? 0.5f : 0.0f),
-		               (float)y0 - (Diameter%2 == 0 ? 0.5f : 0.0f));
-	float Range = (float)Diameter/2.0f;
-
-	for (int32 i = x0 + Min; i <= x0 + Max; i++)
-	{
-		for (int32 j = y0 + Min; j <= y0 + Max; j++)
-		{
-			Vec2 Current = Vec2((float)i, (float)j);
-
-			if(Math::DistanceSquared(Center, Current) <= Range * Range)
-			{
-				PaintPixel(i, j, Color, Memory);
-			}
-		}
-	}
-}
-
-internal void RefreshTexture(PapayaMemory* Memory)
-{
-	glBindTexture(GL_TEXTURE_2D, Memory->Documents[0].TextureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Documents[0].Width, Memory->Documents[0].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Documents[0].Texture);
-}
-
-void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
+void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 {
 	#pragma region Current mouse info
 	{
@@ -658,6 +624,7 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 #if 0
+			// Brush testing routine
 			local_persist int32 i = 0;
 
 			if (i%2)
@@ -1162,4 +1129,6 @@ void Papaya_UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory
 		Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
 	}
 	#pragma endregion
+}
+
 }

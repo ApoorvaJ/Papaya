@@ -522,7 +522,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	}
 	#pragma endregion
 
-	Papaya_Initialize(&Memory);
+	Papaya::Initialize(&Memory);
 
 	#pragma region Initialize ImGui
 	{
@@ -585,7 +585,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		
 		ImGui_NewFrame(Window);
 		
-		Papaya_UpdateAndRender(&Memory, &DebugMemory);
+		Papaya::UpdateAndRender(&Memory, &DebugMemory);
 
 		#pragma region Title Bar Buttons
 		{
@@ -685,6 +685,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		LastCycleCount = EndCycleCount;
 	}
 
-	Papaya_Shutdown(&Memory);
+	Papaya::Shutdown(&Memory);
 	return 0;
 }
