@@ -2336,7 +2336,7 @@ static void PopClipRect()
     window->DrawList->PopClipRect();
 }
 
-void ImGui::Render()
+void ImGui::Render(void* mem)
 {
     ImGuiState& g = *GImGui;
     IM_ASSERT(g.Initialized);                           // Forgot to call ImGui::NewFrame()
@@ -2458,7 +2458,7 @@ void ImGui::Render()
 
         // Render
         if (!g.RenderDrawLists[0].empty())
-            g.IO.RenderDrawListsFn(&g.RenderDrawLists[0][0], (int)g.RenderDrawLists[0].size());
+            g.IO.RenderDrawListsFn(&g.RenderDrawLists[0][0], (int)g.RenderDrawLists[0].size(), mem);
     }
 }
 

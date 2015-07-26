@@ -94,7 +94,7 @@ namespace ImGui
     IMGUI_API ImGuiIO&      GetIO();
     IMGUI_API ImGuiStyle&   GetStyle();
     IMGUI_API void          NewFrame();
-    IMGUI_API void          Render();
+    IMGUI_API void          Render(void* mem);
     IMGUI_API void          Shutdown();
     IMGUI_API void          ShowUserGuide();                            // help block
     IMGUI_API void          ShowStyleEditor(ImGuiStyle* ref = NULL);    // style editor block
@@ -632,7 +632,7 @@ struct ImGuiIO
 
     // REQUIRED: rendering function. 
     // See example code if you are unsure of how to implement this.
-    void        (*RenderDrawListsFn)(ImDrawList** const draw_lists, int count);      
+    void        (*RenderDrawListsFn)(ImDrawList** const draw_lists, int count, void* mem);      
 
     // Optional: access OS clipboard
     // (default to use native Win32 clipboard on Windows, otherwise uses a private clipboard. Override to access OS clipboard on other architectures)
