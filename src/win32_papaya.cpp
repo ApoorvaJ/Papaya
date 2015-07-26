@@ -155,42 +155,6 @@ internal void ImGui_RenderDrawLists(ImDrawList** const cmd_lists, int cmd_lists_
     glBindTexture(GL_TEXTURE_2D, last_texture);
 }
 
-internal void ImGui_NewFrame(HWND Window)
-{
-    ImGuiIO& io = ImGui::GetIO();
-
-    // Setup display size (every frame to accommodate for window resizing)
-	RECT rect;
-    GetClientRect(Window, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-
-	// Read keyboard modifiers inputs
-    io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-    io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-    io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
-    // Setup time step
-    INT64 current_time;
-    QueryPerformanceCounter((LARGE_INTEGER *)&current_time); 
-    io.DeltaTime = (float)(current_time - DebugMemory.Time) / DebugMemory.TicksPerSecond;
-    DebugMemory.Time = current_time;
-
-    // Hide OS mouse cursor if ImGui is drawing it
-    //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
-
-    // Start the frame
-    ImGui::NewFrame();
-}
-
-internal void ClearAndSwap(void)
-{
-	if(Memory.InterfaceColors[PapayaInterfaceColor_Clear])
-	{
-		glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
-	}
-	SwapBuffers(DeviceContext);
-}
-
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
 	LRESULT Result = 0;
@@ -338,7 +302,14 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				Memory.Window.Height = (int32) HIWORD(LParam);
 			}
 
-			ClearAndSwap();
+			// Clear and swap buffers
+			{
+				if (Memory.InterfaceColors[PapayaInterfaceColor_Clear])
+				{
+					glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
+				}
+				SwapBuffers(DeviceContext);
+			}
 		} break;
 
 		#pragma region WM_NCHITTEST
@@ -613,7 +584,33 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		BOOL IsMaximized = IsMaximized(Window);
 		// Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f; // TODO: Might have to turn this on when activating WS_THICKFRAME for aero snapping to work
 		
-		ImGui_NewFrame(Window);
+		#pragma region Start new ImGui frame
+		{
+			ImGuiIO& io = ImGui::GetIO();
+
+			// Setup display size (every frame to accommodate for window resizing)
+			RECT rect;
+			GetClientRect(Window, &rect);
+			io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+
+			// Read keyboard modifiers inputs
+			io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+			io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+			io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+
+			// Setup time step
+			INT64 current_time;
+			QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
+			io.DeltaTime = (float)(current_time - DebugMemory.Time) / DebugMemory.TicksPerSecond;
+			DebugMemory.Time = current_time;
+
+			// Hide OS mouse cursor if ImGui is drawing it
+			//SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+
+			// Start the frame
+			ImGui::NewFrame();
+		}
+		#pragma endregion
 		
 		Papaya::UpdateAndRender(&Memory, &DebugMemory);
 
