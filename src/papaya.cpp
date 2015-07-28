@@ -77,6 +77,7 @@ void Initialize(PapayaMemory* Memory)
 "				uniform float		Radius;																			\n" // Uniforms[4]
 "				uniform vec4		BrushColor;																		\n" // Uniforms[5]
 "				uniform float		Hardness;																		\n" // Uniforms[6]
+"				uniform float		InvAspect;																		\n" // Uniforms[7]
 "																													\n"
 "				in vec2 Frag_UV;																					\n"
 "				out vec4 Out_Color;																					\n"
@@ -132,7 +133,8 @@ void Initialize(PapayaMemory* Memory)
 "					vec4 t = texture(Texture, Frag_UV.st);															\n"
 "																													\n"
 "					float distLine, distp1;																			\n"
-"					line(LastPos, Pos, Frag_UV, Radius, distLine, distp1);											\n"
+"					vec2 aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);											\n"
+"					line(LastPos, Pos, aspectUV, Radius, distLine, distp1);											\n"
 "																													\n"
 "					float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));											\n"
 "					float Period = M_PI * Scale;																	\n"
@@ -170,6 +172,7 @@ void Initialize(PapayaMemory* Memory)
 		Memory->Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Radius");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "BrushColor");
 		Memory->Shaders[PapayaShader_Brush].Uniforms[6]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "Hardness");
+		Memory->Shaders[PapayaShader_Brush].Uniforms[7]   = glGetUniformLocation(Memory->Shaders[PapayaShader_Brush].Handle, "InvAspect");
 	}
 	#pragma endregion
 
@@ -375,8 +378,9 @@ void Initialize(PapayaMemory* Memory)
 	#pragma region Load document
 	{
 		Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
-		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
+		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\h.png", Memory->Documents);
 
+		Memory->Documents[0].InverseAspect = (float)Memory->Documents[0].Height / (float)Memory->Documents[0].Width;
 		Memory->Documents[0].CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Documents[0].Width, (float)Memory->Window.Height/(float)Memory->Documents[0].Height);
 		if (Memory->Documents[0].CanvasZoom > 1.0f) { Memory->Documents[0].CanvasZoom = 1.0f; }
 		Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Documents[0].Width  * Memory->Documents[0].CanvasZoom)/2.0f, 
@@ -646,12 +650,13 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 			glUniformMatrix4fv(Memory->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
 			//glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], Memory->Documents[0].TextureID); // Texture uniform
-			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y); // Pos uniform
-			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y); // Lastpos uniform
+			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Memory->Documents[0].InverseAspect); // Pos uniform
+			glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Memory->Documents[0].InverseAspect); // Lastpos uniform
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter / ((float)Memory->Documents[0].Width * 2.0f)); // TODO: Support non-square documents
 			float Opacity = Memory->Tools.BrushOpacity / 100.0f; //(Math::Distance(CorrectedLastPos, CorrectedPos) > 0.0 ? Memory->Tools.BrushOpacity / 100.0f : 0.0f);
 			glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, Opacity);
 			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushHardness / 100.0f);
+			glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[7], Memory->Documents[0].InverseAspect); // Inverse Aspect uniform
 
 			glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
 			glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);

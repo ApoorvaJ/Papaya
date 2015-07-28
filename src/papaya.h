@@ -63,6 +63,7 @@ struct PapayaDocument
 	uint32 TextureID;
 	Vec2 CanvasPosition;
 	float CanvasZoom;
+	float InverseAspect;
 };
 
 struct PapayaShader
