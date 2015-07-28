@@ -48,29 +48,6 @@ internal void LoadImageIntoDocument(char* Path, PapayaDocument* Document)
 
 void Initialize(PapayaMemory* Memory)
 {
-	#pragma region Set up the frame buffer
-	{
-		// Create a framebuffer object and bind it
-		glGenFramebuffers(1, &Memory->FrameBufferObject);
-		glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
-		
-		Memory->FboRenderTexture = AllocateEmptyTexture(4096, 4096);
-		Memory->FboSampleTexture = AllocateEmptyTexture(4096, 4096);
-
-		// Attach the color texture to the FBO
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
-
-		static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, draw_buffers);
-
-		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		{
-			// TODO: Log: Frame buffer not initialized correctly
-			exit(1);
-		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-	#pragma endregion
 
 	#pragma region Set up brush shader
 	{
@@ -398,13 +375,36 @@ void Initialize(PapayaMemory* Memory)
 	#pragma region Load document
 	{
 		Memory->Documents = (PapayaDocument*)malloc(sizeof(PapayaDocument));
-		//LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
-		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\black4k.png", Memory->Documents);
+		LoadImageIntoDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png", Memory->Documents);
 
 		Memory->Documents[0].CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Documents[0].Width, (float)Memory->Window.Height/(float)Memory->Documents[0].Height);
 		if (Memory->Documents[0].CanvasZoom > 1.0f) { Memory->Documents[0].CanvasZoom = 1.0f; }
 		Memory->Documents[0].CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Documents[0].Width  * Memory->Documents[0].CanvasZoom)/2.0f, 
 												   (Memory->Window.Height - (float)Memory->Documents[0].Height * Memory->Documents[0].CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
+	}
+	#pragma endregion
+
+	#pragma region Set up the frame buffer
+	{
+		// Create a framebuffer object and bind it
+		glGenFramebuffers(1, &Memory->FrameBufferObject);
+		glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
+		
+		Memory->FboRenderTexture = AllocateEmptyTexture(Memory->Documents[0].Width, Memory->Documents[0].Height);
+		Memory->FboSampleTexture = AllocateEmptyTexture(Memory->Documents[0].Width, Memory->Documents[0].Height);
+
+		// Attach the color texture to the FBO
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
+
+		static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, draw_buffers);
+
+		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			// TODO: Log: Frame buffer not initialized correctly
+			exit(1);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	#pragma endregion
 
