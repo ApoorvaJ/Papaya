@@ -564,7 +564,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 				Memory->Tools.RightClickDragStartDiameter = Memory->Tools.BrushDiameter;
 				Memory->Tools.RightClickDragStartHardness = Memory->Tools.BrushHardness;
 				Memory->Tools.RightClickDragStartOpacity = Memory->Tools.BrushOpacity;
-				Memory->Tools.RightClickShiftPressed = ImGui::IsKeyDown(VK_SHIFT);
+				Memory->Tools.RightClickShiftPressed = ImGui::GetIO().KeyShift;
 				Platform::StartMouseCapture();
 				Platform::SetCursorVisibility(false);
 			}
