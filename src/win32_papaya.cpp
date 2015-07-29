@@ -25,6 +25,7 @@ typedef double real64;
 #include <windowsx.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <commdlg.h>
 
 // =================================================================================================
 
@@ -64,6 +65,35 @@ void Platform::SetMousePosition(Vec2 Pos)
 void Platform::SetCursorVisibility(bool Visible)
 {
 	ShowCursor(Visible);
+}
+
+char* Platform::OpenFileDialog()
+{
+	const int32 FileNameSize = 400; // TODO: What's a good value for this?
+	char* FileName = (char*)malloc(FileNameSize);
+
+	OPENFILENAME DialogParams = {};
+	DialogParams.lStructSize	= sizeof(OPENFILENAME);
+	DialogParams.hwndOwner		= GetActiveWindow();
+	//DialogParams.hInstance		= ;
+	DialogParams.lpstrFilter	= "JPEG\0*.jpg;*.jpeg\0PNG\0*.png\0";
+	DialogParams.nFilterIndex	= 2;
+	DialogParams.lpstrFile		= FileName;
+	DialogParams.lpstrFile[0]	= '\0';
+	DialogParams.nMaxFile		= FileNameSize;
+	DialogParams.Flags			= OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	BOOL Result = GetOpenFileNameA(&DialogParams);
+	
+	if (Result)
+	{
+		return FileName;
+	}
+	else
+	{
+		free(FileName);
+		return 0;
+	}
 }
 
 // =================================================================================================

@@ -121,7 +121,7 @@ struct PapayaMemory
 	PapayaShader Shaders[PapayaShader_COUNT];
 	MouseInfo Mouse;
 	ToolParams Tools;
-	PapayaDocument* Documents; // TODO: Use an array or vector instead of bare pointer?
+	PapayaDocument Document;
 
 	// TODO: Refactor
 	uint32 FrameBufferObject;
