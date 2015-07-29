@@ -34,12 +34,6 @@ internal uint32 LoadAndBindImage(char* Path)
 	return (uint32)Id_GLuint;
 }
 
-internal void LoadImageIntoDocument(char* Path, PapayaDocument* Document)
-{
-	
-}
-
-// Returns true on success, false on failure
 internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 {
 	#pragma region Load image
@@ -118,6 +112,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 		glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
 		glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+
 		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[0]); // Position attribute
 		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[1]); // UV attribute
 		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_ImGui].Attributes[2]); // Vertex color attribute
@@ -135,9 +130,65 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 	return true;
 }
 
-internal void CloseDocument(PapayaDocument* Document)
+internal void CloseDocument(PapayaMemory* Memory)
 {
+	// Document
+	if (Memory->Document.Texture) 
+	{	
+		free(Memory->Document.Texture); 
+		Memory->Document.Texture = 0;
+	}
 
+	if (Memory->Document.TextureID) 
+	{ 
+		glDeleteTextures(1, &Memory->Document.TextureID); 
+		Memory->Document.TextureID = 0;
+	}
+
+	// Frame buffer
+	if (Memory->FrameBufferObject)
+	{
+		glDeleteFramebuffers(1, &Memory->FrameBufferObject);
+		Memory->FrameBufferObject = 0;
+	}
+
+	if (Memory->FboRenderTexture)
+	{
+		glDeleteTextures(1, &Memory->FboRenderTexture);
+		Memory->FboRenderTexture = 0;
+	}
+
+	if (Memory->FboSampleTexture)
+	{
+		glDeleteTextures(1, &Memory->FboSampleTexture);
+		Memory->FboSampleTexture = 0;
+	}
+
+	// Vertex Buffer: RTTBrush
+	if (Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle)
+	{
+		glDeleteBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
+		Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle = 0;
+	}
+
+	if (Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle)
+	{
+		glDeleteVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
+		Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle = 0;
+	}
+
+	// Vertex Buffer: RTTAdd
+	if (Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle)
+	{
+		glDeleteBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+		Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle = 0;
+	}
+
+	if (Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle)
+	{
+		glDeleteVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+		Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle = 0;
+	}
 }
 
 void Initialize(PapayaMemory* Memory)
@@ -469,7 +520,7 @@ void Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	//OpenDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\h6.png", Memory);
+	OpenDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\h.png", Memory);
 
 	Memory->Tools.BrushDiameter = 50;
 	Memory->Tools.BrushHardness = 90.0f;
@@ -502,8 +553,170 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 	}
 	#pragma endregion
 
-    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-	glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
+	#pragma region Clear screen buffer
+	{
+		glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+		glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
+
+		glEnable(GL_SCISSOR_TEST);
+		glScissor(34 + (int)Memory->Window.MaximizeOffset,
+			3 + (int)Memory->Window.MaximizeOffset,
+			(int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset),
+			(int)Memory->Window.Height - 58 - (2 * (int)Memory->Window.MaximizeOffset));
+
+		glClearBufferfv(GL_COLOR, 0, (float*)&Memory->InterfaceColors[PapayaInterfaceColor_Workspace]);
+		glDisable(GL_SCISSOR_TEST);
+	}
+	#pragma endregion
+
+	#pragma region Title Bar Icon
+	{
+		ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.IconWidth,(float)Memory->Window.TitleBarHeight));
+		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 1.0f + Memory->Window.MaximizeOffset));
+
+		ImGuiWindowFlags WindowFlags = 0;
+		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+		WindowFlags |= ImGuiWindowFlags_NoResize;
+		WindowFlags |= ImGuiWindowFlags_NoMove;
+		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+		WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
+		bool bTrue = true;
+		ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
+		ImGui::Image((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
+		ImGui::End();
+
+		ImGui::PopStyleColor(1);
+		ImGui::PopStyleVar(5);
+	}
+	#pragma endregion
+
+	#pragma region Title Bar Menu
+	{
+		ImGui::SetNextWindowSize(ImVec2(Memory->Window.Width - Memory->Window.IconWidth - Memory->Window.TitleBarButtonsWidth - 3.0f - (2.0f * Memory->Window.MaximizeOffset),
+			Memory->Window.TitleBarHeight - 10.0f));
+		ImGui::SetNextWindowPos(ImVec2(2.0f + Memory->Window.IconWidth + Memory->Window.MaximizeOffset,
+			1.0f + Memory->Window.MaximizeOffset + 5.0f));
+
+		ImGuiWindowFlags WindowFlags = 0;
+		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+		WindowFlags |= ImGuiWindowFlags_NoResize;
+		WindowFlags |= ImGuiWindowFlags_NoMove;
+		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+		WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+		WindowFlags |= ImGuiWindowFlags_MenuBar;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,4));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
+
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
+		ImGui::PushStyleColor(ImGuiCol_Header, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
+		bool bTrue = true;
+		ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
+		if (ImGui::BeginMenuBar())
+		{
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
+			if (ImGui::BeginMenu("FILE"))
+			{
+				#pragma region File Menu
+				{
+					if (ImGui::MenuItem("Open")) 
+					{
+						char* Path = Platform::OpenFileDialog();
+						if (Path)
+						{
+							CloseDocument(Memory);
+							OpenDocument(Path, Memory);
+							free(Path);
+						}
+					}
+
+					if (ImGui::MenuItem("Close"))
+					{
+						CloseDocument(Memory);
+					}
+					
+					if (ImGui::MenuItem("Save", "Ctrl+S")) 
+					{
+						//
+					}
+					if (ImGui::MenuItem("Save As..")) {}
+					ImGui::Separator();
+					if (ImGui::MenuItem("Quit", "Alt+F4")) { Memory->IsRunning = false; }
+				}
+				#pragma endregion
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+			ImGui::PopStyleColor();
+		}
+		ImGui::End();
+
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar(5);
+	}
+	#pragma endregion
+
+	#pragma region Left toolbar
+	{
+		ImGui::SetNextWindowSize(ImVec2(36,650));
+		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 55.0f + Memory->Window.MaximizeOffset));
+			
+		ImGuiWindowFlags WindowFlags = 0;
+		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+		WindowFlags |= ImGuiWindowFlags_NoResize;
+		WindowFlags |= ImGuiWindowFlags_NoMove;
+		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+		WindowFlags |= ImGuiWindowFlags_NoCollapse;
+		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+		ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
+		bool Show = true;
+		ImGui::Begin("Left toolbar", &Show, WindowFlags);
+
+		ImGui::PushID(0);
+		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
+		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
+		{
+			
+		}
+		#undef CALCUV
+		ImGui::PopID();
+
+		ImGui::End();
+
+		ImGui::PopStyleVar(5);
+		ImGui::PopStyleColor(4);
+	}
+	#pragma endregion
+
+	if (!Memory->Document.TextureID) { goto EndOfFunction; }
 
 	#pragma region Tool Param Bar
 	{
@@ -864,13 +1077,6 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // TODO: Remove?
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 
-		glScissor(34 + (int)Memory->Window.MaximizeOffset, 
-				  3 + (int)Memory->Window.MaximizeOffset, 
-				  (int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset), 
-				  (int)Memory->Window.Height - 58 - (2 * (int)Memory->Window.MaximizeOffset));
-
-		glClearBufferfv(GL_COLOR, 0, (float*)&Memory->InterfaceColors[PapayaInterfaceColor_Workspace]);
-
 		if (Memory->DrawCanvas)
 		{
 			glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Document.TextureID);
@@ -956,146 +1162,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 	}
 	#pragma endregion
 
-	#pragma region Title Bar Icon
-	{
-		ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.IconWidth,(float)Memory->Window.TitleBarHeight));
-		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 1.0f + Memory->Window.MaximizeOffset));
-
-		ImGuiWindowFlags WindowFlags = 0;
-		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-		WindowFlags |= ImGuiWindowFlags_NoResize;
-		WindowFlags |= ImGuiWindowFlags_NoMove;
-		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-		WindowFlags |= ImGuiWindowFlags_NoCollapse;
-		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-		bool bTrue = true;
-		ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-		ImGui::Image((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
-		ImGui::End();
-
-		ImGui::PopStyleColor(1);
-		ImGui::PopStyleVar(5);
-	}
-	#pragma endregion
-
-	#pragma region Title Bar Menu
-	{
-		ImGui::SetNextWindowSize(ImVec2(Memory->Window.Width - Memory->Window.IconWidth - Memory->Window.TitleBarButtonsWidth - 3.0f - (2.0f * Memory->Window.MaximizeOffset),
-			Memory->Window.TitleBarHeight - 10.0f));
-		ImGui::SetNextWindowPos(ImVec2(2.0f + Memory->Window.IconWidth + Memory->Window.MaximizeOffset,
-			1.0f + Memory->Window.MaximizeOffset + 5.0f));
-
-		ImGuiWindowFlags WindowFlags = 0;
-		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-		WindowFlags |= ImGuiWindowFlags_NoResize;
-		WindowFlags |= ImGuiWindowFlags_NoMove;
-		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-		WindowFlags |= ImGuiWindowFlags_NoCollapse;
-		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-		WindowFlags |= ImGuiWindowFlags_MenuBar;
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,4));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
-
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
-		ImGui::PushStyleColor(ImGuiCol_Header, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-		bool bTrue = true;
-		ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
-		if (ImGui::BeginMenuBar())
-		{
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
-			if (ImGui::BeginMenu("FILE"))
-			{
-				#pragma region File Menu
-				{
-					if (ImGui::MenuItem("Open")) 
-					{
-						char* Path = Platform::OpenFileDialog();
-						if (Path)
-						{
-							OpenDocument(Path, Memory);
-							free(Path);
-						}
-					}
-					
-					if (ImGui::MenuItem("Save", "Ctrl+S")) 
-					{
-						//
-					}
-					if (ImGui::MenuItem("Save As..")) {}
-					ImGui::Separator();
-					if (ImGui::MenuItem("Quit", "Alt+F4")) { Memory->IsRunning = false; }
-				}
-				#pragma endregion
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-			ImGui::PopStyleColor();
-		}
-		ImGui::End();
-
-		ImGui::PopStyleColor(4);
-		ImGui::PopStyleVar(5);
-	}
-	#pragma endregion
-
-	#pragma region Left toolbar
-	{
-		ImGui::SetNextWindowSize(ImVec2(36,650));
-		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 55.0f + Memory->Window.MaximizeOffset));
-			
-		ImGuiWindowFlags WindowFlags = 0;
-		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-		WindowFlags |= ImGuiWindowFlags_NoResize;
-		WindowFlags |= ImGuiWindowFlags_NoMove;
-		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-		WindowFlags |= ImGuiWindowFlags_NoCollapse;
-		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-
-		ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-		bool Show = true;
-		ImGui::Begin("Left toolbar", &Show, WindowFlags);
-
-		ImGui::PushID(0);
-		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
-		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
-		{
-			
-		}
-		#undef CALCUV
-		ImGui::PopID();
-
-		ImGui::End();
-
-		ImGui::PopStyleVar(5);
-		ImGui::PopStyleColor(4);
-	}
-	#pragma endregion
+	EndOfFunction:
 
 	#pragma region Last mouse info
 	{
