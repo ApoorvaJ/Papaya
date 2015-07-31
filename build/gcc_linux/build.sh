@@ -1,1 +1,1 @@
-g++ -o papaya  ../../src/linux_papaya.cpp && ./papaya
+g++ -o papaya  ../../src/linux_papaya.cpp -ldl -lGL && ./papaya

@@ -766,7 +766,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 	#pragma region Brush tool
 	{
 		local_persist Color BrushCol = Color(0.0f,1.0f,0.0f);
-
+/*
 		if (ImGui::IsKeyPressed(VK_UP, false))
 		{
 			Memory->Tools.BrushDiameter++;
@@ -781,7 +781,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 		{
 			Memory->Document.CanvasZoom = 1.0;
 		}
-
+*/
 		#pragma region Right mouse dragging
 		{
 			if (Memory->Mouse.Pressed[1])

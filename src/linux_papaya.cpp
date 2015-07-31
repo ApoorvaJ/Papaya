@@ -26,6 +26,45 @@ typedef double real64;
 
 #include <stdio.h>
 
+// =================================================================================================
+
+void Platform::Print(char* Message)
+{
+	//
+}
+
+void Platform::StartMouseCapture()
+{
+	//
+}
+
+void Platform::ReleaseMouseCapture()
+{
+	//
+}
+
+void Platform::SetMousePosition(Vec2 Pos)
+{
+	//
+}
+
+void Platform::SetCursorVisibility(bool Visible)
+{
+	//
+}
+
+char* Platform::OpenFileDialog()
+{
+	return 0;
+}
+
+int64 Platform::GetMilliseconds()
+{
+	return 0;
+}
+
+// =================================================================================================
+
 int main(int argc, char **argv)
 {
   printf("Hello World\n");
