@@ -98,9 +98,9 @@ char* Platform::OpenFileDialog()
 
 int64 Platform::GetMilliseconds()
 {
-	int64 ms;
+	LARGE_INTEGER ms;
 	QueryPerformanceCounter(&ms);
-	return ms;
+	return ms.QuadPart;
 }
 
 // =================================================================================================
