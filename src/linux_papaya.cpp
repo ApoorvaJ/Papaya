@@ -18,6 +18,12 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
+#pragma GCC diagnostic ignored "-Wwrite-strings" //TODO: Check if all string warnings can be eliminated without suppression
+#include <x86intrin.h>
+
+#include "papaya.h"
+#include "papaya.cpp"
+
 #include <stdio.h>
 
 int main(int argc, char **argv)

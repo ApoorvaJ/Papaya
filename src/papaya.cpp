@@ -592,7 +592,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 		bool bTrue = true;
 		ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-		ImGui::Image((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
+		ImGui::Image((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
 		ImGui::End();
 
 		ImGui::PopStyleColor(1);
@@ -702,7 +702,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 		ImGui::PushID(0);
 		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
-		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
+		if(ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
 		{
 
 		}
@@ -998,7 +998,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 		{
 			float MinZoom = 0.01f, MaxZoom = 32.0f;
 			float ZoomSpeed = 0.2f * Memory->Document.CanvasZoom;
-			float ScaleDelta = min(MaxZoom - Memory->Document.CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
+			float ScaleDelta = Math::Min(MaxZoom - Memory->Document.CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
 			Vec2 OldCanvasZoom = Vec2((float)Memory->Document.Width, (float)Memory->Document.Height) * Memory->Document.CanvasZoom;
 
 			Memory->Document.CanvasZoom += ScaleDelta;

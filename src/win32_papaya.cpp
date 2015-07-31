@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-#define internal static 
-#define local_persist static 
+#define internal static
+#define local_persist static
 #define global_variable static
 
 typedef int8_t int8;
@@ -84,7 +84,7 @@ char* Platform::OpenFileDialog()
 	DialogParams.Flags			= OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
 	BOOL Result = GetOpenFileNameA(&DialogParams);
-	
+
 	if (Result)
 	{
 		return FileName;
@@ -94,6 +94,13 @@ char* Platform::OpenFileDialog()
 		free(FileName);
 		return 0;
 	}
+}
+
+int64 Platform::GetMilliseconds()
+{
+	int64 ms;
+	QueryPerformanceCounter(&ms);
+	return ms;
 }
 
 // =================================================================================================
@@ -201,7 +208,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		case WM_DESTROY:
 		{
 			Memory.IsRunning = false;
-			if (RenderingContext) 
+			if (RenderingContext)
 			{
 			    wglMakeCurrent(NULL, NULL);
 			    wglDeleteContext(RenderingContext);
@@ -313,8 +320,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				}
 			}
 
-			if (Y - WindowRect.top - (IsMaximized(Window) ? Memory.Window.MaximizeOffset : 0.0f) <= (float)Memory.Window.TitleBarHeight && 
-				X > WindowRect.left + 200.0f && 
+			if (Y - WindowRect.top - (IsMaximized(Window) ? Memory.Window.MaximizeOffset : 0.0f) <= (float)Memory.Window.TitleBarHeight &&
+				X > WindowRect.left + 200.0f &&
 				X < WindowRect.right - (float)(Memory.Window.TitleBarButtonsWidth + 10))
 			{
 				return HTCAPTION;
@@ -422,7 +429,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				exit(1);
 			}
 
-			if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDescriptor)) 
+			if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDescriptor))
 			{
 				// TODO: Log: Set pixel format failed
 				exit(1);
@@ -496,7 +503,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		io.ImeWindowHandle = Window;
 	}
 	#pragma endregion
-	
+
 	Memory.Window.IconWidth = 32;
 	Memory.Window.TitleBarButtonsWidth = 109;
 	Memory.Window.TitleBarHeight = 30;
@@ -526,7 +533,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		BOOL IsMaximized = IsMaximized(Window);
 		// Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f; // TODO: Might have to turn this on when activating WS_THICKFRAME for aero snapping to work
-		
+
 		#pragma region Start new ImGui frame
 		{
 			ImGuiIO& io = ImGui::GetIO();
@@ -554,14 +561,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::NewFrame();
 		}
 		#pragma endregion
-		
+
 		Papaya::UpdateAndRender(&Memory, &DebugMemory);
 
 		#pragma region Title Bar Buttons
 		{
 			ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.TitleBarButtonsWidth,24.0f));
 			ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width - Memory.Window.TitleBarButtonsWidth - Memory.Window.MaximizeOffset, Memory.Window.MaximizeOffset));
-			
+
 			ImGuiWindowFlags WindowFlags = 0;
 			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
 			WindowFlags |= ImGuiWindowFlags_NoResize;
@@ -592,7 +599,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 			ImVec2 StartUV = IsMaximized ? ImVec2(0.0f,0.5f) : ImVec2(0.5f,0.5f);
 			ImVec2 EndUV   = IsMaximized ? ImVec2(0.5f,1.0f) : ImVec2(1.0f,1.0f);
-			
+
 			ImGui::PopID();
 			ImGui::SameLine();
 			ImGui::PushID(1);

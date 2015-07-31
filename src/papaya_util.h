@@ -11,7 +11,7 @@ enum TimerScope_
 struct PapayaDebugTimer
 {
 	uint64 StartCycleCount,   StopCycleCount,   CyclesElapsed;
-	LARGE_INTEGER StartMilliseconds, StopMilliseconds;
+	int64 StartMilliseconds, StopMilliseconds;
 	double MillisecondsElapsed;
 };
 
@@ -28,7 +28,7 @@ namespace Util
 	void StartTime(TimerScope_ TimerScope, PapayaDebugMemory* DebugMemory)
 	{
 		int32 i = TimerScope;
-		QueryPerformanceCounter(&DebugMemory->Timers[i].StartMilliseconds);
+		DebugMemory->Timers[i].StartMilliseconds = Platform::GetMilliseconds();
 		DebugMemory->Timers[i].StartCycleCount = __rdtsc();
 	}
 
@@ -36,15 +36,15 @@ namespace Util
 	{
 		int32 i = TimerScope;
 		DebugMemory->Timers[i].StopCycleCount = __rdtsc();
-		QueryPerformanceCounter(&DebugMemory->Timers[i].StopMilliseconds);
+		DebugMemory->Timers[i].StopMilliseconds = Platform::GetMilliseconds();
 		DebugMemory->Timers[i].CyclesElapsed = DebugMemory->Timers[i].StopCycleCount   - DebugMemory->Timers[i].StartCycleCount;
-		DebugMemory->Timers[i].MillisecondsElapsed = (double)(DebugMemory->Timers[i].StopMilliseconds.QuadPart - DebugMemory->Timers[i].StartMilliseconds.QuadPart) *
+		DebugMemory->Timers[i].MillisecondsElapsed = (double)(DebugMemory->Timers[i].StopMilliseconds - DebugMemory->Timers[i].StartMilliseconds) *
 													 1000.0 / (double)DebugMemory->TicksPerSecond;
 	}
 
 	void ClearTimes()
 	{
-	
+
 	}
 
 	void DisplayTimes(PapayaDebugMemory* DebugMemory)
@@ -123,8 +123,8 @@ namespace Util
 		else
 		{
 			Platform::Print("Compilation failed\n");
-			const int32 BufferLength = 4096; 
-			int32 OutLength; 
+			const int32 BufferLength = 4096;
+			int32 OutLength;
 			char ErrorLog[BufferLength];
 
 			glGetShaderInfoLog(ShaderHandle, BufferLength, &OutLength, ErrorLog);

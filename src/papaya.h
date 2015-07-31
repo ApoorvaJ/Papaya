@@ -1,8 +1,8 @@
 #pragma once
 
 #define GLEW_STATIC
-#include <gl3w.h>
-#include <gl3w.c>
+#include "gl3w.h"
+#include "gl3w.c"
 
 #include "papaya_math.h"
 #include "papaya_platform.h"
@@ -101,7 +101,7 @@ struct MouseInfo
 struct ToolParams
 {
 	int32 BrushDiameter;
-	const int32 MaxBrushDiameter = 9999;
+	static const int32 MaxBrushDiameter = 9999;
 	float BrushOpacity; // Range: 0.0 - 100.0
 	float BrushHardness; // Range: 0.0 - 100.0
 	Vec2 RightClickDragStartPos;

@@ -8,4 +8,6 @@ namespace Platform
 	void SetMousePosition(Vec2 Pos);
 	void SetCursorVisibility(bool Visible);
 	char* OpenFileDialog();
+
+	int64 GetMilliseconds();
 }
