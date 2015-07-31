@@ -52,7 +52,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 		Memory->Document.InverseAspect = (float)Memory->Document.Height / (float)Memory->Document.Width;
 		Memory->Document.CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Document.Width, (float)Memory->Window.Height/(float)Memory->Document.Height);
 		if (Memory->Document.CanvasZoom > 1.0f) { Memory->Document.CanvasZoom = 1.0f; }
-		Memory->Document.CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Document.Width  * Memory->Document.CanvasZoom)/2.0f, 
+		Memory->Document.CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Document.Width  * Memory->Document.CanvasZoom)/2.0f,
 												   (Memory->Window.Height - (float)Memory->Document.Height * Memory->Document.CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
 	}
 	#pragma endregion
@@ -62,7 +62,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 		// Create a framebuffer object and bind it
 		glGenFramebuffers(1, &Memory->FrameBufferObject);
 		glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
-		
+
 		Memory->FboRenderTexture = AllocateEmptyTexture(Memory->Document.Width, Memory->Document.Height);
 		Memory->FboSampleTexture = AllocateEmptyTexture(Memory->Document.Width, Memory->Document.Height);
 
@@ -91,7 +91,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[0]); // Position attribute
 		glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[1]); // UV attribute
 		//glEnableVertexAttribArray(Memory->Shaders[PapayaShader_Brush].Attributes[2]); // Vertex color attribute // TODO: Remove unused vertex color attributes from shaders
-	
+
 	#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
 		glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));		 // Position attribute
 		glVertexAttribPointer(Memory->Shaders[PapayaShader_Brush].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));			 // UV attribute
@@ -133,15 +133,15 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 internal void CloseDocument(PapayaMemory* Memory)
 {
 	// Document
-	if (Memory->Document.Texture) 
-	{	
-		free(Memory->Document.Texture); 
+	if (Memory->Document.Texture)
+	{
+		free(Memory->Document.Texture);
 		Memory->Document.Texture = 0;
 	}
 
-	if (Memory->Document.TextureID) 
-	{ 
-		glDeleteTextures(1, &Memory->Document.TextureID); 
+	if (Memory->Document.TextureID)
+	{
+		glDeleteTextures(1, &Memory->Document.TextureID);
 		Memory->Document.TextureID = 0;
 	}
 
@@ -196,7 +196,7 @@ void Initialize(PapayaMemory* Memory)
 
 	#pragma region Set up brush shader
 	{
-		const GLchar *vertex_shader = 
+		const GLchar *vertex_shader =
 "				#version 330																						\n"
 "				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
 "																													\n"
@@ -323,7 +323,7 @@ void Initialize(PapayaMemory* Memory)
 
 	#pragma region Set up brush cursor shader
 	{
-		const GLchar *vertex_shader = 
+		const GLchar *vertex_shader =
 "				#version 330																						\n"
 "				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
 "																													\n"
@@ -338,7 +338,7 @@ void Initialize(PapayaMemory* Memory)
 "					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
 "				}																									\n";
 
-		const GLchar* fragment_shader = 
+		const GLchar* fragment_shader =
 "				#version 330																						\n"
 "																													\n"
 "				#define M_PI 3.1415926535897932384626433832795														\n"
@@ -411,7 +411,7 @@ void Initialize(PapayaMemory* Memory)
 	#pragma region Setup for ImGui
 	{
 		// TODO: Write shader compilation wrapper
-		const GLchar *vertex_shader = 
+		const GLchar *vertex_shader =
 "				#version 330                                                      \n"
 "				uniform mat4 ProjMtx;                                             \n" // Uniforms[0]
 "																				  \n"
@@ -428,7 +428,7 @@ void Initialize(PapayaMemory* Memory)
 "					gl_Position = ProjMtx * vec4(Position.xy,0,1);                \n"
 "				}                                                                 \n";
 
-		const GLchar* fragment_shader = 
+		const GLchar* fragment_shader =
 "				#version 330													  \n"
 "				uniform sampler2D Texture;										  \n" // Uniforms[1]
 "																				  \n"
@@ -636,7 +636,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 			{
 				#pragma region File Menu
 				{
-					if (ImGui::MenuItem("Open")) 
+					if (ImGui::MenuItem("Open"))
 					{
 						char* Path = Platform::OpenFileDialog();
 						if (Path)
@@ -651,8 +651,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 					{
 						CloseDocument(Memory);
 					}
-					
-					if (ImGui::MenuItem("Save", "Ctrl+S")) 
+
+					if (ImGui::MenuItem("Save", "Ctrl+S"))
 					{
 						//
 					}
@@ -677,7 +677,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 	{
 		ImGui::SetNextWindowSize(ImVec2(36,650));
 		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 55.0f + Memory->Window.MaximizeOffset));
-			
+
 		ImGuiWindowFlags WindowFlags = 0;
 		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
 		WindowFlags |= ImGuiWindowFlags_NoResize;
@@ -704,7 +704,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 		#define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
 		if(ImGui::ImageButton((void*)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
 		{
-			
+
 		}
 		#undef CALCUV
 		ImGui::PopID();
@@ -722,7 +722,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 	{
 		ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.Width - 37, 30));
 		ImGui::SetNextWindowPos(ImVec2(34, 30));
-			
+
 		ImGuiWindowFlags WindowFlags = 0;
 		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
 		WindowFlags |= ImGuiWindowFlags_NoResize;
@@ -747,7 +747,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 		ImGui::InputInt("Diameter", &Memory->Tools.BrushDiameter);
 		Memory->Tools.BrushDiameter = Math::Clamp(Memory->Tools.BrushDiameter, 1, Memory->Tools.MaxBrushDiameter);
-		
+
 		ImGui::PopItemWidth();
 		ImGui::PushItemWidth(80);
 		ImGui::SameLine();
@@ -849,7 +849,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 				{ -1.0f,		1.0f,			0.0f,		1.0f },
 			};
 			glUseProgram(Memory->Shaders[PapayaShader_Brush].Handle);
-		
+
 			Vec2 CorrectedPos		= Memory->Mouse.UV     + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 			Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
@@ -886,7 +886,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 			glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VboHandle);
 			glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTBrush].VaoHandle);
-		
+
 			glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->FboSampleTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -917,7 +917,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 				{ -1.0f,		1.0f,			0.0f,		1.0f },
 			};
 			glUseProgram(Memory->Shaders[PapayaShader_ImGui].Handle);
-		
+
 
 			glUniformMatrix4fv(Memory->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
 			//glUniform1i(Memory->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
@@ -938,7 +938,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 			Memory->FboRenderTexture = Memory->Document.TextureID;
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
 			Memory->Document.TextureID = Temp;
-			
+
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 
@@ -1004,7 +1004,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 			Memory->Document.CanvasZoom += ScaleDelta;
 			if (Memory->Document.CanvasZoom < MinZoom) { Memory->Document.CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
 			Vec2 NewCanvasSize = Vec2((float)Memory->Document.Width, (float)Memory->Document.Height) * Memory->Document.CanvasZoom;
-		
+
 			if ((NewCanvasSize.x > Memory->Window.Width || NewCanvasSize.y > Memory->Window.Height))
 			{
 				Vec2 PreScaleMousePos = (Memory->Mouse.Pos - Memory->Document.CanvasPosition) / OldCanvasZoom;
@@ -1124,7 +1124,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 		};
 		glUseProgram(Memory->Shaders[PapayaShader_BrushCursor].Handle);
 		glUniformMatrix4fv(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Memory->Tools.BrushOpacity / 100.0f); // Brush color 
+		glUniform4f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Memory->Tools.BrushOpacity / 100.0f); // Brush color
 		glUniform1f(Memory->Shaders[PapayaShader_BrushCursor].Uniforms[2], Memory->Tools.BrushHardness / 100.0f);					// Hardness
 
 		// Grow our buffer according to what we need
@@ -1134,8 +1134,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 		float ScaledDiameter = Memory->Tools.BrushDiameter * Memory->Document.CanvasZoom;
 		Vec2 Size = Vec2(ScaledDiameter,ScaledDiameter);
 		Vec2 Position = (Memory->Mouse.IsDown[1] || Memory->Mouse.WasDown[1] ? Memory->Tools.RightClickDragStartPos : Memory->Mouse.Pos) - (Size * 0.5f);
-		buffer_data[0].pos = Vec2(Position.x, Position.y);		
-		buffer_data[1].pos = Vec2(Size.x + Position.x, Position.y);	
+		buffer_data[0].pos = Vec2(Position.x, Position.y);
+		buffer_data[1].pos = Vec2(Size.x + Position.x, Position.y);
 		buffer_data[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
 		buffer_data[3].pos = Vec2(Position.x, Position.y);
 		buffer_data[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
@@ -1144,9 +1144,9 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 		glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_BrushCursor].VaoHandle);
 
-		/*glScissor(34 + (int)Memory->Window.MaximizeOffset, 
-				  3 + (int)Memory->Window.MaximizeOffset, 
-				  (int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset), 
+		/*glScissor(34 + (int)Memory->Window.MaximizeOffset,
+				  3 + (int)Memory->Window.MaximizeOffset,
+				  (int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset),
 				  (int)Memory->Window.Height - 58 - (2 * (int)Memory->Window.MaximizeOffset));*/
 
 
