@@ -448,7 +448,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				exit(1);
 			}
 
-			if (!gl3wIsSupported(3,2))
+			if (!gl3wIsSupported(3,1))
 			{
 				// TODO: Log: Required OpenGL version not supported
 				exit(1);

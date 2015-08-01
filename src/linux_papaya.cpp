@@ -67,35 +67,158 @@ int64 Platform::GetMilliseconds()
 
 // =================================================================================================
 
+void DrawAQuad()
+{
+	glClearColor(0.0, 0.0, 1.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 int main(int argc, char **argv)
 {
-  Display* Display = XOpenDisplay(0);
-  if (!Display)
-  {
-    //TODO: Log: Error opening connection to the X server
-    return 1;
-  }
+	PapayaMemory Memory = {0};
+	PapayaDebugMemory DebugMemory = {0};
 
-  int32 BlackColor = BlackPixel(Display, DefaultScreen(Display));
-  int32 WhiteColor = WhitePixel(Display, DefaultScreen(Display));
+	Display* Display;
+	Window Window;
+	XVisualInfo* VisualInfo;
+	Atom WmDeleteMessage;
 
-  Window Window = XCreateSimpleWindow(Display, DefaultRootWindow(Display), 0, 0, 200, 100, 0, BlackColor, BlackColor);
+	// Create window
+	{
+	 	Display = XOpenDisplay(0);
+	 	if (!Display)
+	 	{
+			// TODO: Log: Error opening connection to the X server
+			exit(1);
+	 	}
 
-  XSelectInput(Display, Window, StructureNotifyMask);
-  XMapWindow(Display, Window);
-  GC GraphicsContext = XCreateGC(Display, Window, 0, 0);
-  XSetForeground(Display, GraphicsContext, WhiteColor);
-  for(;;)
-  {
-    XEvent Event;
-    XNextEvent(Display, &Event);
-    if (Event.type == MapNotify) { break; }
-  }
+		int32 Attributes[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+	 	VisualInfo = glXChooseVisual(Display, 0, Attributes);
+		if(VisualInfo == NULL)
+		{
+			// TODO: Log: No appropriate visual found
+			exit(1);
+		}
 
-  XDrawLine(Display, Window, GraphicsContext, 10, 60, 180, 20);
+		XSetWindowAttributes SetWindowAttributes = {0};
+		SetWindowAttributes.colormap = XCreateColormap(Display, DefaultRootWindow(Display), VisualInfo->visual, AllocNone);
+		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask;
 
-  XFlush(Display);
-  sleep(10);
+		Window = XCreateWindow(Display, DefaultRootWindow(Display), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
+		XMapWindow(Display, Window);
+	 	XStoreName(Display, Window, "Papaya");
 
-  return 0;
+		WmDeleteMessage = XInternAtom(Display, "WM_DELETE_WINDOW", False);
+		XSetWMProtocols(Display, Window, &WmDeleteMessage, 1);
+	}
+
+	// Create OpenGL context
+	{
+		GLXContext GraphicsContext = glXCreateContext(Display, VisualInfo, 0, GL_TRUE);
+		glXMakeCurrent(Display, Window, GraphicsContext);
+		if (gl3wInit() != 0)
+		{
+			// TODO: Log: GL3W Init failed
+			Platform::Print("Gl3w init failed.\n");
+			exit(1);
+		}
+
+		if (!gl3wIsSupported(3,1))
+		{
+			// TODO: Log: Required OpenGL version not supported
+			Platform::Print("Required OpenGL version not supported.\n");
+			exit(1);
+		}
+
+		glGetIntegerv(GL_MAJOR_VERSION, &Memory.System.OpenGLVersion[0]);
+		glGetIntegerv(GL_MINOR_VERSION, &Memory.System.OpenGLVersion[1]);
+		printf("%d, %d\n", Memory.System.OpenGLVersion[0], Memory.System.OpenGLVersion[1]);
+	}
+
+	Papaya::Initialize(&Memory);
+
+	// Initialize ImGui
+	{
+		// TODO: Profiler timer setup
+
+		ImGuiIO& io = ImGui::GetIO();
+		// TODO: Keyboard mappings
+
+		io.RenderDrawListsFn = Papaya::RenderImGui;
+	}
+
+	Memory.IsRunning = true;
+
+	while (Memory.IsRunning)
+	{
+		XEvent Event;
+		XNextEvent(Display, &Event);
+		switch (Event.type)
+		{
+			case Expose:
+			{
+				// Start new ImGui frame
+				{
+					ImGuiIO& io = ImGui::GetIO();
+
+					XWindowAttributes WindowAttributes;
+					XGetWindowAttributes(Display, Window, &WindowAttributes);
+					io.DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
+					ImGui::NewFrame();
+				}
+
+				Papaya::UpdateAndRender(&Memory, &DebugMemory);
+
+				ImGui::Render(&Memory);
+                glXSwapBuffers(Display, Window);
+			} break;
+
+			case ClientMessage:
+			{
+				if (Event.xclient.data.l[0] == WmDeleteMessage) { Memory.IsRunning = false; }
+			} break;
+		}
+	}
+
+	return 0;
+/*
+
+	Atom WmDeleteMessage = XInternAtom(Display, "WM_DELETE_WINDOW", False);
+	XSetWMProtocols(Display, Window, &WmDeleteMessage, 1);
+
+	XSelectInput(Display, Window, StructureNotifyMask);
+	XMapWindow(Display, Window);
+	GC GraphicsContext = XCreateGC(Display, Window, 0, 0);
+	XSetForeground(Display, GraphicsContext, WhiteColor);
+	for(;;)
+	{
+		XEvent Event;
+		XNextEvent(Display, &Event);
+		if (Event.type == MapNotify) { break; }
+	}
+
+	XDrawLine(Display, Window, GraphicsContext, 10, 60, 180, 20);
+	XFlush(Display);
+
+	Memory.IsRunning = true;
+
+	while (Memory.IsRunning)
+	{
+		XEvent Event;
+		XNextEvent(Display, &Event);
+		switch (Event.type)
+		{
+			case Expose:
+			{
+				//
+			} break;
+
+			case ClientMessage:
+			{
+				if (Event.xclient.data.l[0] == WmDeleteMessage) { Memory.IsRunning = false; }
+			} break;
+		}
+	}
+
+	return 0;*/
 }

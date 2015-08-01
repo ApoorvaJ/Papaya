@@ -86,6 +86,11 @@ struct PapayaWindow
 	uint32 IconWidth, TitleBarButtonsWidth, TitleBarHeight;
 };
 
+struct SystemInfo
+{
+	int32 OpenGLVersion[2];
+};
+
 struct MouseInfo
 {
 	Vec2 Pos;
@@ -117,6 +122,7 @@ struct PapayaMemory
 	Color InterfaceColors[PapayaInterfaceColor_COUNT];
 	uint32 CurrentColor;
 	PapayaWindow Window;
+	SystemInfo System;
 	PapayaVertexBuffer VertexBuffers[PapayaVertexBuffer_COUNT];
 	PapayaShader Shaders[PapayaShader_COUNT];
 	MouseInfo Mouse;
