@@ -9,7 +9,7 @@ Papaya is very much a work in progress, and is not ready for real world usage. F
 Building
 --------
 
-Papaya currently only supports Windows.
+Papaya currently supports Windows, and a Linux port is on its way.
 
 It is set up to use single file compilation. Compile only win32_papaya.cpp, and you're done.
 
