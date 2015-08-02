@@ -520,7 +520,9 @@ void Initialize(PapayaMemory* Memory)
 	}
 	#pragma endregion
 
-	OpenDocument("C:\\Users\\Apoorva\\Pictures\\ImageTest\\h.png", Memory);
+#ifdef PAPAYA_DEFAULT_IMAGE
+	OpenDocument(PAPAYA_DEFAULT_IMAGE, Memory);
+#endif
 
 	Memory->Tools.BrushDiameter = 50;
 	Memory->Tools.BrushHardness = 90.0f;
@@ -569,42 +571,11 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 	}
 	#pragma endregion
 
-	#pragma region Title Bar Icon
-	{
-		ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.IconWidth,(float)Memory->Window.TitleBarHeight));
-		ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 1.0f + Memory->Window.MaximizeOffset));
-
-		ImGuiWindowFlags WindowFlags = 0;
-		WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-		WindowFlags |= ImGuiWindowFlags_NoResize;
-		WindowFlags |= ImGuiWindowFlags_NoMove;
-		WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-		WindowFlags |= ImGuiWindowFlags_NoCollapse;
-		WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
-
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
-
-		bool bTrue = true;
-		ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-		ImGui::Image((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
-		ImGui::End();
-
-		ImGui::PopStyleColor(1);
-		ImGui::PopStyleVar(5);
-	}
-	#pragma endregion
-
 	#pragma region Title Bar Menu
 	{
-		ImGui::SetNextWindowSize(ImVec2(Memory->Window.Width - Memory->Window.IconWidth - Memory->Window.TitleBarButtonsWidth - 3.0f - (2.0f * Memory->Window.MaximizeOffset),
+		ImGui::SetNextWindowSize(ImVec2(Memory->Window.Width - Memory->Window.MenuHorizontalOffset - Memory->Window.TitleBarButtonsWidth - 3.0f - (2.0f * Memory->Window.MaximizeOffset),
 			Memory->Window.TitleBarHeight - 10.0f));
-		ImGui::SetNextWindowPos(ImVec2(2.0f + Memory->Window.IconWidth + Memory->Window.MaximizeOffset,
+		ImGui::SetNextWindowPos(ImVec2(2.0f + Memory->Window.MenuHorizontalOffset + Memory->Window.MaximizeOffset,
 			1.0f + Memory->Window.MaximizeOffset + 5.0f));
 
 		ImGuiWindowFlags WindowFlags = 0;
