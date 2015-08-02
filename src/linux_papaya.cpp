@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
 		XSetWindowAttributes SetWindowAttributes = {0};
 		SetWindowAttributes.colormap = XCreateColormap(Display, DefaultRootWindow(Display), VisualInfo->visual, AllocNone);
-		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask;
+		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask | PointerMotionMask;
 
 		Window = XCreateWindow(Display, DefaultRootWindow(Display), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
 
@@ -189,76 +189,46 @@ int main(int argc, char **argv)
 
 	while (Memory.IsRunning)
 	{
-		XEvent Event;
-		XNextEvent(Display, &Event);
-		switch (Event.type)
+		// Event handling
+		while (XPending(Display))
 		{
-			case Expose:
+			XEvent Event;
+			XNextEvent(Display, &Event);
+			switch (Event.type)
 			{
-				// Start new ImGui frame
+				case Expose:
 				{
-					ImGuiIO& io = ImGui::GetIO();
-
 					XWindowAttributes WindowAttributes;
 					XGetWindowAttributes(Display, Window, &WindowAttributes);
-					io.DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
+					ImGui::GetIO().DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
 					Memory.Window.Width = WindowAttributes.width;
 					Memory.Window.Height = WindowAttributes.height;
-					ImGui::NewFrame();
-				}
+				} break;
 
-				Papaya::UpdateAndRender(&Memory, &DebugMemory);
+				case ClientMessage:
+				{
+					if (Event.xclient.data.l[0] == WmDeleteMessage) { Memory.IsRunning = false; }
+				} break;
 
-				ImGui::Render(&Memory);
-                glXSwapBuffers(Display, Window);
-			} break;
+				case MotionNotify:
+				{
+					ImGui::GetIO().MousePos.x = Event.xmotion.x;
+					ImGui::GetIO().MousePos.y = Event.xmotion.y;
+				} break;
 
-			case ClientMessage:
-			{
-				if (Event.xclient.data.l[0] == WmDeleteMessage) { Memory.IsRunning = false; }
-			} break;
+			}
+		}
+
+		// Update and render
+		{
+			ImGui::NewFrame();
+
+			Papaya::UpdateAndRender(&Memory, &DebugMemory);
+
+			ImGui::Render(&Memory);
+			glXSwapBuffers(Display, Window);
 		}
 	}
 
 	return 0;
-/*
-
-	Atom WmDeleteMessage = XInternAtom(Display, "WM_DELETE_WINDOW", False);
-	XSetWMProtocols(Display, Window, &WmDeleteMessage, 1);
-
-	XSelectInput(Display, Window, StructureNotifyMask);
-	XMapWindow(Display, Window);
-	GC GraphicsContext = XCreateGC(Display, Window, 0, 0);
-	XSetForeground(Display, GraphicsContext, WhiteColor);
-	for(;;)
-	{
-		XEvent Event;
-		XNextEvent(Display, &Event);
-		if (Event.type == MapNotify) { break; }
-	}
-
-	XDrawLine(Display, Window, GraphicsContext, 10, 60, 180, 20);
-	XFlush(Display);
-
-	Memory.IsRunning = true;
-
-	while (Memory.IsRunning)
-	{
-		XEvent Event;
-		XNextEvent(Display, &Event);
-		switch (Event.type)
-		{
-			case Expose:
-			{
-				//
-			} break;
-
-			case ClientMessage:
-			{
-				if (Event.xclient.data.l[0] == WmDeleteMessage) { Memory.IsRunning = false; }
-			} break;
-		}
-	}
-
-	return 0;*/
 }
