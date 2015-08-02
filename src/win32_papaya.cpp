@@ -18,6 +18,7 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
+#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\h.png"
 #include "papaya.h"
 #include "papaya.cpp"
 
@@ -448,7 +449,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				exit(1);
 			}
 
-			if (!gl3wIsSupported(3,2))
+			if (!gl3wIsSupported(3,1))
 			{
 				// TODO: Log: Required OpenGL version not supported
 				exit(1);
@@ -563,6 +564,37 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		#pragma endregion
 
 		Papaya::UpdateAndRender(&Memory, &DebugMemory);
+
+		#pragma region Title Bar Icon
+		{
+			ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.MenuHorizontalOffset,(float)Memory->Window.TitleBarHeight));
+			ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 1.0f + Memory->Window.MaximizeOffset));
+
+			ImGuiWindowFlags WindowFlags = 0;
+			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+			WindowFlags |= ImGuiWindowFlags_NoResize;
+			WindowFlags |= ImGuiWindowFlags_NoMove;
+			WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+			WindowFlags |= ImGuiWindowFlags_NoCollapse;
+			WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
+			bool bTrue = true;
+			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
+			ImGui::Image((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
+			ImGui::End();
+
+			ImGui::PopStyleColor(1);
+			ImGui::PopStyleVar(5);
+		}
+		#pragma endregion
 
 		#pragma region Title Bar Buttons
 		{
