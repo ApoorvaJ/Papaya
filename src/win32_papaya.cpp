@@ -505,7 +505,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	}
 	#pragma endregion
 
-	Memory.Window.IconWidth = 32;
+	Memory.Window.MenuHorizontalOffset = 32;
 	Memory.Window.TitleBarButtonsWidth = 109;
 	Memory.Window.TitleBarHeight = 30;
 
@@ -567,8 +567,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		#pragma region Title Bar Icon
 		{
-			ImGui::SetNextWindowSize(ImVec2((float)Memory->Window.MenuHorizontalOffset,(float)Memory->Window.TitleBarHeight));
-			ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 1.0f + Memory->Window.MaximizeOffset));
+			ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.MenuHorizontalOffset,(float)Memory.Window.TitleBarHeight));
+			ImGui::SetNextWindowPos(ImVec2(1.0f + Memory.Window.MaximizeOffset, 1.0f + Memory.Window.MaximizeOffset));
 
 			ImGuiWindowFlags WindowFlags = 0;
 			WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -584,11 +584,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
 
 			bool bTrue = true;
 			ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-			ImGui::Image((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
+			ImGui::Image((void*)(intptr_t)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
 			ImGui::End();
 
 			ImGui::PopStyleColor(1);
