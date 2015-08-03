@@ -224,6 +224,10 @@ int main(int argc, char **argv)
 					else if (Button == 3) { Button = 1; } //
 
 					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = true; }
+					else
+					{
+						ImGui::GetIO().MouseWheel += (Button == 4) ? +1.0f : -1.0f;
+					}
 				} break;
 
 				case ButtonRelease:
