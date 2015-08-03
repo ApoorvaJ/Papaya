@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
 		XSetWindowAttributes SetWindowAttributes = {0};
 		SetWindowAttributes.colormap = XCreateColormap(Display, DefaultRootWindow(Display), VisualInfo->visual, AllocNone);
-		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask | PointerMotionMask;
+		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
 		Window = XCreateWindow(Display, DefaultRootWindow(Display), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
 
@@ -214,6 +214,26 @@ int main(int argc, char **argv)
 				{
 					ImGui::GetIO().MousePos.x = Event.xmotion.x;
 					ImGui::GetIO().MousePos.y = Event.xmotion.y;
+				} break;
+
+				case ButtonPress:
+				{
+					int32 Button = Event.xbutton.button;
+					if 		(Button == 1) { Button = 0; } // This section maps Xlib's button indices (Left = 1, Middle = 2, Right = 3)
+					else if (Button == 2) { Button = 2; } // to Papaya's button indices              (Left = 0, Right = 1, Middle = 2)
+					else if (Button == 3) { Button = 1; } //
+
+					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = true; }
+				} break;
+
+				case ButtonRelease:
+				{
+					int32 Button = Event.xbutton.button;
+					if 		(Button == 1) { Button = 0; }
+					else if (Button == 2) { Button = 2; }
+					else if (Button == 3) { Button = 1; }
+
+					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = false; }
 				} break;
 
 			}
