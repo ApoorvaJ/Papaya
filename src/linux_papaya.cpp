@@ -29,6 +29,9 @@ typedef double real64;
 #include <unistd.h>
 #include <stdio.h>
 
+global_variable Display* XlibDisplay;
+global_variable Window XlibWindow;
+
 // =================================================================================================
 
 void Platform::Print(char* Message)
@@ -53,7 +56,21 @@ void Platform::SetMousePosition(Vec2 Pos)
 
 void Platform::SetCursorVisibility(bool Visible)
 {
-	//
+	if (!Visible)
+	{
+		// Make a blank cursor
+		char Empty[1] = {0};
+		Pixmap Blank = XCreateBitmapFromData (XlibDisplay, XlibWindow, Empty, 1, 1);
+		if(Blank == None) fprintf(stderr, "error: out of memory.\n");
+		XColor dummy;
+		Cursor InvisCursor = XCreatePixmapCursor(XlibDisplay, Blank, Blank, &dummy, &dummy, 0, 0);
+		XFreePixmap (XlibDisplay, Blank);
+		XDefineCursor(XlibDisplay, XlibWindow, InvisCursor);
+	}
+	else
+	{
+		XUndefineCursor(XlibDisplay, XlibWindow); // TODO: Test what happens if cursor is attempted to be shown when it is not hidden in the first place.
+	}
 }
 
 char* Platform::OpenFileDialog()
@@ -73,22 +90,20 @@ int main(int argc, char **argv)
 	PapayaMemory Memory = {0};
 	PapayaDebugMemory DebugMemory = {0};
 
-	Display* Display;
-	Window Window;
 	XVisualInfo* VisualInfo;
 	Atom WmDeleteMessage;
 
 	// Create window
 	{
-	 	Display = XOpenDisplay(0);
-	 	if (!Display)
+	 	XlibDisplay = XOpenDisplay(0);
+	 	if (!XlibDisplay)
 	 	{
 			// TODO: Log: Error opening connection to the X server
 			exit(1);
 	 	}
 
 		int32 Attributes[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-	 	VisualInfo = glXChooseVisual(Display, 0, Attributes);
+	 	VisualInfo = glXChooseVisual(XlibDisplay, 0, Attributes);
 		if(VisualInfo == NULL)
 		{
 			// TODO: Log: No appropriate visual found
@@ -96,18 +111,18 @@ int main(int argc, char **argv)
 		}
 
 		XSetWindowAttributes SetWindowAttributes = {0};
-		SetWindowAttributes.colormap = XCreateColormap(Display, DefaultRootWindow(Display), VisualInfo->visual, AllocNone);
+		SetWindowAttributes.colormap = XCreateColormap(XlibDisplay, DefaultRootWindow(XlibDisplay), VisualInfo->visual, AllocNone);
 		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
-		Window = XCreateWindow(Display, DefaultRootWindow(Display), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
+		XlibWindow = XCreateWindow(XlibDisplay, DefaultRootWindow(XlibDisplay), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
 		Memory.Window.Width = 600;
 		Memory.Window.Height = 600;
 
-		XMapWindow(Display, Window);
-	 	XStoreName(Display, Window, "Papaya");
+		XMapWindow(XlibDisplay, XlibWindow);
+	 	XStoreName(XlibDisplay, XlibWindow, "Papaya");
 
-		WmDeleteMessage = XInternAtom(Display, "WM_DELETE_WINDOW", False);
-		XSetWMProtocols(Display, Window, &WmDeleteMessage, 1);
+		WmDeleteMessage = XInternAtom(XlibDisplay, "WM_DELETE_WINDOW", False);
+		XSetWMProtocols(XlibDisplay, XlibWindow, &WmDeleteMessage, 1);
 
 		// Window icon
 		{
@@ -143,10 +158,10 @@ int main(int argc, char **argv)
 
 			//printf("%d\n", sizeof(buffer));
 			//uint64 buffer[] = {2,2,4294901760,4278255360,4292649817,4294967295};
-			Atom net_wm_icon = XInternAtom(Display, "_NET_WM_ICON", False);
-			Atom cardinal = XInternAtom(Display, "CARDINAL", False);
+			Atom net_wm_icon = XInternAtom(XlibDisplay, "_NET_WM_ICON", False);
+			Atom cardinal = XInternAtom(XlibDisplay, "CARDINAL", False);
 			int32 length = sizeof(buffer)/8;
-			XChangeProperty(Display, Window, net_wm_icon, cardinal, 32, PropModeReplace, (uint8*) buffer, length);
+			XChangeProperty(XlibDisplay, XlibWindow, net_wm_icon, cardinal, 32, PropModeReplace, (uint8*) buffer, length);
 
 
 		}
@@ -154,8 +169,8 @@ int main(int argc, char **argv)
 
 	// Create OpenGL context
 	{
-		GLXContext GraphicsContext = glXCreateContext(Display, VisualInfo, 0, GL_TRUE);
-		glXMakeCurrent(Display, Window, GraphicsContext);
+		GLXContext GraphicsContext = glXCreateContext(XlibDisplay, VisualInfo, 0, GL_TRUE);
+		glXMakeCurrent(XlibDisplay, XlibWindow, GraphicsContext);
 		if (gl3wInit() != 0)
 		{
 			// TODO: Log: GL3W Init failed
@@ -192,16 +207,16 @@ int main(int argc, char **argv)
 	while (Memory.IsRunning)
 	{
 		// Event handling
-		while (XPending(Display))
+		while (XPending(XlibDisplay))
 		{
 			XEvent Event;
-			XNextEvent(Display, &Event);
+			XNextEvent(XlibDisplay, &Event);
 			switch (Event.type)
 			{
 				case Expose:
 				{
 					XWindowAttributes WindowAttributes;
-					XGetWindowAttributes(Display, Window, &WindowAttributes);
+					XGetWindowAttributes(XlibDisplay, XlibWindow, &WindowAttributes);
 					ImGui::GetIO().DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
 					Memory.Window.Width = WindowAttributes.width;
 					Memory.Window.Height = WindowAttributes.height;
@@ -252,7 +267,7 @@ int main(int argc, char **argv)
 			Papaya::UpdateAndRender(&Memory, &DebugMemory);
 
 			ImGui::Render(&Memory);
-			glXSwapBuffers(Display, Window);
+			glXSwapBuffers(XlibDisplay, XlibWindow);
 		}
 	}
 
