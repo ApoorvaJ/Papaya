@@ -100,6 +100,8 @@ int main(int argc, char **argv)
 		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
 		Window = XCreateWindow(Display, DefaultRootWindow(Display), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
+		Memory.Window.Width = 600;
+		Memory.Window.Height = 600;
 
 		XMapWindow(Display, Window);
 	 	XStoreName(Display, Window, "Papaya");
