@@ -9,9 +9,9 @@ Papaya is very much a work in progress, and is not ready for real world usage. F
 Building
 --------
 
-Papaya currently supports Windows, and a Linux port is on its way.
+Papaya supports Windows and Linux, and is set up to use single file compilation. Compile only win32_papaya.cpp or linux_papaya.cpp, and you're done.
 
-It is set up to use single file compilation. Compile only win32_papaya.cpp, and you're done.
+Project files for Visual Studio 2015, 2013 and 2012 and shell build scripts for gcc are provided in the /build folder.
 
 Credits
 ------
