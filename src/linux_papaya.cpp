@@ -234,57 +234,34 @@ int main(int argc, char **argv)
 				} break;
 
 				case ButtonPress:
+				case ButtonRelease:
 				{
 					int32 Button = Event.xbutton.button;
 					if 		(Button == 1) { Button = 0; } // This section maps Xlib's button indices (Left = 1, Middle = 2, Right = 3)
 					else if (Button == 2) { Button = 2; } // to Papaya's button indices              (Left = 0, Right = 1, Middle = 2)
 					else if (Button == 3) { Button = 1; } //
 
-					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = true; }
+					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = (Event.type == ButtonPress); }
 					else
 					{
-						ImGui::GetIO().MouseWheel += (Button == 4) ? +1.0f : -1.0f;
+						if (Event.type == ButtonPress) { ImGui::GetIO().MouseWheel += (Button == 4) ? +1.0f : -1.0f; }
 					}
 				} break;
 
-				case ButtonRelease:
-				{
-					int32 Button = Event.xbutton.button;
-					if 		(Button == 1) { Button = 0; }
-					else if (Button == 2) { Button = 2; }
-					else if (Button == 3) { Button = 1; }
-
-					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = false; }
-				} break;
-
 				case KeyPress:
+				case KeyRelease:
 				{
 					int32 keysym = XLookupKeysym(&Event.xkey, 0);
 					switch (keysym) // List of keysym's can be found in keysymdef.h or here [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
 					{
 						case XK_Control_L:
-						case XK_Control_R: { ImGui::GetIO().KeyCtrl = true; } break;
+						case XK_Control_R: { ImGui::GetIO().KeyCtrl  = (Event.type == KeyPress); } break;
 						case XK_Shift_L:
-						case XK_Shift_R:   { ImGui::GetIO().KeyShift = true; } break;
+						case XK_Shift_R:   { ImGui::GetIO().KeyShift = (Event.type == KeyPress); } break;
 						case XK_Alt_L:
-						case XK_Alt_R:     { ImGui::GetIO().KeyAlt = true; } break;
+						case XK_Alt_R:     { ImGui::GetIO().KeyAlt   = (Event.type == KeyPress); } break;
 					}
 				} break;
-
-				case KeyRelease:
-				{
-					int32 keysym = XLookupKeysym(&Event.xkey, 0);
-					switch (keysym)
-					{
-						case XK_Control_L:
-						case XK_Control_R: { ImGui::GetIO().KeyCtrl = false; } break;
-						case XK_Shift_L:
-						case XK_Shift_R:   { ImGui::GetIO().KeyShift = false; } break;
-						case XK_Alt_L:
-						case XK_Alt_R:     { ImGui::GetIO().KeyAlt = false; } break;
-					}
-				} break;
-
 			}
 		}
 
