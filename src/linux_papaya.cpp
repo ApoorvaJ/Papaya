@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 
 		XSetWindowAttributes SetWindowAttributes = {0};
 		SetWindowAttributes.colormap = XCreateColormap(XlibDisplay, DefaultRootWindow(XlibDisplay), VisualInfo->visual, AllocNone);
-		SetWindowAttributes.event_mask = ExposureMask | KeyPressMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
+		SetWindowAttributes.event_mask = ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
 
 		XlibWindow = XCreateWindow(XlibDisplay, DefaultRootWindow(XlibDisplay), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
 		Memory.Window.Width = 600;
@@ -255,6 +255,34 @@ int main(int argc, char **argv)
 					else if (Button == 3) { Button = 1; }
 
 					if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = false; }
+				} break;
+
+				case KeyPress:
+				{
+					int32 keysym = XLookupKeysym(&Event.xkey, 0);
+					switch (keysym) // List of keysym's can be found in keysymdef.h or here [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
+					{
+						case XK_Control_L:
+						case XK_Control_R: { ImGui::GetIO().KeyCtrl = true; } break;
+						case XK_Shift_L:
+						case XK_Shift_R:   { ImGui::GetIO().KeyShift = true; } break;
+						case XK_Alt_L:
+						case XK_Alt_R:     { ImGui::GetIO().KeyAlt = true; } break;
+					}
+				} break;
+
+				case KeyRelease:
+				{
+					int32 keysym = XLookupKeysym(&Event.xkey, 0);
+					switch (keysym)
+					{
+						case XK_Control_L:
+						case XK_Control_R: { ImGui::GetIO().KeyCtrl = false; } break;
+						case XK_Shift_L:
+						case XK_Shift_R:   { ImGui::GetIO().KeyShift = false; } break;
+						case XK_Alt_L:
+						case XK_Alt_R:     { ImGui::GetIO().KeyAlt = false; } break;
+					}
 				} break;
 
 			}
