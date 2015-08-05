@@ -51,7 +51,8 @@ void Platform::ReleaseMouseCapture()
 
 void Platform::SetMousePosition(Vec2 Pos)
 {
-	//
+	XWarpPointer(XlibDisplay, None, XlibWindow, 0, 0, 0, 0, (int32)Pos.x, (int32)Pos.y);
+	XFlush(XlibDisplay);
 }
 
 void Platform::SetCursorVisibility(bool Visible)
