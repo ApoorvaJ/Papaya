@@ -18,7 +18,7 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
-#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\h.png"
+#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
 #include "papaya.h"
 #include "papaya.cpp"
 
