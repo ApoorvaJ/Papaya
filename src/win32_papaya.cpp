@@ -41,6 +41,7 @@ global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maxi
 
 // =================================================================================================
 
+
 void Platform::Print(char* Message)
 {
     OutputDebugString((LPCSTR)Message);

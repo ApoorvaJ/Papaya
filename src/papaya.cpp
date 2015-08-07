@@ -837,15 +837,15 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             const float height = (float)Memory->Document.Height;
             const float ortho_projection[4][4] =
             {
-                { 2.0f/width,	0.0f,			0.0f,		0.0f },
-                { 0.0f,			2.0f/-height,	0.0f,		0.0f },
-                { 0.0f,			0.0f,			-1.0f,		0.0f },
-                { -1.0f,		1.0f,			0.0f,		1.0f },
+                { 2.0f/width,   0.0f,           0.0f,       0.0f },
+                { 0.0f,        -2.0f/height,    0.0f,       0.0f },
+                { 0.0f,         0.0f,          -1.0f,       0.0f },
+                { -1.0f,        1.0f,           0.0f,       1.0f },
             };
             glUseProgram(Memory->Shaders[PapayaShader_Brush].Handle);
 
-            Vec2 CorrectedPos		= Memory->Mouse.UV     + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-            Vec2 CorrectedLastPos	= Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Vec2 CorrectedPos     = Memory->Mouse.UV     + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Vec2 CorrectedLastPos = Memory->Mouse.LastUV + (Memory->Tools.BrushDiameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 #if 0
             // Brush testing routine

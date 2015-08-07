@@ -2345,7 +2345,7 @@ STBTT_DEF int stbtt_PackFontRangesGatherRects(stbtt_pack_context *spc, stbtt_fon
       float scale = fh > 0 ? stbtt_ScaleForPixelHeight(info, fh) : stbtt_ScaleForMappingEmToPixels(info, -fh);
       for (j=0; j < ranges[i].num_chars_in_range; ++j) {
          int x0,y0,x1,y1;
-		 int glyph = stbtt_FindGlyphIndex(info,ranges[i].first_unicode_char_in_range + j);
+         int glyph = stbtt_FindGlyphIndex(info,ranges[i].first_unicode_char_in_range + j);
          if (glyph) {
             stbtt_GetGlyphBitmapBoxSubpixel(info,glyph,
                                             scale * spc->h_oversample,

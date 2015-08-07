@@ -7356,7 +7356,7 @@ bool ImGui::Combo(const char* label, int* current_item, bool (*items_getter)(voi
             }
             else
             {
-            	FocusWindow(window);
+                FocusWindow(window);
                 ImGui::OpenPopup(label);
                 menu_toggled = true;
             }
