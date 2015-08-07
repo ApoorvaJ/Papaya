@@ -1,5 +1,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 namespace Papaya
 {
@@ -630,7 +632,23 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
 					if (ImGui::MenuItem("Save", "Ctrl+S"))
 					{
-						//
+						char* Path = Platform::SaveFileDialog();
+						if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
+						{
+							glFinish();
+							glBindTexture(GL_TEXTURE_2D, Memory->Document.TextureID);
+							glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Document.Texture);
+							glFinish();
+
+							int32 Result =  stbi_write_png(Path, Memory->Document.Width, Memory->Document.Height, 4, Memory->Document.Texture, 4 * Memory->Document.Width);
+							if (!Result)
+							{
+								// TODO: Log: Save failed
+								Platform::Print("Save failed\n");
+							}
+
+							free(Path);
+						}
 					}
 					if (ImGui::MenuItem("Save As..")) {}
 					ImGui::Separator();

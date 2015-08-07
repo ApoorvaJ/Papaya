@@ -138,6 +138,7 @@
     <ClInclude Include="..\..\src\papaya_platform.h" />
     <ClInclude Include="..\..\src\papaya_util.h" />
     <ClInclude Include="..\..\src\stb_image.h" />
+    <ClInclude Include="..\..\src\stb_image_write.h" />
     <ClInclude Include="..\..\src\stb_rect_pack.h" />
     <ClInclude Include="..\..\src\stb_textedit.h" />
     <ClInclude Include="..\..\src\stb_truetype.h" />

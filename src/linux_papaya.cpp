@@ -79,6 +79,11 @@ char* Platform::OpenFileDialog()
 	return 0;
 }
 
+char* Platform::SaveFileDialog()
+{
+	return 0
+}
+
 int64 Platform::GetMilliseconds()
 {
 	return 0;

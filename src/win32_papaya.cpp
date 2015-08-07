@@ -76,7 +76,6 @@ char* Platform::OpenFileDialog()
 	OPENFILENAME DialogParams = {};
 	DialogParams.lStructSize	= sizeof(OPENFILENAME);
 	DialogParams.hwndOwner		= GetActiveWindow();
-	//DialogParams.hInstance		= ;
 	DialogParams.lpstrFilter	= "JPEG\0*.jpg;*.jpeg\0PNG\0*.png\0";
 	DialogParams.nFilterIndex	= 2;
 	DialogParams.lpstrFile		= FileName;
@@ -84,7 +83,52 @@ char* Platform::OpenFileDialog()
 	DialogParams.nMaxFile		= FileNameSize;
 	DialogParams.Flags			= OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-	BOOL Result = GetOpenFileNameA(&DialogParams);
+	BOOL Result = GetOpenFileNameA(&DialogParams); // TODO: Unicode support?
+
+	if (Result)
+	{
+		return FileName;
+	}
+	else
+	{
+		free(FileName);
+		return 0;
+	}
+}
+
+char* Platform::SaveFileDialog()
+{
+	const int32 FileNameSize = 400; // TODO: What's a good value for this?
+	char* FileName = (char*)malloc(FileNameSize);
+
+	OPENFILENAME DialogParams = {};
+	DialogParams.lStructSize = sizeof(OPENFILENAME);
+	DialogParams.hwndOwner = GetActiveWindow();
+	DialogParams.lpstrFilter = "PNG\0*.png\0";
+	DialogParams.nFilterIndex = 2;
+	DialogParams.lpstrFile = FileName;
+	DialogParams.lpstrFile[0] = '\0';
+	DialogParams.nMaxFile = FileNameSize;
+	DialogParams.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT;
+
+	BOOL Result = GetSaveFileNameA(&DialogParams); // TODO: Unicode support?
+
+	// Suffix .png if required
+	{
+		int32 L = strlen(FileName);
+		if (L <= FileNameSize - 4 &&								//
+			!((FileName[L-4] == '.') &&								// Ugh.
+			  (FileName[L-3] == 'p' || FileName[L-3] == 'P') &&		// TODO: Write some string utility functions
+			  (FileName[L-2] == 'n' || FileName[L-2] == 'N') &&		//       and clean this up.
+			  (FileName[L-1] == 'g' || FileName[L-1] == 'G')))		//       Also, support for more than just PNGs.
+		{ 
+			strcat(FileName, ".png");
+		}
+	}
+
+	char Buffer[256];
+	sprintf(Buffer, "%s\n", FileName);
+	OutputDebugStringA(Buffer);
 
 	if (Result)
 	{
