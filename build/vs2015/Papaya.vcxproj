@@ -142,6 +142,13 @@
     <ClInclude Include="..\..\src\stb_rect_pack.h" />
     <ClInclude Include="..\..\src\stb_textedit.h" />
     <ClInclude Include="..\..\src\stb_truetype.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Papaya.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\img\papaya.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

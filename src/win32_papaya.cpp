@@ -405,7 +405,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         WindowClass.lpfnWndProc = Win32MainWindowCallback;
         WindowClass.hInstance = Instance;
         // TODO: Add an icon
-        // WindowClass.hIcon;
+        WindowClass.hIcon = (HICON)LoadImage(0, "../../img/papaya.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
         WindowClass.lpszClassName = "PapayaWindowClass";
 
         if (!RegisterClassA(&WindowClass))
