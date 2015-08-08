@@ -550,6 +550,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
     #pragma endregion
 
+    // Handle command line arguments (if present)
+    if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Memory); }
+
     Memory.Window.MenuHorizontalOffset = 32;
     Memory.Window.TitleBarButtonsWidth = 109;
     Memory.Window.TitleBarHeight = 30;
