@@ -81,7 +81,7 @@ char* Platform::OpenFileDialog()
 
 char* Platform::SaveFileDialog()
 {
-	return 0
+	return 0;
 }
 
 int64 Platform::GetMilliseconds()
