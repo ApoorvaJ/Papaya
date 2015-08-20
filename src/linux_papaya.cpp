@@ -28,6 +28,7 @@ typedef double real64;
 #include <X11/Xlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
@@ -86,7 +87,9 @@ char* Platform::SaveFileDialog()
 
 int64 Platform::GetMilliseconds()
 {
-	return 0;
+	timespec tspec;
+	clock_gettime(CLOCK_REALTIME, &tspec);
+	return int64(tspec.tv_sec * 1000 + tspec.tv_nsec / 1000000);
 }
 
 // =================================================================================================
