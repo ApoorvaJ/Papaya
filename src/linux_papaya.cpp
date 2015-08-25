@@ -64,8 +64,8 @@ void Platform::SetCursorVisibility(bool Visible)
 		char Empty[1] = {0};
 		Pixmap Blank = XCreateBitmapFromData (XlibDisplay, XlibWindow, Empty, 1, 1);
 		if(Blank == None) fprintf(stderr, "error: out of memory.\n");
-		XColor dummy;
-		Cursor InvisCursor = XCreatePixmapCursor(XlibDisplay, Blank, Blank, &dummy, &dummy, 0, 0);
+		XColor Dummy;
+		Cursor InvisCursor = XCreatePixmapCursor(XlibDisplay, Blank, Blank, &Dummy, &Dummy, 0, 0);
 		XFreePixmap (XlibDisplay, Blank);
 		XDefineCursor(XlibDisplay, XlibWindow, InvisCursor);
 	}
@@ -87,9 +87,9 @@ char* Platform::SaveFileDialog()
 
 int64 Platform::GetMilliseconds()
 {
-	timespec tspec;
-	clock_gettime(CLOCK_REALTIME, &tspec);
-	return int64(tspec.tv_sec * 1000 + tspec.tv_nsec / 1000000);
+	timespec Time;
+	clock_gettime(CLOCK_MONOTONIC, &Time);
+	return (int64)(Time.tv_sec * 1000 + Time.tv_nsec / 1000000);
 }
 
 // =================================================================================================
