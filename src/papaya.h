@@ -105,14 +105,20 @@ struct MouseInfo
 
 struct ToolParams
 {
+    // Brush params
     int32 BrushDiameter;
     static const int32 MaxBrushDiameter = 9999;
     float BrushOpacity; // Range: 0.0 - 100.0
     float BrushHardness; // Range: 0.0 - 100.0
+
+    // Right-click info for brush manipulation // TODO: Move some of this stuff to the MouseInfo struct?
     Vec2 RightClickDragStartPos;
     bool RightClickShiftPressed;
     int32 RightClickDragStartDiameter;
     float RightClickDragStartHardness, RightClickDragStartOpacity;
+
+    //
+    Color CurrentColor;
 };
 
 struct PapayaMemory
@@ -120,7 +126,6 @@ struct PapayaMemory
     bool IsRunning;
     uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
     Color InterfaceColors[PapayaInterfaceColor_COUNT];
-    uint32 CurrentColor;
     PapayaWindow Window;
     SystemInfo System;
     PapayaVertexBuffer VertexBuffers[PapayaVertexBuffer_COUNT];

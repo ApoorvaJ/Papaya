@@ -536,6 +536,7 @@ void Initialize(PapayaMemory* Memory)
     Memory->Tools.BrushOpacity = 100.0f;
     Memory->DrawCanvas = true;
     Memory->DrawOverlay = false;
+    Memory->Tools.CurrentColor = Color(220, 163, 89);
 }
 
 void Shutdown(PapayaMemory* Memory)
@@ -694,14 +695,23 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         bool Show = true;
         ImGui::Begin("Left toolbar", &Show, WindowFlags);
 
-        ImGui::PushID(0);
         #define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
-        if(ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20,20), CALCUV(0,0), CALCUV(1,1), 6, ImVec4(0,0,0,0)))
         {
+            ImGui::PushID(0);
+            if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(20, 20), CALCUV(0, 0), CALCUV(1, 1), 6, ImVec4(0, 0, 0, 0)))
+            {
 
+            }
+            ImGui::PopID();
+
+            ImGui::PushID(1);
+            if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(28, 28), CALCUV(0, 0), CALCUV(0, 0), 2, Memory->Tools.CurrentColor))
+            {
+
+            }
+            ImGui::PopID();
         }
         #undef CALCUV
-        ImGui::PopID();
 
         ImGui::End();
 
@@ -759,7 +769,6 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
     #pragma region Brush tool
     {
-        local_persist Color BrushCol = Color(0.0f,1.0f,0.0f);
 /*
         if (ImGui::IsKeyPressed(VK_UP, false))
         {
@@ -816,7 +825,6 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         if (Memory->Mouse.IsDown[0])
         {
             Memory->DrawOverlay = true;
-            BrushCol = (Memory->Mouse.IsDown[0]) ? Color(0.0f,1.0f,0.0f) : Color(1.0f,0.0f,0.0f);
 
             glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
 
@@ -872,9 +880,12 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             //glUniform1i(Memory->Shaders[PapayaShader_Brush].Uniforms[1], Memory->Document.TextureID); // Texture uniform
             glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Memory->Document.InverseAspect); // Pos uniform
             glUniform2f(Memory->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Memory->Document.InverseAspect); // Lastpos uniform
-            glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter / ((float)Memory->Document.Width * 2.0f)); // TODO: Support non-square documents
+            glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[4], (float)Memory->Tools.BrushDiameter / ((float)Memory->Document.Width * 2.0f));
             float Opacity = Memory->Tools.BrushOpacity / 100.0f; //(Math::Distance(CorrectedLastPos, CorrectedPos) > 0.0 ? Memory->Tools.BrushOpacity / 100.0f : 0.0f);
-            glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], BrushCol.r, BrushCol.g, BrushCol.b, Opacity);
+            glUniform4f(Memory->Shaders[PapayaShader_Brush].Uniforms[5], Memory->Tools.CurrentColor.r, 
+                                                                         Memory->Tools.CurrentColor.g, 
+                                                                         Memory->Tools.CurrentColor.b, 
+                                                                         Opacity);
             glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[6], Memory->Tools.BrushHardness / 100.0f);
             glUniform1f(Memory->Shaders[PapayaShader_Brush].Uniforms[7], Memory->Document.InverseAspect); // Inverse Aspect uniform
 
