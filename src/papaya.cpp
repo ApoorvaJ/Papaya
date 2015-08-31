@@ -537,6 +537,7 @@ void Initialize(PapayaMemory* Memory)
     Memory->DrawCanvas = true;
     Memory->DrawOverlay = false;
     Memory->Tools.CurrentColor = Color(220, 163, 89);
+    Memory->Tools.ColorPickerOpen = false;
 }
 
 void Shutdown(PapayaMemory* Memory)
@@ -704,7 +705,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             ImGui::PushID(1);
             if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(28, 28), CALCUV(0, 0), CALCUV(0, 0), 2, Memory->Tools.CurrentColor))
             {
-
+                Memory->Tools.ColorPickerOpen = true;
             }
             ImGui::PopID();
         }
@@ -714,6 +715,45 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
         ImGui::PopStyleVar(5);
         ImGui::PopStyleColor(4);
+    }
+    #pragma endregion
+
+    #pragma region Color Picker
+    {
+        if (Memory->Tools.ColorPickerOpen)
+        {
+            ImGui::SetNextWindowSize(ImVec2(315, 315));
+            ImGui::SetNextWindowPos(ImVec2(34, 88));
+
+            ImGuiWindowFlags WindowFlags = 0;
+            WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+            WindowFlags |= ImGuiWindowFlags_NoResize;
+            WindowFlags |= ImGuiWindowFlags_NoMove;
+            WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+            WindowFlags |= ImGuiWindowFlags_NoCollapse;
+            WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Button]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Clear]); // TODO: Investigate: Should be opaque, but is partially transparent
+
+            ImGui::Begin("Color Picker", 0, WindowFlags);
+            {
+                if (ImGui::Button("OK"))
+                {
+                    Memory->Tools.ColorPickerOpen = false;
+                }
+            }
+            ImGui::End();
+
+            ImGui::PopStyleVar(3);
+            ImGui::PopStyleColor(4);
+        }
     }
     #pragma endregion
 

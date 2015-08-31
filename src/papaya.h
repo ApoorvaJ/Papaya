@@ -112,12 +112,13 @@ struct ToolParams
 
     // Right-click info for brush manipulation // TODO: Move some of this stuff to the MouseInfo struct?
     Vec2 RightClickDragStartPos;
-    bool RightClickShiftPressed;
+    bool RightClickShiftPressed; // Right-click-drag started with shift pressed
     int32 RightClickDragStartDiameter;
     float RightClickDragStartHardness, RightClickDragStartOpacity;
 
     //
     Color CurrentColor;
+    bool ColorPickerOpen;
 };
 
 struct PapayaMemory
