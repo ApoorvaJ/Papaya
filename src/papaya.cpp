@@ -569,10 +569,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
 
         glEnable(GL_SCISSOR_TEST);
-        glScissor(34 + (int)Memory->Window.MaximizeOffset,
-            3 + (int)Memory->Window.MaximizeOffset,
-            (int)Memory->Window.Width - 37 - (2 * (int)Memory->Window.MaximizeOffset),
-            (int)Memory->Window.Height - 58 - (2 * (int)Memory->Window.MaximizeOffset));
+        glScissor(34, 3,
+                 (int)Memory->Window.Width  - 37, (int)Memory->Window.Height - 58); // TODO: Remove magic numbers
 
         glClearBufferfv(GL_COLOR, 0, (float*)&Memory->InterfaceColors[PapayaInterfaceColor_Workspace]);
         glDisable(GL_SCISSOR_TEST);
@@ -581,10 +579,9 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
     #pragma region Title Bar Menu
     {
-        ImGui::SetNextWindowSize(ImVec2(Memory->Window.Width - Memory->Window.MenuHorizontalOffset - Memory->Window.TitleBarButtonsWidth - 3.0f - (2.0f * Memory->Window.MaximizeOffset),
-            Memory->Window.TitleBarHeight - 10.0f));
-        ImGui::SetNextWindowPos(ImVec2(2.0f + Memory->Window.MenuHorizontalOffset + Memory->Window.MaximizeOffset,
-            1.0f + Memory->Window.MaximizeOffset + 5.0f));
+        ImGui::SetNextWindowSize(ImVec2(Memory->Window.Width - Memory->Window.MenuHorizontalOffset - Memory->Window.TitleBarButtonsWidth - 3.0f,
+                                        Memory->Window.TitleBarHeight - 10.0f));
+        ImGui::SetNextWindowPos(ImVec2(2.0f + Memory->Window.MenuHorizontalOffset, 6.0f));
 
         ImGuiWindowFlags WindowFlags = 0;
         WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -671,7 +668,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
     #pragma region Left toolbar
     {
         ImGui::SetNextWindowSize(ImVec2(36,650));
-        ImGui::SetNextWindowPos(ImVec2(1.0f + Memory->Window.MaximizeOffset, 55.0f + Memory->Window.MaximizeOffset));
+        ImGui::SetNextWindowPos(ImVec2(1.0f, 55.0f));
 
         ImGuiWindowFlags WindowFlags = 0;
         WindowFlags |= ImGuiWindowFlags_NoTitleBar;

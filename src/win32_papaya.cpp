@@ -366,7 +366,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
                 }
             }
 
-            if (Y - WindowRect.top - (IsMaximized(Window) ? Memory.Window.MaximizeOffset : 0.0f) <= (float)Memory.Window.TitleBarHeight &&
+            if (Y - WindowRect.top <= (float)Memory.Window.TitleBarHeight &&
                 X > WindowRect.left + 200.0f &&
                 X < WindowRect.right - (float)(Memory.Window.TitleBarButtonsWidth + 10))
             {
@@ -581,7 +581,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         #pragma endregion
 
         BOOL IsMaximized = IsMaximized(Window);
-        // Memory.Window.MaximizeOffset = IsMaximized ? 8.0f : 0.0f; // TODO: Might have to turn this on when activating WS_THICKFRAME for aero snapping to work
 
         #pragma region Start new ImGui frame
         {
@@ -616,7 +615,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         #pragma region Title Bar Icon
         {
             ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.MenuHorizontalOffset,(float)Memory.Window.TitleBarHeight));
-            ImGui::SetNextWindowPos(ImVec2(1.0f + Memory.Window.MaximizeOffset, 1.0f + Memory.Window.MaximizeOffset));
+            ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
             ImGuiWindowFlags WindowFlags = 0;
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -647,7 +646,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         #pragma region Title Bar Buttons
         {
             ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.TitleBarButtonsWidth,24.0f));
-            ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width - Memory.Window.TitleBarButtonsWidth - Memory.Window.MaximizeOffset, Memory.Window.MaximizeOffset));
+            ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width - Memory.Window.TitleBarButtonsWidth, 0.0f));
 
             ImGuiWindowFlags WindowFlags = 0;
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
