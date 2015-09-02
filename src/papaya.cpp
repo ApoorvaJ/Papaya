@@ -706,6 +706,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Memory->Tools.CurrentColor))
             {
                 Memory->Tools.ColorPickerOpen = !Memory->Tools.ColorPickerOpen;
+                Memory->Tools.NewColor = Memory->Tools.CurrentColor;
             }
             ImGui::PopID();
         }
@@ -746,7 +747,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             {
                 ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(141, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Memory->Tools.CurrentColor);
                 ImGui::SameLine();
-                ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(173, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Color(255,0,0)); // TODO: Picked color
+                ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(173, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Memory->Tools.NewColor);
             }
             ImGui::End();
             ImGui::PopStyleVar(3);
@@ -756,8 +757,18 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::Begin("Color picker", 0, WindowFlags);
             {
+                int32 col[3];
+                col[0] = (int)(Memory->Tools.NewColor.r * 255.0f);
+                col[1] = (int)(Memory->Tools.NewColor.g * 255.0f);
+                col[2] = (int)(Memory->Tools.NewColor.b * 255.0f);
+                if (ImGui::InputInt3("RGB", col))
+                {
+                    Memory->Tools.NewColor = Color(col[0], col[1], col[2]); // TODO: Clamping
+                }
+
                 if (ImGui::Button("OK"))
                 {
+                    Memory->Tools.CurrentColor = Memory->Tools.NewColor;
                     Memory->Tools.ColorPickerOpen = false;
                 }
                 ImGui::SameLine();

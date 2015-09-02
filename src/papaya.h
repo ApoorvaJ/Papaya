@@ -117,7 +117,7 @@ struct ToolParams
     float RightClickDragStartHardness, RightClickDragStartOpacity;
 
     //
-    Color CurrentColor;
+    Color CurrentColor, NewColor;
     bool ColorPickerOpen;
 };
 
