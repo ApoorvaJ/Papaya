@@ -30,6 +30,8 @@ typedef double real64;
 #include <stdio.h>
 #include <time.h>
 
+#include <gtk/gtk.h>
+
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
 
@@ -77,12 +79,70 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
-	return 0;
+	GtkWidget *dialog = gtk_file_chooser_dialog_new(
+		"Open File",
+		NULL,
+		GTK_FILE_CHOOSER_ACTION_OPEN,
+		"_Cancel", GTK_RESPONSE_CANCEL,
+		"_Open", GTK_RESPONSE_ACCEPT,
+		NULL
+	);
+	GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+	GtkFileFilter *filter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(filter, "*.png");
+	gtk_file_filter_add_pattern(filter, "*.PNG");
+	gtk_file_filter_add_pattern(filter, "*.jpg");
+	gtk_file_filter_add_pattern(filter, "*.JPG");
+	gtk_file_filter_add_pattern(filter, "*.jpeg");
+	gtk_file_filter_add_pattern(filter, "*.JPEG"); // some way to make this not case-sensitive?
+	gtk_file_chooser_add_filter(chooser, filter);
+
+	char *out_filename = 0;
+	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+		gchar *gtk_filename = gtk_file_chooser_get_filename(chooser);
+		int filename_len = strlen(gtk_filename);
+		out_filename = (char*)malloc(filename_len + 1); // +1 for terminator
+		strcpy(out_filename, gtk_filename);
+		out_filename[filename_len] = 0;
+		g_free(gtk_filename);
+	}
+
+	gtk_widget_destroy(dialog);
+
+	return out_filename;
 }
 
 char* Platform::SaveFileDialog()
 {
-	return 0;
+	GtkWidget *dialog = gtk_file_chooser_dialog_new(
+		"Save File",
+		NULL,
+		GTK_FILE_CHOOSER_ACTION_SAVE,
+		"_Cancel", GTK_RESPONSE_CANCEL,
+		"_Save", GTK_RESPONSE_ACCEPT,
+		NULL
+	);
+	GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+	GtkFileFilter *filter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(filter, "*.png");
+	gtk_file_filter_add_pattern(filter, "*.PNG"); // some way to make this not case-sensitive?
+	gtk_file_chooser_add_filter(chooser, filter);
+	gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
+	gtk_file_chooser_set_filename(chooser, "untitled.png"); // what if the user is modifying a file that already has a name?
+
+	char *out_filename = 0;
+	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+		gchar *gtk_filename = gtk_file_chooser_get_filename(chooser);
+		int filename_len = strlen(gtk_filename);
+		out_filename = (char*)malloc(filename_len + 1); // +1 for terminator
+		strcpy(out_filename, gtk_filename);
+		out_filename[filename_len] = 0;
+		g_free(gtk_filename);
+	}
+
+	gtk_widget_destroy(dialog);
+
+	return out_filename;
 }
 
 int64 Platform::GetMilliseconds()
@@ -101,6 +161,9 @@ int main(int argc, char **argv)
 
 	XVisualInfo* VisualInfo;
 	Atom WmDeleteMessage;
+
+	// Initialize GTK for Open/Save file dialogs
+	gtk_init(&argc, &argv);
 
 	// Create window
 	{
