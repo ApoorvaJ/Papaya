@@ -98,10 +98,9 @@ char* Platform::OpenFileDialog()
 	if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 		gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
-		int FilenameLen = strlen(GTKFilename);
-		OutFilename = (char*)malloc(FilenameLen + 1); // +1 for terminator
+		int FilenameLen = strlen(GTKFilename) + 1; // +1 for terminator
+		OutFilename = (char*)malloc(FilenameLen);
 		strcpy(OutFilename, GTKFilename);
-		OutFilename[FilenameLen] = 0;
 		g_free(GTKFilename);
 	}
 
@@ -131,10 +130,9 @@ char* Platform::SaveFileDialog()
 	if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 		gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
-		int FilenameLen = strlen(GTKFilename);
-		OutFilename = (char*)malloc(FilenameLen + 1); // +1 for terminator
+		int FilenameLen = strlen(GTKFilename) + 1; // +1 for terminator
+		OutFilename = (char*)malloc(FilenameLen);
 		strcpy(OutFilename, GTKFilename);
-		OutFilename[FilenameLen] = 0;
 		g_free(GTKFilename);
 	}
 
@@ -344,6 +342,9 @@ int main(int argc, char **argv)
 			ImGui::Render(&Memory);
 			glXSwapBuffers(XlibDisplay, XlibWindow);
 		}
+
+		// Run a GTK+ loop, and *don't* block if there are no events pending
+		gtk_main_iteration_do(FALSE);
 	}
 
 	return 0;
