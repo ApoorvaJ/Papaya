@@ -79,70 +79,68 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new(
+	GtkWidget *Dialog = gtk_file_chooser_dialog_new(
 		"Open File",
 		NULL,
 		GTK_FILE_CHOOSER_ACTION_OPEN,
-		"_Cancel", GTK_RESPONSE_CANCEL,
-		"_Open", GTK_RESPONSE_ACCEPT,
+		"Cancel", GTK_RESPONSE_CANCEL,
+		"Open", GTK_RESPONSE_ACCEPT,
 		NULL
 	);
-	GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
-	GtkFileFilter *filter = gtk_file_filter_new();
-	gtk_file_filter_add_pattern(filter, "*.png");
-	gtk_file_filter_add_pattern(filter, "*.PNG");
-	gtk_file_filter_add_pattern(filter, "*.jpg");
-	gtk_file_filter_add_pattern(filter, "*.JPG");
-	gtk_file_filter_add_pattern(filter, "*.jpeg");
-	gtk_file_filter_add_pattern(filter, "*.JPEG"); // some way to make this not case-sensitive?
-	gtk_file_chooser_add_filter(chooser, filter);
+	GtkFileChooser *Chooser = GTK_FILE_CHOOSER(Dialog);
+	GtkFileFilter *Filter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(Filter, "*.[pP][nN][gG]");
+	gtk_file_filter_add_pattern(Filter, "*.[jJ][pP][gG]");
+	gtk_file_filter_add_pattern(Filter, "*.[jJ][pP][eE][gG]");
+	gtk_file_chooser_add_filter(Chooser, Filter);
 
-	char *out_filename = 0;
-	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-		gchar *gtk_filename = gtk_file_chooser_get_filename(chooser);
-		int filename_len = strlen(gtk_filename);
-		out_filename = (char*)malloc(filename_len + 1); // +1 for terminator
-		strcpy(out_filename, gtk_filename);
-		out_filename[filename_len] = 0;
-		g_free(gtk_filename);
+	char *OutFilename = 0;
+	if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
+		int FilenameLen = strlen(GTKFilename);
+		OutFilename = (char*)malloc(FilenameLen + 1); // +1 for terminator
+		strcpy(OutFilename, GTKFilename);
+		OutFilename[FilenameLen] = 0;
+		g_free(GTKFilename);
 	}
 
-	gtk_widget_destroy(dialog);
+	gtk_widget_destroy(Dialog);
 
-	return out_filename;
+	return OutFilename;
 }
 
 char* Platform::SaveFileDialog()
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new(
+	GtkWidget *Dialog = gtk_file_chooser_dialog_new(
 		"Save File",
 		NULL,
 		GTK_FILE_CHOOSER_ACTION_SAVE,
-		"_Cancel", GTK_RESPONSE_CANCEL,
-		"_Save", GTK_RESPONSE_ACCEPT,
+		"Cancel", GTK_RESPONSE_CANCEL,
+		"Save", GTK_RESPONSE_ACCEPT,
 		NULL
 	);
-	GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
-	GtkFileFilter *filter = gtk_file_filter_new();
-	gtk_file_filter_add_pattern(filter, "*.png");
-	gtk_file_filter_add_pattern(filter, "*.PNG"); // some way to make this not case-sensitive?
-	gtk_file_chooser_add_filter(chooser, filter);
-	gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
-	gtk_file_chooser_set_filename(chooser, "untitled.png"); // what if the user is modifying a file that already has a name?
+	GtkFileChooser *Chooser = GTK_FILE_CHOOSER(Dialog);
+	GtkFileFilter *Filter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(Filter, "*.[pP][nN][gG]");
+	gtk_file_chooser_add_filter(Chooser, Filter);
+	gtk_file_chooser_set_do_overwrite_confirmation(Chooser, TRUE);
+	gtk_file_chooser_set_filename(Chooser, "untitled.png"); // what if the user saves a file that already has a name?
 
-	char *out_filename = 0;
-	if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-		gchar *gtk_filename = gtk_file_chooser_get_filename(chooser);
-		int filename_len = strlen(gtk_filename);
-		out_filename = (char*)malloc(filename_len + 1); // +1 for terminator
-		strcpy(out_filename, gtk_filename);
-		out_filename[filename_len] = 0;
-		g_free(gtk_filename);
+	char *OutFilename = 0;
+	if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
+		int FilenameLen = strlen(GTKFilename);
+		OutFilename = (char*)malloc(FilenameLen + 1); // +1 for terminator
+		strcpy(OutFilename, GTKFilename);
+		OutFilename[FilenameLen] = 0;
+		g_free(GTKFilename);
 	}
 
-	gtk_widget_destroy(dialog);
+	gtk_widget_destroy(Dialog);
 
-	return out_filename;
+	return OutFilename;
 }
 
 int64 Platform::GetMilliseconds()
