@@ -196,7 +196,7 @@ internal void CloseDocument(PapayaMemory* Memory)
 void Initialize(PapayaMemory* Memory)
 {
 
-    #pragma region Set up brush shader
+    #pragma region Brush shader
     {
         const GLchar *vertex_shader =
 "				#version 330																						\n"
@@ -323,7 +323,7 @@ void Initialize(PapayaMemory* Memory)
     }
     #pragma endregion
 
-    #pragma region Set up brush cursor shader
+    #pragma region Brush cursor shader
     {
         const GLchar *vertex_shader =
 "				#version 330																						\n"
@@ -415,6 +415,81 @@ void Initialize(PapayaMemory* Memory)
     }
     #pragma endregion
 
+    #pragma region Picker hue shader
+    {
+    const GLchar *vertex_shader =
+"   #version 330                                            \n"
+"   uniform mat4 ProjMtx;                                   \n" // Uniforms[0]
+"                                                           \n"
+"   in  vec2 Position;                                      \n" // Attributes[0]
+"   in  vec2 UV;                                            \n" // Attributes[1]
+"   out vec2 Frag_UV;                                       \n"
+"                                                           \n"
+"   void main()                                             \n"
+"   {                                                       \n"
+"       Frag_UV = UV;                                       \n"
+"       gl_Position = ProjMtx * vec4(Position.xy,0,1);      \n"
+"   }                                                       \n";
+
+    const GLchar* fragment_shader =
+"   #version 330                                            \n"
+"                                                           \n"
+"   #define M_PI 3.1415926535897932384626433832795          \n"
+"                                                           \n"
+"   uniform float Current;                                  \n" // Uniforms[1]
+"                                                           \n"
+"   in  vec2 Frag_UV;                                       \n"
+"   out vec4 Out_Color;                                     \n"
+"                                                           \n"
+"   void main()                                             \n"
+"   {                                                       \n"
+"       Out_Color = vec4(1.0,1.0,0.0,1.0);                  \n"
+"   }                                                       \n";
+
+        Memory->Shaders[PapayaShader_PickerHue].Handle = glCreateProgram();
+        uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
+        uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
+        glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
+        glCompileShader(g_VertHandle);
+        glCompileShader(g_FragHandle);
+        glAttachShader(Memory->Shaders[PapayaShader_PickerHue].Handle, g_VertHandle);
+        glAttachShader(Memory->Shaders[PapayaShader_PickerHue].Handle, g_FragHandle);
+        Util::PrintGlShaderCompilationStatus(g_VertHandle);
+        Util::PrintGlShaderCompilationStatus(g_FragHandle);
+        glLinkProgram (Memory->Shaders[PapayaShader_PickerHue].Handle);
+
+        Memory->Shaders[PapayaShader_PickerHue].Attributes[0] = glGetAttribLocation (Memory->Shaders[PapayaShader_PickerHue].Handle, "Position");
+        Memory->Shaders[PapayaShader_PickerHue].Attributes[1] = glGetAttribLocation (Memory->Shaders[PapayaShader_PickerHue].Handle, "UV");
+
+        Memory->Shaders[PapayaShader_PickerHue].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerHue].Handle, "ProjMtx");
+        Memory->Shaders[PapayaShader_PickerHue].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerHue].Handle, "Current");
+
+        // Vertex buffer
+        glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VboHandle);
+        glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VboHandle);
+        glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VaoHandle);
+        glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VaoHandle);
+        glEnableVertexAttribArray(Memory->Shaders[PapayaShader_PickerHue].Attributes[0]); // Position attribute
+        glEnableVertexAttribArray(Memory->Shaders[PapayaShader_PickerHue].Attributes[1]); // Position attribute
+#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+        glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerHue].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));   // Position attribute
+        glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerHue].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));    // UV attribute
+#undef OFFSETOF
+
+        Vec2 Position = Vec2(40,60);
+        Vec2 Size = Vec2(26,256);
+        ImDrawVert Verts[6];
+        Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
+        Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
+        Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[2].uv = Vec2(1.0f, 0.0f); Verts[2].col = 0xffffffff;
+        Verts[3].pos = Vec2(Position.x, Position.y);					Verts[3].uv = Vec2(0.0f, 1.0f); Verts[3].col = 0xffffffff;
+        Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);	Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
+        Verts[5].pos = Vec2(Position.x, Size.y + Position.y);			Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
+        glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, GL_DYNAMIC_DRAW);
+    }
+    #pragma endregion
+
     #pragma region Setup for ImGui
     {
         // TODO: Write shader compilation wrapper
@@ -489,7 +564,7 @@ void Initialize(PapayaMemory* Memory)
 
         unsigned char* pixels;
         int width, height;
-        //ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 16.0f);
+        //ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 15.0f);
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
         glGenTextures(1, &Memory->InterfaceTextureIDs[PapayaInterfaceTexture_Font]);
@@ -1247,7 +1322,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
     #pragma endregion
 }
 
-void RenderImGui(ImDrawData* draw_data, void* mem)
+void RenderImGui(ImDrawData* DrawData, void* mem)
 {
     PapayaMemory* Memory = (PapayaMemory*)mem;
 
@@ -1271,7 +1346,7 @@ void RenderImGui(ImDrawData* draw_data, void* mem)
     // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
     ImGuiIO& io = ImGui::GetIO();
     float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
-    draw_data->ScaleClipRects(io.DisplayFramebufferScale);
+    DrawData->ScaleClipRects(io.DisplayFramebufferScale);
 
     // Setup orthographic projection matrix
     const float ortho_projection[4][4] =
@@ -1286,9 +1361,9 @@ void RenderImGui(ImDrawData* draw_data, void* mem)
     glUniformMatrix4fv(Memory->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
     glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VaoHandle);
 
-    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    for (int n = 0; n < DrawData->CmdListsCount; n++)
     {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
+        const ImDrawList* cmd_list = DrawData->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
 
         glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_ImGui].VboHandle);
@@ -1320,6 +1395,50 @@ void RenderImGui(ImDrawData* draw_data, void* mem)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
     glBindVertexArray(last_vertex_array);
     glDisable(GL_SCISSOR_TEST);
+}
+
+void RenderAfterGui(PapayaMemory* Memory)
+{
+    #pragma region Draw hue picker
+    {
+        // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+        GLint last_program, last_texture;
+        glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+
+        // Setup orthographic projection matrix
+        const float width = ImGui::GetIO().DisplaySize.x;
+        const float height = ImGui::GetIO().DisplaySize.y;
+        const float ortho_projection[4][4] =
+        {
+            { 2.0f/width,   0.0f,           0.0f,       0.0f },
+            { 0.0f,         2.0f/-height,   0.0f,       0.0f },
+            { 0.0f,         0.0f,          -1.0f,       0.0f },
+            { -1.0f,        1.0f,           0.0f,       1.0f },
+        };
+
+        glUseProgram(Memory->Shaders[PapayaShader_PickerHue].Handle);
+        glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHue].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+        glUniform1f(Memory->Shaders[PapayaShader_PickerHue].Uniforms[1], 0.3f);                                        // Current
+
+        // Grow our buffer according to what we need
+        glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VboHandle);
+        glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VaoHandle);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // Restore modified state
+        glBindVertexArray(0);
+        glUseProgram(last_program);
+        glDisable(GL_BLEND);
+        glBindTexture(GL_TEXTURE_2D, last_texture);
+    }
+    #pragma endregion
 }
 
 }

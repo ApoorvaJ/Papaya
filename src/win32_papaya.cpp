@@ -715,6 +715,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         //ImGui::ShowTestWindow();
         ImGui::Render(&Memory);
+        Papaya::RenderAfterGui(&Memory);
         SwapBuffers(DeviceContext);
         //=========================================
 
