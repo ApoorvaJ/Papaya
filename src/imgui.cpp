@@ -2240,7 +2240,7 @@ static void PopClipRect()
     window->ClipRect = window->DrawList->_ClipRectStack.back();
 }
 
-void ImGui::Render()
+void ImGui::Render(void* mem)
 {
     ImGuiState& g = *GImGui;
     IM_ASSERT(g.Initialized);                           // Forgot to call ImGui::NewFrame()
@@ -2372,7 +2372,7 @@ void ImGui::Render()
             data.CmdListsCount = g.RenderDrawLists[0].Size;
             data.TotalVtxCount = g.IO.MetricsRenderVertices;
             data.TotalIdxCount = g.IO.MetricsRenderIndices;
-            g.IO.RenderDrawListsFn(&data);
+            g.IO.RenderDrawListsFn(&data, mem);
         }
     }
 }

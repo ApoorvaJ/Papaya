@@ -7,7 +7,9 @@
 #include "papaya_math.h"
 #include "papaya_platform.h"
 #include "imgui.h"
+#include "imgui_draw.cpp"
 #include "imgui.cpp"
+#include "imgui_demo.cpp"
 #include "papaya_util.h"
 
 #define Kilobytes(Value) ((Value)*1024LL)
@@ -73,10 +75,10 @@ struct PapayaShader
     int32 Uniforms[8];
 };
 
-struct PapayaVertexBuffer
+struct PapayaVertexBuffer // TODO: Now with indexed rendering, this struct contains the index buffer handle. Is this name appropriate?
 {
     size_t VboSize;
-    uint32 VboHandle, VaoHandle;
+    uint32 VboHandle, VaoHandle, ElementsHandle;
 };
 
 struct PapayaWindow

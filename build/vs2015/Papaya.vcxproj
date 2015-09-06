@@ -131,7 +131,10 @@
     <ClInclude Include="..\..\src\imconfig.h" />
     <ClInclude Include="..\..\src\imgui.cpp" />
     <ClInclude Include="..\..\src\imgui.h" />
+    <ClInclude Include="..\..\src\imgui_internal.h" />
     <ClInclude Include="..\..\src\papaya.cpp" />
+    <ClInclude Include="..\..\src\imgui_demo.cpp" />
+    <ClInclude Include="..\..\src\imgui_draw.cpp" />
     <ClCompile Include="..\..\src\win32_papaya.cpp" />
     <ClInclude Include="..\..\src\papaya.h" />
     <ClInclude Include="..\..\src\papaya_math.h" />
