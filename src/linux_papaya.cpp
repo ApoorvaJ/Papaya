@@ -30,6 +30,8 @@ typedef double real64;
 #include <stdio.h>
 #include <time.h>
 
+#include <gtk/gtk.h>
+
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
 
@@ -77,12 +79,66 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
-	return 0;
+	GtkWidget *Dialog = gtk_file_chooser_dialog_new(
+		"Open File",
+		NULL,
+		GTK_FILE_CHOOSER_ACTION_OPEN,
+		"Cancel", GTK_RESPONSE_CANCEL,
+		"Open", GTK_RESPONSE_ACCEPT,
+		NULL
+	);
+	GtkFileChooser *Chooser = GTK_FILE_CHOOSER(Dialog);
+	GtkFileFilter *Filter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(Filter, "*.[pP][nN][gG]");
+	gtk_file_filter_add_pattern(Filter, "*.[jJ][pP][gG]");
+	gtk_file_filter_add_pattern(Filter, "*.[jJ][pP][eE][gG]");
+	gtk_file_chooser_add_filter(Chooser, Filter);
+
+	char *OutFilename = 0;
+	if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
+		int FilenameLen = strlen(GTKFilename) + 1; // +1 for terminator
+		OutFilename = (char*)malloc(FilenameLen);
+		strcpy(OutFilename, GTKFilename);
+		g_free(GTKFilename);
+	}
+
+	gtk_widget_destroy(Dialog);
+
+	return OutFilename;
 }
 
 char* Platform::SaveFileDialog()
 {
-	return 0;
+	GtkWidget *Dialog = gtk_file_chooser_dialog_new(
+		"Save File",
+		NULL,
+		GTK_FILE_CHOOSER_ACTION_SAVE,
+		"Cancel", GTK_RESPONSE_CANCEL,
+		"Save", GTK_RESPONSE_ACCEPT,
+		NULL
+	);
+	GtkFileChooser *Chooser = GTK_FILE_CHOOSER(Dialog);
+	GtkFileFilter *Filter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(Filter, "*.[pP][nN][gG]");
+	gtk_file_chooser_add_filter(Chooser, Filter);
+	gtk_file_chooser_set_do_overwrite_confirmation(Chooser, TRUE);
+	gtk_file_chooser_set_filename(Chooser, "untitled.png"); // what if the user saves a file that already has a name?
+
+	char *OutFilename = 0;
+	if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
+		int FilenameLen = strlen(GTKFilename) + 1; // +1 for terminator
+		OutFilename = (char*)malloc(FilenameLen);
+		strcpy(OutFilename, GTKFilename);
+		g_free(GTKFilename);
+	}
+
+	gtk_widget_destroy(Dialog);
+
+	return OutFilename;
 }
 
 int64 Platform::GetMilliseconds()
@@ -101,6 +157,9 @@ int main(int argc, char **argv)
 
 	XVisualInfo* VisualInfo;
 	Atom WmDeleteMessage;
+
+	// Initialize GTK for Open/Save file dialogs
+	gtk_init(&argc, &argv);
 
 	// Create window
 	{
@@ -283,6 +342,9 @@ int main(int argc, char **argv)
 			ImGui::Render(&Memory);
 			glXSwapBuffers(XlibDisplay, XlibWindow);
 		}
+
+		// Run a GTK+ loop, and *don't* block if there are no events pending
+		gtk_main_iteration_do(FALSE);
 	}
 
 	return 0;
