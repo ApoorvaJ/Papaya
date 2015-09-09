@@ -1401,42 +1401,45 @@ void RenderAfterGui(PapayaMemory* Memory)
 {
     #pragma region Draw hue picker
     {
-        // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-        GLint last_program, last_texture;
-        glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-        glEnable(GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-
-        // Setup orthographic projection matrix
-        const float width = ImGui::GetIO().DisplaySize.x;
-        const float height = ImGui::GetIO().DisplaySize.y;
-        const float ortho_projection[4][4] =
+        if (Memory->Tools.ColorPickerOpen)
         {
-            { 2.0f/width,   0.0f,           0.0f,       0.0f },
-            { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-            { 0.0f,         0.0f,          -1.0f,       0.0f },
-            { -1.0f,        1.0f,           0.0f,       1.0f },
-        };
+            // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+            GLint last_program, last_texture;
+            glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+            glEnable(GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDisable(GL_CULL_FACE);
+            glDisable(GL_DEPTH_TEST);
 
-        glUseProgram(Memory->Shaders[PapayaShader_PickerHue].Handle);
-        glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHue].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-        glUniform1f(Memory->Shaders[PapayaShader_PickerHue].Uniforms[1], 0.3f);                                        // Current
+            // Setup orthographic projection matrix
+            const float width = ImGui::GetIO().DisplaySize.x;
+            const float height = ImGui::GetIO().DisplaySize.y;
+            const float ortho_projection[4][4] =
+            {
+                { 2.0f/width,   0.0f,           0.0f,       0.0f },
+                { 0.0f,         2.0f/-height,   0.0f,       0.0f },
+                { 0.0f,         0.0f,          -1.0f,       0.0f },
+                { -1.0f,        1.0f,           0.0f,       1.0f },
+            };
 
-        // Grow our buffer according to what we need
-        glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VboHandle);
-        glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VaoHandle);
+            glUseProgram(Memory->Shaders[PapayaShader_PickerHue].Handle);
+            glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHue].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+            glUniform1f(Memory->Shaders[PapayaShader_PickerHue].Uniforms[1], 0.3f);                                        // Current
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+            // Grow our buffer according to what we need
+            glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VboHandle);
+            glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHue].VaoHandle);
 
-        // Restore modified state
-        glBindVertexArray(0);
-        glUseProgram(last_program);
-        glDisable(GL_BLEND);
-        glBindTexture(GL_TEXTURE_2D, last_texture);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            // Restore modified state
+            glBindVertexArray(0);
+            glUseProgram(last_program);
+            glDisable(GL_BLEND);
+            glBindTexture(GL_TEXTURE_2D, last_texture);
+        }
     }
     #pragma endregion
 }
