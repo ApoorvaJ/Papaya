@@ -432,19 +432,27 @@ void Initialize(PapayaMemory* Memory)
 "   }                                                       \n";
 
     const GLchar* fragment_shader =
-"   #version 330                                            \n"
-"                                                           \n"
-"   #define M_PI 3.1415926535897932384626433832795          \n"
-"                                                           \n"
-"   uniform float Current;                                  \n" // Uniforms[1]
-"                                                           \n"
-"   in  vec2 Frag_UV;                                       \n"
-"   out vec4 Out_Color;                                     \n"
-"                                                           \n"
-"   void main()                                             \n"
-"   {                                                       \n"
-"       Out_Color = vec4(1.0,1.0,0.0,1.0);                  \n"
-"   }                                                       \n";
+"   #version 330                                                    \n"
+"                                                                   \n"
+"   #define M_PI 3.1415926535897932384626433832795                  \n"
+"                                                                   \n"
+"   uniform float Current;                                          \n" // Uniforms[1]
+"                                                                   \n"
+"   in  vec2 Frag_UV;                                               \n"
+"   out vec4 Out_Color;                                             \n"
+"                                                                   \n"
+"   vec3 hsv2rgb(vec3 c)                                            \n" // Source: Fast branchless RGB to HSV conversion in GLSL
+"   {                                                               \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+"       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);              \n"
+"       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);           \n"
+"       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);   \n"
+"   }                                                               \n"
+"                                                                   \n"
+"   void main()                                                     \n"
+"   {                                                               \n"
+"       vec3 Hue = hsv2rgb(vec3(Frag_UV.y, 1.0, 1.0));              \n"
+"       Out_Color = vec4(Hue.x, Hue.y, Hue.z, 1.0);                 \n"
+"   }                                                               \n";
 
         Memory->Shaders[PapayaShader_PickerHue].Handle = glCreateProgram();
         uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -477,7 +485,7 @@ void Initialize(PapayaMemory* Memory)
         glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerHue].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));    // UV attribute
 #undef OFFSETOF
 
-        Vec2 Position = Vec2(40,60);
+        Vec2 Position = Vec2(310,130);
         Vec2 Size = Vec2(26,256);
         ImDrawVert Verts[6];
         Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
