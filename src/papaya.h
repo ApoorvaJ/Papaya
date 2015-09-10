@@ -44,7 +44,8 @@ enum PapayaVertexBuffer_
     PapayaVertexBuffer_ImGui,
     PapayaVertexBuffer_Canvas,
     PapayaVertexBuffer_BrushCursor,
-    PapayaVertexBuffer_PickerHue,
+    PapayaVertexBuffer_PickerHStrip,
+    PapayaVertexBuffer_PickerSVBox,
     PapayaVertexBuffer_RTTBrush,
     PapayaVertexBuffer_RTTAdd,
     PapayaVertexBuffer_COUNT
@@ -55,7 +56,8 @@ enum PapayaShader_
     PapayaShader_ImGui,
     PapayaShader_Brush,
     PapayaShader_BrushCursor,
-    PapayaShader_PickerHue,
+    PapayaShader_PickerHStrip,
+    PapayaShader_PickerSVBox,
     PapayaShader_COUNT
 };
 
