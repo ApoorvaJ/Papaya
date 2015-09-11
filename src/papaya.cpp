@@ -531,8 +531,14 @@ void Initialize(PapayaMemory* Memory)
 "                                                                   \n"
 "   void main()                                                     \n"
 "   {                                                               \n"
-"       vec3 Hue = hsv2rgb(vec3(Frag_UV.y, 1.0, 1.0));              \n"
-"       Out_Color = vec4(Hue.x, Hue.y, Hue.z, 1.0);                 \n"
+"       vec4 Hue = vec4(hsv2rgb(vec3(Frag_UV.y, 1.0, 1.0)).xyz,1.0);\n"
+"       if (abs(0.5 - Frag_UV.x) > 0.3333)                          \n"
+"       {                                                           \n"
+"           Out_Color = vec4(0.36,0.36,0.37,                        \n"
+"                       float(abs(Frag_UV.y - Current) < 0.0039));  \n"
+"       }                                                           \n"
+"       else                                                        \n"
+"           Out_Color = Hue;                                        \n"
 "   }                                                               \n";
 
         Memory->Shaders[PapayaShader_PickerHStrip].Handle = glCreateProgram();
@@ -560,14 +566,14 @@ void Initialize(PapayaMemory* Memory)
         glGenVertexArrays(1, &Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VaoHandle);
         glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VaoHandle);
         glEnableVertexAttribArray(Memory->Shaders[PapayaShader_PickerHStrip].Attributes[0]); // Position attribute
-        glEnableVertexAttribArray(Memory->Shaders[PapayaShader_PickerHStrip].Attributes[1]); // Position attribute
+        glEnableVertexAttribArray(Memory->Shaders[PapayaShader_PickerHStrip].Attributes[1]); // UV attribute
 #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
         glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerHStrip].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos));   // Position attribute
         glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerHStrip].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));    // UV attribute
 #undef OFFSETOF
 
-        Vec2 Position = Vec2(310,128);
-        Vec2 Size = Vec2(26,256);
+        Vec2 Position = Memory->Tools.HueStripPosition;
+        Vec2 Size = Memory->Tools.HueStripSize;
         ImDrawVert Verts[6];
         Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
         Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
@@ -951,7 +957,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
     }
     #pragma endregion
 
-    if (!Memory->Document.TextureID) { goto EndOfFunction; }
+    if (!Memory->Document.TextureID) { return; }
 
     #pragma region Tool Param Bar
     {
@@ -1400,17 +1406,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
     }
     #pragma endregion
 
-    EndOfFunction:
+    //EndOfFunction:
 
-    #pragma region Last mouse info
-    {
-        Memory->Mouse.LastPos = ImGui::GetMousePos();
-        Memory->Mouse.LastUV = Memory->Mouse.UV;
-        Memory->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
-        Memory->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
-        Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
-    }
-    #pragma endregion
 }
 
 void RenderImGui(ImDrawData* DrawData, void* mem)
@@ -1492,6 +1489,21 @@ void RenderAfterGui(PapayaMemory* Memory)
 {
     if (Memory->Tools.ColorPickerOpen)
     {
+        #pragma region Update hue picker
+        {
+            
+            if (Memory->Mouse.IsDown[0] &&
+                Memory->Mouse.Pos.x > Memory->Tools.HueStripPosition.x &&
+                Memory->Mouse.Pos.x < Memory->Tools.HueStripPosition.x + Memory->Tools.HueStripSize.x &&
+                Memory->Mouse.Pos.y > Memory->Tools.HueStripPosition.y &&
+                Memory->Mouse.Pos.y < Memory->Tools.HueStripPosition.y + Memory->Tools.HueStripSize.y)
+            {
+                Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.HueStripPosition.y)/256.0f;
+            }
+            
+        }
+        #pragma endregion
+
         #pragma region Draw hue picker
         {
             // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
@@ -1517,7 +1529,7 @@ void RenderAfterGui(PapayaMemory* Memory)
 
             glUseProgram(Memory->Shaders[PapayaShader_PickerHStrip].Handle);
             glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-            glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], 0.3f);                                        // Current
+            glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Memory->Tools.NewColorHue);                                        // Current
 
             // Grow our buffer according to what we need
             glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VboHandle);
@@ -1558,7 +1570,7 @@ void RenderAfterGui(PapayaMemory* Memory)
 
             glUseProgram(Memory->Shaders[PapayaShader_PickerSVBox].Handle);
             glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-            glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], 0.4f);                                        // Hue
+            glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Memory->Tools.NewColorHue);                   // Hue
             glUniform2f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2], 0.0f, 0.0f);                                  // Current
 
             // Grow our buffer according to what we need
@@ -1575,6 +1587,16 @@ void RenderAfterGui(PapayaMemory* Memory)
         }
         #pragma endregion
     }
+
+    #pragma region Last mouse info
+    {
+        Memory->Mouse.LastPos = ImGui::GetMousePos();
+        Memory->Mouse.LastUV = Memory->Mouse.UV;
+        Memory->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
+        Memory->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
+        Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
+    }
+    #pragma endregion
 }
 
 }
