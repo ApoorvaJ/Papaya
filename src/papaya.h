@@ -126,8 +126,8 @@ struct ToolParams
     Color CurrentColor, NewColor;
     bool ColorPickerOpen;
     float NewColorHue, NewColorSaturation, NewColorValue;
-    Vec2 HueStripPosition = Vec2(305, 128);
-    Vec2 HueStripSize = Vec2(30, 256);
+    Vec2 HueStripPosition;
+    Vec2 HueStripSize;
 };
 
 struct PapayaMemory

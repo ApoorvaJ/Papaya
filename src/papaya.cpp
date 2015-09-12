@@ -195,6 +195,19 @@ internal void CloseDocument(PapayaMemory* Memory)
 
 void Initialize(PapayaMemory* Memory)
 {
+	#pragma region Init tool params
+	{
+		Memory->Tools.BrushDiameter = 50;
+		Memory->Tools.BrushHardness = 90.0f;
+		Memory->Tools.BrushOpacity = 100.0f;
+		Memory->DrawCanvas = true;
+		Memory->DrawOverlay = false;
+		Memory->Tools.CurrentColor = Color(220, 163, 89);
+		Memory->Tools.ColorPickerOpen = false;
+		Memory->Tools.HueStripPosition = Vec2(305, 128);
+		Memory->Tools.HueStripSize = Vec2(30, 256);
+	}
+	#pragma endregion
 
     #pragma region Brush shader
     {
@@ -700,15 +713,7 @@ void Initialize(PapayaMemory* Memory)
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     OpenDocument(PAPAYA_DEFAULT_IMAGE, Memory);
-#endif
-
-    Memory->Tools.BrushDiameter = 50;
-    Memory->Tools.BrushHardness = 90.0f;
-    Memory->Tools.BrushOpacity = 100.0f;
-    Memory->DrawCanvas = true;
-    Memory->DrawOverlay = false;
-    Memory->Tools.CurrentColor = Color(220, 163, 89);
-    Memory->Tools.ColorPickerOpen = false;
+#endif    
 }
 
 void Shutdown(PapayaMemory* Memory)
@@ -1531,7 +1536,6 @@ void RenderAfterGui(PapayaMemory* Memory)
             glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
             glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Memory->Tools.NewColorHue);                                        // Current
 
-            // Grow our buffer according to what we need
             glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VboHandle);
             glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VaoHandle);
 
@@ -1573,7 +1577,6 @@ void RenderAfterGui(PapayaMemory* Memory)
             glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Memory->Tools.NewColorHue);                   // Hue
             glUniform2f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2], 0.0f, 0.0f);                                  // Current
 
-            // Grow our buffer according to what we need
             glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VboHandle);
             glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VaoHandle);
 
