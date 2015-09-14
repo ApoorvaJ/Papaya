@@ -1540,6 +1540,13 @@ void RenderAfterGui(PapayaMemory* Memory)
         }
         #pragma endregion
 
+        // Update new color
+        {
+            Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, 
+                           Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b);
+        }
+        //
+
         #pragma region Draw hue picker
         {
             // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
