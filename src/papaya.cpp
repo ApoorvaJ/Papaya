@@ -206,6 +206,9 @@ void Initialize(PapayaMemory* Memory)
 		Memory->Tools.ColorPickerOpen = false;
 		Memory->Tools.HueStripPosition = Vec2(305, 128);
 		Memory->Tools.HueStripSize = Vec2(30, 256);
+        Memory->Tools.SVBoxPosition = Vec2(42, 128);
+        Memory->Tools.SVBoxSize = Vec2(256, 256);
+        Memory->Tools.NewColorSV = Vec2(0.5f, 0.5f);
 	}
 	#pragma endregion
 
@@ -445,26 +448,38 @@ void Initialize(PapayaMemory* Memory)
 "   }                                                       \n";
 
     const GLchar* fragment_shader =
-"   #version 330                                                    \n"
-"                                                                   \n"
-"   uniform float Hue;                                              \n" // Uniforms[1]
-"   uniform vec2 Current;                                           \n" // Uniforms[2]
-"                                                                   \n"
-"   in  vec2 Frag_UV;                                               \n"
-"   out vec4 Out_Color;                                             \n"
-"                                                                   \n"
-"   vec3 hsv2rgb(vec3 c)                                            \n" // Source: Fast branchless RGB to HSV conversion in GLSL
-"   {                                                               \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
-"       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);              \n"
-"       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);           \n"
-"       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);   \n"
-"   }                                                               \n"
-"                                                                   \n"
-"   void main()                                                     \n"
-"   {                                                               \n"
-"       vec3 RGB = hsv2rgb(vec3(Hue, Frag_UV.x, Frag_UV.y));        \n"
-"       Out_Color = vec4(RGB.x, RGB.y, RGB.z, 1.0);                 \n"
-"   }                                                               \n";
+"   #version 330                                                            \n"
+"                                                                           \n"
+"   uniform float Hue;                                                      \n" // Uniforms[1]
+"   uniform vec2 Cursor;                                                    \n" // Uniforms[2]
+"   uniform float Thickness = 1.0 / 256.0;                                  \n"
+"   uniform float Radius = 0.0075;                                          \n"
+"                                                                           \n"
+"   in  vec2 Frag_UV;                                                       \n"
+"   out vec4 Out_Color;                                                     \n"
+"                                                                           \n"
+"   vec3 hsv2rgb(vec3 c)                                                    \n" // Source: Fast branchless RGB to HSV conversion in GLSL
+"   {                                                                       \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+"       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
+"       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);                   \n"
+"       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);           \n"
+"   }                                                                       \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec3 RGB = hsv2rgb(vec3(Hue, Frag_UV.x, Frag_UV.y));                \n"
+"       float Dist = distance(Frag_UV, Cursor);                             \n"
+"                                                                           \n"
+"       if (Dist > Radius && Dist < Radius + Thickness)                     \n"
+"       {                                                                   \n"
+"           float a = (Cursor.x < 0.4 && Cursor.y > 0.6) ? 0.0 : 1.0;       \n"
+"           Out_Color = vec4(a, a, a, 1.0);                                 \n"
+"       }                                                                   \n"
+"       else                                                                \n"
+"       {                                                                   \n"
+"           Out_Color = vec4(RGB.x, RGB.y, RGB.z, 1.0);                     \n"
+"       }                                                                   \n"
+"   }                                                                       \n";
 
         Memory->Shaders[PapayaShader_PickerSVBox].Handle = glCreateProgram();
         uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -484,7 +499,7 @@ void Initialize(PapayaMemory* Memory)
 
         Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerSVBox].Handle, "ProjMtx");
         Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerSVBox].Handle, "Hue");
-        Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerSVBox].Handle, "Current");
+        Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerSVBox].Handle, "Cursor");
 
         // Vertex buffer
         glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VboHandle);
@@ -498,8 +513,8 @@ void Initialize(PapayaMemory* Memory)
         glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerSVBox].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));    // UV attribute
 #undef OFFSETOF
 
-        Vec2 Position = Vec2(42,128);
-        Vec2 Size = Vec2(256,256);
+        Vec2 Position = Memory->Tools.SVBoxPosition;
+        Vec2 Size = Memory->Tools.SVBoxSize;
         ImDrawVert Verts[6];
         Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
         Verts[1].pos = Vec2(Size.x + Position.x, Position.y);			Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
@@ -530,7 +545,7 @@ void Initialize(PapayaMemory* Memory)
     const GLchar* fragment_shader =
 "   #version 330                                                    \n"
 "                                                                   \n"
-"   uniform float Current;                                          \n" // Uniforms[1]
+"   uniform float Cursor;                                           \n" // Uniforms[1]
 "                                                                   \n"
 "   in  vec2 Frag_UV;                                               \n"
 "   out vec4 Out_Color;                                             \n"
@@ -548,7 +563,7 @@ void Initialize(PapayaMemory* Memory)
 "       if (abs(0.5 - Frag_UV.x) > 0.3333)                          \n"
 "       {                                                           \n"
 "           Out_Color = vec4(0.36,0.36,0.37,                        \n"
-"                       float(abs(Frag_UV.y - Current) < 0.0039));  \n"
+"                       float(abs(Frag_UV.y - Cursor) < 0.0039));   \n"
 "       }                                                           \n"
 "       else                                                        \n"
 "           Out_Color = Hue;                                        \n"
@@ -571,7 +586,7 @@ void Initialize(PapayaMemory* Memory)
         Memory->Shaders[PapayaShader_PickerHStrip].Attributes[1] = glGetAttribLocation (Memory->Shaders[PapayaShader_PickerHStrip].Handle, "UV");
 
         Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[0]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerHStrip].Handle, "ProjMtx");
-        Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerHStrip].Handle, "Current");
+        Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1]   = glGetUniformLocation(Memory->Shaders[PapayaShader_PickerHStrip].Handle, "Cursor");
 
         // Vertex buffer
         glGenBuffers(1, &Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VboHandle);
@@ -1509,6 +1524,22 @@ void RenderAfterGui(PapayaMemory* Memory)
         }
         #pragma endregion
 
+        #pragma region Update saturation-value picker
+        {
+            
+            if (Memory->Mouse.IsDown[0] &&
+                Memory->Mouse.Pos.x > Memory->Tools.SVBoxPosition.x &&
+                Memory->Mouse.Pos.x < Memory->Tools.SVBoxPosition.x + Memory->Tools.SVBoxSize.x &&
+                Memory->Mouse.Pos.y > Memory->Tools.SVBoxPosition.y &&
+                Memory->Mouse.Pos.y < Memory->Tools.SVBoxPosition.y + Memory->Tools.SVBoxSize.y)
+            {
+                Memory->Tools.NewColorSV.x =        (Memory->Mouse.Pos.x - Memory->Tools.SVBoxPosition.x) / 256.0f;
+                Memory->Tools.NewColorSV.y = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.SVBoxPosition.y) / 256.0f;
+            }
+            
+        }
+        #pragma endregion
+
         #pragma region Draw hue picker
         {
             // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
@@ -1534,7 +1565,7 @@ void RenderAfterGui(PapayaMemory* Memory)
 
             glUseProgram(Memory->Shaders[PapayaShader_PickerHStrip].Handle);
             glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-            glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Memory->Tools.NewColorHue);                                        // Current
+            glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Memory->Tools.NewColorHue); // Cursor
 
             glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VboHandle);
             glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VaoHandle);
@@ -1574,8 +1605,8 @@ void RenderAfterGui(PapayaMemory* Memory)
 
             glUseProgram(Memory->Shaders[PapayaShader_PickerSVBox].Handle);
             glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-            glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Memory->Tools.NewColorHue);                   // Hue
-            glUniform2f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2], 0.0f, 0.0f);                                  // Current
+            glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Memory->Tools.NewColorHue); // Hue
+            glUniform2f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y); //Cursor                                 // Current
 
             glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VboHandle);
             glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VaoHandle);
