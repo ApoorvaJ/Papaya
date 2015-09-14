@@ -728,7 +728,7 @@ void Initialize(PapayaMemory* Memory)
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     OpenDocument(PAPAYA_DEFAULT_IMAGE, Memory);
-#endif    
+#endif
 }
 
 void Shutdown(PapayaMemory* Memory)
@@ -1509,6 +1509,9 @@ void RenderAfterGui(PapayaMemory* Memory)
 {
     if (Memory->Tools.ColorPickerOpen)
     {
+        Math::RGBtoHSV(Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b,
+                       Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y);
+
         #pragma region Update hue picker
         {
             
@@ -1540,12 +1543,11 @@ void RenderAfterGui(PapayaMemory* Memory)
         }
         #pragma endregion
 
-        // Update new color
-        {
-            Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, 
-                           Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b);
-        }
-        //
+        float r, g, b;
+        Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b); 
+        Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Update new color
+                                       Math::RoundToInt(g * 255.0f),  //
+                                       Math::RoundToInt(b * 255.0f)); //
 
         #pragma region Draw hue picker
         {

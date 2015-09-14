@@ -82,6 +82,11 @@ namespace Math
 
         return result;
     }
+
+    int32 RoundToInt(float a)
+    {
+        return (int32)Floor(a + 0.5f);
+    }
     
     float Distance(Vec2 a, Vec2 b)
     {
@@ -119,5 +124,25 @@ namespace Math
         case 4: out_r = t; out_g = p; out_b = v; break;
         case 5: default: out_r = v; out_g = p; out_b = q; break;
         }
+    }
+
+    void RGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float& out_v)
+    {
+        float K = 0.f;
+        if (g < b)
+        {
+            const float tmp = g; g = b; b = tmp;
+            K = -1.f;
+        }
+        if (r < g)
+        {
+            const float tmp = r; r = g; g = tmp;
+            K = -2.f / 6.f - K;
+        }
+
+        const float chroma = r - (g < b ? g : b);
+        out_h = fabsf(K + (g - b) / (6.f * chroma + 1e-20f));
+        out_s = chroma / (r + 1e-20f);
+        out_v = r;
     }
 }
