@@ -897,7 +897,12 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Memory->Tools.CurrentColor))
             {
                 Memory->Tools.ColorPickerOpen = !Memory->Tools.ColorPickerOpen;
-                Memory->Tools.NewColor = Memory->Tools.CurrentColor;
+                if (Memory->Tools.ColorPickerOpen)
+                {
+                    Memory->Tools.NewColor = Memory->Tools.CurrentColor;
+                    Math::RGBtoHSV(Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b,
+                                   Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y);
+                }
             }
             ImGui::PopID();
         }
@@ -957,6 +962,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
                 if (ImGui::InputInt3("RGB", col))
                 {
                     Memory->Tools.NewColor = Color(col[0], col[1], col[2]); // TODO: Clamping
+                    Math::RGBtoHSV(Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b, 
+                                   Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y);
                 }
 
                 if (ImGui::Button("OK"))
@@ -1509,9 +1516,6 @@ void RenderAfterGui(PapayaMemory* Memory)
 {
     if (Memory->Tools.ColorPickerOpen)
     {
-        Math::RGBtoHSV(Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b,
-                       Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y);
-
         #pragma region Update hue picker
         {
             
@@ -1543,11 +1547,13 @@ void RenderAfterGui(PapayaMemory* Memory)
         }
         #pragma endregion
 
-        float r, g, b;
-        Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b); 
-        Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Update new color
-                                       Math::RoundToInt(g * 255.0f),  //
-                                       Math::RoundToInt(b * 255.0f)); //
+        {
+            float r, g, b;
+            Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b);
+            Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Update new color
+                                           Math::RoundToInt(g * 255.0f),  //
+                                           Math::RoundToInt(b * 255.0f)); //
+        }
 
         #pragma region Draw hue picker
         {
