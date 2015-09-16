@@ -1519,13 +1519,23 @@ void RenderAfterGui(PapayaMemory* Memory)
         #pragma region Update hue picker
         {
             
-            if (Memory->Mouse.IsDown[0] &&
+            if (Memory->Mouse.Pressed[0] &&
                 Memory->Mouse.Pos.x > Memory->Tools.HueStripPosition.x &&
                 Memory->Mouse.Pos.x < Memory->Tools.HueStripPosition.x + Memory->Tools.HueStripSize.x &&
                 Memory->Mouse.Pos.y > Memory->Tools.HueStripPosition.y &&
                 Memory->Mouse.Pos.y < Memory->Tools.HueStripPosition.y + Memory->Tools.HueStripSize.y)
             {
-                Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.HueStripPosition.y)/256.0f;
+                Memory->Tools.DraggingHue = true;
+            }
+            else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingHue)
+            {
+                Memory->Tools.DraggingHue = false;
+            }
+
+            if (Memory->Tools.DraggingHue)
+            {
+                Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.HueStripPosition.y) / 256.0f;
+                Memory->Tools.NewColorHue = Math::Clamp(Memory->Tools.NewColorHue, 0.0f, 1.0f);
             }
             
         }
@@ -1534,25 +1544,36 @@ void RenderAfterGui(PapayaMemory* Memory)
         #pragma region Update saturation-value picker
         {
             
-            if (Memory->Mouse.IsDown[0] &&
+            if (Memory->Mouse.Pressed[0] &&
                 Memory->Mouse.Pos.x > Memory->Tools.SVBoxPosition.x &&
                 Memory->Mouse.Pos.x < Memory->Tools.SVBoxPosition.x + Memory->Tools.SVBoxSize.x &&
                 Memory->Mouse.Pos.y > Memory->Tools.SVBoxPosition.y &&
                 Memory->Mouse.Pos.y < Memory->Tools.SVBoxPosition.y + Memory->Tools.SVBoxSize.y)
             {
+                Memory->Tools.DraggingSV = true;
+            }
+            else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingSV)
+            {
+                Memory->Tools.DraggingSV = false;
+            }
+
+            if (Memory->Tools.DraggingSV)
+            {
                 Memory->Tools.NewColorSV.x =        (Memory->Mouse.Pos.x - Memory->Tools.SVBoxPosition.x) / 256.0f;
                 Memory->Tools.NewColorSV.y = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.SVBoxPosition.y) / 256.0f;
+                Memory->Tools.NewColorSV.x = Math::Clamp(Memory->Tools.NewColorSV.x, 0.0f, 1.0f);
+                Memory->Tools.NewColorSV.y = Math::Clamp(Memory->Tools.NewColorSV.y, 0.0f, 1.0f);
+
             }
-            
         }
         #pragma endregion
 
         {
             float r, g, b;
             Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b);
-            Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Update new color
-                                           Math::RoundToInt(g * 255.0f),  //
-                                           Math::RoundToInt(b * 255.0f)); //
+            Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
+                                           Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
+                                           Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
         }
 
         #pragma region Draw hue picker

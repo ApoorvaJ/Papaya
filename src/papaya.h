@@ -128,6 +128,7 @@ struct ToolParams
     float NewColorHue, NewColorSaturation, NewColorValue;
     Vec2 HueStripPosition, HueStripSize, SVBoxPosition, SVBoxSize;
     Vec2 NewColorSV;
+    bool DraggingHue, DraggingSV;
 };
 
 struct PapayaMemory
