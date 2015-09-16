@@ -204,9 +204,11 @@ void Initialize(PapayaMemory* Memory)
 		Memory->DrawOverlay = false;
 		Memory->Tools.CurrentColor = Color(220, 163, 89);
 		Memory->Tools.ColorPickerOpen = false;
-		Memory->Tools.HueStripPosition = Vec2(305, 128);
+        Memory->Tools.PickerPosition = Vec2(34, 86);
+        Memory->Tools.PickerSize = Vec2(315, 365);
+        Memory->Tools.HueStripPosition = Vec2(271, 42);
 		Memory->Tools.HueStripSize = Vec2(30, 256);
-        Memory->Tools.SVBoxPosition = Vec2(42, 128);
+        Memory->Tools.SVBoxPosition = Vec2(8, 42);
         Memory->Tools.SVBoxSize = Vec2(256, 256);
         Memory->Tools.NewColorSV = Vec2(0.5f, 0.5f);
 	}
@@ -513,7 +515,7 @@ void Initialize(PapayaMemory* Memory)
         glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerSVBox].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));    // UV attribute
 #undef OFFSETOF
 
-        Vec2 Position = Memory->Tools.SVBoxPosition;
+        Vec2 Position = Memory->Tools.PickerPosition + Memory->Tools.SVBoxPosition;
         Vec2 Size = Memory->Tools.SVBoxSize;
         ImDrawVert Verts[6];
         Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
@@ -600,7 +602,7 @@ void Initialize(PapayaMemory* Memory)
         glVertexAttribPointer(Memory->Shaders[PapayaShader_PickerHStrip].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv));    // UV attribute
 #undef OFFSETOF
 
-        Vec2 Position = Memory->Tools.HueStripPosition;
+        Vec2 Position = Memory->Tools.PickerPosition + Memory->Tools.HueStripPosition;
         Vec2 Size = Memory->Tools.HueStripSize;
         ImDrawVert Verts[6];
         Verts[0].pos = Vec2(Position.x, Position.y);					Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
@@ -751,6 +753,27 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             Memory->Mouse.IsDown[i]   = ImGui::IsMouseDown(i);
             Memory->Mouse.Pressed[i]  = (Memory->Mouse.IsDown[i] && !Memory->Mouse.WasDown[i]);
             Memory->Mouse.Released[i] = (!Memory->Mouse.IsDown[i] && Memory->Mouse.WasDown[i]);
+        }
+
+        // OnCanvas test
+        {
+            Memory->Mouse.OnCanvas = true;
+
+            if (Memory->Mouse.Pos.x <= 34 ||                         // Document workspace test
+                Memory->Mouse.Pos.x >= Memory->Window.Width - 3 ||   // TODO: Formalize the window layout and
+                Memory->Mouse.Pos.y <= 55 ||                         //       remove magic numbers throughout
+                Memory->Mouse.Pos.y >= Memory->Window.Height - 3)    //       the code.
+            {
+                Memory->Mouse.OnCanvas = false;
+            }
+            else if (Memory->Tools.ColorPickerOpen &&
+                Memory->Mouse.Pos.x > Memory->Tools.PickerPosition.x &&                          // Color picker test
+                Memory->Mouse.Pos.x < Memory->Tools.PickerPosition.x + Memory->Tools.PickerSize.x &&  // 
+                Memory->Mouse.Pos.y > Memory->Tools.PickerPosition.y &&                               // 
+                Memory->Mouse.Pos.y < Memory->Tools.PickerPosition.y + Memory->Tools.PickerSize.y)    // 
+            {
+                Memory->Mouse.OnCanvas = false;
+            }
         }
     }
     #pragma endregion
@@ -919,9 +942,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
     {
         if (Memory->Tools.ColorPickerOpen) // TODO: Work-in-progress
         {
-            float PosY = 86;
-            ImGui::SetNextWindowSize(ImVec2(315, 35));
-            ImGui::SetNextWindowPos(ImVec2(34, PosY));
+            ImGui::SetNextWindowSize(ImVec2(Memory->Tools.PickerSize.x, 35));
+            ImGui::SetNextWindowPos(Memory->Tools.PickerPosition);
 
             ImGuiWindowFlags WindowFlags = 0;
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -948,8 +970,8 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             ImGui::End();
             ImGui::PopStyleVar(3);
 
-            ImGui::SetNextWindowSize(ImVec2(315, 330));
-            ImGui::SetNextWindowPos(ImVec2(34, PosY + 35));
+            ImGui::SetNextWindowSize(Memory->Tools.PickerSize - Vec2(0.0f, 35.0f));
+            ImGui::SetNextWindowPos(Memory->Tools.PickerPosition + Vec2(0.0f,35.0f));
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::Begin("Color picker", 0, WindowFlags);
             {
@@ -1086,7 +1108,78 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         }
         #pragma endregion
 
-        if (Memory->Mouse.IsDown[0])
+        if (Memory->Mouse.Pressed[0] && Memory->Mouse.OnCanvas)
+        {
+            Memory->Tools.DraggingBrush = true;
+            if (Memory->Tools.ColorPickerOpen)
+            {
+                Memory->Tools.CurrentColor = Memory->Tools.NewColor;
+            }
+        }
+        else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingBrush)
+        {
+            Memory->Tools.DraggingBrush = false;
+
+            glDisable(GL_SCISSOR_TEST);
+            glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
+
+            glViewport(0, 0, Memory->Document.Width, Memory->Document.Height);
+
+            // Setup orthographic projection matrix
+            const float width = (float)Memory->Document.Width;
+            const float height = (float)Memory->Document.Height;
+            const float ortho_projection[4][4] =                    // TODO: Separate out all ortho projection matrices into a single variable in PapayaMemory
+            {                                                       //
+                { 2.0f / width,   0.0f,           0.0f,       0.0f }, //
+                { 0.0f,         2.0f / -height,   0.0f,       0.0f }, //
+                { 0.0f,         0.0f,          -1.0f,       0.0f }, //
+                { -1.0f,        1.0f,           0.0f,       1.0f }, //
+            };
+            glUseProgram(Memory->Shaders[PapayaShader_ImGui].Handle);
+
+
+            glUniformMatrix4fv(Memory->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+            //glUniform1i(Memory->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+
+            glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
+            glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
+
+            glEnable(GL_BLEND);
+            glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Document.TextureID);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->FboSampleTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            uint32 Temp = Memory->FboRenderTexture;
+            Memory->FboRenderTexture = Memory->Document.TextureID;
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
+            Memory->Document.TextureID = Temp;
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+
+            glDisable(GL_BLEND);
+
+            //==================================================================================================
+            // NOTE: On AMD drivers, the following is causing texture corruption (black spots) and crashes.
+            // Why, though? I added a glFinish() call, plus generous sleep before the call to GetTexImage.
+            // Didn't make a difference. Needs more investigation.
+            //
+#if 0
+            //glFinish();
+            //Sleep(5000);
+            glBindTexture(GL_TEXTURE_2D, Memory->Document.TextureID);
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Document.Texture); // TODO: Do we even need a local texture copy?
+#endif
+                                                                                                  //==================================================================================================
+            Memory->DrawOverlay = false;
+        }
+
+        if (Memory->Tools.DraggingBrush)
         {
             Memory->DrawOverlay = true;
 
@@ -1166,66 +1259,6 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        }
-        else if (Memory->Mouse.Released[0])
-        {
-            glDisable(GL_SCISSOR_TEST);
-            glBindFramebuffer(GL_FRAMEBUFFER, Memory->FrameBufferObject);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
-
-            glViewport(0, 0, Memory->Document.Width, Memory->Document.Height);
-
-            // Setup orthographic projection matrix
-            const float width = (float)Memory->Document.Width;
-            const float height = (float)Memory->Document.Height;
-            const float ortho_projection[4][4] =                    // TODO: Separate out all ortho projection matrices into a single variable in PapayaMemory
-            {                                                       //
-                { 2.0f/width,   0.0f,           0.0f,       0.0f }, //
-                { 0.0f,         2.0f/-height,   0.0f,       0.0f }, //
-                { 0.0f,         0.0f,          -1.0f,       0.0f }, //
-                { -1.0f,        1.0f,           0.0f,       1.0f }, //
-            };
-            glUseProgram(Memory->Shaders[PapayaShader_ImGui].Handle);
-
-
-            glUniformMatrix4fv(Memory->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
-            //glUniform1i(Memory->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
-
-            glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VboHandle);
-            glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_RTTAdd].VaoHandle);
-
-            glEnable(GL_BLEND);
-            glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->Document.TextureID);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Memory->FboSampleTexture);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            uint32 Temp = Memory->FboRenderTexture;
-            Memory->FboRenderTexture = Memory->Document.TextureID;
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Memory->FboRenderTexture, 0);
-            Memory->Document.TextureID = Temp;
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-
-            glDisable(GL_BLEND);
-
-//==================================================================================================
-// NOTE: On AMD drivers, the following is causing texture corruption (black spots) and crashes.
-// Why, though? I added a glFinish() call, plus generous sleep before the call to GetTexImage.
-// Didn't make a difference. Needs more investigation.
-//
-#if 0
-            //glFinish();
-            //Sleep(5000);
-            glBindTexture(GL_TEXTURE_2D, Memory->Document.TextureID);
-            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Document.Texture); // TODO: Do we even need a local texture copy?
-#endif
-//==================================================================================================
-            Memory->DrawOverlay = false;
         }
 
 #if 0
@@ -1432,9 +1465,6 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         glBindTexture(GL_TEXTURE_2D, last_texture);
     }
     #pragma endregion
-
-    //EndOfFunction:
-
 }
 
 void RenderImGui(ImDrawData* DrawData, void* mem)
@@ -1518,12 +1548,13 @@ void RenderAfterGui(PapayaMemory* Memory)
     {
         #pragma region Update hue picker
         {
-            
+            Vec2 Pos = Memory->Tools.PickerPosition + Memory->Tools.HueStripPosition;
+
             if (Memory->Mouse.Pressed[0] &&
-                Memory->Mouse.Pos.x > Memory->Tools.HueStripPosition.x &&
-                Memory->Mouse.Pos.x < Memory->Tools.HueStripPosition.x + Memory->Tools.HueStripSize.x &&
-                Memory->Mouse.Pos.y > Memory->Tools.HueStripPosition.y &&
-                Memory->Mouse.Pos.y < Memory->Tools.HueStripPosition.y + Memory->Tools.HueStripSize.y)
+                Memory->Mouse.Pos.x > Pos.x &&
+                Memory->Mouse.Pos.x < Pos.x + Memory->Tools.HueStripSize.x &&
+                Memory->Mouse.Pos.y > Pos.y &&
+                Memory->Mouse.Pos.y < Pos.y + Memory->Tools.HueStripSize.y)
             {
                 Memory->Tools.DraggingHue = true;
             }
@@ -1534,7 +1565,7 @@ void RenderAfterGui(PapayaMemory* Memory)
 
             if (Memory->Tools.DraggingHue)
             {
-                Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.HueStripPosition.y) / 256.0f;
+                Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Pos.y) / 256.0f;
                 Memory->Tools.NewColorHue = Math::Clamp(Memory->Tools.NewColorHue, 0.0f, 1.0f);
             }
             
@@ -1543,12 +1574,13 @@ void RenderAfterGui(PapayaMemory* Memory)
 
         #pragma region Update saturation-value picker
         {
-            
+            Vec2 Pos = Memory->Tools.PickerPosition + Memory->Tools.SVBoxPosition;
+
             if (Memory->Mouse.Pressed[0] &&
-                Memory->Mouse.Pos.x > Memory->Tools.SVBoxPosition.x &&
-                Memory->Mouse.Pos.x < Memory->Tools.SVBoxPosition.x + Memory->Tools.SVBoxSize.x &&
-                Memory->Mouse.Pos.y > Memory->Tools.SVBoxPosition.y &&
-                Memory->Mouse.Pos.y < Memory->Tools.SVBoxPosition.y + Memory->Tools.SVBoxSize.y)
+                Memory->Mouse.Pos.x > Pos.x &&
+                Memory->Mouse.Pos.x < Pos.x + Memory->Tools.SVBoxSize.x &&
+                Memory->Mouse.Pos.y > Pos.y &&
+                Memory->Mouse.Pos.y < Pos.y + Memory->Tools.SVBoxSize.y)
             {
                 Memory->Tools.DraggingSV = true;
             }
@@ -1559,8 +1591,8 @@ void RenderAfterGui(PapayaMemory* Memory)
 
             if (Memory->Tools.DraggingSV)
             {
-                Memory->Tools.NewColorSV.x =        (Memory->Mouse.Pos.x - Memory->Tools.SVBoxPosition.x) / 256.0f;
-                Memory->Tools.NewColorSV.y = 1.0f - (Memory->Mouse.Pos.y - Memory->Tools.SVBoxPosition.y) / 256.0f;
+                Memory->Tools.NewColorSV.x =        (Memory->Mouse.Pos.x - Pos.x) / 256.0f;
+                Memory->Tools.NewColorSV.y = 1.0f - (Memory->Mouse.Pos.y - Pos.y) / 256.0f;
                 Memory->Tools.NewColorSV.x = Math::Clamp(Memory->Tools.NewColorSV.x, 0.0f, 1.0f);
                 Memory->Tools.NewColorSV.y = Math::Clamp(Memory->Tools.NewColorSV.y, 0.0f, 1.0f);
 
@@ -1568,6 +1600,7 @@ void RenderAfterGui(PapayaMemory* Memory)
         }
         #pragma endregion
 
+        #pragma region Update new color
         {
             float r, g, b;
             Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b);
@@ -1575,6 +1608,7 @@ void RenderAfterGui(PapayaMemory* Memory)
                                            Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
                                            Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
         }
+        #pragma endregion
 
         #pragma region Draw hue picker
         {

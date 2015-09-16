@@ -106,6 +106,7 @@ struct MouseInfo
     bool WasDown[3];
     bool Pressed[3];
     bool Released[3];
+    bool OnCanvas;
 };
 
 struct ToolParams
@@ -121,12 +122,13 @@ struct ToolParams
     bool RightClickShiftPressed; // Right-click-drag started with shift pressed
     int32 RightClickDragStartDiameter;
     float RightClickDragStartHardness, RightClickDragStartOpacity;
+    bool DraggingBrush;
 
     //
     Color CurrentColor, NewColor;
     bool ColorPickerOpen;
     float NewColorHue, NewColorSaturation, NewColorValue;
-    Vec2 HueStripPosition, HueStripSize, SVBoxPosition, SVBoxSize;
+    Vec2 PickerPosition, PickerSize, HueStripPosition, HueStripSize, SVBoxPosition, SVBoxSize;
     Vec2 NewColorSV;
     bool DraggingHue, DraggingSV;
 };
