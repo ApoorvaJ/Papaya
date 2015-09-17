@@ -205,10 +205,10 @@ void Initialize(PapayaMemory* Memory)
 		Memory->Tools.CurrentColor = Color(220, 163, 89);
 		Memory->Tools.ColorPickerOpen = false;
         Memory->Tools.PickerPosition = Vec2(34, 86);
-        Memory->Tools.PickerSize = Vec2(315, 365);
-        Memory->Tools.HueStripPosition = Vec2(271, 42);
+        Memory->Tools.PickerSize = Vec2(292, 331);
+        Memory->Tools.HueStripPosition = Vec2(259, 42);
 		Memory->Tools.HueStripSize = Vec2(30, 256);
-        Memory->Tools.SVBoxPosition = Vec2(8, 42);
+        Memory->Tools.SVBoxPosition = Vec2(0, 42);
         Memory->Tools.SVBoxSize = Vec2(256, 256);
         Memory->Tools.NewColorSV = Vec2(0.5f, 0.5f);
 	}
@@ -728,6 +728,14 @@ void Initialize(PapayaMemory* Memory)
     }
     #pragma endregion
 
+    #pragma region ImGui Style Settings
+    {
+        ImGuiStyle& Style = ImGui::GetStyle();
+        Style.WindowFillAlphaDefault = 1.0f;
+        // TODO: Move repeated stuff here by setting global style
+    }
+    #pragma endregion
+
 #ifdef PAPAYA_DEFAULT_IMAGE
     OpenDocument(PAPAYA_DEFAULT_IMAGE, Memory);
 #endif
@@ -757,22 +765,22 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
         // OnCanvas test
         {
-            Memory->Mouse.OnCanvas = true;
+            Memory->Mouse.InWorkspace = true;
 
             if (Memory->Mouse.Pos.x <= 34 ||                         // Document workspace test
                 Memory->Mouse.Pos.x >= Memory->Window.Width - 3 ||   // TODO: Formalize the window layout and
                 Memory->Mouse.Pos.y <= 55 ||                         //       remove magic numbers throughout
                 Memory->Mouse.Pos.y >= Memory->Window.Height - 3)    //       the code.
             {
-                Memory->Mouse.OnCanvas = false;
+                Memory->Mouse.InWorkspace = false;
             }
             else if (Memory->Tools.ColorPickerOpen &&
-                Memory->Mouse.Pos.x > Memory->Tools.PickerPosition.x &&                          // Color picker test
+                Memory->Mouse.Pos.x > Memory->Tools.PickerPosition.x &&                               // Color picker test
                 Memory->Mouse.Pos.x < Memory->Tools.PickerPosition.x + Memory->Tools.PickerSize.x &&  // 
                 Memory->Mouse.Pos.y > Memory->Tools.PickerPosition.y &&                               // 
                 Memory->Mouse.Pos.y < Memory->Tools.PickerPosition.y + Memory->Tools.PickerSize.y)    // 
             {
-                Memory->Mouse.OnCanvas = false;
+                Memory->Mouse.InWorkspace = false;
             }
         }
     }
@@ -940,8 +948,9 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
 
     #pragma region Color Picker
     {
-        if (Memory->Tools.ColorPickerOpen) // TODO: Work-in-progress
+        if (Memory->Tools.ColorPickerOpen)
         {
+            // TODO: Clean styling code
             ImGui::SetNextWindowSize(ImVec2(Memory->Tools.PickerSize.x, 35));
             ImGui::SetNextWindowPos(Memory->Tools.PickerPosition);
 
@@ -953,25 +962,41 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
             WindowFlags |= ImGuiWindowFlags_NoCollapse;
             WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
 
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
             ImGui::PushStyleColor(ImGuiCol_Button, Memory->InterfaceColors[PapayaInterfaceColor_Button]);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory->InterfaceColors[PapayaInterfaceColor_ButtonHover]);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory->InterfaceColors[PapayaInterfaceColor_ButtonActive]);
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Clear]); // TODO: Investigate: Should be opaque, but is partially transparent
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Transparent]);
+
             ImGui::Begin("Color preview", 0, WindowFlags);
             {
-                ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(141, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Memory->Tools.CurrentColor);
+                float Width1 = (Memory->Tools.PickerSize.x + 33.0f) / 2.0f;
+                float Width2 = Width1 - 33.0f;
+                if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(Width2, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Memory->Tools.CurrentColor))
+                {
+                    Memory->Tools.ColorPickerOpen = false;
+                }
                 ImGui::SameLine();
-                ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(173, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Memory->Tools.NewColor);
+                ImGui::PushID(1);
+                if (ImGui::ImageButton((void*)(intptr_t)Memory->InterfaceTextureIDs[PapayaInterfaceTexture_InterfaceIcons], ImVec2(Width1, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Memory->Tools.NewColor))
+                {
+                    Memory->Tools.ColorPickerOpen = false;
+                    Memory->Tools.CurrentColor = Memory->Tools.NewColor;
+                }
+                ImGui::PopID();
             }
             ImGui::End();
+            ImGui::PopStyleColor();
             ImGui::PopStyleVar(3);
 
-            ImGui::SetNextWindowSize(Memory->Tools.PickerSize - Vec2(0.0f, 35.0f));
-            ImGui::SetNextWindowPos(Memory->Tools.PickerPosition + Vec2(0.0f,35.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory->InterfaceColors[PapayaInterfaceColor_Clear]);
+
+            ImGui::SetNextWindowSize(Memory->Tools.PickerSize - Vec2(0.0f, 34.0f));
+            ImGui::SetNextWindowPos(Memory->Tools.PickerPosition + Vec2(0.0f,34.0f));
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::Begin("Color picker", 0, WindowFlags);
             {
@@ -987,20 +1012,9 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
                     Math::RGBtoHSV(Memory->Tools.NewColor.r, Memory->Tools.NewColor.g, Memory->Tools.NewColor.b, 
                                    Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y);
                 }
-
-                if (ImGui::Button("OK"))
-                {
-                    Memory->Tools.CurrentColor = Memory->Tools.NewColor;
-                    Memory->Tools.ColorPickerOpen = false;
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Cancel"))
-                {
-                    Memory->Tools.ColorPickerOpen = false;
-                }
             }
             ImGui::End();
-            ImGui::PopStyleVar(1);
+            ImGui::PopStyleVar(2);
             ImGui::PopStyleColor(4);
         }
     }
@@ -1108,7 +1122,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         }
         #pragma endregion
 
-        if (Memory->Mouse.Pressed[0] && Memory->Mouse.OnCanvas)
+        if (Memory->Mouse.Pressed[0] && Memory->Mouse.InWorkspace)
         {
             Memory->Tools.DraggingBrush = true;
             if (Memory->Tools.ColorPickerOpen)

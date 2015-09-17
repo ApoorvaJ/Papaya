@@ -106,7 +106,7 @@ struct MouseInfo
     bool WasDown[3];
     bool Pressed[3];
     bool Released[3];
-    bool OnCanvas;
+    bool InWorkspace;
 };
 
 struct ToolParams
