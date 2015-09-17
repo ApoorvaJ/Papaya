@@ -40,23 +40,24 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 {
     #pragma region Load image
     {
-        Memory->Document.Texture = stbi_load(Path, &Memory->Document.Width, &Memory->Document.Height, &Memory->Document.ComponentsPerPixel, 4);
+        uint8* Texture = stbi_load(Path, &Memory->Document.Width, &Memory->Document.Height, &Memory->Document.ComponentsPerPixel, 4);
 
-        if (!Memory->Document.Texture) { return false; }
+        if (!Texture) { return false; }
 
         // Create texture
         glGenTextures(1, &Memory->Document.TextureID);
         glBindTexture(GL_TEXTURE_2D, Memory->Document.TextureID);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Document.Width, Memory->Document.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Document.Texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Memory->Document.Width, Memory->Document.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
 
         Memory->Document.InverseAspect = (float)Memory->Document.Height / (float)Memory->Document.Width;
         Memory->Document.CanvasZoom = 0.8f * Math::Min((float)Memory->Window.Width/(float)Memory->Document.Width, (float)Memory->Window.Height/(float)Memory->Document.Height);
         if (Memory->Document.CanvasZoom > 1.0f) { Memory->Document.CanvasZoom = 1.0f; }
         Memory->Document.CanvasPosition = Vec2((Memory->Window.Width  - (float)Memory->Document.Width  * Memory->Document.CanvasZoom)/2.0f,
                                                (Memory->Window.Height - (float)Memory->Document.Height * Memory->Document.CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
-    }
+        free(Texture);
+}
     #pragma endregion
 
     #pragma region Set up the frame buffer
@@ -135,12 +136,6 @@ internal bool OpenDocument(char* Path, PapayaMemory* Memory)
 internal void CloseDocument(PapayaMemory* Memory)
 {
     // Document
-    if (Memory->Document.Texture)
-    {
-        free(Memory->Document.Texture);
-        Memory->Document.Texture = 0;
-    }
-
     if (Memory->Document.TextureID)
     {
         glDeleteTextures(1, &Memory->Document.TextureID);
@@ -854,20 +849,22 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
                     if (ImGui::MenuItem("Save", "Ctrl+S"))
                     {
                         char* Path = Platform::SaveFileDialog();
+                        uint8* Texture = (uint8*)malloc(4 * Memory->Document.Width * Memory->Document.Height);
                         if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
                         {
                             glFinish();
                             glBindTexture(GL_TEXTURE_2D, Memory->Document.TextureID);
-                            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Memory->Document.Texture);
+                            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
                             glFinish();
 
-                            int32 Result =  stbi_write_png(Path, Memory->Document.Width, Memory->Document.Height, 4, Memory->Document.Texture, 4 * Memory->Document.Width);
+                            int32 Result =  stbi_write_png(Path, Memory->Document.Width, Memory->Document.Height, 4, Texture, 4 * Memory->Document.Width);
                             if (!Result)
                             {
                                 // TODO: Log: Save failed
                                 Platform::Print("Save failed\n");
                             }
 
+                            free(Texture);
                             free(Path);
                         }
                     }

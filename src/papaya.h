@@ -63,7 +63,6 @@ enum PapayaShader_
 
 struct PapayaDocument
 {
-    uint8* Texture;
     int32 Width, Height;
     int32 ComponentsPerPixel;
     uint32 TextureID;
