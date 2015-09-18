@@ -1017,7 +1017,7 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
     }
     #pragma endregion
 
-    if (!Memory->Document.TextureID) { return; }
+    if (!Memory->Document.TextureID) { goto EndOfDoc; }
 
     #pragma region Tool Param Bar
     {
@@ -1476,6 +1476,172 @@ void UpdateAndRender(PapayaMemory* Memory, PapayaDebugMemory* DebugMemory)
         glBindTexture(GL_TEXTURE_2D, last_texture);
     }
     #pragma endregion
+
+EndOfDoc:
+
+    ImGui::Render(Memory);
+
+    #pragma region Color Picker Panel
+    {
+        if (Memory->Tools.ColorPickerOpen)
+        {
+            #pragma region Update hue picker
+            {
+                Vec2 Pos = Memory->Tools.PickerPosition + Memory->Tools.HueStripPosition;
+
+                if (Memory->Mouse.Pressed[0] &&
+                    Memory->Mouse.Pos.x > Pos.x &&
+                    Memory->Mouse.Pos.x < Pos.x + Memory->Tools.HueStripSize.x &&
+                    Memory->Mouse.Pos.y > Pos.y &&
+                    Memory->Mouse.Pos.y < Pos.y + Memory->Tools.HueStripSize.y)
+                {
+                    Memory->Tools.DraggingHue = true;
+                }
+                else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingHue)
+                {
+                    Memory->Tools.DraggingHue = false;
+                }
+
+                if (Memory->Tools.DraggingHue)
+                {
+                    Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Pos.y) / 256.0f;
+                    Memory->Tools.NewColorHue = Math::Clamp(Memory->Tools.NewColorHue, 0.0f, 1.0f);
+                }
+            
+            }
+            #pragma endregion
+
+            #pragma region Update saturation-value picker
+            {
+                Vec2 Pos = Memory->Tools.PickerPosition + Memory->Tools.SVBoxPosition;
+
+                if (Memory->Mouse.Pressed[0] &&
+                    Memory->Mouse.Pos.x > Pos.x &&
+                    Memory->Mouse.Pos.x < Pos.x + Memory->Tools.SVBoxSize.x &&
+                    Memory->Mouse.Pos.y > Pos.y &&
+                    Memory->Mouse.Pos.y < Pos.y + Memory->Tools.SVBoxSize.y)
+                {
+                    Memory->Tools.DraggingSV = true;
+                }
+                else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingSV)
+                {
+                    Memory->Tools.DraggingSV = false;
+                }
+
+                if (Memory->Tools.DraggingSV)
+                {
+                    Memory->Tools.NewColorSV.x =        (Memory->Mouse.Pos.x - Pos.x) / 256.0f;
+                    Memory->Tools.NewColorSV.y = 1.0f - (Memory->Mouse.Pos.y - Pos.y) / 256.0f;
+                    Memory->Tools.NewColorSV.x = Math::Clamp(Memory->Tools.NewColorSV.x, 0.0f, 1.0f);
+                    Memory->Tools.NewColorSV.y = Math::Clamp(Memory->Tools.NewColorSV.y, 0.0f, 1.0f);
+
+                }
+            }
+            #pragma endregion
+
+            #pragma region Update new color
+            {
+                float r, g, b;
+                Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b);
+                Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
+                                               Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
+                                               Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
+            }
+            #pragma endregion
+
+            #pragma region Draw hue picker
+            {
+                // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+                GLint last_program, last_texture;
+                glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+                glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+                glEnable(GL_BLEND);
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glDisable(GL_CULL_FACE);
+                glDisable(GL_DEPTH_TEST);
+
+                // Setup orthographic projection matrix
+                const float width = ImGui::GetIO().DisplaySize.x;
+                const float height = ImGui::GetIO().DisplaySize.y;
+                const float ortho_projection[4][4] =
+                {
+                    { 2.0f/width,   0.0f,           0.0f,       0.0f },
+                    { 0.0f,         2.0f/-height,   0.0f,       0.0f },
+                    { 0.0f,         0.0f,          -1.0f,       0.0f },
+                    { -1.0f,        1.0f,           0.0f,       1.0f },
+                };
+
+                glUseProgram(Memory->Shaders[PapayaShader_PickerHStrip].Handle);
+                glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+                glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Memory->Tools.NewColorHue); // Cursor
+
+                glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VboHandle);
+                glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VaoHandle);
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+
+                // Restore modified state
+                glBindVertexArray(0);
+                glUseProgram(last_program);
+                glDisable(GL_BLEND);
+                glBindTexture(GL_TEXTURE_2D, last_texture);
+            }
+            #pragma endregion
+
+            #pragma region Draw saturation-value picker
+            {
+                // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+                GLint last_program, last_texture;
+                glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+                glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+                glEnable(GL_BLEND);
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glDisable(GL_CULL_FACE);
+                glDisable(GL_DEPTH_TEST);
+
+                // Setup orthographic projection matrix
+                const float width = ImGui::GetIO().DisplaySize.x;
+                const float height = ImGui::GetIO().DisplaySize.y;
+                const float ortho_projection[4][4] =
+                {
+                    { 2.0f/width,   0.0f,           0.0f,       0.0f },
+                    { 0.0f,         2.0f/-height,   0.0f,       0.0f },
+                    { 0.0f,         0.0f,          -1.0f,       0.0f },
+                    { -1.0f,        1.0f,           0.0f,       1.0f },
+                };
+
+                glUseProgram(Memory->Shaders[PapayaShader_PickerSVBox].Handle);
+                glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+                glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Memory->Tools.NewColorHue); // Hue
+                glUniform2f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y); //Cursor                                 // Current
+
+                glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VboHandle);
+                glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VaoHandle);
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+
+                // Restore modified state
+                glBindVertexArray(0);
+                glUseProgram(last_program);
+                glDisable(GL_BLEND);
+                glBindTexture(GL_TEXTURE_2D, last_texture);
+            }
+            #pragma endregion
+        }
+    }
+    #pragma endregion
+
+    #pragma region Last mouse info
+    {
+        Memory->Mouse.LastPos = ImGui::GetMousePos();
+        Memory->Mouse.LastUV = Memory->Mouse.UV;
+        Memory->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
+        Memory->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
+        Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
+    }
+    #pragma endregion
 }
 
 void RenderImGui(ImDrawData* DrawData, void* mem)
@@ -1551,167 +1717,6 @@ void RenderImGui(ImDrawData* DrawData, void* mem)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
     glBindVertexArray(last_vertex_array);
     glDisable(GL_SCISSOR_TEST);
-}
-
-void RenderAfterGui(PapayaMemory* Memory)
-{
-    if (Memory->Tools.ColorPickerOpen)
-    {
-        #pragma region Update hue picker
-        {
-            Vec2 Pos = Memory->Tools.PickerPosition + Memory->Tools.HueStripPosition;
-
-            if (Memory->Mouse.Pressed[0] &&
-                Memory->Mouse.Pos.x > Pos.x &&
-                Memory->Mouse.Pos.x < Pos.x + Memory->Tools.HueStripSize.x &&
-                Memory->Mouse.Pos.y > Pos.y &&
-                Memory->Mouse.Pos.y < Pos.y + Memory->Tools.HueStripSize.y)
-            {
-                Memory->Tools.DraggingHue = true;
-            }
-            else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingHue)
-            {
-                Memory->Tools.DraggingHue = false;
-            }
-
-            if (Memory->Tools.DraggingHue)
-            {
-                Memory->Tools.NewColorHue = 1.0f - (Memory->Mouse.Pos.y - Pos.y) / 256.0f;
-                Memory->Tools.NewColorHue = Math::Clamp(Memory->Tools.NewColorHue, 0.0f, 1.0f);
-            }
-            
-        }
-        #pragma endregion
-
-        #pragma region Update saturation-value picker
-        {
-            Vec2 Pos = Memory->Tools.PickerPosition + Memory->Tools.SVBoxPosition;
-
-            if (Memory->Mouse.Pressed[0] &&
-                Memory->Mouse.Pos.x > Pos.x &&
-                Memory->Mouse.Pos.x < Pos.x + Memory->Tools.SVBoxSize.x &&
-                Memory->Mouse.Pos.y > Pos.y &&
-                Memory->Mouse.Pos.y < Pos.y + Memory->Tools.SVBoxSize.y)
-            {
-                Memory->Tools.DraggingSV = true;
-            }
-            else if (Memory->Mouse.Released[0] && Memory->Tools.DraggingSV)
-            {
-                Memory->Tools.DraggingSV = false;
-            }
-
-            if (Memory->Tools.DraggingSV)
-            {
-                Memory->Tools.NewColorSV.x =        (Memory->Mouse.Pos.x - Pos.x) / 256.0f;
-                Memory->Tools.NewColorSV.y = 1.0f - (Memory->Mouse.Pos.y - Pos.y) / 256.0f;
-                Memory->Tools.NewColorSV.x = Math::Clamp(Memory->Tools.NewColorSV.x, 0.0f, 1.0f);
-                Memory->Tools.NewColorSV.y = Math::Clamp(Memory->Tools.NewColorSV.y, 0.0f, 1.0f);
-
-            }
-        }
-        #pragma endregion
-
-        #pragma region Update new color
-        {
-            float r, g, b;
-            Math::HSVtoRGB(Memory->Tools.NewColorHue, Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y, r, g, b);
-            Memory->Tools.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
-                                           Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
-                                           Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
-        }
-        #pragma endregion
-
-        #pragma region Draw hue picker
-        {
-            // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-            GLint last_program, last_texture;
-            glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-            glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-            glEnable(GL_BLEND);
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glDisable(GL_CULL_FACE);
-            glDisable(GL_DEPTH_TEST);
-
-            // Setup orthographic projection matrix
-            const float width = ImGui::GetIO().DisplaySize.x;
-            const float height = ImGui::GetIO().DisplaySize.y;
-            const float ortho_projection[4][4] =
-            {
-                { 2.0f/width,   0.0f,           0.0f,       0.0f },
-                { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-                { 0.0f,         0.0f,          -1.0f,       0.0f },
-                { -1.0f,        1.0f,           0.0f,       1.0f },
-            };
-
-            glUseProgram(Memory->Shaders[PapayaShader_PickerHStrip].Handle);
-            glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-            glUniform1f(Memory->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Memory->Tools.NewColorHue); // Cursor
-
-            glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VboHandle);
-            glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerHStrip].VaoHandle);
-
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            // Restore modified state
-            glBindVertexArray(0);
-            glUseProgram(last_program);
-            glDisable(GL_BLEND);
-            glBindTexture(GL_TEXTURE_2D, last_texture);
-        }
-        #pragma endregion
-
-        #pragma region Draw saturation-value picker
-        {
-            // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-            GLint last_program, last_texture;
-            glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-            glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-            glEnable(GL_BLEND);
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glDisable(GL_CULL_FACE);
-            glDisable(GL_DEPTH_TEST);
-
-            // Setup orthographic projection matrix
-            const float width = ImGui::GetIO().DisplaySize.x;
-            const float height = ImGui::GetIO().DisplaySize.y;
-            const float ortho_projection[4][4] =
-            {
-                { 2.0f/width,   0.0f,           0.0f,       0.0f },
-                { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-                { 0.0f,         0.0f,          -1.0f,       0.0f },
-                { -1.0f,        1.0f,           0.0f,       1.0f },
-            };
-
-            glUseProgram(Memory->Shaders[PapayaShader_PickerSVBox].Handle);
-            glUniformMatrix4fv(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
-            glUniform1f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Memory->Tools.NewColorHue); // Hue
-            glUniform2f(Memory->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Memory->Tools.NewColorSV.x, Memory->Tools.NewColorSV.y); //Cursor                                 // Current
-
-            glBindBuffer(GL_ARRAY_BUFFER, Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VboHandle);
-            glBindVertexArray(Memory->VertexBuffers[PapayaVertexBuffer_PickerSVBox].VaoHandle);
-
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            // Restore modified state
-            glBindVertexArray(0);
-            glUseProgram(last_program);
-            glDisable(GL_BLEND);
-            glBindTexture(GL_TEXTURE_2D, last_texture);
-        }
-        #pragma endregion
-    }
-
-    #pragma region Last mouse info
-    {
-        Memory->Mouse.LastPos = ImGui::GetMousePos();
-        Memory->Mouse.LastUV = Memory->Mouse.UV;
-        Memory->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
-        Memory->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
-        Memory->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
-    }
-    #pragma endregion
 }
 
 }

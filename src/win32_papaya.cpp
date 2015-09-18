@@ -610,8 +610,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
         #pragma endregion
 
-        Papaya::UpdateAndRender(&Memory, &DebugMemory);
-
         #pragma region Title Bar Icon
         {
             ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.MenuHorizontalOffset,(float)Memory.Window.TitleBarHeight));
@@ -713,9 +711,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
         #pragma endregion
 
+        Papaya::UpdateAndRender(&Memory, &DebugMemory);
         //ImGui::ShowTestWindow();
-        ImGui::Render(&Memory);
-        Papaya::RenderAfterGui(&Memory);
         SwapBuffers(DeviceContext);
         //=========================================
 
