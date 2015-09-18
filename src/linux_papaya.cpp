@@ -30,7 +30,9 @@ typedef double real64;
 #include <stdio.h>
 #include <time.h>
 
+#ifdef USE_GTK
 #include <gtk/gtk.h>
+#endif
 
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
@@ -79,6 +81,9 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
+#ifndef USE_GTK
+	return 0;
+#else
 	GtkWidget *Dialog = gtk_file_chooser_dialog_new(
 		"Open File",
 		NULL,
@@ -107,10 +112,14 @@ char* Platform::OpenFileDialog()
 	gtk_widget_destroy(Dialog);
 
 	return OutFilename;
+#endif
 }
 
 char* Platform::SaveFileDialog()
 {
+#ifndef USE_GTK
+	return 0;
+#else
 	GtkWidget *Dialog = gtk_file_chooser_dialog_new(
 		"Save File",
 		NULL,
@@ -139,6 +148,7 @@ char* Platform::SaveFileDialog()
 	gtk_widget_destroy(Dialog);
 
 	return OutFilename;
+#endif
 }
 
 int64 Platform::GetMilliseconds()
@@ -158,8 +168,10 @@ int main(int argc, char **argv)
 	XVisualInfo* VisualInfo;
 	Atom WmDeleteMessage;
 
+#ifdef USE_GTK
 	// Initialize GTK for Open/Save file dialogs
 	gtk_init(&argc, &argv);
+#endif
 
 	// Create window
 	{
@@ -343,8 +355,10 @@ int main(int argc, char **argv)
 			glXSwapBuffers(XlibDisplay, XlibWindow);
 		}
 
+#ifdef USE_GTK
 		// Run a GTK+ loop, and *don't* block if there are no events pending
 		gtk_main_iteration_do(FALSE);
+#endif
 	}
 
 	return 0;
