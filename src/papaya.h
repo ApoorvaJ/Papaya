@@ -12,43 +12,38 @@
 #include "imgui_demo.cpp"
 #include "papaya_util.h"
 
-#define Kilobytes(Value) ((Value)*1024LL)
-#define Megabytes(Value) (Kilobytes(Value)*1024LL)
-#define Gigabytes(Value) (Megabytes(Value)*1024LL)
-#define Terabytes(Value) (Gigabytes(Value)*1024LL)
-
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
-enum PapayaInterfaceTexture_
+enum PapayaTex_
 {
-    PapayaInterfaceTexture_Font,
-    PapayaInterfaceTexture_TitleBarButtons,
-    PapayaInterfaceTexture_TitleBarIcon,
-    PapayaInterfaceTexture_InterfaceIcons,
-    PapayaInterfaceTexture_COUNT
+    PapayaTex_Font,
+    PapayaTex_TitleBarButtons,
+    PapayaTex_TitleBarIcon,
+    PapayaTex_InterfaceIcons,
+    PapayaTex_COUNT
 };
 
-enum PapayaInterfaceColor_
+enum PapayaCol_
 {
-    PapayaInterfaceColor_Clear,
-    PapayaInterfaceColor_Workspace,
-    PapayaInterfaceColor_Transparent,
-    PapayaInterfaceColor_Button,
-    PapayaInterfaceColor_ButtonHover,
-    PapayaInterfaceColor_ButtonActive,
-    PapayaInterfaceColor_COUNT
+    PapayaCol_Clear,
+    PapayaCol_Workspace,
+    PapayaCol_Transparent,
+    PapayaCol_Button,
+    PapayaCol_ButtonHover,
+    PapayaCol_ButtonActive,
+    PapayaCol_COUNT
 };
 
-enum PapayaVertexBuffer_
+enum PapayaVtxBuf_
 {
-    PapayaVertexBuffer_ImGui,
-    PapayaVertexBuffer_Canvas,
-    PapayaVertexBuffer_BrushCursor,
-    PapayaVertexBuffer_PickerHStrip,
-    PapayaVertexBuffer_PickerSVBox,
-    PapayaVertexBuffer_RTTBrush,
-    PapayaVertexBuffer_RTTAdd,
-    PapayaVertexBuffer_COUNT
+    PapayaVtxBuf_ImGui,
+    PapayaVtxBuf_Canvas,
+    PapayaVtxBuf_BrushCursor,
+    PapayaVtxBuf_PickerHStrip,
+    PapayaVtxBuf_PickerSVBox,
+    PapayaVtxBuf_RTTBrush,
+    PapayaVtxBuf_RTTAdd,
+    PapayaVtxBuf_COUNT
 };
 
 enum PapayaShader_
@@ -61,7 +56,18 @@ enum PapayaShader_
     PapayaShader_COUNT
 };
 
-struct PapayaDocument
+struct SystemInfo
+{
+    int32 OpenGLVersion[2];
+};
+
+struct WindowInfo
+{
+    uint32 Width, Height;
+    uint32 MenuHorizontalOffset, TitleBarButtonsWidth, TitleBarHeight;
+};
+
+struct DocumentInfo
 {
     int32 Width, Height;
     int32 ComponentsPerPixel;
@@ -69,30 +75,6 @@ struct PapayaDocument
     Vec2 CanvasPosition;
     float CanvasZoom;
     float InverseAspect;
-};
-
-struct PapayaShader
-{
-    uint32 Handle;
-    int32 Attributes[8];
-    int32 Uniforms[8];
-};
-
-struct PapayaVertexBuffer // TODO: Now with indexed rendering, this struct contains the index buffer handle. Is this name appropriate?
-{
-    size_t VboSize;
-    uint32 VboHandle, VaoHandle, ElementsHandle;
-};
-
-struct PapayaWindow
-{
-    uint32 Width, Height;
-    uint32 MenuHorizontalOffset, TitleBarButtonsWidth, TitleBarHeight;
-};
-
-struct SystemInfo
-{
-    int32 OpenGLVersion[2];
 };
 
 struct MouseInfo
@@ -108,46 +90,66 @@ struct MouseInfo
     bool InWorkspace;
 };
 
-struct ToolParams
+struct ShaderInfo
 {
-    // Brush params
-    int32 BrushDiameter;
-    static const int32 MaxBrushDiameter = 9999;
-    float BrushOpacity; // Range: 0.0 - 100.0
-    float BrushHardness; // Range: 0.0 - 100.0
+    uint32 Handle;
+    int32 Attributes[8];
+    int32 Uniforms[8];
+};
 
-    // Right-click info for brush manipulation // TODO: Move some of this stuff to the MouseInfo struct?
-    Vec2 RightClickDragStartPos;
-    bool RightClickShiftPressed; // Right-click-drag started with shift pressed
-    int32 RightClickDragStartDiameter;
-    float RightClickDragStartHardness, RightClickDragStartOpacity;
-    bool DraggingBrush;
+struct VtxBufInfo // TODO: Now with indexed rendering, this struct contains the index buffer handle. Is this name appropriate?
+{
+    size_t VboSize;
+    uint32 VboHandle, VaoHandle, ElementsHandle;
+};
 
-    //
+struct BrushInfo
+{
+    int32 Diameter;
+    int32 MaxDiameter;
+    float Opacity;  // Range: 0.0 - 100.0
+    float Hardness; // Range: 0.0 - 100.0
+
+    // TODO: Move some of this stuff to the MouseInfo struct?
+    Vec2 RtDragStartPos;
+    bool RtDragWithShift;
+    int32 RtDragStartDiameter;
+    float RtDragStartHardness, RtDragStartOpacity;
+    bool BeingDragged;
+};
+
+struct PickerInfo
+{
+    bool Open;
     Color CurrentColor, NewColor;
-    bool ColorPickerOpen;
-    float NewColorHue, NewColorSaturation, NewColorValue;
-    Vec2 PickerPosition, PickerSize, HueStripPosition, HueStripSize, SVBoxPosition, SVBoxSize;
-    Vec2 NewColorSV;
+    Vec2 CursorSV;
+    float CursorH;
+
+    Vec2 Pos, Size, HueStripPos, HueStripSize, SVBoxPos, SVBoxSize;
     bool DraggingHue, DraggingSV;
+};
+
+struct MiscInfo // TODO: This entire struct is for stuff to be refactored at some point
+{
+    uint32 FrameBufferObject;
+    uint32 FboRenderTexture, FboSampleTexture;
+    bool DrawOverlay;
+    bool DrawCanvas;
 };
 
 struct PapayaMemory
 {
     bool IsRunning;
-    uint32 InterfaceTextureIDs[PapayaInterfaceTexture_COUNT];
-    Color InterfaceColors[PapayaInterfaceColor_COUNT];
-    PapayaWindow Window;
     SystemInfo System;
-    PapayaVertexBuffer VertexBuffers[PapayaVertexBuffer_COUNT];
-    PapayaShader Shaders[PapayaShader_COUNT];
+    WindowInfo Window;
+    DocumentInfo Doc;
     MouseInfo Mouse;
-    ToolParams Tools;
-    PapayaDocument Document;
 
-    // TODO: Refactor
-    uint32 FrameBufferObject;
-    uint32 FboRenderTexture, FboSampleTexture;
-    bool DrawOverlay;
-    bool DrawCanvas;
+    uint32 Textures[PapayaTex_COUNT];
+    Color Colors[PapayaCol_COUNT];
+    VtxBufInfo VertexBuffers[PapayaVtxBuf_COUNT];
+    ShaderInfo Shaders[PapayaShader_COUNT];
+    BrushInfo Brush;
+    PickerInfo Picker;
+    MiscInfo Misc;
 };

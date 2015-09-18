@@ -30,8 +30,8 @@ typedef double real64;
 
 // =================================================================================================
 
-global_variable PapayaMemory Memory = {};
-global_variable PapayaDebugMemory DebugMemory = {};
+global_variable PapayaMemory Mem = {};
+global_variable PapayaDebugMemory DebugMem = {};
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2];
@@ -253,7 +253,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
         case WM_DESTROY:
         {
-            Memory.IsRunning = false;
+            Mem.IsRunning = false;
             if (RenderingContext)
             {
                 wglMakeCurrent(NULL, NULL);
@@ -274,7 +274,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
         case WM_CLOSE:
         {
             // TODO: Handle this with a message to the user?
-            Memory.IsRunning = false;
+            Mem.IsRunning = false;
         } break;
 
         case WM_ACTIVATEAPP:
@@ -289,20 +289,20 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
                 int32 WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
                 int32 WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
                 SetWindowPos(Window, HWND_TOP, WindowsWorkArea.left, WindowsWorkArea.top, WorkAreaWidth, WorkAreaHeight, NULL);
-                Memory.Window.Width = WorkAreaWidth;
-                Memory.Window.Height = WorkAreaHeight;
+                Mem.Window.Width = WorkAreaWidth;
+                Mem.Window.Height = WorkAreaHeight;
             }
             else
             {
-                Memory.Window.Width = (int32) LOWORD(LParam);
-                Memory.Window.Height = (int32) HIWORD(LParam);
+                Mem.Window.Width = (int32) LOWORD(LParam);
+                Mem.Window.Height = (int32) HIWORD(LParam);
             }
 
             // Clear and swap buffers
             {
-                if (Memory.InterfaceColors[PapayaInterfaceColor_Clear])
+                if (Mem.Colors[PapayaCol_Clear])
                 {
-                    glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Memory.InterfaceColors[PapayaInterfaceColor_Clear]);
+                    glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Mem.Colors[PapayaCol_Clear]);
                 }
                 SwapBuffers(DeviceContext);
             }
@@ -366,9 +366,9 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
                 }
             }
 
-            if (Y - WindowRect.top <= (float)Memory.Window.TitleBarHeight &&
+            if (Y - WindowRect.top <= (float)Mem.Window.TitleBarHeight &&
                 X > WindowRect.left + 200.0f &&
-                X < WindowRect.right - (float)(Memory.Window.TitleBarButtonsWidth + 10))
+                X < WindowRect.right - (float)(Mem.Window.TitleBarButtonsWidth + 10))
             {
                 return HTCAPTION;
             }
@@ -395,7 +395,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     LARGE_INTEGER PerfCountFrequencyResult;
     QueryPerformanceFrequency(&PerfCountFrequencyResult);
     int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
-    Memory.IsRunning = true;
+    Mem.IsRunning = true;
 
     HWND Window;
     #pragma region Create Window
@@ -441,13 +441,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
         float WindowSize = 0.8f;
-        Memory.Window.Width = (uint32)((float)ScreenWidth * WindowSize);
-        Memory.Window.Height = (uint32)((float)ScreenHeight * WindowSize);
+        Mem.Window.Width = (uint32)((float)ScreenWidth * WindowSize);
+        Mem.Window.Height = (uint32)((float)ScreenHeight * WindowSize);
 
-        uint32 WindowX = (ScreenWidth - Memory.Window.Width) / 2;
-        uint32 WindowY = (ScreenHeight - Memory.Window.Height) / 2;
+        uint32 WindowX = (ScreenWidth - Mem.Window.Width) / 2;
+        uint32 WindowY = (ScreenHeight - Mem.Window.Height) / 2;
 
-        SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Memory.Window.Width, Memory.Window.Height, NULL);
+        SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Mem.Window.Width, Mem.Window.Height, NULL);
         //SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
     }
     #pragma endregion
@@ -519,12 +519,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
     #pragma endregion
 
-    Papaya::Initialize(&Memory);
+    Papaya::Initialize(&Mem);
 
     #pragma region Initialize ImGui
     {
-        QueryPerformanceFrequency((LARGE_INTEGER *)&DebugMemory.TicksPerSecond);
-        QueryPerformanceCounter((LARGE_INTEGER *)&DebugMemory.Time);
+        QueryPerformanceFrequency((LARGE_INTEGER *)&DebugMem.TicksPerSecond);
+        QueryPerformanceCounter((LARGE_INTEGER *)&DebugMem.Time);
 
         ImGuiIO& io = ImGui::GetIO();
         io.KeyMap[ImGuiKey_Tab] = VK_TAB;          // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
@@ -551,18 +551,18 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     #pragma endregion
 
     // Handle command line arguments (if present)
-    if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Memory); }
+    if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Mem); }
 
-    Memory.Window.MenuHorizontalOffset = 32;
-    Memory.Window.TitleBarButtonsWidth = 109;
-    Memory.Window.TitleBarHeight = 30;
+    Mem.Window.MenuHorizontalOffset = 32;
+    Mem.Window.TitleBarButtonsWidth = 109;
+    Mem.Window.TitleBarHeight = 30;
 
     LARGE_INTEGER LastCounter;
     QueryPerformanceCounter(&LastCounter);
     uint64 LastCycleCount = __rdtsc();
 
 
-    while (Memory.IsRunning)
+    while (Mem.IsRunning)
     {
         #pragma region Windows message handling
         {
@@ -571,7 +571,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             {
                 if (Message.message == WM_QUIT)
                 {
-                    Memory.IsRunning = false;
+                    Mem.IsRunning = false;
                 }
 
                 TranslateMessage(&Message);
@@ -599,8 +599,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             // Setup time step
             INT64 current_time;
             QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-            io.DeltaTime = (float)(current_time - DebugMemory.Time) / DebugMemory.TicksPerSecond;
-            DebugMemory.Time = current_time;
+            io.DeltaTime = (float)(current_time - DebugMem.Time) / DebugMem.TicksPerSecond;
+            DebugMem.Time = current_time;
 
             // Hide OS mouse cursor if ImGui is drawing it
             //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
@@ -612,7 +612,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         #pragma region Title Bar Icon
         {
-            ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.MenuHorizontalOffset,(float)Memory.Window.TitleBarHeight));
+            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.MenuHorizontalOffset,(float)Mem.Window.TitleBarHeight));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
             ImGuiWindowFlags WindowFlags = 0;
@@ -629,11 +629,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem.Colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
             ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-            ImGui::Image((void*)(intptr_t)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarIcon], ImVec2(28,28));
+            ImGui::Image((void*)(intptr_t)Mem.Textures[PapayaTex_TitleBarIcon], ImVec2(28,28));
             ImGui::End();
 
             ImGui::PopStyleColor(1);
@@ -643,8 +643,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         #pragma region Title Bar Buttons
         {
-            ImGui::SetNextWindowSize(ImVec2((float)Memory.Window.TitleBarButtonsWidth,24.0f));
-            ImGui::SetNextWindowPos(ImVec2((float)Memory.Window.Width - Memory.Window.TitleBarButtonsWidth, 0.0f));
+            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.TitleBarButtonsWidth,24.0f));
+            ImGui::SetNextWindowPos(ImVec2((float)Mem.Window.Width - Mem.Window.TitleBarButtonsWidth, 0.0f));
 
             ImGuiWindowFlags WindowFlags = 0;
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -660,16 +660,16 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-            ImGui::PushStyleColor(ImGuiCol_Button, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Memory.InterfaceColors[PapayaInterfaceColor_ButtonHover]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, Memory.InterfaceColors[PapayaInterfaceColor_ButtonActive]);
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, Memory.InterfaceColors[PapayaInterfaceColor_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_Button, Mem.Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Mem.Colors[PapayaCol_ButtonHover]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, Mem.Colors[PapayaCol_ButtonActive]);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem.Colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
             ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
             ImGui::PushID(0);
-            if(ImGui::ImageButton((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
             {
                 ShowWindow(Window, SW_MINIMIZE);
             }
@@ -681,7 +681,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SameLine();
             ImGui::PushID(1);
 
-            if(ImGui::ImageButton((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
             {
                 if (IsMaximized)
                 {
@@ -697,7 +697,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SameLine();
             ImGui::PushID(2);
 
-            if(ImGui::ImageButton((void*)Memory.InterfaceTextureIDs[PapayaInterfaceTexture_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
             {
                 SendMessage(Window, WM_CLOSE, 0, 0);
             }
@@ -711,7 +711,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
         #pragma endregion
 
-        Papaya::UpdateAndRender(&Memory, &DebugMemory);
+        Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();
         SwapBuffers(DeviceContext);
         //=========================================
@@ -739,6 +739,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         LastCycleCount = EndCycleCount;
     }
 
-    Papaya::Shutdown(&Memory);
+    Papaya::Shutdown(&Mem);
     return 0;
 }
