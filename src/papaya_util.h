@@ -54,7 +54,7 @@ namespace Util
         ImGui::Begin("Profiler");
         for (int32 i = 0; i < TimerScope_COUNT; i++)
         {
-            ImGui::Text("%d: Cycles: %I64u, MS: %f", i, DebugMemory->Timers[i].CyclesElapsed, DebugMemory->Timers[i].MillisecondsElapsed);
+            ImGui::Text("%d: Cycles: %lu, MS: %f", i, DebugMemory->Timers[i].CyclesElapsed, DebugMemory->Timers[i].MillisecondsElapsed);
         }
         ImGui::End();
     }
