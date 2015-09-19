@@ -190,127 +190,129 @@ internal void CloseDocument(PapayaMemory* Mem)
 
 void Initialize(PapayaMemory* Mem)
 {
-	#pragma region Init tool params
-	{
+    #pragma region Init tool params
+    {
         Mem->Brush.Diameter = 50;
         Mem->Brush.MaxDiameter = 9999;
-		Mem->Brush.Hardness = 90.0f;
-		Mem->Brush.Opacity = 100.0f;
+        Mem->Brush.Hardness = 90.0f;
+        Mem->Brush.Opacity = 100.0f;
 
-		Mem->Picker.CurrentColor = Color(220, 163, 89);
-		Mem->Picker.Open = false;
+        Mem->Picker.CurrentColor = Color(220, 163, 89);
+        Mem->Picker.Open = false;
         Mem->Picker.Pos = Vec2(34, 86);
         Mem->Picker.Size = Vec2(292, 331);
         Mem->Picker.HueStripPos = Vec2(259, 42);
-		Mem->Picker.HueStripSize = Vec2(30, 256);
+        Mem->Picker.HueStripSize = Vec2(30, 256);
         Mem->Picker.SVBoxPos = Vec2(0, 42);
         Mem->Picker.SVBoxSize = Vec2(256, 256);
         Mem->Picker.CursorSV = Vec2(0.5f, 0.5f);
 
         Mem->Misc.DrawCanvas = true;
         Mem->Misc.DrawOverlay = false;
-	}
-	#pragma endregion
+    }
+    #pragma endregion
 
     #pragma region Brush shader
     {
-        const GLchar *vertex_shader =
-"				#version 330																						\n"
-"				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
-"																													\n"
-"				in vec2 Position;																					\n" // Attributes[0]
-"				in vec2 UV;																							\n" // Attributes[1]
-"				in vec4 Color;																						\n" // Attributes[2]
-"																													\n"
-"				out vec2 Frag_UV;																					\n"
-"				void main()																							\n"
-"				{																									\n"
-"					Frag_UV = UV;																					\n"
-"					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
-"				}																									\n";
+    const GLchar *vertex_shader =
+"   #version 330                                        \n"
+"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
+"                                                       \n"
+"   in vec2 Position;                                   \n" // Attributes[0]
+"   in vec2 UV;                                         \n" // Attributes[1]
+"   in vec4 Color;                                      \n" // Attributes[2]
+"                                                       \n"
+"   out vec2 Frag_UV;                                   \n"
+"                                                       \n"
+"   void main()                                         \n"
+"   {                                                   \n"
+"       Frag_UV = UV;                                   \n"
+"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
+"   }                                                   \n";
 
-        const GLchar* fragment_shader =
-"				#version 330																						\n"
-"																													\n"
-"				#define M_PI 3.1415926535897932384626433832795														\n"
-"																													\n"
-"				uniform sampler2D	Texture;																		\n" // Uniforms[1]
-"				uniform vec2		Pos;																			\n" // Uniforms[2]
-"				uniform vec2		LastPos;																		\n" // Uniforms[3]
-"				uniform float		Radius;																			\n" // Uniforms[4]
-"				uniform vec4		BrushColor;																		\n" // Uniforms[5]
-"				uniform float		Hardness;																		\n" // Uniforms[6]
-"				uniform float		InvAspect;																		\n" // Uniforms[7]
-"																													\n"
-"				in vec2 Frag_UV;																					\n"
-"				out vec4 Out_Color;																					\n"
-"																													\n"
-"				void line(vec2 p1, vec2 p2, vec2 uv, float radius, out float distLine, out float distp1)			\n"
-"				{																									\n"
-"					if (distance(p1,p2) <= 0.0)																		\n"
-"					{																								\n"
-"						distLine = distance(uv, p1);																\n"
-"						distp1 = 0.0;																				\n"
-"						return;																						\n"
-"					}																								\n"
-"																													\n"
-"					float a = abs(distance(p1, uv));																\n"
-"					float b = abs(distance(p2, uv));																\n"
-"					float c = abs(distance(p1, p2));																\n"
-"					float d = sqrt(c*c + radius*radius);															\n"
-"																													\n"
-"					vec2 a1 = normalize(uv - p1);																	\n"
-"					vec2 b1 = normalize(uv - p2);																	\n"
-"					vec2 c1 = normalize(p2 - p1);																	\n"
-"					if (dot(a1,c1) < 0.0)																			\n"
-"					{																								\n"
-"						distLine = a;																				\n"
-"						distp1 = 0.0;																				\n"
-"						return;																						\n"
-"					}																								\n"
-"																													\n"
-"					if (dot(b1,c1) > 0.0)																			\n"
-"					{																								\n"
-"						distLine = b;																				\n"
-"						distp1 = 1.0;																				\n"
-"						return;																						\n"
-"					}																								\n"
-"																													\n"
-"					float p = (a + b + c) * 0.5;																	\n"
-"					float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );											\n"
-"																													\n"
-"					if (isnan(h))																					\n"
-"					{																								\n"
-"						distLine = 0.0;																				\n"
-"						distp1 = a / c;																				\n"
-"					}																								\n"
-"					else																							\n"
-"					{																								\n"
-"						distLine = h;																				\n"
-"						distp1 = sqrt(a*a - h*h) / c;																\n"
-"					}																								\n"
-"				}																									\n"
-"																													\n"
-"				void main()																							\n"
-"				{																									\n"
-"					vec4 t = texture(Texture, Frag_UV.st);															\n"
-"																													\n"
-"					float distLine, distp1;																			\n"
-"					vec2 aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);											\n"
-"					line(LastPos, Pos, aspectUV, Radius, distLine, distp1);											\n"
-"																													\n"
-"					float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));											\n"
-"					float Period = M_PI * Scale;																	\n"
-"					float Phase = (1.0 - Scale * 2.0 * Radius) * M_PI * 0.5;										\n"
-"					float Alpha = cos((Period * distLine) + Phase);													\n"
-"					if (distLine < Radius - (0.5/Scale)) Alpha = 1.0;												\n"
-"					if (distLine > Radius)		  Alpha = 0.0;														\n"
-"																													\n"
-"					float FinalAlpha = max(t.a, Alpha * BrushColor.a);												\n"
-"																													\n"
-"					Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b, 										\n"
-"								clamp(FinalAlpha,0.0,1.0));															\n" // TODO: Needs improvement. Self-intersection corners look weird.
-"				}																									\n";
+    const GLchar* fragment_shader =
+"   #version 330                                                    \n"
+"                                                                   \n"
+"   #define M_PI 3.1415926535897932384626433832795                  \n"
+"                                                                   \n"
+"   uniform sampler2D Texture;                                      \n" // Uniforms[1]
+"   uniform vec2 Pos;                                               \n" // Uniforms[2]
+"   uniform vec2 LastPos;                                           \n" // Uniforms[3]
+"   uniform float Radius;                                           \n" // Uniforms[4]
+"   uniform vec4 BrushColor;                                        \n" // Uniforms[5]
+"   uniform float Hardness;                                         \n" // Uniforms[6]
+"   uniform float InvAspect;                                        \n" // Uniforms[7]
+"                                                                   \n"
+"   in vec2 Frag_UV;                                                \n"
+"   out vec4 Out_Color;                                             \n"
+"                                                                   \n"
+"   void line(vec2 p1, vec2 p2, vec2 uv, float radius, 	            \n"
+"             out float distLine, out float distp1)                 \n"
+"   {                                                               \n"
+"       if (distance(p1,p2) <= 0.0)                                 \n"
+"       {                                                           \n"
+"           distLine = distance(uv, p1);                            \n"
+"           distp1 = 0.0;                                           \n"
+"           return;                                                 \n"
+"       }                                                           \n"
+"                                                                   \n"
+"       float a = abs(distance(p1, uv));                            \n"
+"       float b = abs(distance(p2, uv));                            \n"
+"       float c = abs(distance(p1, p2));                            \n"
+"       float d = sqrt(c*c + radius*radius);                        \n"
+"                                                                   \n"
+"       vec2 a1 = normalize(uv - p1);                               \n"
+"       vec2 b1 = normalize(uv - p2);                               \n"
+"       vec2 c1 = normalize(p2 - p1);                               \n"
+"       if (dot(a1,c1) < 0.0)                                       \n"
+"       {                                                           \n"
+"           distLine = a;                                           \n"
+"           distp1 = 0.0;                                           \n"
+"           return;                                                 \n"
+"       }                                                           \n"
+"                                                                   \n"
+"       if (dot(b1,c1) > 0.0)                                       \n"
+"       {                                                           \n"
+"           distLine = b;                                           \n"
+"           distp1 = 1.0;                                           \n"
+"           return;                                                 \n"
+"       }                                                           \n"
+"                                                                   \n"
+"       float p = (a + b + c) * 0.5;                                \n"
+"       float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );      \n"
+"                                                                   \n"
+"       if (isnan(h))                                               \n"
+"       {                                                           \n"
+"           distLine = 0.0;                                         \n"
+"           distp1 = a / c;                                         \n"
+"       }                                                           \n"
+"       else                                                        \n"
+"       {                                                           \n"
+"           distLine = h;                                           \n"
+"           distp1 = sqrt(a*a - h*h) / c;                           \n"
+"       }                                                           \n"
+"   }                                                               \n"
+"                                                                   \n"
+"   void main()                                                     \n"
+"   {                                                               \n"
+"       vec4 t = texture(Texture, Frag_UV.st);                      \n"
+"                                                                   \n"
+"       float distLine, distp1;                                     \n"
+"       vec2 aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);     \n"
+"       line(LastPos, Pos, aspectUV, Radius, distLine, distp1);     \n"
+"                                                                   \n"
+"       float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));      \n"
+"       float Period = M_PI * Scale;                                \n"
+"       float Phase = (1.0 - Scale * 2.0 * Radius) * M_PI * 0.5;    \n"
+"       float Alpha = cos((Period * distLine) + Phase);             \n"
+"       if (distLine < Radius - (0.5/Scale)) Alpha = 1.0;           \n"
+"       if (distLine > Radius) Alpha = 0.0;                         \n"
+"                                                                   \n"
+"       float FinalAlpha = max(t.a, Alpha * BrushColor.a);          \n"
+"                                                                   \n"
+"       Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b,  \n"
+"                        clamp(FinalAlpha,0.0,1.0));                \n" // TODO: Needs improvement. Self-intersection corners look weird.
+"   }                                                               \n";
 
         Mem->Shaders[PapayaShader_Brush].Handle = glCreateProgram();
         uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -341,48 +343,48 @@ void Initialize(PapayaMemory* Mem)
 
     #pragma region Brush cursor shader
     {
-        const GLchar *vertex_shader =
-"				#version 330																						\n"
-"				uniform mat4 ProjMtx;																				\n" // Uniforms[0]
-"																													\n"
-"				in vec2 Position;																					\n" // Attributes[0]
-"				in vec2 UV;																							\n" // Attributes[1]
-"																													\n"
-"				out vec2 Frag_UV;																					\n"
-"																													\n"
-"				void main()																							\n"
-"				{																									\n"
-"					Frag_UV = UV;																					\n"
-"					gl_Position = ProjMtx * vec4(Position.xy,0,1);													\n"
-"				}																									\n";
+    const GLchar *vertex_shader =
+"   #version 330                                        \n"
+"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
+"                                                       \n"
+"   in vec2 Position;                                   \n" // Attributes[0]
+"   in vec2 UV;                                         \n" // Attributes[1]
+"                                                       \n"
+"   out vec2 Frag_UV;                                   \n"
+"                                                       \n"
+"   void main()                                         \n"
+"   {                                                   \n"
+"       Frag_UV = UV;                                   \n"
+"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
+"   }                                                   \n";
 
-        const GLchar* fragment_shader =
-"				#version 330																						\n"
-"																													\n"
-"				#define M_PI 3.1415926535897932384626433832795														\n"
-"																													\n"
-"				uniform vec4		BrushColor;																		\n" // Uniforms[1]
-"				uniform float		Hardness;																		\n" // Uniforms[2]
-"				uniform float		PixelDiameter;																	\n" // Uniforms[3]
-"																													\n"
-"				in vec2 Frag_UV;																					\n"
-"																													\n"
-"				out vec4 Out_Color;																					\n"
-"																													\n"
-"				void main()																							\n"
-"				{																									\n"
-"					float Scale = 1.0 / (1.0 - Hardness);															\n"
-"					float Period = M_PI * Scale;																	\n"
-"					float Phase = (1.0 - Scale) * M_PI * 0.5;														\n"
-"					float Dist = distance(Frag_UV,vec2(0.5,0.5));													\n"
-"					float Alpha = cos((Period * Dist) + Phase);														\n"
-"					if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;														\n"
-"					else if (Dist > 0.5)		  Alpha = 0.0;														\n"
-"					float BorderThickness = 1.0 / PixelDiameter;													\n"
-"					Out_Color = (Dist > 0.5 - BorderThickness && Dist < 0.5) ?										\n"
-"					            vec4(0.0,0.0,0.0,1.0) :																\n"
-"					            vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);				\n"
-"				}					 																				\n";
+    const GLchar* fragment_shader =
+"   #version 330                                                                \n"
+"                                                                               \n"
+"   #define M_PI 3.1415926535897932384626433832795                              \n"
+"                                                                               \n"
+"   uniform vec4 BrushColor;                                                    \n" // Uniforms[1]
+"   uniform float Hardness;                                                     \n" // Uniforms[2]
+"   uniform float PixelDiameter;                                                \n" // Uniforms[3]
+"                                                                               \n"
+"   in vec2 Frag_UV;                                                            \n"
+"                                                                               \n"
+"   out vec4 Out_Color;                                                         \n"
+"                                                                               \n"
+"   void main()                                                                 \n"
+"   {                                                                           \n"
+"       float Scale = 1.0 / (1.0 - Hardness);                                   \n"
+"       float Period = M_PI * Scale;                                            \n"
+"       float Phase = (1.0 - Scale) * M_PI * 0.5;                               \n"
+"       float Dist = distance(Frag_UV,vec2(0.5,0.5));                           \n"
+"       float Alpha = cos((Period * Dist) + Phase);                             \n"
+"       if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;                              \n"
+"       else if (Dist > 0.5)          Alpha = 0.0;                              \n"
+"       float BorderThickness = 1.0 / PixelDiameter;                            \n"
+"       Out_Color = (Dist > 0.5 - BorderThickness && Dist < 0.5) ?              \n"
+"       vec4(0.0,0.0,0.0,1.0) :                                                 \n"
+"       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
+"   }                                                                           \n";
 
         Mem->Shaders[PapayaShader_BrushCursor].Handle = glCreateProgram();
         uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
@@ -615,36 +617,36 @@ void Initialize(PapayaMemory* Mem)
 
     #pragma region Setup for ImGui
     {
-        // TODO: Write shader compilation wrapper
-        const GLchar *vertex_shader =
-"				#version 330                                                      \n"
-"				uniform mat4 ProjMtx;                                             \n" // Uniforms[0]
-"																				  \n"
-"				in vec2 Position;                                                 \n" // Attributes[0]
-"				in vec2 UV;                                                       \n" // Attributes[1]
-"				in vec4 Color;                                                    \n" // Attributes[2]
-"																				  \n"
-"				out vec2 Frag_UV;                                                 \n"
-"				out vec4 Frag_Color;                                              \n"
-"				void main()                                                       \n"
-"				{                                                                 \n"
-"					Frag_UV = UV;                                                 \n"
-"					Frag_Color = Color;                                           \n"
-"					gl_Position = ProjMtx * vec4(Position.xy,0,1);                \n"
-"				}                                                                 \n";
+    // TODO: Write shader compilation wrapper
+    const GLchar *vertex_shader =
+"   #version 330                                        \n"
+"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
+"                                                       \n"
+"   in vec2 Position;                                   \n" // Attributes[0]
+"   in vec2 UV;                                         \n" // Attributes[1]
+"   in vec4 Color;                                      \n" // Attributes[2]
+"                                                       \n"
+"   out vec2 Frag_UV;                                   \n"
+"   out vec4 Frag_Color;                                \n"
+"   void main()                                         \n"
+"   {                                                   \n"
+"       Frag_UV = UV;                                   \n"
+"       Frag_Color = Color;                             \n"
+"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
+"   }                                                   \n";
 
-        const GLchar* fragment_shader =
-"				#version 330													  \n"
-"				uniform sampler2D Texture;										  \n" // Uniforms[1]
-"																				  \n"
-"				in vec2 Frag_UV;												  \n"
-"				in vec4 Frag_Color;												  \n"
-"																				  \n"
-"				out vec4 Out_Color;												  \n"
-"				void main()														  \n"
-"				{																  \n"
-"					Out_Color = Frag_Color * texture( Texture, Frag_UV.st);		  \n"
-"				}																  \n";
+    const GLchar* fragment_shader =
+"   #version 330                                                \n"
+"   uniform sampler2D Texture;                                  \n" // Uniforms[1]
+"                                                               \n"
+"   in vec2 Frag_UV;                                            \n"
+"   in vec4 Frag_Color;                                         \n"
+"                                                               \n"
+"   out vec4 Out_Color;                                         \n"
+"   void main()                                                 \n"
+"   {                                                           \n"
+"       Out_Color = Frag_Color * texture( Texture, Frag_UV.st); \n"
+"   }                                                           \n";
 
         Mem->Shaders[PapayaShader_ImGui].Handle = glCreateProgram();
         int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
