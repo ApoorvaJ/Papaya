@@ -188,6 +188,35 @@ internal void CloseDocument(PapayaMemory* Mem)
     }
 }
 
+internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Frag, int32 AttribCount, int32 UniformCount, ...)
+{
+    Shader.Handle = glCreateProgram();
+    uint32 VertHandle = glCreateShader(GL_VERTEX_SHADER);
+    uint32 FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(VertHandle, 1, &Vert, 0);
+    glShaderSource(FragHandle, 1, &Frag, 0);
+    glCompileShader(VertHandle);
+    glCompileShader(FragHandle);
+    glAttachShader(Shader.Handle, VertHandle);
+    glAttachShader(Shader.Handle, FragHandle);
+    Util::PrintGlShaderCompilationStatus(VertHandle); // TODO: Print name of compiled shader
+    Util::PrintGlShaderCompilationStatus(FragHandle);
+    glLinkProgram(Shader.Handle); // TODO: Print linking errors
+
+    va_list Args;
+    va_start(Args, UniformCount);
+    for (int32 i = 0; i < AttribCount; i++)
+    {
+        Shader.Attributes[i] = glGetAttribLocation(Shader.Handle, va_arg(Args, const char*));
+    }
+
+    for (int32 i = 0; i < UniformCount; i++)
+    {
+        Shader.Uniforms[i] = glGetUniformLocation(Shader.Handle, va_arg(Args, const char*));
+    }
+    va_end(Args);
+}
+
 void Initialize(PapayaMemory* Mem)
 {
     #pragma region Init tool params
@@ -214,7 +243,7 @@ void Initialize(PapayaMemory* Mem)
 
     #pragma region Brush shader
     {
-    const GLchar *vertex_shader =
+    const char* Vert =
 "   #version 330                                        \n"
 "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
 "                                                       \n"
@@ -230,7 +259,7 @@ void Initialize(PapayaMemory* Mem)
 "       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
 "   }                                                   \n";
 
-    const GLchar* fragment_shader =
+    const char* Frag =
 "   #version 330                                                    \n"
 "                                                                   \n"
 "   #define M_PI 3.1415926535897932384626433832795                  \n"
@@ -314,36 +343,16 @@ void Initialize(PapayaMemory* Mem)
 "                        clamp(FinalAlpha,0.0,1.0));                \n" // TODO: Needs improvement. Self-intersection corners look weird.
 "   }                                                               \n";
 
-        Mem->Shaders[PapayaShader_Brush].Handle = glCreateProgram();
-        uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-        glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-        glCompileShader(g_VertHandle);
-        glCompileShader(g_FragHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_Brush].Handle, g_VertHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_Brush].Handle, g_FragHandle);
-        Util::PrintGlShaderCompilationStatus(g_FragHandle);
-        glLinkProgram (Mem->Shaders[PapayaShader_Brush].Handle);
+    CompileShader(Mem->Shaders[PapayaShader_Brush], Vert, Frag, 3, 8,
+        "Position", "UV", "Color",
+        "ProjMtx", "Texture", "Pos", "LastPos", "Radius", "BrushColor", "Hardness", "InvAspect");
 
-        Mem->Shaders[PapayaShader_Brush].Attributes[0] = glGetAttribLocation (Mem->Shaders[PapayaShader_Brush].Handle, "Position");
-        Mem->Shaders[PapayaShader_Brush].Attributes[1] = glGetAttribLocation (Mem->Shaders[PapayaShader_Brush].Handle, "UV");
-        Mem->Shaders[PapayaShader_Brush].Attributes[2] = glGetAttribLocation (Mem->Shaders[PapayaShader_Brush].Handle, "Color");
-
-        Mem->Shaders[PapayaShader_Brush].Uniforms[0]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "ProjMtx");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[1]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "Texture");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[2]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "Pos");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[3]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "LastPos");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[4]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "Radius");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[5]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "BrushColor");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[6]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "Hardness");
-        Mem->Shaders[PapayaShader_Brush].Uniforms[7]   = glGetUniformLocation(Mem->Shaders[PapayaShader_Brush].Handle, "InvAspect");
     }
     #pragma endregion
 
     #pragma region Brush cursor shader
     {
-    const GLchar *vertex_shader =
+    const char* Vert =
 "   #version 330                                        \n"
 "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
 "                                                       \n"
@@ -358,7 +367,7 @@ void Initialize(PapayaMemory* Mem)
 "       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
 "   }                                                   \n";
 
-    const GLchar* fragment_shader =
+    const char* Frag =
 "   #version 330                                                                \n"
 "                                                                               \n"
 "   #define M_PI 3.1415926535897932384626433832795                              \n"
@@ -386,26 +395,9 @@ void Initialize(PapayaMemory* Mem)
 "       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
 "   }                                                                           \n";
 
-        Mem->Shaders[PapayaShader_BrushCursor].Handle = glCreateProgram();
-        uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-        glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-        glCompileShader(g_VertHandle);
-        glCompileShader(g_FragHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_BrushCursor].Handle, g_VertHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_BrushCursor].Handle, g_FragHandle);
-        Util::PrintGlShaderCompilationStatus(g_VertHandle);
-        Util::PrintGlShaderCompilationStatus(g_FragHandle);
-        glLinkProgram (Mem->Shaders[PapayaShader_BrushCursor].Handle);
-
-        Mem->Shaders[PapayaShader_BrushCursor].Attributes[0] = glGetAttribLocation (Mem->Shaders[PapayaShader_BrushCursor].Handle, "Position");
-        Mem->Shaders[PapayaShader_BrushCursor].Attributes[1] = glGetAttribLocation (Mem->Shaders[PapayaShader_BrushCursor].Handle, "UV");
-
-        Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0]   = glGetUniformLocation(Mem->Shaders[PapayaShader_BrushCursor].Handle, "ProjMtx");
-        Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1]   = glGetUniformLocation(Mem->Shaders[PapayaShader_BrushCursor].Handle, "BrushColor");
-        Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2]   = glGetUniformLocation(Mem->Shaders[PapayaShader_BrushCursor].Handle, "Hardness");
-        Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3]   = glGetUniformLocation(Mem->Shaders[PapayaShader_BrushCursor].Handle, "PixelDiameter");
+    CompileShader(Mem->Shaders[PapayaShader_BrushCursor], Vert, Frag, 2, 4, 
+        "Position", "UV",
+        "ProjMtx", "BrushColor", "Hardness", "PixelDiameter");
 
         // Vertex buffer
         glGenBuffers(1, &Mem->VertexBuffers[PapayaVtxBuf_BrushCursor].VboHandle);
@@ -435,7 +427,7 @@ void Initialize(PapayaMemory* Mem)
 
     #pragma region Picker saturation-value shader
     {
-    const GLchar *vertex_shader =
+    const char* Vert =
 "   #version 330                                            \n"
 "   uniform mat4 ProjMtx;                                   \n" // Uniforms[0]
 "                                                           \n"
@@ -449,7 +441,7 @@ void Initialize(PapayaMemory* Mem)
 "       gl_Position = ProjMtx * vec4(Position.xy,0,1);      \n"
 "   }                                                       \n";
 
-    const GLchar* fragment_shader =
+    const char* Frag =
 "   #version 330                                                            \n"
 "                                                                           \n"
 "   uniform float Hue;                                                      \n" // Uniforms[1]
@@ -483,25 +475,9 @@ void Initialize(PapayaMemory* Mem)
 "       }                                                                   \n"
 "   }                                                                       \n";
 
-        Mem->Shaders[PapayaShader_PickerSVBox].Handle = glCreateProgram();
-        uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-        glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-        glCompileShader(g_VertHandle);
-        glCompileShader(g_FragHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_PickerSVBox].Handle, g_VertHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_PickerSVBox].Handle, g_FragHandle);
-        Util::PrintGlShaderCompilationStatus(g_VertHandle);
-        Util::PrintGlShaderCompilationStatus(g_FragHandle);
-        glLinkProgram (Mem->Shaders[PapayaShader_PickerSVBox].Handle);
-
-        Mem->Shaders[PapayaShader_PickerSVBox].Attributes[0] = glGetAttribLocation (Mem->Shaders[PapayaShader_PickerSVBox].Handle, "Position");
-        Mem->Shaders[PapayaShader_PickerSVBox].Attributes[1] = glGetAttribLocation (Mem->Shaders[PapayaShader_PickerSVBox].Handle, "UV");
-
-        Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0]   = glGetUniformLocation(Mem->Shaders[PapayaShader_PickerSVBox].Handle, "ProjMtx");
-        Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1]   = glGetUniformLocation(Mem->Shaders[PapayaShader_PickerSVBox].Handle, "Hue");
-        Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2]   = glGetUniformLocation(Mem->Shaders[PapayaShader_PickerSVBox].Handle, "Cursor");
+    CompileShader(Mem->Shaders[PapayaShader_PickerSVBox], Vert, Frag, 2, 3,
+        "Position", "UV",
+        "ProjMtx", "Hue", "Cursor");
 
         // Vertex buffer
         glGenBuffers(1, &Mem->VertexBuffers[PapayaVtxBuf_PickerSVBox].VboHandle);
@@ -530,7 +506,7 @@ void Initialize(PapayaMemory* Mem)
 
     #pragma region Picker hue shader
     {
-    const GLchar *vertex_shader =
+    const char* Vert =
 "   #version 330                                            \n"
 "   uniform mat4 ProjMtx;                                   \n" // Uniforms[0]
 "                                                           \n"
@@ -544,7 +520,7 @@ void Initialize(PapayaMemory* Mem)
 "       gl_Position = ProjMtx * vec4(Position.xy,0,1);      \n"
 "   }                                                       \n";
 
-    const GLchar* fragment_shader =
+    const char* Frag =
 "   #version 330                                                    \n"
 "                                                                   \n"
 "   uniform float Cursor;                                           \n" // Uniforms[1]
@@ -571,24 +547,9 @@ void Initialize(PapayaMemory* Mem)
 "           Out_Color = Hue;                                        \n"
 "   }                                                               \n";
 
-        Mem->Shaders[PapayaShader_PickerHStrip].Handle = glCreateProgram();
-        uint32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        uint32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-        glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-        glCompileShader(g_VertHandle);
-        glCompileShader(g_FragHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_PickerHStrip].Handle, g_VertHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_PickerHStrip].Handle, g_FragHandle);
-        Util::PrintGlShaderCompilationStatus(g_VertHandle);
-        Util::PrintGlShaderCompilationStatus(g_FragHandle);
-        glLinkProgram (Mem->Shaders[PapayaShader_PickerHStrip].Handle);
-
-        Mem->Shaders[PapayaShader_PickerHStrip].Attributes[0] = glGetAttribLocation (Mem->Shaders[PapayaShader_PickerHStrip].Handle, "Position");
-        Mem->Shaders[PapayaShader_PickerHStrip].Attributes[1] = glGetAttribLocation (Mem->Shaders[PapayaShader_PickerHStrip].Handle, "UV");
-
-        Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0]   = glGetUniformLocation(Mem->Shaders[PapayaShader_PickerHStrip].Handle, "ProjMtx");
-        Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1]   = glGetUniformLocation(Mem->Shaders[PapayaShader_PickerHStrip].Handle, "Cursor");
+    CompileShader(Mem->Shaders[PapayaShader_PickerHStrip], Vert, Frag, 2, 2,
+        "Position", "UV",
+        "ProjMtx", "Cursor");
 
         // Vertex buffer
         glGenBuffers(1, &Mem->VertexBuffers[PapayaVtxBuf_PickerHStrip].VboHandle);
@@ -615,10 +576,9 @@ void Initialize(PapayaMemory* Mem)
     }
     #pragma endregion
 
-    #pragma region Setup for ImGui
+    #pragma region ImGui default shader
     {
-    // TODO: Write shader compilation wrapper
-    const GLchar *vertex_shader =
+    const char* Vert =
 "   #version 330                                        \n"
 "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
 "                                                       \n"
@@ -635,7 +595,7 @@ void Initialize(PapayaMemory* Mem)
 "       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
 "   }                                                   \n";
 
-    const GLchar* fragment_shader =
+    const char* Frag =
 "   #version 330                                                \n"
 "   uniform sampler2D Texture;                                  \n" // Uniforms[1]
 "                                                               \n"
@@ -648,24 +608,14 @@ void Initialize(PapayaMemory* Mem)
 "       Out_Color = Frag_Color * texture( Texture, Frag_UV.st); \n"
 "   }                                                           \n";
 
-        Mem->Shaders[PapayaShader_ImGui].Handle = glCreateProgram();
-        int32 g_VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        int32 g_FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(g_VertHandle, 1, &vertex_shader, 0);
-        glShaderSource(g_FragHandle, 1, &fragment_shader, 0);
-        glCompileShader(g_VertHandle);
-        glCompileShader(g_FragHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_ImGui].Handle, g_VertHandle);
-        glAttachShader(Mem->Shaders[PapayaShader_ImGui].Handle, g_FragHandle);
-        glLinkProgram (Mem->Shaders[PapayaShader_ImGui].Handle);
+    CompileShader(Mem->Shaders[PapayaShader_ImGui], Vert, Frag, 3, 2,
+        "Position", "UV", "Color",
+        "ProjMtx", "Texture");
+    }
+    #pragma endregion
 
-        Mem->Shaders[PapayaShader_ImGui].Attributes[0] = glGetAttribLocation (Mem->Shaders[PapayaShader_ImGui].Handle, "Position");
-        Mem->Shaders[PapayaShader_ImGui].Attributes[1] = glGetAttribLocation (Mem->Shaders[PapayaShader_ImGui].Handle, "UV");
-        Mem->Shaders[PapayaShader_ImGui].Attributes[2] = glGetAttribLocation (Mem->Shaders[PapayaShader_ImGui].Handle, "Color");
-
-        Mem->Shaders[PapayaShader_ImGui].Uniforms[0]	 = glGetUniformLocation(Mem->Shaders[PapayaShader_ImGui].Handle, "ProjMtx");
-        Mem->Shaders[PapayaShader_ImGui].Uniforms[1]	 = glGetUniformLocation(Mem->Shaders[PapayaShader_ImGui].Handle, "Texture");
-
+    #pragma region Setup for ImGui
+    {
         glGenBuffers(1, &Mem->VertexBuffers[PapayaVtxBuf_ImGui].VboHandle);
         glGenBuffers(1, &Mem->VertexBuffers[PapayaVtxBuf_ImGui].ElementsHandle);
 
