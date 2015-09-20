@@ -125,6 +125,21 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
     }
     #pragma endregion
 
+    #pragma region Projection matrix
+    {
+        float w = (float)Mem->Doc.Width;
+        float h = (float)Mem->Doc.Height;
+        float OrthoMtx[4][4] =
+        {
+            { 2.0f/w,  0.0f,    0.0f,   0.0f },
+            { 0.0f,   -2.0f/h,  0.0f,   0.0f },
+            { 0.0f,    0.0f,   -1.0f,   0.0f },
+            {-1.0f,    1.0f,    0.0f,   1.0f },
+        };
+        memcpy(Mem->Doc.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
+    }
+    #pragma endregion
+
     return true;
 }
 
@@ -214,7 +229,7 @@ internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Fr
 
 void Initialize(PapayaMemory* Mem)
 {
-    #pragma region Init tool params
+    #pragma region Init values
     {
         Mem->Brush.Diameter = 50;
         Mem->Brush.MaxDiameter = 9999;
@@ -233,6 +248,15 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Misc.DrawCanvas = true;
         Mem->Misc.DrawOverlay = false;
+
+        float OrthoMtx[4][4] =
+        {
+            { 2.0f,   0.0f,   0.0f,   0.0f },
+            { 0.0f,  -2.0f,   0.0f,   0.0f },
+            { 0.0f,   0.0f,  -1.0f,   0.0f },
+            { -1.0f,  1.0f,   0.0f,   1.0f },
+        };
+        memcpy(Mem->Window.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
     }
     #pragma endregion
 
@@ -640,55 +664,62 @@ void Shutdown(PapayaMemory* Mem)
 
 void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 {
-    #pragma region Current mouse info
+    #pragma region Initialize frame
     {
-        Mem->Mouse.Pos  = ImGui::GetMousePos();
-        Vec2 MousePixelPos = Vec2(Math::Floor((Mem->Mouse.Pos.x - Mem->Doc.CanvasPosition.x) / Mem->Doc.CanvasZoom),
-                                  Math::Floor((Mem->Mouse.Pos.y - Mem->Doc.CanvasPosition.y) / Mem->Doc.CanvasZoom));
-        Mem->Mouse.UV   = Vec2(MousePixelPos.x / (float) Mem->Doc.Width,
-                                  MousePixelPos.y / (float) Mem->Doc.Height);
-
-        for (int32 i = 0; i < 3; i++)
+        #pragma region Current mouse info
         {
-            Mem->Mouse.IsDown[i]   = ImGui::IsMouseDown(i);
-            Mem->Mouse.Pressed[i]  = (Mem->Mouse.IsDown[i] && !Mem->Mouse.WasDown[i]);
-            Mem->Mouse.Released[i] = (!Mem->Mouse.IsDown[i] && Mem->Mouse.WasDown[i]);
-        }
+            Mem->Mouse.Pos = ImGui::GetMousePos();
+            Vec2 MousePixelPos = Vec2(Math::Floor((Mem->Mouse.Pos.x - Mem->Doc.CanvasPosition.x) / Mem->Doc.CanvasZoom),
+                                      Math::Floor((Mem->Mouse.Pos.y - Mem->Doc.CanvasPosition.y) / Mem->Doc.CanvasZoom));
+            Mem->Mouse.UV = Vec2(MousePixelPos.x / (float) Mem->Doc.Width, MousePixelPos.y / (float) Mem->Doc.Height);
 
-        // OnCanvas test
+            for (int32 i = 0; i < 3; i++)
+            {
+                Mem->Mouse.IsDown[i]   = ImGui::IsMouseDown(i);
+                Mem->Mouse.Pressed[i]  = (Mem->Mouse.IsDown[i] && !Mem->Mouse.WasDown[i]);
+                Mem->Mouse.Released[i] = (!Mem->Mouse.IsDown[i] && Mem->Mouse.WasDown[i]);
+            }
+
+            // OnCanvas test
+            {
+                Mem->Mouse.InWorkspace = true;
+
+                if (Mem->Mouse.Pos.x <= 34 ||                      // Document workspace test
+                    Mem->Mouse.Pos.x >= Mem->Window.Width - 3 ||   // TODO: Formalize the window layout and
+                    Mem->Mouse.Pos.y <= 55 ||                      //       remove magic numbers throughout
+                    Mem->Mouse.Pos.y >= Mem->Window.Height - 3)    //       the code.
+                {
+                    Mem->Mouse.InWorkspace = false;
+                }
+                else if (Mem->Picker.Open &&
+                    Mem->Mouse.Pos.x > Mem->Picker.Pos.x &&                       // Color picker test
+                    Mem->Mouse.Pos.x < Mem->Picker.Pos.x + Mem->Picker.Size.x &&  // 
+                    Mem->Mouse.Pos.y > Mem->Picker.Pos.y &&                       // 
+                    Mem->Mouse.Pos.y < Mem->Picker.Pos.y + Mem->Picker.Size.y)    // 
+                {
+                    Mem->Mouse.InWorkspace = false;
+                }
+            }
+        }
+        #pragma endregion
+
+        #pragma region Clear screen buffer
         {
-            Mem->Mouse.InWorkspace = true;
+            glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+            glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Mem->Colors[PapayaCol_Clear]);
 
-            if (Mem->Mouse.Pos.x <= 34 ||                         // Document workspace test
-                Mem->Mouse.Pos.x >= Mem->Window.Width - 3 ||   // TODO: Formalize the window layout and
-                Mem->Mouse.Pos.y <= 55 ||                         //       remove magic numbers throughout
-                Mem->Mouse.Pos.y >= Mem->Window.Height - 3)    //       the code.
-            {
-                Mem->Mouse.InWorkspace = false;
-            }
-            else if (Mem->Picker.Open &&
-                Mem->Mouse.Pos.x > Mem->Picker.Pos.x &&                          // Color picker test
-                Mem->Mouse.Pos.x < Mem->Picker.Pos.x + Mem->Picker.Size.x &&  // 
-                Mem->Mouse.Pos.y > Mem->Picker.Pos.y &&                          // 
-                Mem->Mouse.Pos.y < Mem->Picker.Pos.y + Mem->Picker.Size.y)    // 
-            {
-                Mem->Mouse.InWorkspace = false;
-            }
+            glEnable(GL_SCISSOR_TEST);
+            glScissor(34, 3,
+                     (int)Mem->Window.Width  - 37, (int)Mem->Window.Height - 58); // TODO: Remove magic numbers
+
+            glClearBufferfv(GL_COLOR, 0, (float*)&Mem->Colors[PapayaCol_Workspace]);
+            glDisable(GL_SCISSOR_TEST);
         }
-    }
-    #pragma endregion
+        #pragma endregion
 
-    #pragma region Clear screen buffer
-    {
-        glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-        glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Mem->Colors[PapayaCol_Clear]);
-
-        glEnable(GL_SCISSOR_TEST);
-        glScissor(34, 3,
-                 (int)Mem->Window.Width  - 37, (int)Mem->Window.Height - 58); // TODO: Remove magic numbers
-
-        glClearBufferfv(GL_COLOR, 0, (float*)&Mem->Colors[PapayaCol_Workspace]);
-        glDisable(GL_SCISSOR_TEST);
+        // Set projection matrix
+        Mem->Window.ProjMtx[0][0] =  2.0f / ImGui::GetIO().DisplaySize.x;
+        Mem->Window.ProjMtx[1][1] = -2.0f / ImGui::GetIO().DisplaySize.y;
     }
     #pragma endregion
 
@@ -1034,21 +1065,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
 
             glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
-
-            // Setup orthographic projection matrix
-            const float width = (float)Mem->Doc.Width;
-            const float height = (float)Mem->Doc.Height;
-            const float ortho_projection[4][4] =                    // TODO: Separate out all ortho projection matrices into a single variable in PapayaMemory
-            {                                                       //
-                { 2.0f / width,   0.0f,           0.0f,       0.0f }, //
-                { 0.0f,         2.0f / -height,   0.0f,       0.0f }, //
-                { 0.0f,         0.0f,          -1.0f,       0.0f }, //
-                { -1.0f,        1.0f,           0.0f,       1.0f }, //
-            };
             glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
 
-
-            glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+            glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
             //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
             glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
@@ -1094,15 +1113,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             glDisable(GL_SCISSOR_TEST);
 
             // Setup orthographic projection matrix
-            const float width = (float)Mem->Doc.Width;
-            const float height = (float)Mem->Doc.Height;
-            const float ortho_projection[4][4] =
-            {
-                { 2.0f/width,   0.0f,           0.0f,       0.0f },
-                { 0.0f,        -2.0f/height,    0.0f,       0.0f },
-                { 0.0f,         0.0f,          -1.0f,       0.0f },
-                { -1.0f,        1.0f,           0.0f,       1.0f },
-            };
+            float width = (float)Mem->Doc.Width;
+            float height = (float)Mem->Doc.Height;
             glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle);
 
             Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
@@ -1129,7 +1141,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             i++;
 #endif
 
-            glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+            glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
             //glUniform1i(Mem->Shaders[PapayaShader_Brush].Uniforms[1], Mem->Doc.TextureID); // Texture uniform
             glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect); // Pos uniform
             glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect); // Lastpos uniform
@@ -1233,19 +1245,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_NEAREST);// : GL_LINEAR);
 
-        // Setup orthographic projection matrix
-        const float width = ImGui::GetIO().DisplaySize.x;
-        const float height = ImGui::GetIO().DisplaySize.y;
-        const float ortho_projection[4][4] =
-        {
-            { 2.0f/width,   0.0f,           0.0f,       0.0f },
-            { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-            { 0.0f,         0.0f,          -1.0f,       0.0f },
-            { -1.0f,        1.0f,           0.0f,       1.0f },
-        };
         glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
-
-        glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+        glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
         glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
         // Grow our buffer according to what we need
@@ -1310,22 +1311,11 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_SCISSOR_TEST);
 
-        // Setup orthographic projection matrix
-        const float width = ImGui::GetIO().DisplaySize.x;
-        const float height = ImGui::GetIO().DisplaySize.y;
-        const float ortho_projection[4][4] =
-        {
-            { 2.0f/width,   0.0f,           0.0f,       0.0f },
-            { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-            { 0.0f,         0.0f,          -1.0f,       0.0f },
-            { -1.0f,        1.0f,           0.0f,       1.0f },
-        };
         glUseProgram(Mem->Shaders[PapayaShader_BrushCursor].Handle);
-        glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);                // Projection matrix uniform
-        glUniform4f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? 
-                                                                                             Mem->Brush.Opacity/100.0f : 0.0f);	// Brush color
-        glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness / 100.0f);						// Hardness
-        glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom);	// PixelDiameter
+        glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
+        glUniform4f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity/100.0f : 0.0f); // Brush color
+        glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness / 100.0f); // Hardness
+        glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
 
         glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
 
@@ -1445,19 +1435,8 @@ EndOfDoc:
                 glDisable(GL_CULL_FACE);
                 glDisable(GL_DEPTH_TEST);
 
-                // Setup orthographic projection matrix
-                const float width = ImGui::GetIO().DisplaySize.x;
-                const float height = ImGui::GetIO().DisplaySize.y;
-                const float ortho_projection[4][4] =
-                {
-                    { 2.0f/width,   0.0f,           0.0f,       0.0f },
-                    { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-                    { 0.0f,         0.0f,          -1.0f,       0.0f },
-                    { -1.0f,        1.0f,           0.0f,       1.0f },
-                };
-
                 glUseProgram(Mem->Shaders[PapayaShader_PickerHStrip].Handle);
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+                glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
                 glUniform1f(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH); // Cursor
 
                 glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
@@ -1485,19 +1464,8 @@ EndOfDoc:
                 glDisable(GL_CULL_FACE);
                 glDisable(GL_DEPTH_TEST);
 
-                // Setup orthographic projection matrix
-                const float width = ImGui::GetIO().DisplaySize.x;
-                const float height = ImGui::GetIO().DisplaySize.y;
-                const float ortho_projection[4][4] =
-                {
-                    { 2.0f/width,   0.0f,           0.0f,       0.0f },
-                    { 0.0f,         2.0f/-height,   0.0f,       0.0f },
-                    { 0.0f,         0.0f,          -1.0f,       0.0f },
-                    { -1.0f,        1.0f,           0.0f,       1.0f },
-                };
-
                 glUseProgram(Mem->Shaders[PapayaShader_PickerSVBox].Handle);
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]); // Projection matrix uniform
+                glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
                 glUniform1f(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH); // Hue
                 glUniform2f(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y); //Cursor                                 // Current
 
@@ -1554,17 +1522,9 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
     DrawData->ScaleClipRects(io.DisplayFramebufferScale);
 
-    // Setup orthographic projection matrix
-    const float ortho_projection[4][4] =
-    {
-        { 2.0f/io.DisplaySize.x, 0.0f,                   0.0f, 0.0f },
-        { 0.0f,                  2.0f/-io.DisplaySize.y, 0.0f, 0.0f },
-        { 0.0f,                  0.0f,                  -1.0f, 0.0f },
-        {-1.0f,                  1.0f,                   0.0f, 1.0f },
-    };
     glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
     glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0);
-    glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &ortho_projection[0][0]);
+    glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]);
     glBindVertexArray(Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
 
     for (int n = 0; n < DrawData->CmdListsCount; n++)

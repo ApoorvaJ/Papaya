@@ -64,6 +64,7 @@ struct WindowInfo
 {
     uint32 Width, Height;
     uint32 MenuHorizontalOffset, TitleBarButtonsWidth, TitleBarHeight;
+    float ProjMtx[4][4];
 };
 
 struct DocumentInfo
@@ -74,6 +75,7 @@ struct DocumentInfo
     Vec2 CanvasPosition;
     float CanvasZoom;
     float InverseAspect;
+    float ProjMtx[4][4];
 };
 
 struct MouseInfo
