@@ -33,16 +33,16 @@ enum PapayaCol_
     PapayaCol_COUNT
 };
 
-enum PapayaVtxBuf_
+enum PapayaMesh_
 {
-    PapayaVtxBuf_ImGui,
-    PapayaVtxBuf_Canvas,
-    PapayaVtxBuf_BrushCursor,
-    PapayaVtxBuf_PickerHStrip,
-    PapayaVtxBuf_PickerSVBox,
-    PapayaVtxBuf_RTTBrush,
-    PapayaVtxBuf_RTTAdd,
-    PapayaVtxBuf_COUNT
+    PapayaMesh_ImGui,
+    PapayaMesh_Canvas,
+    PapayaMesh_BrushCursor,
+    PapayaMesh_PickerHStrip,
+    PapayaMesh_PickerSVBox,
+    PapayaMesh_RTTBrush,
+    PapayaMesh_RTTAdd,
+    PapayaMesh_COUNT
 };
 
 enum PapayaShader_
@@ -96,7 +96,7 @@ struct ShaderInfo
     int32 Uniforms[8];
 };
 
-struct VtxBufInfo // TODO: Now with indexed rendering, this struct contains the index buffer handle. Is this name appropriate?
+struct MeshInfo
 {
     size_t VboSize;
     uint32 VboHandle, VaoHandle, ElementsHandle;
@@ -146,7 +146,7 @@ struct PapayaMemory
 
     uint32 Textures[PapayaTex_COUNT];
     Color Colors[PapayaCol_COUNT];
-    VtxBufInfo VertexBuffers[PapayaVtxBuf_COUNT];
+    MeshInfo Meshes[PapayaMesh_COUNT];
     ShaderInfo Shaders[PapayaShader_COUNT];
     BrushInfo Brush;
     PickerInfo Picker;
