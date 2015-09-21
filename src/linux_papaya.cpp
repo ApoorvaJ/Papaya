@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdarg.h>
 
 #define internal static
 #define local_persist static
@@ -348,10 +349,7 @@ int main(int argc, char **argv)
         // Update and render
         {
             ImGui::NewFrame();
-
             Papaya::UpdateAndRender(&Memory, &DebugMemory);
-
-            ImGui::Render(&Memory);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
 
