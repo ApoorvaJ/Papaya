@@ -1171,7 +1171,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
 #if 0
         // =========================================================================================
-        // Brush falloff visualization
+        // Visualization: Brush falloff
 
         const int32 ArraySize = 256;
         local_persist float Opacities[ArraySize] = { 0 };
@@ -1190,7 +1190,6 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
         ImGui::Begin("Brush falloff");
         ImGui::PlotLines("", Opacities, ArraySize, 0, 0, FLT_MIN, FLT_MAX, Vec2(256,256));
-        ImGui::Text("%.2f - %.2f", Opacities[0], Opacities[ArraySize - 1]);
         ImGui::End();
         // =========================================================================================
 #endif
