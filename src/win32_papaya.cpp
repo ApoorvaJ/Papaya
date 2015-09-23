@@ -582,6 +582,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         #pragma endregion
 
         BOOL IsMaximized = IsMaximized(Window);
+        if (IsIconic(Window)) { continue; }
 
         #pragma region Start new ImGui frame
         {
