@@ -140,6 +140,18 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
     }
     #pragma endregion
 
+    #pragma region Allocate undo buffer
+    {
+        uint32 MB = 10;
+        Mem->Doc.Undo.Size = MB * 1024 * 1024;
+        Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
+
+        Mem->Doc.Undo.Base = Mem->Doc.Undo.Size / 4;
+        Mem->Doc.Undo.Current = 1.2f * Mem->Doc.Undo.Size / 2;
+        Mem->Doc.Undo.Top = 3 * Mem->Doc.Undo.Size / 4;
+    }
+    #pragma endregion
+
     return true;
 }
 
@@ -1194,6 +1206,47 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         // =========================================================================================
 #endif
 }
+    #pragma endregion
+
+    #pragma region Undo
+    {
+#if 1
+        // =========================================================================================
+        // Visualization: Undo buffer
+
+        ImGui::Begin("Undo buffer");
+
+        ImDrawList* DrawList = ImGui::GetWindowDrawList();
+        
+        // Buffer line
+        float Width = ImGui::GetWindowSize().x;
+        Vec2 Pos = ImGui::GetWindowPos();
+        Vec2 P1 = Pos + Vec2(10, 40);
+        Vec2 P2 = Pos + Vec2(Width - 10, 40);
+        DrawList->AddLine(P1, P2, 0xFFFFFFFF);
+
+        // Base mark
+        float BaseX = P1.x + (float)Mem->Doc.Undo.Base / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        DrawList->AddLine(Vec2(BaseX, Pos.y + 29), Vec2(BaseX,Pos.y + 51), 0xFFFFFF00);
+
+        // Current mark
+        float CurrX = P1.x + (float)Mem->Doc.Undo.Current / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        DrawList->AddLine(Vec2(CurrX, Pos.y + 32), Vec2(CurrX, Pos.y + 48), 0xFFFF00FF);
+
+        // Top mark
+        float TopX = P1.x + (float)Mem->Doc.Undo.Top / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
+
+        ImGui::Text("");
+        ImGui::Text("");
+        ImGui::TextColored(Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", Mem->Doc.Undo.Base);
+        ImGui::TextColored(Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", Mem->Doc.Undo.Current);
+        ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", Mem->Doc.Undo.Top);
+        
+        ImGui::End();
+        // =========================================================================================
+#endif
+    }
     #pragma endregion
 
     #pragma region Canvas zooming and panning

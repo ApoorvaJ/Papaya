@@ -55,6 +55,12 @@ enum PapayaShader_
     PapayaShader_COUNT
 };
 
+enum PapayaUndoOp_
+{
+    PapayaUndoOp_Brush,
+    PapayaUndoOp_COUNT
+};
+
 struct SystemInfo
 {
     int32 OpenGLVersion[2];
@@ -67,6 +73,23 @@ struct WindowInfo
     float ProjMtx[4][4];
 };
 
+#pragma region Undo structs
+
+struct UndoBufferInfo
+{
+    void* Start; // Pointer to beginning of undo buffer
+    uint64 Size; // Size of the undo buffer in bytes
+    uint64 Base, Current, Top; // Offsets in bytes, from Start
+};
+
+struct UndoOp
+{
+    uint8 OpCode; // Stores enum of type PapayaUndoOp_
+    UndoOp* Prev, * Next;
+};
+
+#pragma endregion
+
 struct DocumentInfo
 {
     int32 Width, Height;
@@ -76,6 +99,7 @@ struct DocumentInfo
     float CanvasZoom;
     float InverseAspect;
     float ProjMtx[4][4];
+    UndoBufferInfo Undo;
 };
 
 struct MouseInfo
