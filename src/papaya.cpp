@@ -63,6 +63,32 @@ internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, G
     glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage);
 }
 
+internal void PushUndo(PapayaMemory* Mem)
+{
+    // TODO: Handle wrap-around and overwrites
+    UndoImageData Data = {};
+    Data.OpCode = PapayaUndoOp_Brush;
+    Data.Prev = (Mem->Doc.Undo.Count == 0) ? 0 : Mem->Doc.Undo.Last;
+    Data.PosX = 0;
+    Data.PosY = 0;
+    Data.SizeX = Mem->Doc.Width;
+    Data.SizeY = Mem->Doc.Height;
+    memcpy(Mem->Doc.Undo.Top, &Data, sizeof(UndoImageData));
+
+    if (Mem->Doc.Undo.Count > 0) { ((UndoImageData*)Mem->Doc.Undo.Last)->Next = Mem->Doc.Undo.Top; }
+    Mem->Doc.Undo.Last = Mem->Doc.Undo.Top;
+    Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + sizeof(UndoImageData);
+
+    glFinish();
+    glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Mem->Doc.Undo.Top); // TODO: Ensure that there's enough space for this
+    glFinish();
+    Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + 4 * Data.SizeX * Data.SizeY;
+
+    Mem->Doc.Undo.Current = Mem->Doc.Undo.Last;
+    Mem->Doc.Undo.Count++;
+}
+
 internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 {
     #pragma region Load image
@@ -140,15 +166,14 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
     }
     #pragma endregion
 
-    #pragma region Allocate undo buffer
+    #pragma region Init undo buffer
     {
-        uint32 MB = 10;
-        Mem->Doc.Undo.Size = MB * 1024 * 1024;
+        uint32 MB = 1;
+        Mem->Doc.Undo.Size = 500000;// MB * 1024 * 1024;
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
+        Mem->Doc.Undo.Base = Mem->Doc.Undo.Current = Mem->Doc.Undo.Top = Mem->Doc.Undo.Start;
 
-        Mem->Doc.Undo.Base = Mem->Doc.Undo.Size / 4;
-        Mem->Doc.Undo.Current = 1.2f * Mem->Doc.Undo.Size / 2;
-        Mem->Doc.Undo.Top = 3 * Mem->Doc.Undo.Size / 4;
+        PushUndo(Mem);
     }
     #pragma endregion
 
@@ -1070,40 +1095,46 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         }
         else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
         {
-            Mem->Brush.BeingDragged = false;
+            #pragma region Additive render-to-texture
+            {
+                glDisable(GL_SCISSOR_TEST);
+                glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
 
-            glDisable(GL_SCISSOR_TEST);
-            glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
+                glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
+                glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
 
-            glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
-            glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
+                glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
+                //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
-            glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
-            //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+                glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
+                glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle);
 
-            glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
-            glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle);
+                glEnable(GL_BLEND);
+                glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            glEnable(GL_BLEND);
-            glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
 
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+                uint32 Temp = Mem->Misc.FboRenderTexture;
+                Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
+                Mem->Doc.TextureID = Temp;
 
-            uint32 Temp = Mem->Misc.FboRenderTexture;
-            Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
-            Mem->Doc.TextureID = Temp;
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
 
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+                glDisable(GL_BLEND);
+            }
+            #pragma endregion
 
-            glDisable(GL_BLEND);
+            PushUndo(Mem);
+
             Mem->Misc.DrawOverlay = false;
+            Mem->Brush.BeingDragged = false;
         }
 
         if (Mem->Brush.BeingDragged)
@@ -1210,6 +1241,32 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
     #pragma region Undo
     {
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Z))) // Pop undo op
+        {
+            bool Refresh = false;
+
+            if (ImGui::GetIO().KeyShift && Mem->Doc.Undo.Current != Mem->Doc.Undo.Top)
+            {
+                void* Next = ((UndoImageData*)Mem->Doc.Undo.Current)->Next;
+                if (Next != 0) { Mem->Doc.Undo.Current = Next; }
+                Refresh = true;
+            }
+            else if (Mem->Doc.Undo.Current != Mem->Doc.Undo.Base)
+            {
+                void* Prev = ((UndoImageData*)Mem->Doc.Undo.Current)->Prev;
+                if (Mem->Doc.Undo.Current == Mem->Doc.Undo.Top) { Mem->Doc.Undo.Current = Mem->Doc.Undo.Last; }
+                else if (Prev != 0)                             { Mem->Doc.Undo.Current = Prev; }
+                Refresh = true;
+            }
+                
+            if (Refresh)
+            {
+                UndoImageData* Data = (UndoImageData*)Mem->Doc.Undo.Current;
+                glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Data->SizeX, Data->SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Mem->Doc.Undo.Current + sizeof(UndoImageData));
+            }
+        }
+
 #if 1
         // =========================================================================================
         // Visualization: Undo buffer
@@ -1226,22 +1283,31 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         DrawList->AddLine(P1, P2, 0xFFFFFFFF);
 
         // Base mark
-        float BaseX = P1.x + (float)Mem->Doc.Undo.Base / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
-        DrawList->AddLine(Vec2(BaseX, Pos.y + 29), Vec2(BaseX,Pos.y + 51), 0xFFFFFF00);
+        uint64 BaseOffset = (int8*)Mem->Doc.Undo.Base - (int8*)Mem->Doc.Undo.Start;
+        float BaseX = P1.x + (float)BaseOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        DrawList->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
 
         // Current mark
-        float CurrX = P1.x + (float)Mem->Doc.Undo.Current / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
-        DrawList->AddLine(Vec2(CurrX, Pos.y + 32), Vec2(CurrX, Pos.y + 48), 0xFFFF00FF);
+        uint64 CurrOffset = (int8*)Mem->Doc.Undo.Current - (int8*)Mem->Doc.Undo.Start;
+        float CurrX = P1.x + (float)CurrOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        DrawList->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
+
+        // Last mark
+        uint64 LastOffset = (int8*)Mem->Doc.Undo.Last - (int8*)Mem->Doc.Undo.Start;
+        float LastX = P1.x + (float)LastOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        //DrawList->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
 
         // Top mark
-        float TopX = P1.x + (float)Mem->Doc.Undo.Top / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        uint64 TopOffset = (int8*)Mem->Doc.Undo.Top - (int8*)Mem->Doc.Undo.Start;
+        float TopX = P1.x + (float)TopOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
         DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
-        ImGui::Text("");
-        ImGui::Text("");
-        ImGui::TextColored(Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", Mem->Doc.Undo.Base);
-        ImGui::TextColored(Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", Mem->Doc.Undo.Current);
-        ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", Mem->Doc.Undo.Top);
+        ImGui::Text(""); ImGui::Text(""); // Vertical spacers
+        ImGui::TextColored(Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
+        ImGui::TextColored(Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
+        //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
+        ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
+        ImGui::Text("Count   %lu", Mem->Doc.Undo.Count);
         
         ImGui::End();
         // =========================================================================================

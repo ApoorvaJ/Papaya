@@ -77,17 +77,23 @@ struct WindowInfo
 
 struct UndoBufferInfo
 {
-    void* Start; // Pointer to beginning of undo buffer
-    uint64 Size; // Size of the undo buffer in bytes
-    uint64 Base, Current, Top; // Offsets in bytes, from Start
+    void* Start;   // Pointer to beginning of undo buffer memory block // TODO: Change pointer types to int8*?
+    uint64 Size;   // Size of the undo buffer in bytes
+    void* Base;    // Pointer to the base of the undo stack
+    void* Current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
+    void* Last;    // Last undo data block in the buffer. Should be located just before Top.
+    void* Top;     // Pointer to the top of the undo stack
+    uint64 Count;  // Number of undo ops in buffer
 };
 
-struct UndoOp
+struct UndoImageData
 {
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
-    UndoOp* Prev, * Next;
+    void* Prev, * Next;
+    uint16 PosX, PosY; // Position of the subrect
+    uint16 SizeX, SizeY; // Size of the subrect
+    // Image data goes after this
 };
-
 #pragma endregion
 
 struct DocumentInfo
@@ -132,7 +138,7 @@ struct BrushInfo
 {
     int32 Diameter;
     int32 MaxDiameter;
-    float Opacity;  // Range: 0.0 - 100.0
+    float Opacity;  // Range: 0.0 - 100.0 // TODO: Change to 0.0 - 1.0?
     float Hardness; // Range: 0.0 - 100.0
 
     // TODO: Move some of this stuff to the MouseInfo struct?
