@@ -65,7 +65,14 @@ internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, G
 
 internal void PushUndo(PapayaMemory* Mem)
 {
-    // TODO: Handle wrap-around and overwrites
+    // TODO: Handle wrap-around
+    UndoImageData* CurData = (UndoImageData*)Mem->Doc.Undo.Current;
+    if (Mem->Doc.Undo.Count > 0 && CurData->Next != 0) // Current pointer is not at end
+    {
+        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + sizeof(UndoImageData) + 4 * CurData->SizeX * CurData->SizeY;
+        Mem->Doc.Undo.Last = Mem->Doc.Undo.Current;
+    }
+
     UndoImageData Data = {};
     Data.OpCode = PapayaUndoOp_Brush;
     Data.Prev = (Mem->Doc.Undo.Count == 0) ? 0 : Mem->Doc.Undo.Last;
