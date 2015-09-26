@@ -75,24 +75,24 @@ struct WindowInfo
 
 #pragma region Undo structs
 
-struct UndoBufferInfo
-{
-    void* Start;   // Pointer to beginning of undo buffer memory block // TODO: Change pointer types to int8*?
-    uint64 Size;   // Size of the undo buffer in bytes
-    void* Base;    // Pointer to the base of the undo stack
-    void* Current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
-    void* Last;    // Last undo data block in the buffer. Should be located just before Top.
-    void* Top;     // Pointer to the top of the undo stack
-    uint64 Count;  // Number of undo ops in buffer
-};
-
-struct UndoImageData
+struct UndoData // TODO: Convert into a union of structs once multiple types of undo ops are required
 {
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
-    void* Prev, * Next;
+    UndoData* Prev, *Next;
     uint16 PosX, PosY; // Position of the subrect
     uint16 SizeX, SizeY; // Size of the subrect
     // Image data goes after this
+};
+
+struct UndoBufferInfo
+{
+    void* Start;   // Pointer to beginning of undo buffer memory block // TODO: Change pointer types to int8*?
+    void* Top;     // Pointer to the top of the undo stack
+    UndoData* Base;    // Pointer to the base of the undo stack
+    UndoData* Current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
+    UndoData* Last;    // Last undo data block in the buffer. Should be located just before Top.
+    uint64 Size;   // Size of the undo buffer in bytes
+    uint64 Count;  // Number of undo ops in buffer
 };
 #pragma endregion
 

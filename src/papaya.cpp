@@ -66,25 +66,30 @@ internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, G
 internal void PushUndo(PapayaMemory* Mem)
 {
     // TODO: Handle wrap-around
-    UndoImageData* CurData = (UndoImageData*)Mem->Doc.Undo.Current;
-    if (Mem->Doc.Undo.Count > 0 && CurData->Next != 0) // Current pointer is not at end
+
+    if (Mem->Doc.Undo.Top == 0) // Buffer is empty
     {
-        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + sizeof(UndoImageData) + 4 * CurData->SizeX * CurData->SizeY;
+        Mem->Doc.Undo.Base = (UndoData*)Mem->Doc.Undo.Start;
+        Mem->Doc.Undo.Top = Mem->Doc.Undo.Start;
+    }
+    else if (Mem->Doc.Undo.Current->Next != 0) // Not empty and not at end. Reposition for overwrite.
+    {
+        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData) + 4 * Mem->Doc.Undo.Current->SizeX * Mem->Doc.Undo.Current->SizeY;
         Mem->Doc.Undo.Last = Mem->Doc.Undo.Current;
     }
 
-    UndoImageData Data = {};
+    UndoData Data = {};
     Data.OpCode = PapayaUndoOp_Brush;
-    Data.Prev = (Mem->Doc.Undo.Count == 0) ? 0 : Mem->Doc.Undo.Last;
+    Data.Prev = Mem->Doc.Undo.Last;
     Data.PosX = 0;
     Data.PosY = 0;
     Data.SizeX = Mem->Doc.Width;
     Data.SizeY = Mem->Doc.Height;
-    memcpy(Mem->Doc.Undo.Top, &Data, sizeof(UndoImageData));
+    memcpy(Mem->Doc.Undo.Top, &Data, sizeof(UndoData));
 
-    if (Mem->Doc.Undo.Count > 0) { ((UndoImageData*)Mem->Doc.Undo.Last)->Next = Mem->Doc.Undo.Top; }
-    Mem->Doc.Undo.Last = Mem->Doc.Undo.Top;
-    Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + sizeof(UndoImageData);
+    if (Mem->Doc.Undo.Last) { Mem->Doc.Undo.Last->Next = (UndoData*)Mem->Doc.Undo.Top; }
+    Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
+    Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + sizeof(UndoData);
 
     glFinish();
     glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
@@ -178,7 +183,6 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         uint32 MB = 1;
         Mem->Doc.Undo.Size = 500000;// MB * 1024 * 1024;
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
-        Mem->Doc.Undo.Base = Mem->Doc.Undo.Current = Mem->Doc.Undo.Top = Mem->Doc.Undo.Start;
 
         PushUndo(Mem);
     }
@@ -1246,31 +1250,27 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 }
     #pragma endregion
 
-    #pragma region Undo
+    #pragma region Undo/Redo
     {
         if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Z))) // Pop undo op
         {
             bool Refresh = false;
 
-            if (ImGui::GetIO().KeyShift && Mem->Doc.Undo.Current != Mem->Doc.Undo.Top)
+            if (ImGui::GetIO().KeyShift && Mem->Doc.Undo.Current != Mem->Doc.Undo.Top) // Redo
             {
-                void* Next = ((UndoImageData*)Mem->Doc.Undo.Current)->Next;
-                if (Next != 0) { Mem->Doc.Undo.Current = Next; }
+                if (Mem->Doc.Undo.Current->Next != 0) { Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Next; }
                 Refresh = true;
             }
-            else if (Mem->Doc.Undo.Current != Mem->Doc.Undo.Base)
+            else if (Mem->Doc.Undo.Current != Mem->Doc.Undo.Base) // Undo
             {
-                void* Prev = ((UndoImageData*)Mem->Doc.Undo.Current)->Prev;
-                if (Mem->Doc.Undo.Current == Mem->Doc.Undo.Top) { Mem->Doc.Undo.Current = Mem->Doc.Undo.Last; }
-                else if (Prev != 0)                             { Mem->Doc.Undo.Current = Prev; }
+                if (Mem->Doc.Undo.Current->Prev != 0) { Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Prev; }
                 Refresh = true;
             }
                 
             if (Refresh)
             {
-                UndoImageData* Data = (UndoImageData*)Mem->Doc.Undo.Current;
                 glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Data->SizeX, Data->SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Mem->Doc.Undo.Current + sizeof(UndoImageData));
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Undo.Current->SizeX, Mem->Doc.Undo.Current->SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData));
             }
         }
 
