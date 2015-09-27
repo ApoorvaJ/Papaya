@@ -65,8 +65,6 @@ internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, G
 
 internal void PushUndo(PapayaMemory* Mem)
 {
-    // TODO: Handle wrap-around
-
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
     {
         Mem->Doc.Undo.Base = (UndoData*)Mem->Doc.Undo.Start;
@@ -134,7 +132,6 @@ internal void PushUndo(PapayaMemory* Mem)
     }
     
     free(Buf);
-
 
     Mem->Doc.Undo.Current = Mem->Doc.Undo.Last;
     Mem->Doc.Undo.Count++;
@@ -1308,8 +1305,38 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 
             if (Refresh)
             {
+                // TODO: Simplify this block a bit, for human readability
+                UndoData Data = {};
+                void* Image = 0;
+                bool AllocUsed = false;
+
+                int64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
+                if (BytesToRight >= sizeof(UndoData)) // UndoData is contiguously stored
+                {
+                    memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
+                    if (BytesToRight - sizeof(UndoData) >= 4 * Data.SizeX * Data.SizeY) // Image is contiguously stored
+                    {
+                        Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
+                    }
+                    else // Image is split
+                    {
+                        AllocUsed = true;
+                        Image = malloc(4 * Data.SizeX * Data.SizeY);
+                        memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
+                        memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)((4 * Data.SizeX * Data.SizeY) - (BytesToRight - sizeof(UndoData))));
+                    }
+                }
+                else // UndoData is split
+                {
+                    memcpy(&Data, Mem->Doc.Undo.Current, (size_t)BytesToRight);
+                    memcpy(&Data + BytesToRight, Mem->Doc.Undo.Start, (size_t)(sizeof(UndoData) - BytesToRight));
+                    Image = (int8*)Mem->Doc.Undo.Start + sizeof(UndoData) - BytesToRight;
+                }
+
                 glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Undo.Current->SizeX, Mem->Doc.Undo.Current->SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData));
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Data.SizeX, Data.SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+
+                if (AllocUsed) { free(Image); }
             }
         }
 
