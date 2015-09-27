@@ -85,17 +85,56 @@ internal void PushUndo(PapayaMemory* Mem)
     Data.PosY = 0;
     Data.SizeX = Mem->Doc.Width;
     Data.SizeY = Mem->Doc.Height;
-    memcpy(Mem->Doc.Undo.Top, &Data, sizeof(UndoData));
 
-    if (Mem->Doc.Undo.Last) { Mem->Doc.Undo.Last->Next = (UndoData*)Mem->Doc.Undo.Top; }
-    Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
-    Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + sizeof(UndoData);
-
+    uint64 BufSize = sizeof(UndoData) + 4 * Data.SizeX * Data.SizeY;
+    void* Buf = malloc((size_t)BufSize);
+    memcpy(Buf, &Data, sizeof(UndoData));
     glFinish();
     glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Mem->Doc.Undo.Top); // TODO: Ensure that there's enough space for this
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)); 
     glFinish();
-    Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + 4 * Data.SizeX * Data.SizeY;
+
+    uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Top;
+    if (BytesToRight < BufSize) // Wrap around
+    {
+        // Reposition the base pointer
+        while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top ||
+               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight)
+        {
+            Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
+            Mem->Doc.Undo.Base->Prev = 0;
+            Mem->Doc.Undo.Count--;
+        }
+
+        memcpy(Mem->Doc.Undo.Top, Buf, (size_t)BytesToRight);
+        memcpy(Mem->Doc.Undo.Start, (int8*)Buf + BytesToRight, (size_t)(BufSize - BytesToRight));
+
+        if (BytesToRight == 0) { Mem->Doc.Undo.Top = Mem->Doc.Undo.Start; }
+
+        if (Mem->Doc.Undo.Last) { Mem->Doc.Undo.Last->Next = (UndoData*)Mem->Doc.Undo.Top; }
+        Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
+        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight;
+    }
+    else // Simply append
+    {
+        // Reposition the base pointer
+        while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top &&
+               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Top + BufSize)
+        {
+            Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
+            Mem->Doc.Undo.Base->Prev = 0;
+            Mem->Doc.Undo.Count--;
+        }
+
+        memcpy(Mem->Doc.Undo.Top, Buf, (size_t)BufSize);
+
+        if (Mem->Doc.Undo.Last) { Mem->Doc.Undo.Last->Next = (UndoData*)Mem->Doc.Undo.Top; }
+        Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
+        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + BufSize;
+    }
+    
+    free(Buf);
+
 
     Mem->Doc.Undo.Current = Mem->Doc.Undo.Last;
     Mem->Doc.Undo.Count++;
