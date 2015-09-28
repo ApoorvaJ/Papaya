@@ -93,7 +93,25 @@ internal void PushUndo(PapayaMemory* Mem)
     glFinish();
 
     uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Top;
-    if (BytesToRight < BufSize) // Wrap around
+    if (BytesToRight < sizeof(UndoData)) // Not enough space for UndoData. Go to start.
+    {
+        // Reposition the base pointer
+        while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top ||
+               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize)
+        {
+            Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
+            Mem->Doc.Undo.Base->Prev = 0;
+            Mem->Doc.Undo.Count--;
+        }
+
+        Mem->Doc.Undo.Top = Mem->Doc.Undo.Start;
+        memcpy(Mem->Doc.Undo.Top, Buf, (size_t)BufSize);
+
+        if (Mem->Doc.Undo.Last) { Mem->Doc.Undo.Last->Next = (UndoData*)Mem->Doc.Undo.Top; }
+        Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
+        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + BufSize;
+    }
+    else if (BytesToRight < BufSize) // Enough space for UndoData, but not for image. Split image data.
     {
         // Reposition the base pointer
         while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top ||
@@ -113,7 +131,7 @@ internal void PushUndo(PapayaMemory* Mem)
         Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
         Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight;
     }
-    else // Simply append
+    else // Enough space for everything. Simply append.
     {
         // Reposition the base pointer
         while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top &&
@@ -216,8 +234,10 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     #pragma region Init undo buffer
     {
-        uint32 MB = 100;
-        Mem->Doc.Undo.Size = MB * 1024 * 1024;
+        uint32 MB = 1;
+        Mem->Doc.Undo.Size = Math::Max((uint64)(MB * 1024 * 1024),                          // Buffer needs to be at least
+                                       (uint64)(2 * 4 * Mem->Doc.Width * Mem->Doc.Height) + // twice as large as image
+                                       (uint64)(2 * sizeof(UndoData)));                     // plus two UndoData vars
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
 
         PushUndo(Mem);
@@ -1310,28 +1330,21 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 void* Image = 0;
                 bool AllocUsed = false;
 
+                memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
+
                 int64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
-                if (BytesToRight >= sizeof(UndoData)) // UndoData is contiguously stored
+                if (BytesToRight - sizeof(UndoData) >= 4 * Data.SizeX * Data.SizeY) // Image is contiguously stored
                 {
-                    memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
-                    if (BytesToRight - sizeof(UndoData) >= 4 * Data.SizeX * Data.SizeY) // Image is contiguously stored
-                    {
-                        Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
-                    }
-                    else // Image is split
-                    {
-                        AllocUsed = true;
-                        Image = malloc(4 * Data.SizeX * Data.SizeY);
-                        memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
-                        memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)((4 * Data.SizeX * Data.SizeY) - (BytesToRight - sizeof(UndoData))));
-                    }
+                    Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
                 }
-                else // UndoData is split
+                else // Image is split
                 {
-                    memcpy(&Data, Mem->Doc.Undo.Current, (size_t)BytesToRight);
-                    memcpy(&Data + BytesToRight, Mem->Doc.Undo.Start, (size_t)(sizeof(UndoData) - BytesToRight));
-                    Image = (int8*)Mem->Doc.Undo.Start + sizeof(UndoData) - BytesToRight;
+                    AllocUsed = true;
+                    Image = malloc(4 * Data.SizeX * Data.SizeY);
+                    memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
+                    memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)((4 * Data.SizeX * Data.SizeY) - (BytesToRight - sizeof(UndoData))));
                 }
+
 
                 glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Data.SizeX, Data.SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);

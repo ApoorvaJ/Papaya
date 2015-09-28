@@ -47,6 +47,11 @@ namespace Math
         return (a > b ? a : b);
     }
 
+    uint64 Max(uint64 a, uint64 b)
+    {
+        return (a > b ? a : b);
+    }
+
     float Abs(float a)
     {
         return (a < 0.0f ? a * -1.0f : a);
