@@ -216,8 +216,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     #pragma region Init undo buffer
     {
-        uint32 MB = 1;
-        Mem->Doc.Undo.Size = 500000;// MB * 1024 * 1024;
+        uint32 MB = 100;
+        Mem->Doc.Undo.Size = MB * 1024 * 1024;
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
 
         PushUndo(Mem);
