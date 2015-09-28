@@ -74,6 +74,7 @@ internal void PushUndo(PapayaMemory* Mem)
     {
         Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData) + 4 * Mem->Doc.Undo.Current->SizeX * Mem->Doc.Undo.Current->SizeY;
         Mem->Doc.Undo.Last = Mem->Doc.Undo.Current;
+        Mem->Doc.Undo.Count = Mem->Doc.Undo.CurrentIndex + 1;
     }
 
     UndoData Data = {};
@@ -102,6 +103,7 @@ internal void PushUndo(PapayaMemory* Mem)
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
             Mem->Doc.Undo.Base->Prev = 0;
             Mem->Doc.Undo.Count--;
+            Mem->Doc.Undo.CurrentIndex--;
         }
 
         Mem->Doc.Undo.Top = Mem->Doc.Undo.Start;
@@ -120,6 +122,7 @@ internal void PushUndo(PapayaMemory* Mem)
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
             Mem->Doc.Undo.Base->Prev = 0;
             Mem->Doc.Undo.Count--;
+            Mem->Doc.Undo.CurrentIndex--;
         }
 
         memcpy(Mem->Doc.Undo.Top, Buf, (size_t)BytesToRight);
@@ -140,6 +143,7 @@ internal void PushUndo(PapayaMemory* Mem)
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
             Mem->Doc.Undo.Base->Prev = 0;
             Mem->Doc.Undo.Count--;
+            Mem->Doc.Undo.CurrentIndex--;
         }
 
         memcpy(Mem->Doc.Undo.Top, Buf, (size_t)BufSize);
@@ -153,6 +157,7 @@ internal void PushUndo(PapayaMemory* Mem)
 
     Mem->Doc.Undo.Current = Mem->Doc.Undo.Last;
     Mem->Doc.Undo.Count++;
+    Mem->Doc.Undo.CurrentIndex++;
 }
 
 internal bool OpenDocument(char* Path, PapayaMemory* Mem)
@@ -239,6 +244,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
                                        (uint64)(2 * 4 * Mem->Doc.Width * Mem->Doc.Height) + // twice as large as image
                                        (uint64)(2 * sizeof(UndoData)));                     // plus two UndoData vars
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
+        Mem->Doc.Undo.CurrentIndex = -1;
 
         PushUndo(Mem);
     }
@@ -1312,20 +1318,25 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         {
             bool Refresh = false;
 
-            if (ImGui::GetIO().KeyShift && Mem->Doc.Undo.Current != Mem->Doc.Undo.Top) // Redo
+            if (ImGui::GetIO().KeyShift && 
+                Mem->Doc.Undo.CurrentIndex < Mem->Doc.Undo.Count - 1 && 
+                Mem->Doc.Undo.Current->Next != 0) // Redo
             {
-                if (Mem->Doc.Undo.Current->Next != 0) { Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Next; }
+                Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Next;
+                Mem->Doc.Undo.CurrentIndex++;
                 Refresh = true;
             }
-            else if (Mem->Doc.Undo.Current != Mem->Doc.Undo.Base) // Undo
+            else if (!ImGui::GetIO().KeyShift &&
+                     Mem->Doc.Undo.CurrentIndex > 0 && 
+                     Mem->Doc.Undo.Current->Prev != 0) // Undo
             {
-                if (Mem->Doc.Undo.Current->Prev != 0) { Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Prev; }
+                Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Prev;
+                Mem->Doc.Undo.CurrentIndex--;
                 Refresh = true;
             }
                 
             if (Refresh)
             {
-                // TODO: Simplify this block a bit, for human readability
                 UndoData Data = {};
                 void* Image = 0;
                 bool AllocUsed = false;
@@ -1344,7 +1355,6 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                     memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
                     memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)((4 * Data.SizeX * Data.SizeY) - (BytesToRight - sizeof(UndoData))));
                 }
-
 
                 glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Data.SizeX, Data.SizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
@@ -1394,6 +1404,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
         ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
         ImGui::Text("Count   %lu", Mem->Doc.Undo.Count);
+        ImGui::Text("Index   %lu", Mem->Doc.Undo.CurrentIndex);
         
         ImGui::End();
         // =========================================================================================
