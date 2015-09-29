@@ -72,7 +72,16 @@ internal void PushUndo(PapayaMemory* Mem)
     }
     else if (Mem->Doc.Undo.Current->Next != 0) // Not empty and not at end. Reposition for overwrite.
     {
-        Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData) + 4 * Mem->Doc.Undo.Current->SizeX * Mem->Doc.Undo.Current->SizeY;
+        uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
+        uint64 BlockSize = sizeof(UndoData) + 4 * Mem->Doc.Undo.Current->SizeX * Mem->Doc.Undo.Current->SizeY;
+        if (BytesToRight >= BlockSize)
+        {
+            Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + BlockSize;
+        }
+        else
+        {
+            Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Start + BlockSize - BytesToRight;
+        }
         Mem->Doc.Undo.Last = Mem->Doc.Undo.Current;
         Mem->Doc.Undo.Count = Mem->Doc.Undo.CurrentIndex + 1;
     }
@@ -97,8 +106,9 @@ internal void PushUndo(PapayaMemory* Mem)
     if (BytesToRight < sizeof(UndoData)) // Not enough space for UndoData. Go to start.
     {
         // Reposition the base pointer
-        while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top ||
-               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize)
+        while (((int8*)Mem->Doc.Undo.Base >= (int8*)Mem->Doc.Undo.Top ||
+               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize) &&
+               Mem->Doc.Undo.Count > 0)
         {
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
             Mem->Doc.Undo.Base->Prev = 0;
@@ -116,8 +126,9 @@ internal void PushUndo(PapayaMemory* Mem)
     else if (BytesToRight < BufSize) // Enough space for UndoData, but not for image. Split image data.
     {
         // Reposition the base pointer
-        while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top ||
-               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight)
+        while (((int8*)Mem->Doc.Undo.Base >= (int8*)Mem->Doc.Undo.Top ||
+               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight) &&
+               Mem->Doc.Undo.Count > 0)
         {
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
             Mem->Doc.Undo.Base->Prev = 0;
