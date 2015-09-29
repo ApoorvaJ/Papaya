@@ -137,8 +137,9 @@ internal void PushUndo(PapayaMemory* Mem)
     else // Enough space for everything. Simply append.
     {
         // Reposition the base pointer
-        while ((int8*)Mem->Doc.Undo.Base > (int8*)Mem->Doc.Undo.Top &&
-               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Top + BufSize)
+        while ((int8*)Mem->Doc.Undo.Base >= (int8*)Mem->Doc.Undo.Top &&
+               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Top + BufSize &&
+               Mem->Doc.Undo.Count > 0)
         {
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
             Mem->Doc.Undo.Base->Prev = 0;
@@ -239,7 +240,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     #pragma region Init undo buffer
     {
-        uint32 MB = 1;
+        uint32 MB = 0;
         Mem->Doc.Undo.Size = Math::Max((uint64)(MB * 1024 * 1024),                          // Buffer needs to be at least
                                        (uint64)(2 * 4 * Mem->Doc.Width * Mem->Doc.Height) + // twice as large as image
                                        (uint64)(2 * sizeof(UndoData)));                     // plus two UndoData vars
