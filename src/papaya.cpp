@@ -240,7 +240,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     #pragma region Init undo buffer
     {
-        uint32 MB = 0;
+        uint32 MB = 100;
         Mem->Doc.Undo.Size = Math::Max((uint64)(MB * 1024 * 1024),                          // Buffer needs to be at least
                                        (uint64)(2 * 4 * Mem->Doc.Width * Mem->Doc.Height) + // twice as large as image
                                        (uint64)(2 * sizeof(UndoData)));                     // plus two UndoData vars
@@ -261,6 +261,15 @@ internal void CloseDocument(PapayaMemory* Mem)
     {
         glDeleteTextures(1, &Mem->Doc.TextureID);
         Mem->Doc.TextureID = 0;
+    }
+
+    // Undo buffer
+    {
+        free(Mem->Doc.Undo.Start);
+        Mem->Doc.Undo.Start = Mem->Doc.Undo.Top = 0;
+        Mem->Doc.Undo.Base = Mem->Doc.Undo.Current = Mem->Doc.Undo.Last = 0;
+        Mem->Doc.Undo.Size = Mem->Doc.Undo.Count = 0;
+        Mem->Doc.Undo.CurrentIndex = -1;
     }
 
     // Frame buffer
