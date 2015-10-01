@@ -79,8 +79,7 @@ struct UndoData // TODO: Convert into a union of structs once multiple types of 
 {
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
     UndoData* Prev, *Next;
-    uint16 PosX, PosY; // Position of the subrect
-    uint16 SizeX, SizeY; // Size of the subrect
+    int64 Size; // Size of the suffixed data block
     // Image data goes after this
 };
 
