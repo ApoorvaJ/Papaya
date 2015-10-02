@@ -248,10 +248,11 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     #pragma region Init undo buffer
     {
-        uint32 MB = 1;
-        Mem->Doc.Undo.Size = Math::Max((uint64)(MB * 1024 * 1024),                          // Buffer needs to be at least
-                                       (uint64)(2 * 4 * Mem->Doc.Width * Mem->Doc.Height) + // twice as large as image
-                                       (uint64)(2 * sizeof(UndoData)));                     // plus two UndoData vars
+        uint64 MaxSize = 1024 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
+        uint64 UndoRecordSize = sizeof(UndoData) + 4 * Mem->Doc.Width * Mem->Doc.Height;
+        Mem->Doc.Undo.Size = Math::Min(100 * UndoRecordSize, MaxSize);
+        if (Mem->Doc.Undo.Size < 2 * UndoRecordSize) { Mem->Doc.Undo.Size = 2 * UndoRecordSize; }
+
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
         Mem->Doc.Undo.CurrentIndex = -1;
 

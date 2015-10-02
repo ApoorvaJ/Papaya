@@ -42,6 +42,11 @@ namespace Math
         return (a < b ? a : b);
     }
 
+    uint64 Min(uint64 a, uint64 b)
+    {
+        return (a < b ? a : b);
+    }
+
     float Max(float a, float b)
     {
         return (a > b ? a : b);
