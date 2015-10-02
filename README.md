@@ -17,6 +17,7 @@ Papaya is very much a work in progress. The following features are functional so
 * Brush with adjustable size, hardness and opacity
 * Color picker
 * Loading jpg & png images, saving png images
+* Undo/Redo
 
 For development updates, you can follow [@PapayaEditor](https://twitter.com/PapayaEditor) on Twitter.
 
