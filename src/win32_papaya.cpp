@@ -72,7 +72,7 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
-    const int32 FileNameSize = 400; // TODO: What's a good value for this?
+    const int32 FileNameSize = MAX_PATH;
     char* FileName = (char*)malloc(FileNameSize);
 
     OPENFILENAME DialogParams   = {};
@@ -100,7 +100,7 @@ char* Platform::OpenFileDialog()
 
 char* Platform::SaveFileDialog()
 {
-    const int32 FileNameSize = 400; // TODO: What's a good value for this?
+    const int32 FileNameSize = MAX_PATH;
     char* FileName = (char*)malloc(FileNameSize);
 
     OPENFILENAME DialogParams = {};
