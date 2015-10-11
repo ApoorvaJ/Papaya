@@ -617,7 +617,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.MenuHorizontalOffset,(float)Mem.Window.TitleBarHeight));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
-            ImGuiWindowFlags WindowFlags = 0;
+            ImGuiWindowFlags WindowFlags = 0; // TODO: Create a commonly-used set of Window flags, and use them across ImGui windows
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
             WindowFlags |= ImGuiWindowFlags_NoResize;
             WindowFlags |= ImGuiWindowFlags_NoMove;

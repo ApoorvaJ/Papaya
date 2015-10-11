@@ -706,6 +706,10 @@ void Initialize(PapayaMemory* Mem)
     CompileShader(Mem->Shaders[PapayaShader_ImGui], Vert, Frag, 3, 2,
         "Position", "UV", "Color",
         "ProjMtx", "Texture");
+
+    InitMesh(Mem->Meshes[PapayaMesh_Canvas],
+        Mem->Shaders[PapayaShader_ImGui],
+        Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
     #pragma endregion
 
@@ -1484,12 +1488,12 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
         // Grow our buffer according to what we need
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
+        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
         size_t needed_vtx_size = 6 * sizeof(ImDrawVert);
-        if (Mem->Meshes[PapayaMesh_ImGui].VboSize < needed_vtx_size)
+        if (Mem->Meshes[PapayaMesh_Canvas].VboSize < needed_vtx_size) // TODO: Improve this code. Buffer growing isn't necessary.
         {
-            Mem->Meshes[PapayaMesh_ImGui].VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
-            glBufferData(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboSize, NULL, GL_STREAM_DRAW);
+            Mem->Meshes[PapayaMesh_Canvas].VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
+            glBufferData(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboSize, NULL, GL_STREAM_DRAW);
         }
 
         // Copy and convert all vertices into a single contiguous buffer
@@ -1508,7 +1512,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         buffer_data += 6 * sizeof(ImDrawVert);
         glUnmapBuffer(GL_ARRAY_BUFFER);
         glBindBuffer(GL_ARRAY_BUFFER, 0); // TODO: Remove?
-        glBindVertexArray(Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
+        glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle);
 
         if (Mem->Misc.DrawCanvas)
         {
