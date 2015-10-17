@@ -96,7 +96,7 @@ internal void PushUndo(PapayaMemory* Mem)
     memcpy(Buf, &Data, sizeof(UndoData));
     glFinish();
     glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)); 
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData));
     glFinish();
 
     uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Top;
@@ -161,7 +161,7 @@ internal void PushUndo(PapayaMemory* Mem)
         Mem->Doc.Undo.Last = (UndoData*)Mem->Doc.Undo.Top;
         Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Top + BufSize;
     }
-    
+
     free(Buf);
 
     Mem->Doc.Undo.Current = Mem->Doc.Undo.Last;
@@ -544,12 +544,12 @@ void Initialize(PapayaMemory* Mem)
 "       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
 "   }                                                                           \n";
 
-    CompileShader(Mem->Shaders[PapayaShader_BrushCursor], Vert, Frag, 3, 4, 
+    CompileShader(Mem->Shaders[PapayaShader_BrushCursor], Vert, Frag, 3, 4,
         "Position", "UV", "Color",
         "ProjMtx", "BrushColor", "Hardness", "PixelDiameter");
 
-    InitMesh(Mem->Meshes[PapayaMesh_BrushCursor], 
-        Mem->Shaders[PapayaShader_BrushCursor], 
+    InitMesh(Mem->Meshes[PapayaMesh_BrushCursor],
+        Mem->Shaders[PapayaShader_BrushCursor],
         Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
     #pragma endregion
@@ -826,9 +826,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 }
                 else if (Mem->Picker.Open &&
                     Mem->Mouse.Pos.x > Mem->Picker.Pos.x &&                       // Color picker test
-                    Mem->Mouse.Pos.x < Mem->Picker.Pos.x + Mem->Picker.Size.x &&  // 
-                    Mem->Mouse.Pos.y > Mem->Picker.Pos.y &&                       // 
-                    Mem->Mouse.Pos.y < Mem->Picker.Pos.y + Mem->Picker.Size.y)    // 
+                    Mem->Mouse.Pos.x < Mem->Picker.Pos.x + Mem->Picker.Size.x &&  //
+                    Mem->Mouse.Pos.y > Mem->Picker.Pos.y &&                       //
+                    Mem->Mouse.Pos.y < Mem->Picker.Pos.y + Mem->Picker.Size.y)    //
                 {
                     Mem->Mouse.InWorkspace = false;
                 }
@@ -1067,7 +1067,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 if (ImGui::InputInt3("RGB", col))
                 {
                     Mem->Picker.NewColor = Color(col[0], col[1], col[2]); // TODO: Clamping
-                    Math::RGBtoHSV(Mem->Picker.NewColor.r, Mem->Picker.NewColor.g, Mem->Picker.NewColor.b, 
+                    Math::RGBtoHSV(Mem->Picker.NewColor.r, Mem->Picker.NewColor.g, Mem->Picker.NewColor.b,
                                    Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y);
                 }
             }
@@ -1286,9 +1286,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect); // Lastpos uniform
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f));
             float Opacity = Mem->Brush.Opacity / 100.0f; //(Math::Distance(CorrectedLastPos, CorrectedPos) > 0.0 ? Mem->Brush.Opacity / 100.0f : 0.0f);
-            glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r, 
-                                                                         Mem->Picker.CurrentColor.g, 
-                                                                         Mem->Picker.CurrentColor.b, 
+            glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
+                                                                         Mem->Picker.CurrentColor.g,
+                                                                         Mem->Picker.CurrentColor.b,
                                                                          Opacity);
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Mem->Brush.Hardness / 100.0f);
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
@@ -1341,8 +1341,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         {
             bool Refresh = false;
 
-            if (ImGui::GetIO().KeyShift && 
-                Mem->Doc.Undo.CurrentIndex < Mem->Doc.Undo.Count - 1 && 
+            if (ImGui::GetIO().KeyShift &&
+                Mem->Doc.Undo.CurrentIndex < Mem->Doc.Undo.Count - 1 &&
                 Mem->Doc.Undo.Current->Next != 0) // Redo
             {
                 Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Next;
@@ -1350,14 +1350,14 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 Refresh = true;
             }
             else if (!ImGui::GetIO().KeyShift &&
-                     Mem->Doc.Undo.CurrentIndex > 0 && 
+                     Mem->Doc.Undo.CurrentIndex > 0 &&
                      Mem->Doc.Undo.Current->Prev != 0) // Undo
             {
                 Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Prev;
                 Mem->Doc.Undo.CurrentIndex--;
                 Refresh = true;
             }
-                
+
             if (Refresh)
             {
                 UndoData Data = {};
@@ -1386,14 +1386,14 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             }
         }
 
-#if 1
+#if 0
         // =========================================================================================
         // Visualization: Undo buffer
 
         ImGui::Begin("Undo buffer");
 
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
-        
+
         // Buffer line
         float Width = ImGui::GetWindowSize().x;
         Vec2 Pos = ImGui::GetWindowPos();
@@ -1421,14 +1421,14 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         float TopX = P1.x + (float)TopOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
         DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
-        ImGui::Text(""); ImGui::Text(""); // Vertical spacers
+        ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
         ImGui::TextColored(Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
         ImGui::TextColored(Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
         //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
         ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
         ImGui::Text("Count   %lu", Mem->Doc.Undo.Count);
         ImGui::Text("Index   %lu", Mem->Doc.Undo.CurrentIndex);
-        
+
         ImGui::End();
         // =========================================================================================
 #endif
@@ -1619,7 +1619,7 @@ EndOfDoc:
                     Mem->Picker.CursorH = 1.0f - (Mem->Mouse.Pos.y - Pos.y) / 256.0f;
                     Mem->Picker.CursorH = Math::Clamp(Mem->Picker.CursorH, 0.0f, 1.0f);
                 }
-            
+
             }
             #pragma endregion
 

@@ -278,9 +278,12 @@ int main(int argc, char **argv)
         // TODO: Profiler timer setup
 
         ImGuiIO& io = ImGui::GetIO();
-        // TODO: Keyboard mappings
-
         io.RenderDrawListsFn = Papaya::RenderImGui;
+
+        // Keyboard mappings
+        {
+            io.KeyMap[ImGuiKey_Z] = XK_z;
+        }
     }
 
     Memory.IsRunning = true;
@@ -332,6 +335,18 @@ int main(int argc, char **argv)
                 case KeyPress:
                 case KeyRelease:
                 {
+                    if (Event.type == KeyRelease && XEventsQueued(XlibDisplay, QueuedAfterReading))
+                    {
+                        XEvent NextEvent;
+                        XPeekEvent(XlibDisplay, &NextEvent);
+                        if (NextEvent.type == KeyPress &&
+                            NextEvent.xkey.time == Event.xkey.time &&
+                            NextEvent.xkey.keycode == Event.xkey.keycode)
+                        {
+                            break; // Key wasn’t actually released
+                        }
+                    }
+
                     int32 keysym = XLookupKeysym(&Event.xkey, 0);
                     switch (keysym) // List of keysym's can be found in keysymdef.h or here [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
                     {
@@ -341,6 +356,9 @@ int main(int argc, char **argv)
                         case XK_Shift_R:   { ImGui::GetIO().KeyShift = (Event.type == KeyPress); } break;
                         case XK_Alt_L:
                         case XK_Alt_R:     { ImGui::GetIO().KeyAlt   = (Event.type == KeyPress); } break;
+
+                        case XK_z:
+                        { ImGui::GetIO().KeysDown[keysym] = (Event.type == KeyPress); } break;
                     }
                 } break;
             }
