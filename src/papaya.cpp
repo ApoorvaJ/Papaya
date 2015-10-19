@@ -1487,31 +1487,20 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
         glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
-        // Grow our buffer according to what we need
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
-        size_t needed_vtx_size = 6 * sizeof(ImDrawVert);
-        if (Mem->Meshes[PapayaMesh_Canvas].VboSize < needed_vtx_size) // TODO: Improve this code. Buffer growing isn't necessary.
-        {
-            Mem->Meshes[PapayaMesh_Canvas].VboSize = needed_vtx_size + 5000 * sizeof(ImDrawVert);  // Grow buffer
-            glBufferData(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboSize, NULL, GL_STREAM_DRAW);
-        }
-
-        // Copy and convert all vertices into a single contiguous buffer
-        Vec2 Position = Mem->Doc.CanvasPosition;
-        Vec2 Size = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
         ImDrawVert Verts[6];
-        Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-        Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-        Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-        Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-        Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-        Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+        {
+            Vec2 Position = Mem->Doc.CanvasPosition;
+            Vec2 Size = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
+            Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+            Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+            Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+            Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+            Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+            Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
 
-        unsigned char* buffer_data = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-        memcpy(buffer_data, Verts, 6 * sizeof(ImDrawVert)); //TODO: Profile this.
-        buffer_data += 6 * sizeof(ImDrawVert);
-        glUnmapBuffer(GL_ARRAY_BUFFER);
-        glBindBuffer(GL_ARRAY_BUFFER, 0); // TODO: Remove?
         glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle);
 
         if (Mem->Misc.DrawCanvas)
@@ -1555,27 +1544,26 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness / 100.0f); // Hardness
         glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
 
+        ImDrawVert Verts[6];
+        {
+            float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
+            Vec2 Size = Vec2(ScaledDiameter,ScaledDiameter);
+            Vec2 Position = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
+            Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+            Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+            Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+            Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+            Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+            Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+        }
         glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
-
-        ImDrawVert* buffer_data = (ImDrawVert*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-        float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
-        Vec2 Size = Vec2(ScaledDiameter,ScaledDiameter);
-        Vec2 Position = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
-        buffer_data[0].pos = Vec2(Position.x, Position.y);
-        buffer_data[1].pos = Vec2(Size.x + Position.x, Position.y);
-        buffer_data[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
-        buffer_data[3].pos = Vec2(Position.x, Position.y);
-        buffer_data[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);
-        buffer_data[5].pos = Vec2(Position.x, Size.y + Position.y);
-        glUnmapBuffer(GL_ARRAY_BUFFER);
-
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
         glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
 
         /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
                   3 + (int)Mem->Window.MaximizeOffset,
                   (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
                   (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
-
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
