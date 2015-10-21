@@ -171,7 +171,7 @@ internal void PushUndo(PapayaMemory* Mem)
 
 internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 {
-    #pragma region Load image
+    // Load image
     {
         uint8* Texture = stbi_load(Path, &Mem->Doc.Width, &Mem->Doc.Height, &Mem->Doc.ComponentsPerPixel, 4);
 
@@ -191,9 +191,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
                                                (Mem->Window.Height - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
         free(Texture);
 }
-    #pragma endregion
 
-    #pragma region Set up the frame buffer
+    // Set up the frame buffer
     {
         // Create a framebuffer object and bind it
         glGenFramebuffers(1, &Mem->Misc.FrameBufferObject);
@@ -215,9 +214,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-    #pragma endregion
 
-    #pragma region Set up meshes for rendering to texture
+    // Set up meshes for rendering to texture
     {
         Vec2 Size = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height);
 
@@ -229,9 +227,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
             Mem->Shaders[PapayaShader_ImGui],
             Vec2(0, 0), Size, GL_STATIC_DRAW);
     }
-    #pragma endregion
 
-    #pragma region Projection matrix
+    // Projection matrix
     {
         float w = (float)Mem->Doc.Width;
         float h = (float)Mem->Doc.Height;
@@ -244,9 +241,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         };
         memcpy(Mem->Doc.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
     }
-    #pragma endregion
 
-    #pragma region Init undo buffer
+    // Init undo buffer
     {
         uint64 MaxSize = 1024 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
         uint64 UndoRecordSize = sizeof(UndoData) + 4 * Mem->Doc.Width * Mem->Doc.Height;
@@ -258,7 +254,6 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
         PushUndo(Mem);
     }
-    #pragma endregion
 
     return true;
 }
@@ -358,7 +353,7 @@ internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Fr
 
 void Initialize(PapayaMemory* Mem)
 {
-    #pragma region Init values
+    // Init values
     {
         Mem->Brush.Diameter = 50;
         Mem->Brush.MaxDiameter = 9999;
@@ -387,9 +382,8 @@ void Initialize(PapayaMemory* Mem)
         };
         memcpy(Mem->Window.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
     }
-    #pragma endregion
 
-    #pragma region Brush shader
+    // Brush shader
     {
     const char* Vert =
 "   #version 330                                        \n"
@@ -496,9 +490,8 @@ void Initialize(PapayaMemory* Mem)
         "ProjMtx", "Texture", "Pos", "LastPos", "Radius", "BrushColor", "Hardness", "InvAspect");
 
     }
-    #pragma endregion
 
-    #pragma region Brush cursor shader
+    // Brush cursor shader
     {
     const char* Vert =
 "   #version 330                                        \n"
@@ -552,9 +545,8 @@ void Initialize(PapayaMemory* Mem)
         Mem->Shaders[PapayaShader_BrushCursor],
         Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
-    #pragma endregion
 
-    #pragma region Picker saturation-value shader
+    // Picker saturation-value shader
     {
     const char* Vert =
 "   #version 330                                        \n"
@@ -614,9 +606,8 @@ void Initialize(PapayaMemory* Mem)
         Mem->Shaders[PapayaShader_PickerSVBox],
         Mem->Picker.Pos + Mem->Picker.SVBoxPos, Mem->Picker.SVBoxSize, GL_STATIC_DRAW);
     }
-    #pragma endregion
 
-    #pragma region Picker hue shader
+    // Picker hue shader
     {
     const char* Vert =
 "   #version 330                                        \n"
@@ -669,9 +660,8 @@ void Initialize(PapayaMemory* Mem)
         Mem->Shaders[PapayaShader_PickerHStrip],
         Mem->Picker.Pos + Mem->Picker.HueStripPos, Mem->Picker.HueStripSize, GL_STATIC_DRAW);
     }
-    #pragma endregion
 
-    #pragma region ImGui default shader
+    // ImGui default shader
     {
     const char* Vert =
 "   #version 330                                        \n"
@@ -711,9 +701,8 @@ void Initialize(PapayaMemory* Mem)
         Mem->Shaders[PapayaShader_ImGui],
         Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
-    #pragma endregion
 
-    #pragma region Setup for ImGui
+    // Setup for ImGui
     {
         glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle);
         glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
@@ -754,9 +743,8 @@ void Initialize(PapayaMemory* Mem)
         io.Fonts->ClearInputData();
         io.Fonts->ClearTexData();
     }
-    #pragma endregion
 
-    #pragma region Load interface textures and colors
+    // Load interface textures and colors
     {
         // Texture IDs
         Mem->Textures[PapayaTex_TitleBarButtons] = LoadAndBindImage("../../img/win32_titlebar_buttons.png");
@@ -775,15 +763,13 @@ void Initialize(PapayaMemory* Mem)
         Mem->Colors[PapayaCol_ButtonHover]   = Color(64,64,64);
         Mem->Colors[PapayaCol_ButtonActive]  = Color(0,122,204);
     }
-    #pragma endregion
 
-    #pragma region ImGui Style Settings
+    // ImGui Style Settings
     {
         ImGuiStyle& Style = ImGui::GetStyle();
         Style.WindowFillAlphaDefault = 1.0f;
         // TODO: Move repeated stuff here by setting global style
     }
-    #pragma endregion
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     OpenDocument(PAPAYA_DEFAULT_IMAGE, Mem);
@@ -797,9 +783,9 @@ void Shutdown(PapayaMemory* Mem)
 
 void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 {
-    #pragma region Initialize frame
+    // Initialize frame
     {
-        #pragma region Current mouse info
+        // Current mouse info
         {
             Mem->Mouse.Pos = ImGui::GetMousePos();
             Vec2 MousePixelPos = Vec2(Math::Floor((Mem->Mouse.Pos.x - Mem->Doc.CanvasPosition.x) / Mem->Doc.CanvasZoom),
@@ -834,9 +820,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 }
             }
         }
-        #pragma endregion
 
-        #pragma region Clear screen buffer
+        // Clear screen buffer
         {
             glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
             glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Mem->Colors[PapayaCol_Clear]);
@@ -848,15 +833,13 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             glClearBufferfv(GL_COLOR, 0, (float*)&Mem->Colors[PapayaCol_Workspace]);
             glDisable(GL_SCISSOR_TEST);
         }
-        #pragma endregion
 
         // Set projection matrix
         Mem->Window.ProjMtx[0][0] =  2.0f / ImGui::GetIO().DisplaySize.x;
         Mem->Window.ProjMtx[1][1] = -2.0f / ImGui::GetIO().DisplaySize.y;
     }
-    #pragma endregion
 
-    #pragma region Title Bar Menu
+    // Title Bar Menu
     {
         ImGui::SetNextWindowSize(ImVec2(Mem->Window.Width - Mem->Window.MenuHorizontalOffset - Mem->Window.TitleBarButtonsWidth - 3.0f,
                                         Mem->Window.TitleBarHeight - 10.0f));
@@ -889,7 +872,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Clear]);
             if (ImGui::BeginMenu("FILE"))
             {
-                #pragma region File Menu
+                // File Menu
                 {
                     if (ImGui::MenuItem("Open"))
                     {
@@ -933,7 +916,6 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                     ImGui::Separator();
                     if (ImGui::MenuItem("Quit", "Alt+F4")) { Mem->IsRunning = false; }
                 }
-                #pragma endregion
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -944,9 +926,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         ImGui::PopStyleColor(4);
         ImGui::PopStyleVar(5);
     }
-    #pragma endregion
 
-    #pragma region Left toolbar
+    // Left toolbar
     {
         ImGui::SetNextWindowSize(ImVec2(36,650));
         ImGui::SetNextWindowPos(ImVec2(1.0f, 55.0f));
@@ -1002,9 +983,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         ImGui::PopStyleVar(5);
         ImGui::PopStyleColor(4);
     }
-    #pragma endregion
 
-    #pragma region Color Picker
+    // Color Picker
     {
         if (Mem->Picker.Open)
         {
@@ -1076,11 +1056,10 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             ImGui::PopStyleColor(4);
         }
     }
-    #pragma endregion
 
     if (!Mem->Doc.TextureID) { goto EndOfDoc; }
 
-    #pragma region Tool Param Bar
+    // Tool Param Bar
     {
         ImGui::SetNextWindowSize(ImVec2((float)Mem->Window.Width - 37, 30));
         ImGui::SetNextWindowPos(ImVec2(34, 30));
@@ -1123,9 +1102,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(5);
     }
-    #pragma endregion
 
-    #pragma region Brush tool
+    // Brush tool
     {
 /*
         if (ImGui::IsKeyPressed(VK_UP, false))
@@ -1144,7 +1122,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         }
 */
 
-        #pragma region Right mouse dragging
+        // Right mouse dragging
         {
             if (Mem->Mouse.Pressed[1])
             {
@@ -1179,7 +1157,6 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 Platform::SetCursorVisibility(true);
             }
         }
-        #pragma endregion
 
         if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
         {
@@ -1191,7 +1168,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         }
         else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
         {
-            #pragma region Additive render-to-texture
+            // Additive render-to-texture
             {
                 glDisable(GL_SCISSOR_TEST);
                 glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
@@ -1225,7 +1202,6 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
                 glDisable(GL_BLEND);
             }
-            #pragma endregion
 
             PushUndo(Mem);
 
@@ -1333,9 +1309,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         // =========================================================================================
 #endif
 }
-    #pragma endregion
 
-    #pragma region Undo/Redo
+    // Undo/Redo
     {
         if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Z))) // Pop undo op
         {
@@ -1433,9 +1408,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         // =========================================================================================
 #endif
     }
-    #pragma endregion
 
-    #pragma region Canvas zooming and panning
+    // Canvas zooming and panning
     {
         // Panning
         Mem->Doc.CanvasPosition += ImGui::GetMouseDragDelta(2);
@@ -1465,9 +1439,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             }
         }
     }
-    #pragma endregion
 
-    #pragma region Draw canvas
+    // Draw canvas
     {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
         GLint last_program, last_texture;
@@ -1523,9 +1496,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glDisable(GL_BLEND);
         glBindTexture(GL_TEXTURE_2D, last_texture);
     }
-    #pragma endregion
 
-    #pragma region Draw brush cursor
+    // Draw brush cursor
     {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
         GLint last_program, last_texture;
@@ -1575,17 +1547,16 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         glDisable(GL_BLEND);
         glBindTexture(GL_TEXTURE_2D, last_texture);
     }
-    #pragma endregion
 
 EndOfDoc:
 
     ImGui::Render(Mem);
 
-    #pragma region Color Picker Panel
+    // Color Picker Panel
     {
         if (Mem->Picker.Open)
         {
-            #pragma region Update hue picker
+            // Update hue picker
             {
                 Vec2 Pos = Mem->Picker.Pos + Mem->Picker.HueStripPos;
 
@@ -1609,9 +1580,8 @@ EndOfDoc:
                 }
 
             }
-            #pragma endregion
 
-            #pragma region Update saturation-value picker
+            // Update saturation-value picker
             {
                 Vec2 Pos = Mem->Picker.Pos + Mem->Picker.SVBoxPos;
 
@@ -1637,9 +1607,8 @@ EndOfDoc:
 
                 }
             }
-            #pragma endregion
 
-            #pragma region Update new color
+            // Update new color
             {
                 float r, g, b;
                 Math::HSVtoRGB(Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y, r, g, b);
@@ -1647,9 +1616,8 @@ EndOfDoc:
                                                Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
                                                Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
             }
-            #pragma endregion
 
-            #pragma region Draw hue picker
+            // Draw hue picker
             {
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
@@ -1676,9 +1644,8 @@ EndOfDoc:
                 glDisable(GL_BLEND);
                 glBindTexture(GL_TEXTURE_2D, last_texture);
             }
-            #pragma endregion
 
-            #pragma region Draw saturation-value picker
+            // Draw saturation-value picker
             {
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
@@ -1706,12 +1673,10 @@ EndOfDoc:
                 glDisable(GL_BLEND);
                 glBindTexture(GL_TEXTURE_2D, last_texture);
             }
-            #pragma endregion
         }
     }
-    #pragma endregion
 
-    #pragma region Last mouse info
+    // Last mouse info
     {
         Mem->Mouse.LastPos = ImGui::GetMousePos();
         Mem->Mouse.LastUV = Mem->Mouse.UV;
@@ -1719,7 +1684,6 @@ EndOfDoc:
         Mem->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
         Mem->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
     }
-    #pragma endregion
 }
 
 void RenderImGui(ImDrawData* DrawData, void* MemPtr)
