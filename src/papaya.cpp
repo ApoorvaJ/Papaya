@@ -383,24 +383,29 @@ void Initialize(PapayaMemory* Mem)
         memcpy(Mem->Window.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
     }
 
+    const char* Vert;
+    // Vertex shader
+    {
+        Vert = 
+        "   #version 330                                        \n"
+        "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
+        "                                                       \n"
+        "   in vec2 Position;                                   \n" // Attributes[0]
+        "   in vec2 UV;                                         \n" // Attributes[1]
+        "   in vec4 Color;                                      \n" // Attributes[2]
+        "                                                       \n"
+        "   out vec2 Frag_UV;                                   \n"
+        "   out vec4 Frag_Color;                                \n"
+        "   void main()                                         \n"
+        "   {                                                   \n"
+        "       Frag_UV = UV;                                   \n"
+        "       Frag_Color = Color;                             \n"
+        "       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
+        "   }                                                   \n";
+    }
+
     // Brush shader
     {
-    const char* Vert =
-"   #version 330                                        \n"
-"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
-"                                                       \n"
-"   in vec2 Position;                                   \n" // Attributes[0]
-"   in vec2 UV;                                         \n" // Attributes[1]
-"   in vec4 Color;                                      \n" // Attributes[2]
-"                                                       \n"
-"   out vec2 Frag_UV;                                   \n"
-"                                                       \n"
-"   void main()                                         \n"
-"   {                                                   \n"
-"       Frag_UV = UV;                                   \n"
-"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
-"   }                                                   \n";
-
     const char* Frag =
 "   #version 330                                                    \n"
 "                                                                   \n"
@@ -493,22 +498,6 @@ void Initialize(PapayaMemory* Mem)
 
     // Brush cursor shader
     {
-    const char* Vert =
-"   #version 330                                        \n"
-"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
-"                                                       \n"
-"   in vec2 Position;                                   \n" // Attributes[0]
-"   in vec2 UV;                                         \n" // Attributes[1]
-"   in vec4 Color;                                      \n" // Attributes[2]
-"                                                       \n"
-"   out vec2 Frag_UV;                                   \n"
-"                                                       \n"
-"   void main()                                         \n"
-"   {                                                   \n"
-"       Frag_UV = UV;                                   \n"
-"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
-"   }                                                   \n";
-
     const char* Frag =
 "   #version 330                                                                \n"
 "                                                                               \n"
@@ -548,22 +537,6 @@ void Initialize(PapayaMemory* Mem)
 
     // Picker saturation-value shader
     {
-    const char* Vert =
-"   #version 330                                        \n"
-"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
-"                                                       \n"
-"   in  vec2 Position;                                  \n" // Attributes[0]
-"   in  vec2 UV;                                        \n" // Attributes[1]
-"   in vec4 Color;                                      \n" // Attributes[2]
-"                                                       \n"
-"   out vec2 Frag_UV;                                   \n"
-"                                                       \n"
-"   void main()                                         \n"
-"   {                                                   \n"
-"       Frag_UV = UV;                                   \n"
-"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
-"   }                                                   \n";
-
     const char* Frag =
 "   #version 330                                                            \n"
 "                                                                           \n"
@@ -609,22 +582,6 @@ void Initialize(PapayaMemory* Mem)
 
     // Picker hue shader
     {
-    const char* Vert =
-"   #version 330                                        \n"
-"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
-"                                                       \n"
-"   in  vec2 Position;                                  \n" // Attributes[0]
-"   in  vec2 UV;                                        \n" // Attributes[1]
-"   in  vec4 Color;                                     \n" // Attributes[2]
-"                                                       \n"
-"   out vec2 Frag_UV;                                   \n"
-"                                                       \n"
-"   void main()                                         \n"
-"   {                                                   \n"
-"       Frag_UV = UV;                                   \n"
-"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
-"   }                                                   \n";
-
     const char* Frag =
 "   #version 330                                                    \n"
 "                                                                   \n"
@@ -663,23 +620,6 @@ void Initialize(PapayaMemory* Mem)
 
     // ImGui default shader
     {
-    const char* Vert =
-"   #version 330                                        \n"
-"   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
-"                                                       \n"
-"   in vec2 Position;                                   \n" // Attributes[0]
-"   in vec2 UV;                                         \n" // Attributes[1]
-"   in vec4 Color;                                      \n" // Attributes[2]
-"                                                       \n"
-"   out vec2 Frag_UV;                                   \n"
-"   out vec4 Frag_Color;                                \n"
-"   void main()                                         \n"
-"   {                                                   \n"
-"       Frag_UV = UV;                                   \n"
-"       Frag_Color = Color;                             \n"
-"       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
-"   }                                                   \n";
-
     const char* Frag =
 "   #version 330                                                \n"
 "   uniform sampler2D Texture;                                  \n" // Uniforms[1]
