@@ -9,11 +9,11 @@ namespace Papaya
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {
     uint32 Tex;
-    glGenTextures(1, &Tex);
-    glBindTexture(GL_TEXTURE_2D, Tex);
+    glGenTextures  (1, &Tex);
+    glBindTexture  (GL_TEXTURE_2D, Tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     return Tex;
 }
 
@@ -25,11 +25,11 @@ internal uint32 LoadAndBindImage(char* Path)
 
     // Create texture
     GLuint Id_GLuint;
-    glGenTextures(1, &Id_GLuint);
-    glBindTexture(GL_TEXTURE_2D, Id_GLuint);
+    glGenTextures  (1, &Id_GLuint);
+    glBindTexture  (GL_TEXTURE_2D, Id_GLuint);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+    glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
 
     // Store our identifier
     free(Image);
@@ -38,8 +38,8 @@ internal uint32 LoadAndBindImage(char* Path)
 
 internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, GLenum Usage)
 {
-    glGenBuffers(1, &Mesh.VboHandle);
-    glBindBuffer(GL_ARRAY_BUFFER, Mesh.VboHandle);
+    glGenBuffers     (1, &Mesh.VboHandle);
+    glBindBuffer     (GL_ARRAY_BUFFER, Mesh.VboHandle);
     glGenVertexArrays(1, &Mesh.VaoHandle);
     glBindVertexArray(Mesh.VaoHandle);
 
@@ -60,6 +60,7 @@ internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, G
     Verts[3].pos = Vec2(Pos.x, Pos.y);                   Verts[3].uv = Vec2(0.0f, 1.0f); Verts[3].col = 0xffffffff;
     Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
     Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);          Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage);
 }
 
@@ -68,7 +69,7 @@ internal void PushUndo(PapayaMemory* Mem)
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
     {
         Mem->Doc.Undo.Base = (UndoData*)Mem->Doc.Undo.Start;
-        Mem->Doc.Undo.Top = Mem->Doc.Undo.Start;
+        Mem->Doc.Undo.Top  = Mem->Doc.Undo.Start;
     }
     else if (Mem->Doc.Undo.Current->Next != 0) // Not empty and not at end. Reposition for overwrite.
     {
@@ -86,13 +87,13 @@ internal void PushUndo(PapayaMemory* Mem)
         Mem->Doc.Undo.Count = Mem->Doc.Undo.CurrentIndex + 1;
     }
 
-    UndoData Data = {};
-    Data.OpCode = PapayaUndoOp_Brush;
-    Data.Prev = Mem->Doc.Undo.Last;
-    Data.Size = 4 * Mem->Doc.Width * Mem->Doc.Height;
-
+    UndoData Data  = {};
+    Data.OpCode    = PapayaUndoOp_Brush;
+    Data.Prev      = Mem->Doc.Undo.Last;
+    Data.Size      = 4 * Mem->Doc.Width * Mem->Doc.Height;
     uint64 BufSize = sizeof(UndoData) + Data.Size;
-    void* Buf = malloc((size_t)BufSize);
+    void* Buf      = malloc((size_t)BufSize);
+
     memcpy(Buf, &Data, sizeof(UndoData));
     glFinish();
     glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
@@ -124,7 +125,7 @@ internal void PushUndo(PapayaMemory* Mem)
     {
         // Reposition the base pointer
         while (((int8*)Mem->Doc.Undo.Base >= (int8*)Mem->Doc.Undo.Top ||
-               (int8*)Mem->Doc.Undo.Base < (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight) &&
+               (int8*)Mem->Doc.Undo.Base  <  (int8*)Mem->Doc.Undo.Start + BufSize - BytesToRight) &&
                Mem->Doc.Undo.Count > 0)
         {
             Mem->Doc.Undo.Base = Mem->Doc.Undo.Base->Next;
@@ -178,11 +179,11 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         if (!Texture) { return false; }
 
         // Create texture
-        glGenTextures(1, &Mem->Doc.TextureID);
-        glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
+        glGenTextures  (1, &Mem->Doc.TextureID);
+        glBindTexture  (GL_TEXTURE_2D, Mem->Doc.TextureID);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
+        glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
 
         Mem->Doc.InverseAspect = (float)Mem->Doc.Height / (float)Mem->Doc.Width;
         Mem->Doc.CanvasZoom = 0.8f * Math::Min((float)Mem->Window.Width/(float)Mem->Doc.Width, (float)Mem->Window.Height/(float)Mem->Doc.Height);
@@ -190,7 +191,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         Mem->Doc.CanvasPosition = Vec2((Mem->Window.Width  - (float)Mem->Doc.Width  * Mem->Doc.CanvasZoom)/2.0f,
                                                (Mem->Window.Height - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
         free(Texture);
-}
+    }
 
     // Set up the frame buffer
     {
@@ -244,9 +245,9 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     // Init undo buffer
     {
-        uint64 MaxSize = 1024 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
+        uint64 MaxSize        = 1024 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
         uint64 UndoRecordSize = sizeof(UndoData) + 4 * Mem->Doc.Width * Mem->Doc.Height;
-        Mem->Doc.Undo.Size = Math::Min(100 * UndoRecordSize, MaxSize);
+        Mem->Doc.Undo.Size    = Math::Min(100 * UndoRecordSize, MaxSize);
         if (Mem->Doc.Undo.Size < 2 * UndoRecordSize) { Mem->Doc.Undo.Size = 2 * UndoRecordSize; }
 
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
@@ -270,9 +271,9 @@ internal void CloseDocument(PapayaMemory* Mem)
     // Undo buffer
     {
         free(Mem->Doc.Undo.Start);
-        Mem->Doc.Undo.Start = Mem->Doc.Undo.Top = 0;
-        Mem->Doc.Undo.Base = Mem->Doc.Undo.Current = Mem->Doc.Undo.Last = 0;
-        Mem->Doc.Undo.Size = Mem->Doc.Undo.Count = 0;
+        Mem->Doc.Undo.Start = Mem->Doc.Undo.Top     = 0;
+        Mem->Doc.Undo.Base  = Mem->Doc.Undo.Current = Mem->Doc.Undo.Last = 0;
+        Mem->Doc.Undo.Size  = Mem->Doc.Undo.Count   = 0;
         Mem->Doc.Undo.CurrentIndex = -1;
     }
 
@@ -324,15 +325,17 @@ internal void CloseDocument(PapayaMemory* Mem)
 
 internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Frag, int32 AttribCount, int32 UniformCount, ...)
 {
-    Shader.Handle = glCreateProgram();
+    Shader.Handle     = glCreateProgram();
     uint32 VertHandle = glCreateShader(GL_VERTEX_SHADER);
     uint32 FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(VertHandle, 1, &Vert, 0);
-    glShaderSource(FragHandle, 1, &Frag, 0);
+    
+    glShaderSource (VertHandle, 1, &Vert, 0);
+    glShaderSource (FragHandle, 1, &Frag, 0);
     glCompileShader(VertHandle);
     glCompileShader(FragHandle);
-    glAttachShader(Shader.Handle, VertHandle);
-    glAttachShader(Shader.Handle, FragHandle);
+    glAttachShader (Shader.Handle, VertHandle);
+    glAttachShader (Shader.Handle, FragHandle);
+
     Util::PrintGlShaderCompilationStatus(VertHandle); // TODO: Print name of compiled shader
     Util::PrintGlShaderCompilationStatus(FragHandle);
     glLinkProgram(Shader.Handle); // TODO: Print linking errors
@@ -355,22 +358,22 @@ void Initialize(PapayaMemory* Mem)
 {
     // Init values
     {
-        Mem->Brush.Diameter = 50;
+        Mem->Brush.Diameter    = 50;
         Mem->Brush.MaxDiameter = 9999;
-        Mem->Brush.Hardness = 90.0f;
-        Mem->Brush.Opacity = 100.0f;
+        Mem->Brush.Hardness    = 90.0f;
+        Mem->Brush.Opacity     = 100.0f;
 
         Mem->Picker.CurrentColor = Color(220, 163, 89);
-        Mem->Picker.Open = false;
-        Mem->Picker.Pos = Vec2(34, 86);
-        Mem->Picker.Size = Vec2(292, 331);
-        Mem->Picker.HueStripPos = Vec2(259, 42);
+        Mem->Picker.Open         = false;
+        Mem->Picker.Pos          = Vec2(34, 86);
+        Mem->Picker.Size         = Vec2(292, 331);
+        Mem->Picker.HueStripPos  = Vec2(259, 42);
         Mem->Picker.HueStripSize = Vec2(30, 256);
-        Mem->Picker.SVBoxPos = Vec2(0, 42);
-        Mem->Picker.SVBoxSize = Vec2(256, 256);
-        Mem->Picker.CursorSV = Vec2(0.5f, 0.5f);
+        Mem->Picker.SVBoxPos     = Vec2(0, 42);
+        Mem->Picker.SVBoxSize    = Vec2(256, 256);
+        Mem->Picker.CursorSV     = Vec2(0.5f, 0.5f);
 
-        Mem->Misc.DrawCanvas = true;
+        Mem->Misc.DrawCanvas  = true;
         Mem->Misc.DrawOverlay = false;
 
         float OrthoMtx[4][4] =
@@ -647,9 +650,9 @@ void Initialize(PapayaMemory* Mem)
         glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle);
         glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
 
-        glGenVertexArrays(1, &Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
-        glBindVertexArray(Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
+        glGenVertexArrays        (1, &Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
+        glBindVertexArray        (Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
+        glBindBuffer             (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
         glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[0]);
         glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[1]);
         glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[2]);
@@ -670,11 +673,11 @@ void Initialize(PapayaMemory* Mem)
         //ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 15.0f);
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-        glGenTextures(1, &Mem->Textures[PapayaTex_Font]);
-        glBindTexture(GL_TEXTURE_2D, Mem->Textures[PapayaTex_Font]);
+        glGenTextures  (1, &Mem->Textures[PapayaTex_Font]);
+        glBindTexture  (GL_TEXTURE_2D, Mem->Textures[PapayaTex_Font]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
         // Store our identifier
         io.Fonts->TexID = (void *)(intptr_t)Mem->Textures[PapayaTex_Font];
@@ -688,8 +691,8 @@ void Initialize(PapayaMemory* Mem)
     {
         // Texture IDs
         Mem->Textures[PapayaTex_TitleBarButtons] = LoadAndBindImage("../../img/win32_titlebar_buttons.png");
-        Mem->Textures[PapayaTex_TitleBarIcon] = LoadAndBindImage("../../img/win32_titlebar_icon.png");
-        Mem->Textures[PapayaTex_InterfaceIcons] = LoadAndBindImage("../../img/interface_icons.png");
+        Mem->Textures[PapayaTex_TitleBarIcon]    = LoadAndBindImage("../../img/win32_titlebar_icon.png");
+        Mem->Textures[PapayaTex_InterfaceIcons]  = LoadAndBindImage("../../img/interface_icons.png");
 
         // Colors
 #if 1
@@ -794,16 +797,16 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
         WindowFlags |= ImGuiWindowFlags_MenuBar;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,4));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5,5));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,8));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding   , 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding     , ImVec2(0, 4));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing , ImVec2(5, 5));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing      , ImVec2(8, 8));
 
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, Mem->Colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, Mem->Colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,4));
-        ImGui::PushStyleColor(ImGuiCol_Header, Mem->Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg           , Mem->Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_MenuBarBg          , Mem->Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered      , Mem->Colors[PapayaCol_ButtonHover]);
+        ImGui::PushStyleVar  (ImGuiStyleVar_WindowPadding , ImVec2(8, 4));
+        ImGui::PushStyleColor(ImGuiCol_Header             , Mem->Colors[PapayaCol_Transparent]);
 
         bool bTrue = true;
         ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
@@ -841,7 +844,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                             glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
                             glFinish();
 
-                            int32 Result =  stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
+                            int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
                             if (!Result)
                             {
                                 // TODO: Log: Save failed
@@ -869,8 +872,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
     // Left toolbar
     {
-        ImGui::SetNextWindowSize(ImVec2(36,650));
-        ImGui::SetNextWindowPos(ImVec2(1.0f, 55.0f));
+        ImGui::SetNextWindowSize(ImVec2(36, 650));
+        ImGui::SetNextWindowPos (ImVec2( 1, 55));
 
         ImGuiWindowFlags WindowFlags = 0;
         WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -880,16 +883,16 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         WindowFlags |= ImGuiWindowFlags_NoCollapse;
         WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding   , 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding    , ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding     , ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing , ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing      , ImVec2(0, 0));
 
-        ImGui::PushStyleColor(ImGuiCol_Button, Mem->Colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Mem->Colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Mem->Colors[PapayaCol_ButtonActive]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_Button        , Mem->Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered , Mem->Colors[PapayaCol_ButtonHover]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , Mem->Colors[PapayaCol_ButtonActive]);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg      , Mem->Colors[PapayaCol_Transparent]);
 
         bool Show = true;
         ImGui::Begin("Left toolbar", &Show, WindowFlags);
@@ -930,7 +933,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         {
             // TODO: Clean styling code
             ImGui::SetNextWindowSize(ImVec2(Mem->Picker.Size.x, 35));
-            ImGui::SetNextWindowPos(Mem->Picker.Pos);
+            ImGui::SetNextWindowPos (Mem->Picker.Pos);
 
             ImGuiWindowFlags WindowFlags = 0;
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -940,14 +943,14 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             WindowFlags |= ImGuiWindowFlags_NoCollapse;
             WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
 
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2(0, 0));
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(0, 0));
 
-            ImGui::PushStyleColor(ImGuiCol_Button, Mem->Colors[PapayaCol_Button]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Mem->Colors[PapayaCol_ButtonHover]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, Mem->Colors[PapayaCol_ButtonActive]);
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_Button        , Mem->Colors[PapayaCol_Button]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered , Mem->Colors[PapayaCol_ButtonHover]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive  , Mem->Colors[PapayaCol_ButtonActive]);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg      , Mem->Colors[PapayaCol_Transparent]);
 
             ImGui::Begin("Color preview", 0, WindowFlags);
             {
@@ -970,12 +973,12 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             ImGui::PopStyleColor();
             ImGui::PopStyleVar(3);
 
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
+            ImGui::PushStyleVar  (ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
             ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Clear]);
 
             ImGui::SetNextWindowSize(Mem->Picker.Size - Vec2(0.0f, 34.0f));
-            ImGui::SetNextWindowPos(Mem->Picker.Pos + Vec2(0.0f,34.0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+            ImGui::SetNextWindowPos (Mem->Picker.Pos  + Vec2(0.0f, 34.0f));
+            ImGui::PushStyleVar     (ImGuiStyleVar_WindowRounding, 0);
             ImGui::Begin("Color picker", 0, WindowFlags);
             {
                 ImGui::BeginChild("HSV Gradients", Vec2(315, 258));
@@ -1012,15 +1015,15 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         WindowFlags |= ImGuiWindowFlags_NoCollapse;
         WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse; // TODO: Once the overall look has been established, make commonly used templates
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(30,0));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2( 0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(30, 0));
 
-        ImGui::PushStyleColor(ImGuiCol_Button, Mem->Colors[PapayaCol_Button]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Mem->Colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, Mem->Colors[PapayaCol_ButtonActive]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, Mem->Colors[PapayaCol_ButtonActive]);
+        ImGui::PushStyleColor(ImGuiCol_Button           , Mem->Colors[PapayaCol_Button]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered    , Mem->Colors[PapayaCol_ButtonHover]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive     , Mem->Colors[PapayaCol_ButtonActive]);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg         , Mem->Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive , Mem->Colors[PapayaCol_ButtonActive]);
 
         bool Show = true;
         ImGui::Begin("Tool param bar", &Show, WindowFlags);
@@ -1066,11 +1069,11 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         {
             if (Mem->Mouse.Pressed[1])
             {
-                Mem->Brush.RtDragStartPos = Mem->Mouse.Pos;
+                Mem->Brush.RtDragStartPos      = Mem->Mouse.Pos;
                 Mem->Brush.RtDragStartDiameter = Mem->Brush.Diameter;
                 Mem->Brush.RtDragStartHardness = Mem->Brush.Hardness;
-                Mem->Brush.RtDragStartOpacity = Mem->Brush.Opacity;
-                Mem->Brush.RtDragWithShift = ImGui::GetIO().KeyShift;
+                Mem->Brush.RtDragStartOpacity  = Mem->Brush.Opacity;
+                Mem->Brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
                 Platform::StartMouseCapture();
                 Platform::SetCursorVisibility(false);
             }
@@ -1111,7 +1114,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             // Additive render-to-texture
             {
                 glDisable(GL_SCISSOR_TEST);
-                glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
+                glBindFramebuffer   (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
 
                 glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
@@ -1128,9 +1131,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
                 glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glDrawArrays (GL_TRIANGLES, 0, 6);
                 glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glDrawArrays (GL_TRIANGLES, 0, 6);
 
                 uint32 Temp = Mem->Misc.FboRenderTexture;
                 Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
@@ -1145,7 +1148,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
             PushUndo(Mem);
 
-            Mem->Misc.DrawOverlay = false;
+            Mem->Misc.DrawOverlay   = false;
             Mem->Brush.BeingDragged = false;
         }
 
@@ -1168,7 +1171,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             glDisable(GL_SCISSOR_TEST);
 
             // Setup orthographic projection matrix
-            float width = (float)Mem->Doc.Width;
+            float width  = (float)Mem->Doc.Width;
             float height = (float)Mem->Doc.Height;
             glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle);
 
@@ -1203,9 +1206,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f));
             float Opacity = Mem->Brush.Opacity / 100.0f; //(Math::Distance(CorrectedLastPos, CorrectedPos) > 0.0 ? Mem->Brush.Opacity / 100.0f : 0.0f);
             glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
-                                                                         Mem->Picker.CurrentColor.g,
-                                                                         Mem->Picker.CurrentColor.b,
-                                                                         Opacity);
+                                                                      Mem->Picker.CurrentColor.g,
+                                                                      Mem->Picker.CurrentColor.b,
+                                                                      Opacity);
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Mem->Brush.Hardness / 100.0f);
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
 
@@ -1231,11 +1234,11 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         const int32 ArraySize = 256;
         local_persist float Opacities[ArraySize] = { 0 };
 
-        const float MaxScale = 90.0f;
-        float t = Mem->Brush.Hardness / 100.0f;
-        float Scale = 1.0f / (1.0f - t);
-        float Phase = (1.0f - Scale) * (float)Math::Pi;
-        float Period = (float)Math::Pi * Scale / (float)ArraySize;
+        float MaxScale = 90.0f;
+        float t        = Mem->Brush.Hardness / 100.0f;
+        float Scale    = 1.0f / (1.0f - t);
+        float Phase    = (1.0f - Scale) * (float)Math::Pi;
+        float Period   = (float)Math::Pi * Scale / (float)ArraySize;
 
         for (int32 i = 0; i < ArraySize; i++)
         {
@@ -1275,8 +1278,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
             if (Refresh)
             {
-                UndoData Data = {};
-                void* Image = 0;
+                UndoData Data  = {};
+                void* Image    = 0;
                 bool AllocUsed = false;
 
                 memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
@@ -1295,7 +1298,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
                 }
 
                 glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
 
                 if (AllocUsed) { free(Image); }
             }
@@ -1311,38 +1314,38 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
         // Buffer line
         float Width = ImGui::GetWindowSize().x;
-        Vec2 Pos = ImGui::GetWindowPos();
-        Vec2 P1 = Pos + Vec2(10, 40);
-        Vec2 P2 = Pos + Vec2(Width - 10, 40);
+        Vec2 Pos    = ImGui::GetWindowPos();
+        Vec2 P1     = Pos + Vec2(10, 40);
+        Vec2 P2     = Pos + Vec2(Width - 10, 40);
         DrawList->AddLine(P1, P2, 0xFFFFFFFF);
 
         // Base mark
         uint64 BaseOffset = (int8*)Mem->Doc.Undo.Base - (int8*)Mem->Doc.Undo.Start;
-        float BaseX = P1.x + (float)BaseOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        float BaseX       = P1.x + (float)BaseOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
         DrawList->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
 
         // Current mark
         uint64 CurrOffset = (int8*)Mem->Doc.Undo.Current - (int8*)Mem->Doc.Undo.Start;
-        float CurrX = P1.x + (float)CurrOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        float CurrX       = P1.x + (float)CurrOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
         DrawList->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
 
         // Last mark
         uint64 LastOffset = (int8*)Mem->Doc.Undo.Last - (int8*)Mem->Doc.Undo.Start;
-        float LastX = P1.x + (float)LastOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        float LastX       = P1.x + (float)LastOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
         //DrawList->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
 
         // Top mark
         uint64 TopOffset = (int8*)Mem->Doc.Undo.Top - (int8*)Mem->Doc.Undo.Start;
-        float TopX = P1.x + (float)TopOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+        float TopX       = P1.x + (float)TopOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
         DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
         ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
-        ImGui::TextColored(Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
-        ImGui::TextColored(Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
+        ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
+        ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
         //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
-        ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
-        ImGui::Text("Count   %lu", Mem->Doc.Undo.Count);
-        ImGui::Text("Index   %lu", Mem->Doc.Undo.CurrentIndex);
+        ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
+        ImGui::Text         ("Count   %lu", Mem->Doc.Undo.Count);
+        ImGui::Text         ("Index   %lu", Mem->Doc.Undo.CurrentIndex);
 
         ImGui::End();
         // =========================================================================================
@@ -1358,9 +1361,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         // Zooming
         if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
         {
-            float MinZoom = 0.01f, MaxZoom = 32.0f;
-            float ZoomSpeed = 0.2f * Mem->Doc.CanvasZoom;
-            float ScaleDelta = Math::Min(MaxZoom - Mem->Doc.CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
+            float MinZoom      = 0.01f, MaxZoom = 32.0f;
+            float ZoomSpeed    = 0.2f * Mem->Doc.CanvasZoom;
+            float ScaleDelta   = Math::Min(MaxZoom - Mem->Doc.CanvasZoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
             Vec2 OldCanvasZoom = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height) * Mem->Doc.CanvasZoom;
 
             Mem->Doc.CanvasZoom += ScaleDelta;
@@ -1374,7 +1377,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             }
             else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
             {
-                Vec2 WindowSize = Vec2((float)Mem->Window.Width, (float)Mem->Window.Height);
+                Vec2 WindowSize         = Vec2((float)Mem->Window.Width, (float)Mem->Window.Height);
                 Mem->Doc.CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
             }
         }
@@ -1384,26 +1387,26 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
     {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
         GLint last_program, last_texture;
-        glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-        glEnable(GL_BLEND);
+        glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+        glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
+        glEnable       (GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_SCISSOR_TEST);
+        glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable      (GL_CULL_FACE);
+        glDisable      (GL_DEPTH_TEST);
+        glEnable       (GL_SCISSOR_TEST);
         glActiveTexture(GL_TEXTURE0);
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_NEAREST);// : GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_NEAREST);// : GL_LINEAR);
 
-        glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
+        glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle);
         glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-        glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+        glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
         ImDrawVert Verts[6];
         {
             Vec2 Position = Mem->Doc.CanvasPosition;
-            Vec2 Size = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
+            Vec2 Size     = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
             Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
             Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
             Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
@@ -1411,7 +1414,7 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
+        glBindBuffer   (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
 
         glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle);
@@ -1423,17 +1426,17 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
         }
         if (Mem->Misc.DrawOverlay)
         {
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
+            glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawArrays   (GL_TRIANGLES, 0, 6);
         }
 
         // Restore modified state
         glBindVertexArray(0);
-        glUseProgram(last_program);
-        glDisable(GL_SCISSOR_TEST);
-        glDisable(GL_BLEND);
+        glUseProgram (last_program);
+        glDisable    (GL_SCISSOR_TEST);
+        glDisable    (GL_BLEND);
         glBindTexture(GL_TEXTURE_2D, last_texture);
     }
 
@@ -1441,26 +1444,26 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
     {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
         GLint last_program, last_texture;
-        glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-        glEnable(GL_BLEND);
+        glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+        glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
+        glEnable       (GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_SCISSOR_TEST);
+        glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable      (GL_CULL_FACE);
+        glDisable      (GL_DEPTH_TEST);
+        glEnable       (GL_SCISSOR_TEST);
 
-        glUseProgram(Mem->Shaders[PapayaShader_BrushCursor].Handle);
+        glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle);
         glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-        glUniform4f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity/100.0f : 0.0f); // Brush color
-        glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness / 100.0f); // Hardness
-        glUniform1f(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
+        glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity/100.0f : 0.0f); // Brush color
+        glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness / 100.0f); // Hardness
+        glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
 
         ImDrawVert Verts[6];
         {
             float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
-            Vec2 Size = Vec2(ScaledDiameter,ScaledDiameter);
-            Vec2 Position = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
+            Vec2 Size            = Vec2(ScaledDiameter,ScaledDiameter);
+            Vec2 Position        = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
             Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
             Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
             Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
@@ -1468,8 +1471,8 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
+        glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
+        glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
         glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
 
         /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
@@ -1482,9 +1485,9 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
 
         // Restore modified state
         glBindVertexArray(0);
-        glUseProgram(last_program);
-        glDisable(GL_SCISSOR_TEST);
-        glDisable(GL_BLEND);
+        glUseProgram (last_program);
+        glDisable    (GL_SCISSOR_TEST);
+        glDisable    (GL_BLEND);
         glBindTexture(GL_TEXTURE_2D, last_texture);
     }
 
@@ -1552,7 +1555,7 @@ EndOfDoc:
             {
                 float r, g, b;
                 Math::HSVtoRGB(Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y, r, g, b);
-                Mem->Picker.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
+                Mem->Picker.NewColor = Color(Math::RoundToInt(r * 255.0f),    // Note: Rounding is essential.
                                                Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
                                                Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
             }
@@ -1561,27 +1564,27 @@ EndOfDoc:
             {
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
-                glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-                glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-                glEnable(GL_BLEND);
+                glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+                glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
+                glEnable       (GL_BLEND);
                 glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glDisable(GL_CULL_FACE);
-                glDisable(GL_DEPTH_TEST);
+                glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glDisable      (GL_CULL_FACE);
+                glDisable      (GL_DEPTH_TEST);
 
-                glUseProgram(Mem->Shaders[PapayaShader_PickerHStrip].Handle);
+                glUseProgram      (Mem->Shaders[PapayaShader_PickerHStrip].Handle);
                 glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-                glUniform1f(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH); // Cursor
+                glUniform1f       (Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH); // Cursor
 
-                glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
+                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_PickerHStrip].VaoHandle);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
 
                 // Restore modified state
                 glBindVertexArray(0);
-                glUseProgram(last_program);
-                glDisable(GL_BLEND);
+                glUseProgram (last_program);
+                glDisable    (GL_BLEND);
                 glBindTexture(GL_TEXTURE_2D, last_texture);
             }
 
@@ -1589,28 +1592,28 @@ EndOfDoc:
             {
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
-                glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-                glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-                glEnable(GL_BLEND);
+                glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+                glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
+                glEnable       (GL_BLEND);
                 glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glDisable(GL_CULL_FACE);
-                glDisable(GL_DEPTH_TEST);
+                glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glDisable      (GL_CULL_FACE);
+                glDisable      (GL_DEPTH_TEST);
 
-                glUseProgram(Mem->Shaders[PapayaShader_PickerSVBox].Handle);
+                glUseProgram      (Mem->Shaders[PapayaShader_PickerSVBox].Handle);
                 glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-                glUniform1f(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH); // Hue
-                glUniform2f(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y); //Cursor                                 // Current
+                glUniform1f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH); // Hue
+                glUniform2f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y); //Cursor                                 // Current
 
-                glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
+                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_PickerSVBox].VaoHandle);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
 
                 // Restore modified state
                 glBindVertexArray(0);
-                glUseProgram(last_program);
-                glDisable(GL_BLEND);
+                glUseProgram (last_program);
+                glDisable    (GL_BLEND);
                 glBindTexture(GL_TEXTURE_2D, last_texture);
             }
         }
@@ -1618,8 +1621,8 @@ EndOfDoc:
 
     // Last mouse info
     {
-        Mem->Mouse.LastPos = ImGui::GetMousePos();
-        Mem->Mouse.LastUV = Mem->Mouse.UV;
+        Mem->Mouse.LastPos    = ImGui::GetMousePos();
+        Mem->Mouse.LastUV     = Mem->Mouse.UV;
         Mem->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
         Mem->Mouse.WasDown[1] = ImGui::IsMouseDown(1);
         Mem->Mouse.WasDown[2] = ImGui::IsMouseDown(2);
@@ -1639,23 +1642,23 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-    glEnable(GL_BLEND);
+    glEnable       (GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_SCISSOR_TEST);
+    glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable      (GL_CULL_FACE);
+    glDisable      (GL_DEPTH_TEST);
+    glEnable       (GL_SCISSOR_TEST);
     glActiveTexture(GL_TEXTURE0);
 
     // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io     = ImGui::GetIO();
     float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
     DrawData->ScaleClipRects(io.DisplayFramebufferScale);
 
-    glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
-    glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0);
+    glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle);
+    glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0);
     glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]);
-    glBindVertexArray(Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
+    glBindVertexArray (Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
 
     for (int n = 0; n < DrawData->CmdListsCount; n++)
     {
@@ -1685,12 +1688,12 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     }
 
     // Restore modified GL state
-    glUseProgram(last_program);
-    glBindTexture(GL_TEXTURE_2D, last_texture);
-    glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+    glUseProgram     (last_program);
+    glBindTexture    (GL_TEXTURE_2D, last_texture);
+    glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer);
+    glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
     glBindVertexArray(last_vertex_array);
-    glDisable(GL_SCISSOR_TEST);
+    glDisable        (GL_SCISSOR_TEST);
 }
 
 }
