@@ -159,7 +159,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
     switch (Message)
     {
-        #pragma region Mouse
+        // Mouse
 
         case WM_LBUTTONDOWN:
         {
@@ -222,9 +222,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             return true;
         } break;
 
-        #pragma endregion
 
-        #pragma region Keyboard
+        // Keyboard
 
         case WM_KEYDOWN:
         {
@@ -248,9 +247,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             return true;
         } break;
 
-        #pragma endregion
 
-        #pragma region Window handling
+        // Window handling
 
         case WM_DESTROY:
         {
@@ -309,7 +307,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             }
         } break;
 
-        #pragma region WM_NCHITTEST
+        // WM_NCHITTEST
 
         case WM_NCHITTEST:
         {
@@ -378,9 +376,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             return HTCLIENT;
         } break;
 
-        #pragma endregion
 
-        #pragma endregion
 
         default:
         {
@@ -399,7 +395,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     Mem.IsRunning = true;
 
     HWND Window;
-    #pragma region Create Window
+    // Create Window
     {
         WNDCLASSA WindowClass = {};
         WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
@@ -451,15 +447,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Mem.Window.Width, Mem.Window.Height, NULL);
         //SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
     }
-    #pragma endregion
 
-    #pragma region Initialize OpenGL
+    // Initialize OpenGL
     {
         DeviceContext = GetDC(Window);
         PIXELFORMATDESCRIPTOR PixelFormatDescriptor = {};
         int32 PixelFormat;
 
-        #pragma region Setup pixel format
+        // Setup pixel format
         {
             PixelFormatDescriptor.nSize = sizeof(PIXELFORMATDESCRIPTOR);
             PixelFormatDescriptor.nVersion = 1;
@@ -482,9 +477,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
                 exit(1);
             }
         }
-        #pragma endregion
 
-        #pragma region Create rendering context
+        // Create rendering context
         {
             HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
             wglMakeCurrent(DeviceContext, TempRenderingContext);
@@ -516,13 +510,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
             glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
         }
-        #pragma endregion
     }
-    #pragma endregion
 
     Papaya::Initialize(&Mem);
 
-    #pragma region Initialize ImGui
+    // Initialize ImGui
     {
         QueryPerformanceFrequency((LARGE_INTEGER *)&DebugMem.TicksPerSecond);
         QueryPerformanceCounter((LARGE_INTEGER *)&DebugMem.Time);
@@ -549,7 +541,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         io.RenderDrawListsFn = Papaya::RenderImGui;
         io.ImeWindowHandle = Window;
     }
-    #pragma endregion
 
     // Handle command line arguments (if present)
     if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Mem); }
@@ -565,7 +556,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     while (Mem.IsRunning)
     {
-        #pragma region Windows message handling
+        // Windows message handling
         {
             MSG Message;
             while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
@@ -579,12 +570,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
                 DispatchMessageA(&Message);
             }
         }
-        #pragma endregion
 
         BOOL IsMaximized = IsMaximized(Window);
         if (IsIconic(Window)) { continue; }
 
-        #pragma region Start new ImGui frame
+        // Start new ImGui frame
         {
             ImGuiIO& io = ImGui::GetIO();
 
@@ -610,9 +600,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             // Start the frame
             ImGui::NewFrame();
         }
-        #pragma endregion
 
-        #pragma region Title Bar Icon
+        // Title Bar Icon
         {
             ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.MenuHorizontalOffset,(float)Mem.Window.TitleBarHeight));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
@@ -641,9 +630,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PopStyleColor(1);
             ImGui::PopStyleVar(5);
         }
-        #pragma endregion
 
-        #pragma region Title Bar Buttons
+        // Title Bar Buttons
         {
             ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.TitleBarButtonsWidth,24.0f));
             ImGui::SetNextWindowPos(ImVec2((float)Mem.Window.Width - Mem.Window.TitleBarButtonsWidth, 0.0f));
@@ -711,7 +699,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PopStyleVar(5);
             ImGui::PopStyleColor(4);
         }
-        #pragma endregion
 
         Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();

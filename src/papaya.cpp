@@ -1555,9 +1555,9 @@ EndOfDoc:
             {
                 float r, g, b;
                 Math::HSVtoRGB(Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y, r, g, b);
-                Mem->Picker.NewColor = Color(Math::RoundToInt(r * 255.0f),    // Note: Rounding is essential.
-                                               Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
-                                               Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
+                Mem->Picker.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
+                                             Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
+                                             Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
             }
 
             // Draw hue picker
