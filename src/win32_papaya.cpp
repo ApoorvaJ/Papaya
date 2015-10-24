@@ -722,6 +722,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         ImGui::Text("%d, %d", (int32)Wintab.PosX, (int32)Wintab.PosY);
         ImGui::Text("%f", Wintab.Pressure);
         ImGui::End();
+        Mem.Tablet.Pressure = Wintab.Pressure;
 
         Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();

@@ -123,7 +123,7 @@ struct MouseInfo
 
 struct TabletInfo
 {
-    bool Active;
+    float Pressure;
 };
 
 struct ShaderInfo
