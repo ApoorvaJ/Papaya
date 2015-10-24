@@ -145,6 +145,8 @@
     <ClInclude Include="..\..\src\stb_rect_pack.h" />
     <ClInclude Include="..\..\src\stb_textedit.h" />
     <ClInclude Include="..\..\src\stb_truetype.h" />
+    <ClInclude Include="..\..\src\win32_tablet.h" />
+    <ClInclude Include="..\..\src\wintab.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

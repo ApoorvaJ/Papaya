@@ -121,6 +121,11 @@ struct MouseInfo
     bool InWorkspace;
 };
 
+struct TabletInfo
+{
+    bool Active;
+};
+
 struct ShaderInfo
 {
     uint32 Handle;
@@ -175,6 +180,7 @@ struct PapayaMemory
     WindowInfo Window;
     DocumentInfo Doc;
     MouseInfo Mouse;
+    TabletInfo Tablet;
 
     uint32 Textures[PapayaTex_COUNT];
     Color Colors[PapayaCol_COUNT];

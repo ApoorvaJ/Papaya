@@ -19,7 +19,7 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
-#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\h.png"
+#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
 #include "papaya.h"
 #include "papaya.cpp"
 
@@ -29,16 +29,16 @@ typedef double real64;
 #include <malloc.h>
 #include <commdlg.h>
 
+#include "win32_tablet.h"
 // =================================================================================================
 
 global_variable PapayaMemory Mem = {};
 global_variable PapayaDebugMemory DebugMem = {};
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
-global_variable int32 OpenGLVersion[2];
-
+global_variable int32 OpenGLVersion[2]; // TODO: Move this to SystemInfo
 global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
-
+global_variable WintabInfo Wintab = {};
 
 // =================================================================================================
 
@@ -376,7 +376,22 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             return HTCLIENT;
         } break;
 
+        case WT_PACKET:
+        {
+            PACKET Packet = {0};
+            if ((HCTX)LParam == Wintab.Context &&
+                Wintab.WTPacket(Wintab.Context, WParam, &Packet))
+            {
+                POINT Point = {0};
+                Point.x = Packet.pkX;
+                Point.y = Packet.pkY;
+                ScreenToClient(Window, &Point);
+                Wintab.PosX = Point.x;
+                Wintab.PosY = Point.y;
 
+                Wintab.Pressure = (float)Packet.pkNormalPressure / (float)Wintab.MaxPressure;
+            }
+        } break;
 
         default:
         {
@@ -511,6 +526,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
         }
     }
+
+    // Initialize tablet
+    Wintab_Load(&Wintab, Window);
 
     Papaya::Initialize(&Mem);
 
@@ -699,6 +717,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PopStyleVar(5);
             ImGui::PopStyleColor(4);
         }
+
+        ImGui::Begin("TABLET");
+        ImGui::Text("%d, %d", (int32)Wintab.PosX, (int32)Wintab.PosY);
+        ImGui::Text("%f", Wintab.Pressure);
+        ImGui::End();
 
         Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();
