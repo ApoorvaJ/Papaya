@@ -30,6 +30,7 @@ typedef double real64;
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
+#include "linux_tablet.h"
 
 #ifdef USE_GTK
 #include <gtk/gtk.h>
@@ -37,7 +38,7 @@ typedef double real64;
 
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
-
+global_variable EasyTabInfo EasyTab = {};
 // =================================================================================================
 
 void Platform::Print(char* Message)
@@ -271,6 +272,8 @@ int main(int argc, char **argv)
         printf("%d, %d\n", Memory.System.OpenGLVersion[0], Memory.System.OpenGLVersion[1]);
     }
 
+    EasyTab_Load(&EasyTab, XlibDisplay);
+
     Papaya::Initialize(&Memory);
 
     // Initialize ImGui
@@ -295,6 +298,16 @@ int main(int argc, char **argv)
         {
             XEvent Event;
             XNextEvent(XlibDisplay, &Event);
+
+            if (Event.type == EasyTab.MotionType)
+            {
+                XDeviceMotionEvent* MotionEvent = (XDeviceMotionEvent*)(&Event);
+                EasyTab.PosX     = MotionEvent->axis_data[0];
+                EasyTab.PosY     = MotionEvent->axis_data[1];
+                EasyTab.Pressure = (float)MotionEvent->axis_data[2] / (float)EasyTab.MaxPressure;
+                continue;
+            }
+
             switch (Event.type)
             {
                 case Expose:
@@ -367,6 +380,13 @@ int main(int argc, char **argv)
         // Update and render
         {
             ImGui::NewFrame();
+
+            ImGui::Begin("TABLET");
+            ImGui::Text("%d, %d", (int32)EasyTab.PosX, (int32)EasyTab.PosY);
+            ImGui::Text("%f", EasyTab.Pressure);
+            ImGui::End();
+            Memory.Tablet.Pressure = EasyTab.Pressure;
+
             Papaya::UpdateAndRender(&Memory, &DebugMemory);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
