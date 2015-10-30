@@ -416,7 +416,7 @@ bool EasyTab_Load(HWND Window)
     EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
     if (!EasyTab) { return false; }
 
-    // Load EasyTab DLL and get function addresses
+    // Load Wintab DLL and get function addresses
     {
         EasyTab->Dll = LoadLibraryA("Wintab32.dll");
         if (!EasyTab->Dll)
