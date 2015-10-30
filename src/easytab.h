@@ -1,3 +1,6 @@
+// TODO: Documentation
+// TODO: Platform-specific print macro
+
 
 #ifndef EASYTAB_H
 #define EASYTAB_H
@@ -392,6 +395,8 @@ struct EasyTabInfo
     WTMGRDEFCONTEXTEX WTMgrDefContextEx;
 };
 
+static EasyTabInfo* EasyTab;
+
 #endif // EASYTAB_H
 
 // =============================================================================
@@ -406,8 +411,11 @@ struct EasyTabInfo
         return false;                                                           \
     }
 
-bool EasyTab_Load(EasyTabInfo* EasyTab, HWND Window)
+bool EasyTab_Load(HWND Window)
 {
+    EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
+    if (!EasyTab) { return false; }
+
     // Load EasyTab DLL and get function addresses
     {
         EasyTab->Dll = LoadLibraryA("Wintab32.dll");
@@ -500,36 +508,34 @@ bool EasyTab_Load(EasyTabInfo* EasyTab, HWND Window)
 
 #undef GETPROCADDRESS
 
-void EasyTab_Unload(EasyTabInfo* EasyTab)
+void EasyTab_HandleEvent(HWND Window, LPARAM LParam, WPARAM WParam)
+{
+    PACKET Packet = { 0 };
+    if ((HCTX)LParam == EasyTab->Context &&
+        EasyTab->WTPacket(EasyTab->Context, WParam, &Packet))
+    {
+        POINT Point = { 0 };
+        Point.x = Packet.pkX;
+        Point.y = Packet.pkY;
+        ScreenToClient(Window, &Point); // TODO: Is ScreenToClient() required? 
+                                        //       Do we want it to be optional?
+        EasyTab->PosX = Point.x;
+        EasyTab->PosY = Point.y;
+
+        EasyTab->Pressure = (float)Packet.pkNormalPressure / (float)EasyTab->MaxPressure;
+    }
+}
+
+void EasyTab_Unload()
 {
     EasyTab->WTClose(EasyTab->Context);
 
     if (EasyTab->Dll)
     {
         FreeLibrary(EasyTab->Dll);
-        EasyTab->Dll = 0;
     }
 
-    EasyTab->WTInfoA           = 0;
-    EasyTab->WTOpenA           = 0;
-    EasyTab->WTGetA            = 0;
-    EasyTab->WTSetA            = 0;
-    EasyTab->WTClose           = 0;
-    EasyTab->WTPacket          = 0;
-    EasyTab->WTEnable          = 0;
-    EasyTab->WTOverlap         = 0;
-    EasyTab->WTSave            = 0;
-    EasyTab->WTConfig          = 0;
-    EasyTab->WTRestore         = 0;
-    EasyTab->WTExtSet          = 0;
-    EasyTab->WTExtGet          = 0;
-    EasyTab->WTQueueSizeSet    = 0;
-    EasyTab->WTDataPeek        = 0;
-    EasyTab->WTPacketsGet      = 0;
-    EasyTab->WTMgrOpen         = 0;
-    EasyTab->WTMgrClose        = 0;
-    EasyTab->WTMgrDefContext   = 0;
-    EasyTab->WTMgrDefContextEx = 0;
+    free(EasyTab);
 }
 
 #endif // EASYTAB_IMPLEMENTATION

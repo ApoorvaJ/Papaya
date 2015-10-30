@@ -40,7 +40,6 @@ global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2]; // TODO: Move this to SystemInfo
 global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
-global_variable EasyTabInfo EasyTab = {};
 
 // =================================================================================================
 
@@ -379,19 +378,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
         case WT_PACKET:
         {
-            PACKET Packet = {0};
-            if ((HCTX)LParam == EasyTab.Context &&
-                EasyTab.WTPacket(EasyTab.Context, WParam, &Packet))
-            {
-                POINT Point = {0};
-                Point.x = Packet.pkX;
-                Point.y = Packet.pkY;
-                ScreenToClient(Window, &Point);
-                EasyTab.PosX = Point.x;
-                EasyTab.PosY = Point.y;
-
-                EasyTab.Pressure = (float)Packet.pkNormalPressure / (float)EasyTab.MaxPressure;
-            }
+            EasyTab_HandleEvent(Window, LParam, WParam);
         } break;
 
         default:
@@ -529,7 +516,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
 
     // Initialize tablet
-    EasyTab_Load(&EasyTab, Window);
+    EasyTab_Load(Window);
 
     Papaya::Initialize(&Mem);
 
@@ -720,10 +707,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
 
         ImGui::Begin("TABLET");
-        ImGui::Text("%d, %d", (int32)EasyTab.PosX, (int32)EasyTab.PosY);
-        ImGui::Text("%f", EasyTab.Pressure);
+        ImGui::Text("%d, %d", (int32)EasyTab->PosX, (int32)EasyTab->PosY);
+        ImGui::Text("%f", EasyTab->Pressure);
         ImGui::End();
-        Mem.Tablet.Pressure = EasyTab.Pressure;
+        Mem.Tablet.Pressure = EasyTab->Pressure;
 
         Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();
@@ -755,7 +742,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     Papaya::Shutdown(&Mem);
 
-    EasyTab_Unload(&EasyTab);
+    EasyTab_Unload();
 
     return 0;
 }
