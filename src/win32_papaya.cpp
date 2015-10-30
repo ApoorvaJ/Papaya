@@ -754,5 +754,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
 
     Papaya::Shutdown(&Mem);
+
+    EasyTab_Unload(&EasyTab);
+
     return 0;
 }

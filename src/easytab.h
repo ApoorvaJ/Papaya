@@ -2,6 +2,8 @@
 #ifndef EASYTAB_H
 #define EASYTAB_H
 
+#include <stdint.h>
+
 // -----------------------------------------------------------------------------
 // wintab.h
 #if 1
@@ -397,8 +399,8 @@ struct EasyTabInfo
 #ifdef EASYTAB_IMPLEMENTATION
 
 #define GETPROCADDRESS(type, func)                                              \
-    EasyTab->func = (type)GetProcAddress(EasyTab->Dll, #func);                    \
-    if (!EasyTab->func)                                                          \
+    EasyTab->func = (type)GetProcAddress(EasyTab->Dll, #func);                  \
+    if (!EasyTab->func)                                                         \
     {                                                                           \
         OutputDebugStringA("Function " #func " not found in Wintab32.dll.\n");  \
         return false;                                                           \
@@ -497,5 +499,37 @@ bool EasyTab_Load(EasyTabInfo* EasyTab, HWND Window)
 }
 
 #undef GETPROCADDRESS
+
+void EasyTab_Unload(EasyTabInfo* EasyTab)
+{
+    EasyTab->WTClose(EasyTab->Context);
+
+    if (EasyTab->Dll)
+    {
+        FreeLibrary(EasyTab->Dll);
+        EasyTab->Dll = 0;
+    }
+
+    EasyTab->WTInfoA           = 0;
+    EasyTab->WTOpenA           = 0;
+    EasyTab->WTGetA            = 0;
+    EasyTab->WTSetA            = 0;
+    EasyTab->WTClose           = 0;
+    EasyTab->WTPacket          = 0;
+    EasyTab->WTEnable          = 0;
+    EasyTab->WTOverlap         = 0;
+    EasyTab->WTSave            = 0;
+    EasyTab->WTConfig          = 0;
+    EasyTab->WTRestore         = 0;
+    EasyTab->WTExtSet          = 0;
+    EasyTab->WTExtGet          = 0;
+    EasyTab->WTQueueSizeSet    = 0;
+    EasyTab->WTDataPeek        = 0;
+    EasyTab->WTPacketsGet      = 0;
+    EasyTab->WTMgrOpen         = 0;
+    EasyTab->WTMgrClose        = 0;
+    EasyTab->WTMgrDefContext   = 0;
+    EasyTab->WTMgrDefContextEx = 0;
+}
 
 #endif // EASYTAB_IMPLEMENTATION
