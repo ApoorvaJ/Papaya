@@ -126,6 +126,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\easytab.h" />
     <ClInclude Include="..\..\src\gl3w.c" />
     <ClInclude Include="..\..\src\gl3w.h" />
     <ClInclude Include="..\..\src\glcorearb.h" />

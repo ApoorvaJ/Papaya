@@ -86,6 +86,9 @@
     <ClInclude Include="..\..\src\win32_tablet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\easytab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Papaya.rc">

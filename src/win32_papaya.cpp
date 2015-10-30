@@ -29,7 +29,9 @@ typedef double real64;
 #include <malloc.h>
 #include <commdlg.h>
 
-#include "win32_tablet.h"
+//#include "win32_tablet.h"
+#define EASYTAB_IMPLEMENTATION
+#include "easytab.h"
 // =================================================================================================
 
 global_variable PapayaMemory Mem = {};
@@ -38,10 +40,9 @@ global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2]; // TODO: Move this to SystemInfo
 global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
-global_variable WintabInfo Wintab = {};
+global_variable EasyTabInfo EasyTab = {};
 
 // =================================================================================================
-
 
 void Platform::Print(char* Message)
 {
@@ -379,17 +380,17 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
         case WT_PACKET:
         {
             PACKET Packet = {0};
-            if ((HCTX)LParam == Wintab.Context &&
-                Wintab.WTPacket(Wintab.Context, WParam, &Packet))
+            if ((HCTX)LParam == EasyTab.Context &&
+                EasyTab.WTPacket(EasyTab.Context, WParam, &Packet))
             {
                 POINT Point = {0};
                 Point.x = Packet.pkX;
                 Point.y = Packet.pkY;
                 ScreenToClient(Window, &Point);
-                Wintab.PosX = Point.x;
-                Wintab.PosY = Point.y;
+                EasyTab.PosX = Point.x;
+                EasyTab.PosY = Point.y;
 
-                Wintab.Pressure = (float)Packet.pkNormalPressure / (float)Wintab.MaxPressure;
+                EasyTab.Pressure = (float)Packet.pkNormalPressure / (float)EasyTab.MaxPressure;
             }
         } break;
 
@@ -528,7 +529,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
 
     // Initialize tablet
-    Wintab_Load(&Wintab, Window);
+    EasyTab_Load(&EasyTab, Window);
 
     Papaya::Initialize(&Mem);
 
@@ -719,10 +720,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
 
         ImGui::Begin("TABLET");
-        ImGui::Text("%d, %d", (int32)Wintab.PosX, (int32)Wintab.PosY);
-        ImGui::Text("%f", Wintab.Pressure);
+        ImGui::Text("%d, %d", (int32)EasyTab.PosX, (int32)EasyTab.PosY);
+        ImGui::Text("%f", EasyTab.Pressure);
         ImGui::End();
-        Mem.Tablet.Pressure = Wintab.Pressure;
+        Mem.Tablet.Pressure = EasyTab.Pressure;
 
         Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();
