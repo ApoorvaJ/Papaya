@@ -364,14 +364,14 @@ typedef HCTX (WINAPI * WTMGRDEFCONTEXTEX) (HMGR, UINT, BOOL);
 
 struct EasyTabInfo
 {
+    int32_t PosX, PosY;
+    float   Pressure; // Range: 0.0f to 1.0f
+
+    int32_t RangeX, RangeY;
+    int32_t MaxPressure;
+
     HINSTANCE Dll;
     HCTX      Context;
-
-    LONG  PosX, PosY;
-    float Pressure;
-
-    LONG RangeX, RangeY;
-    UINT MaxPressure;
 
     WTINFOA           WTInfoA;
     WTOPENA           WTOpenA;
@@ -512,7 +512,7 @@ void EasyTab_HandleEvent(HWND Window, LPARAM LParam, WPARAM WParam)
 {
     PACKET Packet = { 0 };
     if ((HCTX)LParam == EasyTab->Context &&
-        EasyTab->WTPacket(EasyTab->Context, WParam, &Packet))
+        EasyTab->WTPacket(EasyTab->Context, (UINT)WParam, &Packet))
     {
         POINT Point = { 0 };
         Point.x = Packet.pkX;
