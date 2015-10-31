@@ -123,7 +123,7 @@ char* Platform::SaveFileDialog()
               (FileName[L-3] == 'p' || FileName[L-3] == 'P') &&     // TODO: Write some string utility functions
               (FileName[L-2] == 'n' || FileName[L-2] == 'N') &&     //       and clean this up.
               (FileName[L-1] == 'g' || FileName[L-1] == 'G')))      //       Also, support for more than just PNGs.
-        { 
+        {
             strcat(FileName, ".png");
         }
     }
@@ -154,6 +154,8 @@ int64 Platform::GetMilliseconds()
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
+    if (EasyTab_HandleEvent(Window, Message, LParam, WParam)) { return true; } // Tablet input
+
     LRESULT Result = 0;
     ImGuiIO& io = ImGui::GetIO();
 
@@ -374,11 +376,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
             SetCursor(LoadCursor(NULL, IDC_ARROW));
             return HTCLIENT;
-        } break;
-
-        case WT_PACKET:
-        {
-            EasyTab_HandleEvent(Window, LParam, WParam);
         } break;
 
         default:

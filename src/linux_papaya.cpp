@@ -30,7 +30,9 @@ typedef double real64;
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
-#include "linux_tablet.h"
+//#include "linux_tablet.h"
+#define EASYTAB_IMPLEMENTATION
+#include "easytab.h"
 
 #ifdef USE_GTK
 #include <gtk/gtk.h>
@@ -38,7 +40,6 @@ typedef double real64;
 
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
-global_variable EasyTabInfo EasyTab = {};
 // =================================================================================================
 
 void Platform::Print(char* Message)
@@ -272,7 +273,7 @@ int main(int argc, char **argv)
         printf("%d, %d\n", Memory.System.OpenGLVersion[0], Memory.System.OpenGLVersion[1]);
     }
 
-    EasyTab_Load(&EasyTab, XlibDisplay);
+    EasyTab_Load(XlibDisplay);
 
     Papaya::Initialize(&Memory);
 
@@ -299,14 +300,7 @@ int main(int argc, char **argv)
             XEvent Event;
             XNextEvent(XlibDisplay, &Event);
 
-            if (Event.type == EasyTab.MotionType)
-            {
-                XDeviceMotionEvent* MotionEvent = (XDeviceMotionEvent*)(&Event);
-                EasyTab.PosX     = MotionEvent->axis_data[0];
-                EasyTab.PosY     = MotionEvent->axis_data[1];
-                EasyTab.Pressure = (float)MotionEvent->axis_data[2] / (float)EasyTab.MaxPressure;
-                continue;
-            }
+            if (EasyTab_HandleEvent(&Event)) { continue; }
 
             switch (Event.type)
             {
@@ -382,10 +376,10 @@ int main(int argc, char **argv)
             ImGui::NewFrame();
 
             ImGui::Begin("TABLET");
-            ImGui::Text("%d, %d", (int32)EasyTab.PosX, (int32)EasyTab.PosY);
-            ImGui::Text("%f", EasyTab.Pressure);
+            ImGui::Text("%d, %d", (int32)EasyTab->PosX, (int32)EasyTab->PosY);
+            ImGui::Text("%f", EasyTab->Pressure);
             ImGui::End();
-            Memory.Tablet.Pressure = EasyTab.Pressure;
+            Memory.Tablet.Pressure = EasyTab->Pressure;
 
             Papaya::UpdateAndRender(&Memory, &DebugMemory);
             glXSwapBuffers(XlibDisplay, XlibWindow);
@@ -396,6 +390,9 @@ int main(int argc, char **argv)
         gtk_main_iteration_do(FALSE);
 #endif
     }
+
+    //Papaya::Shutdown(&Mem);
+    EasyTab_Unload();
 
     return 0;
 }

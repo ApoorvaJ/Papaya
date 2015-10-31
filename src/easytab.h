@@ -1,12 +1,19 @@
 // TODO: Documentation
 // TODO: Platform-specific print macro
-
+// TODO: Null checks and warnings for null EasyTab
+// TODO: Formatting and beautification
+// Instructions: Add -lXi to compiler options to link XInput on Linux.
 
 #ifndef EASYTAB_H
 #define EASYTAB_H
 
 #include <stdint.h>
 
+#ifdef __linux__
+#include <X11/extensions/XInput.h>
+#endif // __linux__
+
+#ifdef WIN32
 // -----------------------------------------------------------------------------
 // wintab.h
 #if 1
@@ -362,6 +369,8 @@ typedef BOOL (WINAPI * WTMGRCLOSE) (HMGR);
 typedef HCTX (WINAPI * WTMGRDEFCONTEXT) (HMGR, BOOL);
 typedef HCTX (WINAPI * WTMGRDEFCONTEXTEX) (HMGR, UINT, BOOL);
 
+#endif // WIN32
+
 struct EasyTabInfo
 {
     int32_t PosX, PosY;
@@ -370,6 +379,14 @@ struct EasyTabInfo
     int32_t RangeX, RangeY;
     int32_t MaxPressure;
 
+#ifdef __linux__
+    XDevice* Device;
+    uint32_t MotionType;
+    XEventClass EventClasses[1024];
+    uint32_t NumEventClasses;
+#endif // __linux__
+
+#ifdef WIN32
     HINSTANCE Dll;
     HCTX      Context;
 
@@ -393,15 +410,141 @@ struct EasyTabInfo
     WTMGRCLOSE        WTMgrClose;
     WTMGRDEFCONTEXT   WTMgrDefContext;
     WTMGRDEFCONTEXTEX WTMgrDefContextEx;
+#endif // WIN32
 };
 
 static EasyTabInfo* EasyTab;
+
+// -----------------------------------------------------------------------------
+// Function declarations
+// -----------------------------------------------------------------------------
+#ifdef __linux__
+
+    bool EasyTab_Load(Display* Disp);
+    bool EasyTab_HandleEvent(XEvent* Event);
+    void EasyTab_Unload();
+
+#endif // __linux__
+
+#ifdef WIN32
+
+    bool EasyTab_Load(HWND Window);
+    bool EasyTab_HandleEvent(HWND Window, LPARAM LParam, WPARAM WParam);
+    void EasyTab_Unload();
+
+#endif // WIN32
+// -----------------------------------------------------------------------------
 
 #endif // EASYTAB_H
 
 // =============================================================================
 
+
 #ifdef EASYTAB_IMPLEMENTATION
+
+// -----------------------------------------------------------------------------
+// Linux implementation
+// -----------------------------------------------------------------------------
+#ifdef __linux__
+
+bool EasyTab_Load(Display* Disp)
+{
+    EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
+    if (!EasyTab) { return false; }
+
+    int32_t Count;
+    XDeviceInfoPtr Devices = (XDeviceInfoPtr)XListInputDevices(Disp, &Count);
+    if (!Devices) { return false; }
+
+    for (int32_t i = 0; i < Count; i++)
+    {
+        if (!strstr(Devices[i].name, "stylus") &&
+            !strstr(Devices[i].name, "eraser")) { continue; }
+
+        EasyTab->Device = XOpenDevice(Disp, Devices[i].id);
+        XAnyClassPtr ClassPtr = Devices[i].inputclassinfo;
+
+        for (int32_t j = 0; j < Devices[i].num_classes; j++)
+        {
+            switch (ClassPtr->c_class) // NOTE: Most examples use ClassPtr->class, but that gives me the error:
+                                       // expected unqualified-id before ‘class’ switch (ClassPtr->class)
+                                       //                                                          ^
+                                       // Looking at Line 759 of XInput.h, this is expected,
+                                       // since 'c_class' is defined in stead of 'class' if the flag '__cplusplus' is defined.
+                                       // Not sure why examples compile. Maybe they use C.
+            {
+                case ValuatorClass:
+                {
+                    XValuatorInfo *Info = (XValuatorInfo *)ClassPtr;
+                    // X
+                    if (Info->num_axes > 0)
+                    {
+                        int32_t min     = Info->axes[0].min_value;
+                        EasyTab->RangeX = Info->axes[0].max_value;
+                        //printf("Max/min x values: %d, %d\n", min, EasyTab->RangeX); // TODO: Platform-print macro
+                    }
+
+                    // Y
+                    if (Info->num_axes > 1)
+                    {
+                        int32_t min     = Info->axes[1].min_value;
+                        EasyTab->RangeY = Info->axes[1].max_value;
+                        //printf("Max/min y values: %d, %d\n", min, EasyTab->RangeY);
+                    }
+
+                    // Pressure
+                    if (Info->num_axes > 2)
+                    {
+                        int32_t min          = Info->axes[2].min_value;
+                        EasyTab->MaxPressure = Info->axes[2].max_value;
+                        //printf("Max/min pressure values: %d, %d\n", min, EasyTab->MaxPressure);
+                    }
+
+                    XEventClass EventClass;
+                    DeviceMotionNotify(EasyTab->Device, EasyTab->MotionType, EventClass);
+                    if (EventClass)
+                    {
+                        EasyTab->EventClasses[EasyTab->NumEventClasses] = EventClass;
+                        EasyTab->NumEventClasses++;
+                    }
+                } break;
+            }
+
+            ClassPtr = (XAnyClassPtr) ((uint8_t*)ClassPtr + ClassPtr->length); // TODO: Access this as an array to avoid pointer arithmetic?
+        }
+
+        XSelectExtensionEvent(Disp, DefaultRootWindow(Disp), EasyTab->EventClasses, EasyTab->NumEventClasses);
+    }
+
+    XFreeDeviceList(Devices);
+
+    if (EasyTab->Device != 0) { return true; }
+    else                      { return false; }
+}
+
+bool EasyTab_HandleEvent(XEvent* Event)
+{
+    if (Event->type != EasyTab->MotionType) { return false; }
+
+    XDeviceMotionEvent* MotionEvent = (XDeviceMotionEvent*)(Event);
+    EasyTab->PosX     = MotionEvent->axis_data[0];
+    EasyTab->PosY     = MotionEvent->axis_data[1];
+    EasyTab->Pressure = (float)MotionEvent->axis_data[2] / (float)EasyTab->MaxPressure;
+    return true;
+}
+
+void EasyTab_Unload()
+{
+    free(EasyTab);
+}
+
+#endif // __linux__
+
+
+// -----------------------------------------------------------------------------
+// Windows implementation
+// -----------------------------------------------------------------------------
+#ifdef WIN32
 
 #define GETPROCADDRESS(type, func)                                              \
     EasyTab->func = (type)GetProcAddress(EasyTab->Dll, #func);                  \
@@ -488,7 +631,7 @@ bool EasyTab_Load(HWND Window)
         LogContext.lcSysExtY = GetSystemMetrics(SM_CYSCREEN);
 
         EasyTab->Context = EasyTab->WTOpenA(Window, &LogContext, TRUE);
-        
+
         if (!EasyTab->Context)
         {
             OutputDebugStringA("Wintab context couldn't be opened.\n");
@@ -508,34 +651,38 @@ bool EasyTab_Load(HWND Window)
 
 #undef GETPROCADDRESS
 
-void EasyTab_HandleEvent(HWND Window, LPARAM LParam, WPARAM WParam)
+bool EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPARAM WParam)
 {
     PACKET Packet = { 0 };
-    if ((HCTX)LParam == EasyTab->Context &&
+
+    if (Message == WT_PACKET &&
+        (HCTX)LParam == EasyTab->Context &&
         EasyTab->WTPacket(EasyTab->Context, (UINT)WParam, &Packet))
     {
         POINT Point = { 0 };
         Point.x = Packet.pkX;
         Point.y = Packet.pkY;
-        ScreenToClient(Window, &Point); // TODO: Is ScreenToClient() required? 
+        ScreenToClient(Window, &Point); // TODO: Is ScreenToClient() required?
                                         //       Do we want it to be optional?
         EasyTab->PosX = Point.x;
         EasyTab->PosY = Point.y;
 
         EasyTab->Pressure = (float)Packet.pkNormalPressure / (float)EasyTab->MaxPressure;
+        return true;
     }
+
+    return false;
 }
 
 void EasyTab_Unload()
 {
     EasyTab->WTClose(EasyTab->Context);
-
-    if (EasyTab->Dll)
-    {
-        FreeLibrary(EasyTab->Dll);
-    }
-
+    if (EasyTab->Dll) { FreeLibrary(EasyTab->Dll); }
     free(EasyTab);
 }
+
+#endif // WIN32
+// -----------------------------------------------------------------------------
+
 
 #endif // EASYTAB_IMPLEMENTATION
