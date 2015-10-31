@@ -1,8 +1,11 @@
 // TODO: Documentation
-// TODO: Platform-specific print macro
+// TODO: Better error logging/printing
 // TODO: Null checks and warnings for null EasyTab
-// TODO: Formatting and beautification
 // Instructions: Add -lXi to compiler options to link XInput on Linux.
+
+// =============================================================================
+// EasyTab header section
+// =============================================================================
 
 #ifndef EASYTAB_H
 #define EASYTAB_H
@@ -16,6 +19,7 @@
 #ifdef WIN32
 // -----------------------------------------------------------------------------
 // wintab.h
+// -----------------------------------------------------------------------------
 #if 1
 
     DECLARE_HANDLE(HMGR);
@@ -209,6 +213,7 @@
 
 // -----------------------------------------------------------------------------
 // pktdef.h
+// -----------------------------------------------------------------------------
 #if 1
 
     // TODO: Simplify this file if we have a fixed packet format.
@@ -371,6 +376,9 @@ typedef HCTX (WINAPI * WTMGRDEFCONTEXTEX) (HMGR, UINT, BOOL);
 
 #endif // WIN32
 
+// -----------------------------------------------------------------------------
+// Structs
+// -----------------------------------------------------------------------------
 struct EasyTabInfo
 {
     int32_t PosX, PosY;
@@ -437,8 +445,11 @@ static EasyTabInfo* EasyTab;
 
 #endif // EASYTAB_H
 
-// =============================================================================
 
+
+// =============================================================================
+// EasyTab implementation section
+// =============================================================================
 
 #ifdef EASYTAB_IMPLEMENTATION
 
