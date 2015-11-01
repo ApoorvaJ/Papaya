@@ -1,7 +1,130 @@
-// TODO: Documentation
+/*
+    EasyTab.h - Single-header multi-platform tablet library
+    https://github.com/ApoorvaJ/EasyTab
+
+    ----------------------------------------------------------------------------
+    USAGE
+    ----------------------------------------------------------------------------
+    1) Add the following lines in exactly one of your cpp files to compile the 
+       implementation.
+
+           #define EASYTAB_IMPLEMENTATION
+           #include "easytab.h"
+
+    2) Call EasyTab_Load() with correct parameters to initialize EasyTab. These
+       parameters vary per OS, so look at the function declarations or examples
+       below. Function returns true if initialization was successful.
+
+    3) Call EasyTab_HandleEvent() in your message-handling code. The function
+       returns true if the message was a tablet message, and false otherwise.
+
+    4) Call EasyTab_Unload() in your shutdown code.
+
+    5) Once initialized, you can query tablet state using the EasyTab pointer.
+       e.g.:
+
+           EasyTab->PosX        // X position of the pen
+           EasyTab->Pressure    // Pressure of the pen ranging from 0.0f to 1.0f
+           EasyTab->MaxPressure // Maximum pressure the pen can register
+
+       For more info, have a look at the EasyTabInfo struct below.
+
+
+    * Add -lXi to compiler options to link XInput on Linux.   
+
+    ----------------------------------------------------------------------------
+    EXAMPLES
+    ----------------------------------------------------------------------------
+    1) Windows:
+
+        int CALLBACK WinMain(...)
+        {
+            HWND Window;
+
+            ...
+
+            if (!EasyTab_Load(Window))                                   // Load
+            { 
+                OutputDebugStringA("Tablet init failed\n"); 
+            }
+
+            ...
+
+            EasyTab_Unload();                                          // Unload
+        }
+
+        LRESULT CALLBACK WindowProc(
+            HWND Window, 
+            UINT Message, 
+            WPARAM WParam, 
+            LPARAM LParam)
+        {
+            if (EasyTab_HandleEvent(Window, Message, LParam, WParam))   // Event
+            { 
+                return true; // Tablet event handled
+            }
+
+            switch (Message)
+            {
+                ...
+            }
+        }
+
+
+    2) Linux:
+
+        int main(...)
+        {
+            Display* Disp;
+
+            ...
+
+            if (!EasyTab_Load(Disp))                                     // Load
+            {
+                printf("Tablet init failed\n");
+            }
+
+            ...
+
+            while (XPending(Disp)) // Event loop
+            {
+                XEvent Event;
+                XNextEvent(XlibDisplay, &Event);
+
+                if (EasyTab_HandleEvent(&Event))                        // Event
+                { 
+                    continue; // Tablet event handled
+                }
+
+                switch (Event.type)
+                {
+                    ...
+                }
+            }
+
+            ...
+
+            EasyTab_Unload();                                          // Unload
+        }
+
+    ----------------------------------------------------------------------------
+    CREDITS
+    ----------------------------------------------------------------------------
+    Apoorva Joshi       apoorvaj.io
+
+    This library is coded in the spirit of the stb libraries and follows the stb
+    guidelines.
+
+    ----------------------------------------------------------------------------
+    LICENSE
+    ----------------------------------------------------------------------------
+    This software is in the public domain. Where that dedication is not
+    recognized, you are granted a perpetual, irrevocable license to copy,
+    distribute, and modify this file as you see fit.
+*/
+
 // TODO: Better error logging/printing
-// TODO: Null checks and warnings for null EasyTab
-// Instructions: Add -lXi to compiler options to link XInput on Linux.
+// TODO: Null checks and warnings for EasyTab
 
 // =============================================================================
 // EasyTab header section
