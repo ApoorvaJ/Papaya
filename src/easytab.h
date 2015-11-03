@@ -5,7 +5,7 @@
     ----------------------------------------------------------------------------
     USAGE
     ----------------------------------------------------------------------------
-    1) Add the following lines in exactly one of your cpp files to compile the 
+    1) Add the following lines in exactly one of your cpp files to compile the
        implementation.
 
            #define EASYTAB_IMPLEMENTATION
@@ -13,10 +13,11 @@
 
     2) Call EasyTab_Load() with correct parameters to initialize EasyTab. These
        parameters vary per OS, so look at the function declarations or examples
-       below. Function returns true if initialization was successful.
+       below. Function returns EASYTAB_OK if initialization was successful.
 
-    3) Call EasyTab_HandleEvent() in your message-handling code. The function
-       returns true if the message was a tablet message, and false otherwise.
+    3) Call EasyTab_HandleEvent() in your message-handling code. The function returns
+       EASYTAB_OK if the message was a tablet message, and EASYTAB_EVENT_NOT_HANDLED
+       otherwise.
 
     4) Call EasyTab_Unload() in your shutdown code.
 
@@ -30,7 +31,7 @@
        For more info, have a look at the EasyTabInfo struct below.
 
 
-    * Add -lXi to compiler options to link XInput on Linux.   
+    * Add -lXi to compiler options to link XInput on Linux.
 
     ----------------------------------------------------------------------------
     EXAMPLES
@@ -43,24 +44,24 @@
 
             ...
 
-            if (!EasyTab_Load(Window))                                   // Load
-            { 
-                OutputDebugStringA("Tablet init failed\n"); 
+            if (EasyTab_Load(Window) != EASYTAB_OK)                     // Load
+            {
+                OutputDebugStringA("Tablet init failed\n");
             }
 
             ...
 
-            EasyTab_Unload();                                          // Unload
+            EasyTab_Unload();                                           // Unload
         }
 
         LRESULT CALLBACK WindowProc(
-            HWND Window, 
-            UINT Message, 
-            WPARAM WParam, 
+            HWND Window,
+            UINT Message,
+            WPARAM WParam,
             LPARAM LParam)
         {
-            if (EasyTab_HandleEvent(Window, Message, LParam, WParam))   // Event
-            { 
+            if (EasyTab_HandleEvent(Window, Message, LParam, WParam) == EASYTAB_OK)   // Event
+            {
                 return true; // Tablet event handled
             }
 
@@ -76,10 +77,11 @@
         int main(...)
         {
             Display* Disp;
+            Window   Win;
 
             ...
 
-            if (!EasyTab_Load(Disp))                                     // Load
+            if (EasyTab_Load(Disp, Win) != EASYTAB_OK)                       // Load
             {
                 printf("Tablet init failed\n");
             }
@@ -91,8 +93,8 @@
                 XEvent Event;
                 XNextEvent(XlibDisplay, &Event);
 
-                if (EasyTab_HandleEvent(&Event))                        // Event
-                { 
+                if (EasyTab_HandleEvent(&Event) == EASYTAB_OK)          // Event
+                {
                     continue; // Tablet event handled
                 }
 
@@ -111,6 +113,7 @@
     CREDITS
     ----------------------------------------------------------------------------
     Apoorva Joshi       apoorvaj.io
+    Sergio Gonzalez     s3rg.io
 
     This library is coded in the spirit of the stb libraries and follows the stb
     guidelines.
@@ -138,6 +141,20 @@
 #ifdef __linux__
 #include <X11/extensions/XInput.h>
 #endif // __linux__
+
+typedef enum
+{
+    EASYTAB_OK = 0,
+
+    // Errors
+    EASYTAB_MEMORY_ERROR           = -1,
+    EASYTAB_X11_ERROR              = -2,
+    EASYTAB_DLL_LOAD_ERROR         = -3,
+    EASYTAB_WACOM_WIN32_ERROR      = -4,
+    EASYTAB_INVALID_FUNCTION_ERROR = -5,
+
+    EASYTAB_EVENT_NOT_HANDLED = -16,
+} EasyTabResult;
 
 #ifdef WIN32
 // -----------------------------------------------------------------------------
@@ -502,7 +519,7 @@ typedef HCTX (WINAPI * WTMGRDEFCONTEXTEX) (HMGR, UINT, BOOL);
 // -----------------------------------------------------------------------------
 // Structs
 // -----------------------------------------------------------------------------
-struct EasyTabInfo
+typedef struct
 {
     int32_t PosX, PosY;
     float   Pressure; // Range: 0.0f to 1.0f
@@ -542,28 +559,31 @@ struct EasyTabInfo
     WTMGRDEFCONTEXT   WTMgrDefContext;
     WTMGRDEFCONTEXTEX WTMgrDefContextEx;
 #endif // WIN32
-};
+} EasyTabInfo;
 
 static EasyTabInfo* EasyTab;
 
 // -----------------------------------------------------------------------------
 // Function declarations
 // -----------------------------------------------------------------------------
-#ifdef __linux__
+#if defined(__linux__)
 
-    bool EasyTab_Load(Display* Disp);
-    bool EasyTab_HandleEvent(XEvent* Event);
+EasyTabResult EasyTab_Load(Display* Disp, Window Win);
+    EasyTabResult EasyTab_HandleEvent(XEvent* Event);
     void EasyTab_Unload();
 
-#endif // __linux__
+#elif defined(_WIN32)
 
-#ifdef WIN32
-
-    bool EasyTab_Load(HWND Window);
-    bool EasyTab_HandleEvent(HWND Window, LPARAM LParam, WPARAM WParam);
+    EasyTabResult EasyTab_Load(HWND Window);
+    EasyTabResult EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPARAM WParam);
     void EasyTab_Unload();
 
-#endif // WIN32
+#else
+
+    // Save some trouble when porting.
+#error "Unsupported platform."
+
+#endif // __linux__ _WIN32
 // -----------------------------------------------------------------------------
 
 #endif // EASYTAB_H
@@ -576,19 +596,20 @@ static EasyTabInfo* EasyTab;
 
 #ifdef EASYTAB_IMPLEMENTATION
 
+
 // -----------------------------------------------------------------------------
 // Linux implementation
 // -----------------------------------------------------------------------------
 #ifdef __linux__
 
-bool EasyTab_Load(Display* Disp)
+EasyTabResult EasyTab_Load(Display* Disp, Window Win)
 {
     EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
-    if (!EasyTab) { return false; }
+    if (!EasyTab) { return EASYTAB_MEMORY_ERROR; }
 
     int32_t Count;
     XDeviceInfoPtr Devices = (XDeviceInfoPtr)XListInputDevices(Disp, &Count);
-    if (!Devices) { return false; }
+    if (!Devices) { return EASYTAB_X11_ERROR; }
 
     for (int32_t i = 0; i < Count; i++)
     {
@@ -600,12 +621,11 @@ bool EasyTab_Load(Display* Disp)
 
         for (int32_t j = 0; j < Devices[i].num_classes; j++)
         {
-            switch (ClassPtr->c_class) // NOTE: Most examples use ClassPtr->class, but that gives me the error:
-                                       // expected unqualified-id before ‘class’ switch (ClassPtr->class)
-                                       //                                                          ^
-                                       // Looking at Line 759 of XInput.h, this is expected,
-                                       // since 'c_class' is defined in stead of 'class' if the flag '__cplusplus' is defined.
-                                       // Not sure why examples compile. Maybe they use C.
+#if defined(__cplusplus)
+            switch (ClassPtr->c_class)
+#else
+            switch (ClassPtr->class)
+#endif
             {
                 case ValuatorClass:
                 {
@@ -647,29 +667,30 @@ bool EasyTab_Load(Display* Disp)
             ClassPtr = (XAnyClassPtr) ((uint8_t*)ClassPtr + ClassPtr->length); // TODO: Access this as an array to avoid pointer arithmetic?
         }
 
-        XSelectExtensionEvent(Disp, DefaultRootWindow(Disp), EasyTab->EventClasses, EasyTab->NumEventClasses);
+        XSelectExtensionEvent(Disp, Win, EasyTab->EventClasses, EasyTab->NumEventClasses);
     }
 
     XFreeDeviceList(Devices);
 
-    if (EasyTab->Device != 0) { return true; }
-    else                      { return false; }
+    if (EasyTab->Device != 0) { return EASYTAB_OK; }
+    else                      { return EASYTAB_X11_ERROR; }
 }
 
-bool EasyTab_HandleEvent(XEvent* Event)
+EasyTabResult EasyTab_HandleEvent(XEvent* Event)
 {
-    if (Event->type != EasyTab->MotionType) { return false; }
+    if (Event->type != EasyTab->MotionType) { return EASYTAB_EVENT_NOT_HANDLED; }
 
     XDeviceMotionEvent* MotionEvent = (XDeviceMotionEvent*)(Event);
-    EasyTab->PosX     = MotionEvent->axis_data[0];
-    EasyTab->PosY     = MotionEvent->axis_data[1];
+    EasyTab->PosX     = MotionEvent->x;
+    EasyTab->PosY     = MotionEvent->y;
     EasyTab->Pressure = (float)MotionEvent->axis_data[2] / (float)EasyTab->MaxPressure;
-    return true;
+    return EASYTAB_OK;
 }
 
 void EasyTab_Unload()
 {
     free(EasyTab);
+    EasyTab = NULL;
 }
 
 #endif // __linux__
@@ -685,13 +706,13 @@ void EasyTab_Unload()
     if (!EasyTab->func)                                                         \
     {                                                                           \
         OutputDebugStringA("Function " #func " not found in Wintab32.dll.\n");  \
-        return false;                                                           \
+        return EASYTAB_INVALID_FUNCTION_ERROR;                                                           \
     }
 
-bool EasyTab_Load(HWND Window)
+EasyTabResult EasyTab_Load(HWND Window)
 {
     EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
-    if (!EasyTab) { return false; }
+    if (!EasyTab) { return EASYTAB_MEMORY_ERROR; }
 
     // Load Wintab DLL and get function addresses
     {
@@ -699,7 +720,7 @@ bool EasyTab_Load(HWND Window)
         if (!EasyTab->Dll)
         {
             OutputDebugStringA("Wintab32.dll not found.\n");
-            return false;
+            return EASYTAB_DLL_LOAD_ERROR;
         }
 
         GETPROCADDRESS(WTINFOA           , WTInfoA);
@@ -727,7 +748,7 @@ bool EasyTab_Load(HWND Window)
     if (!EasyTab->WTInfoA(0, 0, NULL))
     {
         OutputDebugStringA("Wintab services not available.\n");
-        return false;
+        return EASYTAB_WACOM_WIN32_ERROR;
     }
 
     // Open context
@@ -769,7 +790,7 @@ bool EasyTab_Load(HWND Window)
         if (!EasyTab->Context)
         {
             OutputDebugStringA("Wintab context couldn't be opened.\n");
-            return false;
+            return EASYTAB_WACOM_WIN32_ERROR;
         }
 
         // Get tablet capabilites
@@ -780,12 +801,12 @@ bool EasyTab_Load(HWND Window)
         }
     }
 
-    return true;
+    return EASYTAB_OK;
 }
 
 #undef GETPROCADDRESS
 
-bool EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPARAM WParam)
+EasyTabResult EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPARAM WParam)
 {
     PACKET Packet = { 0 };
 
@@ -802,10 +823,10 @@ bool EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPARAM WParam
         EasyTab->PosY = Point.y;
 
         EasyTab->Pressure = (float)Packet.pkNormalPressure / (float)EasyTab->MaxPressure;
-        return true;
+        return EASYTAB_OK;
     }
 
-    return false;
+    return EASYTAB_EVENT_NOT_HANDLED;
 }
 
 void EasyTab_Unload()
@@ -813,6 +834,7 @@ void EasyTab_Unload()
     EasyTab->WTClose(EasyTab->Context);
     if (EasyTab->Dll) { FreeLibrary(EasyTab->Dll); }
     free(EasyTab);
+    EasyTab = NULL;
 }
 
 #endif // WIN32

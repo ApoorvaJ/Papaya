@@ -154,7 +154,10 @@ int64 Platform::GetMilliseconds()
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
-    if (EasyTab_HandleEvent(Window, Message, LParam, WParam)) { return true; } // Tablet input
+    if (EasyTab_HandleEvent(Window, Message, LParam, WParam) == EASYTAB_OK)
+    { 
+        return true;  // Tablet input
+    }
 
     LRESULT Result = 0;
     ImGuiIO& io = ImGui::GetIO();
