@@ -273,7 +273,7 @@ int main(int argc, char **argv)
         printf("%d, %d\n", Memory.System.OpenGLVersion[0], Memory.System.OpenGLVersion[1]);
     }
 
-    EasyTab_Load(XlibDisplay);
+    EasyTab_Load(XlibDisplay, XlibWindow);
 
     Papaya::Initialize(&Memory);
 
@@ -300,7 +300,7 @@ int main(int argc, char **argv)
             XEvent Event;
             XNextEvent(XlibDisplay, &Event);
 
-            if (EasyTab_HandleEvent(&Event)) { continue; }
+            if (EasyTab_HandleEvent(&Event) == EASYTAB_OK) { continue; }
 
             switch (Event.type)
             {
