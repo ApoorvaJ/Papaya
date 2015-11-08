@@ -25,8 +25,8 @@
        e.g.:
 
            EasyTab->PosX        // X position of the pen
+           EasyTab->PosY        // Y position of the pen
            EasyTab->Pressure    // Pressure of the pen ranging from 0.0f to 1.0f
-           EasyTab->MaxPressure // Maximum pressure the pen can register
 
        For more info, have a look at the EasyTabInfo struct below.
 
@@ -48,6 +48,16 @@
             {
                 OutputDebugStringA("Tablet init failed\n");
             }
+
+            ...
+
+            // Once you've set up EasyTab loading, unloading and event handling,
+            // use the EasyTab variable at any point in your program to access 
+            // the tablet state:
+            //    EasyTab->PosX 
+            //    EasyTab->PosY
+            //    EasyTab->Pressure
+            // For more tablet information, look at the EasyTabInfo struct.
 
             ...
 
@@ -103,6 +113,16 @@
                     ...
                 }
             }
+
+            ...
+
+            // Once you've set up EasyTab loading, unloading and event handling,
+            // use the EasyTab variable at any point in your program to access 
+            // the tablet state:
+            //    EasyTab->PosX 
+            //    EasyTab->PosY
+            //    EasyTab->Pressure
+            // For more tablet information, look at the EasyTabInfo struct.
 
             ...
 
@@ -561,6 +581,8 @@ typedef struct
 #endif // WIN32
 } EasyTabInfo;
 
+static EasyTabInfo* EasyTab;
+
 // -----------------------------------------------------------------------------
 // Function declarations
 // -----------------------------------------------------------------------------
@@ -593,8 +615,6 @@ typedef struct
 // =============================================================================
 
 #ifdef EASYTAB_IMPLEMENTATION
-
-static EasyTabInfo* EasyTab;
 
 // -----------------------------------------------------------------------------
 // Linux implementation
