@@ -1,45 +1,24 @@
 #pragma once
 
 
-enum TimerScope_
-{
-    TimerScope_1,
-    TimerScope_2,
-    TimerScope_COUNT
-};
-
-struct PapayaDebugTimer
-{
-    uint64 StartCycleCount,   StopCycleCount,   CyclesElapsed;
-    int64 StartMilliseconds, StopMilliseconds;
-    double MillisecondsElapsed;
-};
-
-struct PapayaDebugMemory
-{
-    int64 Time;             //
-    int64 TicksPerSecond;   // TODO: Put in PapayaMemory so that we can track this during shipping builds as well
-    PapayaDebugTimer Timers[TimerScope_COUNT];
-};
-
 namespace Util
 {
     // Timer
-    void StartTime(TimerScope_ TimerScope, PapayaDebugMemory* DebugMemory)
+    void StartTime(TimerScope_ TimerScope, PapayaMemory* Mem)
     {
         int32 i = TimerScope;
-        DebugMemory->Timers[i].StartMilliseconds = Platform::GetMilliseconds();
-        DebugMemory->Timers[i].StartCycleCount = __rdtsc();
+        Mem->Debug.Timers[i].StartMilliseconds = Platform::GetMilliseconds();
+        Mem->Debug.Timers[i].StartCycleCount = __rdtsc();
     }
 
-    void StopTime(TimerScope_ TimerScope, PapayaDebugMemory* DebugMemory)
+    void StopTime(TimerScope_ TimerScope, PapayaMemory* Mem)
     {
         int32 i = TimerScope;
-        DebugMemory->Timers[i].StopCycleCount = __rdtsc();
-        DebugMemory->Timers[i].StopMilliseconds = Platform::GetMilliseconds();
-        DebugMemory->Timers[i].CyclesElapsed = DebugMemory->Timers[i].StopCycleCount - DebugMemory->Timers[i].StartCycleCount;
-        DebugMemory->Timers[i].MillisecondsElapsed = (double)(DebugMemory->Timers[i].StopMilliseconds - DebugMemory->Timers[i].StartMilliseconds) *
-                                                     1000.0 / (double)DebugMemory->TicksPerSecond;
+        Mem->Debug.Timers[i].StopCycleCount = __rdtsc();
+        Mem->Debug.Timers[i].StopMilliseconds = Platform::GetMilliseconds();
+        Mem->Debug.Timers[i].CyclesElapsed = Mem->Debug.Timers[i].StopCycleCount - Mem->Debug.Timers[i].StartCycleCount;
+        Mem->Debug.Timers[i].MillisecondsElapsed = (double)(Mem->Debug.Timers[i].StopMilliseconds - Mem->Debug.Timers[i].StartMilliseconds) *
+                                                     1000.0 / (double)Mem->Debug.TicksPerSecond;
     }
 
     void ClearTimes()
@@ -47,14 +26,14 @@ namespace Util
 
     }
 
-    void DisplayTimes(PapayaDebugMemory* DebugMemory)
+    void DisplayTimes(PapayaMemory* Mem)
     {
         ImGui::SetNextWindowPos(Vec2(0, ImGui::GetIO().DisplaySize.y - 75));
         ImGui::SetNextWindowSize(Vec2(300, 75));
         ImGui::Begin("Profiler");
         for (int32 i = 0; i < TimerScope_COUNT; i++)
         {
-            ImGui::Text("%d: Cycles: %lu, MS: %f", i, DebugMemory->Timers[i].CyclesElapsed, DebugMemory->Timers[i].MillisecondsElapsed);
+            ImGui::Text("%d: Cycles: %lu, MS: %f", i, Mem->Debug.Timers[i].CyclesElapsed, Mem->Debug.Timers[i].MillisecondsElapsed);
         }
         ImGui::End();
     }

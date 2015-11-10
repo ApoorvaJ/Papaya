@@ -9,7 +9,6 @@
 #include "imgui_draw.cpp"
 #include "imgui.cpp"
 #include "imgui_demo.cpp"
-#include "papaya_util.h"
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
@@ -59,6 +58,13 @@ enum PapayaUndoOp_
 {
     PapayaUndoOp_Brush,
     PapayaUndoOp_COUNT
+};
+
+enum TimerScope_ // TODO: Improve timing subsystem
+{
+    TimerScope_Startup,
+    TimerScope_ImageOpen,
+    TimerScope_COUNT
 };
 
 struct SystemInfo
@@ -166,6 +172,20 @@ struct PickerInfo
     bool DraggingHue, DraggingSV;
 };
 
+struct TimerInfo
+{
+    uint64 StartCycleCount,   StopCycleCount,   CyclesElapsed;
+    int64 StartMilliseconds, StopMilliseconds;
+    double MillisecondsElapsed;
+};
+
+struct DebugInfo
+{
+    int64 Time;
+    int64 TicksPerSecond;
+    TimerInfo Timers[TimerScope_COUNT];
+};
+
 struct MiscInfo // TODO: This entire struct is for stuff to be refactored at some point
 {
     uint32 FrameBufferObject;
@@ -183,6 +203,7 @@ struct PapayaMemory
     DocumentInfo Doc;
     MouseInfo Mouse;
     TabletInfo Tablet;
+    DebugInfo Debug;
 
     uint32 Textures[PapayaTex_COUNT];
     Color Colors[PapayaCol_COUNT];
@@ -192,3 +213,6 @@ struct PapayaMemory
     PickerInfo Picker;
     MiscInfo Misc;
 };
+
+
+#include "papaya_util.h"

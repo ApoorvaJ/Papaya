@@ -35,7 +35,6 @@ typedef double real64;
 // =================================================================================================
 
 global_variable PapayaMemory Mem = {};
-global_variable PapayaDebugMemory DebugMem = {};
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
 global_variable int32 OpenGLVersion[2]; // TODO: Move this to SystemInfo
@@ -395,6 +394,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     LARGE_INTEGER PerfCountFrequencyResult;
     QueryPerformanceFrequency(&PerfCountFrequencyResult);
     int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
+    
+    QueryPerformanceFrequency((LARGE_INTEGER *)&Mem.Debug.TicksPerSecond);
+    QueryPerformanceCounter((LARGE_INTEGER *)&Mem.Debug.Time);
+    Util::StartTime(TimerScope_Startup, &Mem);
+
     Mem.IsRunning = true;
 
     HWND Window;
@@ -522,9 +526,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     // Initialize ImGui
     {
-        QueryPerformanceFrequency((LARGE_INTEGER *)&DebugMem.TicksPerSecond);
-        QueryPerformanceCounter((LARGE_INTEGER *)&DebugMem.Time);
-
         ImGuiIO& io = ImGui::GetIO();
         io.KeyMap[ImGuiKey_Tab] = VK_TAB;          // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array that we will update during the application lifetime.
         io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
@@ -548,8 +549,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         io.ImeWindowHandle = Window;
     }
 
-    // Handle command line arguments (if present)
-    if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Mem); }
 
     Mem.Window.MenuHorizontalOffset = 32;
     Mem.Window.TitleBarButtonsWidth = 109;
@@ -559,6 +558,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     QueryPerformanceCounter(&LastCounter);
     uint64 LastCycleCount = __rdtsc();
 
+    Util::StopTime(TimerScope_Startup, &Mem);
+
+    // Handle command line arguments (if present)
+    if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Mem); }
+
+#ifdef PAPAYA_DEFAULT_IMAGE
+    Papaya::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
+#endif
 
     while (Mem.IsRunning)
     {
@@ -604,8 +611,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             // Setup time step
             INT64 current_time;
             QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-            io.DeltaTime = (float)(current_time - DebugMem.Time) / DebugMem.TicksPerSecond;
-            DebugMem.Time = current_time;
+            io.DeltaTime = (float)(current_time - Mem.Debug.Time) / Mem.Debug.TicksPerSecond;
+            Mem.Debug.Time = current_time;
 
             // Hide OS mouse cursor if ImGui is drawing it
             //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
@@ -714,7 +721,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
 
         //ImGui::ShowTestWindow();
-        Papaya::UpdateAndRender(&Mem, &DebugMem);
+        Papaya::UpdateAndRender(&Mem);
         SwapBuffers(DeviceContext);
         //=========================================
 

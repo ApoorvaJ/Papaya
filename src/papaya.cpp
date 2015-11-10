@@ -172,6 +172,8 @@ internal void PushUndo(PapayaMemory* Mem)
 
 internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 {
+    Util::StartTime(TimerScope_ImageOpen, Mem);
+
     // Load image
     {
         uint8* Texture = stbi_load(Path, &Mem->Doc.Width, &Mem->Doc.Height, &Mem->Doc.ComponentsPerPixel, 4);
@@ -245,7 +247,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
     // Init undo buffer
     {
-        uint64 MaxSize        = 1024 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
+        uint64 MaxSize        = 512 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
         uint64 UndoRecordSize = sizeof(UndoData) + 4 * Mem->Doc.Width * Mem->Doc.Height;
         Mem->Doc.Undo.Size    = Math::Min(100 * UndoRecordSize, MaxSize);
         if (Mem->Doc.Undo.Size < 2 * UndoRecordSize) { Mem->Doc.Undo.Size = 2 * UndoRecordSize; }
@@ -255,6 +257,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
 
         PushUndo(Mem);
     }
+
+    Util::StopTime(TimerScope_ImageOpen, Mem);
 
     return true;
 }
@@ -713,10 +717,6 @@ void Initialize(PapayaMemory* Mem)
         Style.WindowFillAlphaDefault = 1.0f;
         // TODO: Move repeated stuff here by setting global style
     }
-
-#ifdef PAPAYA_DEFAULT_IMAGE
-    OpenDocument(PAPAYA_DEFAULT_IMAGE, Mem);
-#endif
 }
 
 void Shutdown(PapayaMemory* Mem)
@@ -724,7 +724,7 @@ void Shutdown(PapayaMemory* Mem)
     //TODO: Free stuff
 }
 
-void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
+void UpdateAndRender(PapayaMemory* Mem)
 {
     // Initialize frame
     {
@@ -1502,7 +1502,27 @@ EndOfDoc:
         if (Mem->Misc.ShowMetricsWindow)
         {
             ImGui::Begin("Metrics");
-            //if (ImGui::CollapsingHeader("Input"))
+            if (ImGui::CollapsingHeader("Profiler", 0, true, true))
+            {
+                ImGui::Columns(3, "profilercolumns");
+                ImGui::Separator();
+                ImGui::Text("Name");                ImGui::NextColumn();
+                ImGui::Text("Cycles");              ImGui::NextColumn();
+                ImGui::Text("Millisecs");           ImGui::NextColumn();
+                ImGui::Separator();
+
+                ImGui::Text("Startup");                                                        ImGui::NextColumn();
+                ImGui::Text("%lu", Mem->Debug.Timers[TimerScope_Startup].CyclesElapsed);       ImGui::NextColumn();
+                ImGui::Text("%f" , Mem->Debug.Timers[TimerScope_Startup].MillisecondsElapsed); ImGui::NextColumn();
+
+                ImGui::Text("ImageOpen");                                                        ImGui::NextColumn();
+                ImGui::Text("%lu", Mem->Debug.Timers[TimerScope_ImageOpen].CyclesElapsed);       ImGui::NextColumn();
+                ImGui::Text("%f" , Mem->Debug.Timers[TimerScope_ImageOpen].MillisecondsElapsed); ImGui::NextColumn();
+
+                ImGui::Columns(1);
+                ImGui::Separator();
+            }
+            if (ImGui::CollapsingHeader("Input"))
             {
                 ImGui::Separator();
                 ImGui::Text("Tablet");
