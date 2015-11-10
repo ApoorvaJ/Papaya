@@ -37,7 +37,6 @@ typedef double real64;
 global_variable PapayaMemory Mem = {};
 global_variable HDC DeviceContext;
 global_variable HGLRC RenderingContext;
-global_variable int32 OpenGLVersion[2]; // TODO: Move this to SystemInfo
 global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
 
 // =================================================================================================
@@ -514,8 +513,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             wglDeleteContext(TempRenderingContext);
             wglMakeCurrent(DeviceContext, RenderingContext);
 
-            glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
-            glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
+            glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
+            glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
         }
     }
 
