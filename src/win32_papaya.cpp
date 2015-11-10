@@ -577,6 +577,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             }
         }
 
+        // Tablet input
+        {
+            Mem.Tablet.Pressure = EasyTab->Pressure;
+            Mem.Tablet.PosX = EasyTab->PosX;
+            Mem.Tablet.PosY = EasyTab->PosY;
+        }
+
         BOOL IsMaximized = IsMaximized(Window);
         if (IsIconic(Window)) { continue; }
 
@@ -706,14 +713,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PopStyleColor(4);
         }
 
-        ImGui::Begin("TABLET");
-        ImGui::Text("%d, %d", (int32)EasyTab->PosX, (int32)EasyTab->PosY);
-        ImGui::Text("%f", EasyTab->Pressure);
-        ImGui::End();
-        Mem.Tablet.Pressure = EasyTab->Pressure;
-
-        Papaya::UpdateAndRender(&Mem, &DebugMem);
         //ImGui::ShowTestWindow();
+        Papaya::UpdateAndRender(&Mem, &DebugMem);
         SwapBuffers(DeviceContext);
         //=========================================
 

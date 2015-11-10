@@ -110,8 +110,8 @@ struct DocumentInfo
 
 struct MouseInfo
 {
-    Vec2 Pos;
-    Vec2 LastPos;
+    Vec2 Pos;     // TODO: Switch to int32s
+    Vec2 LastPos; // TODO: Switch to int32s
     Vec2 UV;
     Vec2 LastUV;
     bool IsDown[3];
@@ -123,6 +123,7 @@ struct MouseInfo
 
 struct TabletInfo
 {
+    int32 PosX, PosY;
     float Pressure;
 };
 
@@ -171,6 +172,7 @@ struct MiscInfo // TODO: This entire struct is for stuff to be refactored at som
     uint32 FboRenderTexture, FboSampleTexture;
     bool DrawOverlay;
     bool DrawCanvas;
+    bool ShowMetricsWindow;
 };
 
 struct PapayaMemory

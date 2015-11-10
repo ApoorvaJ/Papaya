@@ -815,50 +815,53 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
             ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Clear]);
             if (ImGui::BeginMenu("FILE"))
             {
-                // File Menu
+                if (ImGui::MenuItem("Open"))
                 {
-                    if (ImGui::MenuItem("Open"))
-                    {
-                        char* Path = Platform::OpenFileDialog();
-                        if (Path)
-                        {
-                            CloseDocument(Mem);
-                            OpenDocument(Path, Mem);
-                            free(Path);
-                        }
-                    }
-
-                    if (ImGui::MenuItem("Close"))
+                    char* Path = Platform::OpenFileDialog();
+                    if (Path)
                     {
                         CloseDocument(Mem);
+                        OpenDocument(Path, Mem);
+                        free(Path);
                     }
-
-                    if (ImGui::MenuItem("Save", "Ctrl+S"))
-                    {
-                        char* Path = Platform::SaveFileDialog();
-                        uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
-                        if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
-                        {
-                            glFinish();
-                            glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-                            glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
-                            glFinish();
-
-                            int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
-                            if (!Result)
-                            {
-                                // TODO: Log: Save failed
-                                Platform::Print("Save failed\n");
-                            }
-
-                            free(Texture);
-                            free(Path);
-                        }
-                    }
-                    if (ImGui::MenuItem("Save As..")) {}
-                    ImGui::Separator();
-                    if (ImGui::MenuItem("Quit", "Alt+F4")) { Mem->IsRunning = false; }
                 }
+
+                if (ImGui::MenuItem("Close"))
+                {
+                    CloseDocument(Mem);
+                }
+
+                if (ImGui::MenuItem("Save", "Ctrl+S"))
+                {
+                    char* Path = Platform::SaveFileDialog();
+                    uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
+                    if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
+                    {
+                        glFinish();
+                        glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
+                        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
+                        glFinish();
+
+                        int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
+                        if (!Result)
+                        {
+                            // TODO: Log: Save failed
+                            Platform::Print("Save failed\n");
+                        }
+
+                        free(Texture);
+                        free(Path);
+                    }
+                }
+                if (ImGui::MenuItem("Save As..")) {}
+                ImGui::Separator();
+                if (ImGui::MenuItem("Quit", "Alt+F4")) { Mem->IsRunning = false; }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("VIEW"))
+            {
+                ImGui::MenuItem("Metrics Window", NULL, &Mem->Misc.ShowMetricsWindow);
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -1493,6 +1496,45 @@ void UpdateAndRender(PapayaMemory* Mem, PapayaDebugMemory* DebugMem)
     }
 
 EndOfDoc:
+
+    // Metrics window
+    {
+        if (Mem->Misc.ShowMetricsWindow)
+        {
+            ImGui::Begin("Metrics");
+            //if (ImGui::CollapsingHeader("Input"))
+            {
+                ImGui::Separator();
+                ImGui::Text("Tablet");
+                ImGui::Columns(2, "inputcolumns");
+                ImGui::Separator();
+                ImGui::Text("PosX");                        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->Tablet.PosX);        ImGui::NextColumn();
+                ImGui::Text("PosY");                        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->Tablet.PosY);        ImGui::NextColumn();
+                ImGui::Text("Pressure");                    ImGui::NextColumn();
+                ImGui::Text("%f", Mem->Tablet.Pressure);    ImGui::NextColumn();
+
+                ImGui::Columns(1);
+                ImGui::Separator();
+                ImGui::Text("Mouse");
+                ImGui::Columns(2, "inputcolumns");
+                ImGui::Separator();
+                ImGui::Text("PosX");                        ImGui::NextColumn();
+                ImGui::Text("%f", Mem->Mouse.Pos.x);        ImGui::NextColumn();
+                ImGui::Text("PosY");                        ImGui::NextColumn();
+                ImGui::Text("%f", Mem->Mouse.Pos.y);        ImGui::NextColumn();
+                ImGui::Text("Buttons");                     ImGui::NextColumn();
+                ImGui::Text("%d %d %d", 
+                    Mem->Mouse.IsDown[0], 
+                    Mem->Mouse.IsDown[1], 
+                    Mem->Mouse.IsDown[2]);                  ImGui::NextColumn();
+                ImGui::Columns(1);
+                ImGui::Separator();
+            }
+            ImGui::End();
+        }
+    }
 
     ImGui::Render(Mem);
 
