@@ -165,8 +165,10 @@ int64 Platform::GetMilliseconds()
 
 int main(int argc, char **argv)
 {
-    PapayaMemory Memory = {0};
-    PapayaDebugMemory DebugMemory = {0};
+    PapayaMemory Mem = {0};
+
+    Mem.Debug.TicksPerSecond = 1000;
+    Util::StartTime(TimerScope_Startup, &Mem);
 
     XVisualInfo* VisualInfo;
     Atom WmDeleteMessage;
@@ -198,8 +200,8 @@ int main(int argc, char **argv)
         SetWindowAttributes.event_mask = ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
 
         XlibWindow = XCreateWindow(XlibDisplay, DefaultRootWindow(XlibDisplay), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
-        Memory.Window.Width = 600;
-        Memory.Window.Height = 600;
+        Mem.Window.Width = 600;
+        Mem.Window.Height = 600;
 
         XMapWindow(XlibDisplay, XlibWindow);
          XStoreName(XlibDisplay, XlibWindow, "Papaya");
@@ -268,14 +270,14 @@ int main(int argc, char **argv)
             exit(1);
         }
 
-        glGetIntegerv(GL_MAJOR_VERSION, &Memory.System.OpenGLVersion[0]);
-        glGetIntegerv(GL_MINOR_VERSION, &Memory.System.OpenGLVersion[1]);
-        printf("%d, %d\n", Memory.System.OpenGLVersion[0], Memory.System.OpenGLVersion[1]);
+        glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
+        glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
+        printf("%d, %d\n", Mem.System.OpenGLVersion[0], Mem.System.OpenGLVersion[1]);
     }
 
     EasyTab_Load(XlibDisplay, XlibWindow);
 
-    Papaya::Initialize(&Memory);
+    Papaya::Initialize(&Mem);
 
     // Initialize ImGui
     {
@@ -290,9 +292,15 @@ int main(int argc, char **argv)
         }
     }
 
-    Memory.IsRunning = true;
+    Util::StopTime(TimerScope_Startup, &Mem);
 
-    while (Memory.IsRunning)
+#ifdef PAPAYA_DEFAULT_IMAGE
+    Papaya::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
+#endif
+
+    Mem.IsRunning = true;
+
+    while (Mem.IsRunning)
     {
         // Event handling
         while (XPending(XlibDisplay))
@@ -309,13 +317,13 @@ int main(int argc, char **argv)
                     XWindowAttributes WindowAttributes;
                     XGetWindowAttributes(XlibDisplay, XlibWindow, &WindowAttributes);
                     ImGui::GetIO().DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
-                    Memory.Window.Width = WindowAttributes.width;
-                    Memory.Window.Height = WindowAttributes.height;
+                    Mem.Window.Width = WindowAttributes.width;
+                    Mem.Window.Height = WindowAttributes.height;
                 } break;
 
                 case ClientMessage:
                 {
-                    if (Event.xclient.data.l[0] == WmDeleteMessage) { Memory.IsRunning = false; }
+                    if (Event.xclient.data.l[0] == WmDeleteMessage) { Mem.IsRunning = false; }
                 } break;
 
                 case MotionNotify:
@@ -379,9 +387,9 @@ int main(int argc, char **argv)
             ImGui::Text("%d, %d", (int32)EasyTab->PosX, (int32)EasyTab->PosY);
             ImGui::Text("%f", EasyTab->Pressure);
             ImGui::End();
-            Memory.Tablet.Pressure = EasyTab->Pressure;
+            Mem.Tablet.Pressure = EasyTab->Pressure;
 
-            Papaya::UpdateAndRender(&Memory, &DebugMemory);
+            Papaya::UpdateAndRender(&Mem);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
 
