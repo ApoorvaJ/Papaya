@@ -8,7 +8,9 @@
 #include "imgui.h"
 #include "imgui_draw.cpp"
 #include "imgui.cpp"
+#pragma warning (disable: 4312) // Warning C4312 during 64 bit compilation: 'type cast': conversion from 'uint32' to 'void *' of greater size
 #include "imgui_demo.cpp"
+#pragma warning (default: 4312)
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
@@ -85,7 +87,7 @@ struct UndoData // TODO: Convert into a union of structs once multiple types of 
 {
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
     UndoData* Prev, *Next;
-    int64 Size; // Size of the suffixed data block
+    size_t Size; // Size of the suffixed data block
     // Image data goes after this
 };
 
@@ -96,7 +98,7 @@ struct UndoBufferInfo
     UndoData* Base;    // Pointer to the base of the undo stack
     UndoData* Current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
     UndoData* Last;    // Last undo data block in the buffer. Should be located just before Top.
-    uint64 Size;  // Size of the undo buffer in bytes
+    size_t Size;  // Size of the undo buffer in bytes
     int64 Count;  // Number of undo ops in buffer
     int64 CurrentIndex; // Index of the current undo data block from the beginning
 };

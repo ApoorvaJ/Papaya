@@ -19,7 +19,7 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
-#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
+//#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
 #include "papaya.h"
 #include "papaya.cpp"
 
@@ -115,7 +115,7 @@ char* Platform::SaveFileDialog()
 
     // Suffix .png if required
     {
-        int32 L = strlen(FileName);
+        size_t L = strlen(FileName);
         if (L <= FileNameSize - 4 &&                                //
             !((FileName[L-4] == '.') &&                             // Ugh.
               (FileName[L-3] == 'p' || FileName[L-3] == 'P') &&     // TODO: Write some string utility functions
@@ -678,7 +678,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
             ImGui::PushID(0);
-            if(ImGui::ImageButton((void*)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
             {
                 ShowWindow(Window, SW_MINIMIZE);
             }
@@ -690,7 +690,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SameLine();
             ImGui::PushID(1);
 
-            if(ImGui::ImageButton((void*)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
             {
                 if (IsMaximized)
                 {
@@ -706,7 +706,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SameLine();
             ImGui::PushID(2);
 
-            if(ImGui::ImageButton((void*)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
             {
                 SendMessage(Window, WM_CLOSE, 0, 0);
             }

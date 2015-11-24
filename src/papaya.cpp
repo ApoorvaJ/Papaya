@@ -1,5 +1,8 @@
+#pragma warning (disable: 4312) // Warning C4312 during 64 bit compilation: 'type cast': conversion from 'uint32' to 'void *' of greater size
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#pragma warning (default: 4312)
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -1288,7 +1291,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                 memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
 
-                int64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
+                size_t BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
                 if (BytesToRight - sizeof(UndoData) >= Data.Size) // Image is contiguously stored
                 {
                     Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
