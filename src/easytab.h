@@ -15,8 +15,8 @@
        parameters vary per OS, so look at the function declarations or examples
        below. Function returns EASYTAB_OK if initialization was successful.
 
-    3) Call EasyTab_HandleEvent() in your message-handling code. The function 
-       returns EASYTAB_OK if the message was a tablet message, and 
+    3) Call EasyTab_HandleEvent() in your message-handling code. The function
+       returns EASYTAB_OK if the message was a tablet message, and
        EASYTAB_EVENT_NOT_HANDLED otherwise.
 
     4) Call EasyTab_Unload() in your shutdown code.
@@ -52,9 +52,9 @@
             ...
 
             // Once you've set up EasyTab loading, unloading and event handling,
-            // use the EasyTab variable at any point in your program to access 
+            // use the EasyTab variable at any point in your program to access
             // the tablet state:
-            //    EasyTab->PosX 
+            //    EasyTab->PosX
             //    EasyTab->PosY
             //    EasyTab->Pressure
             // For more tablet information, look at the EasyTabInfo struct.
@@ -117,9 +117,9 @@
             ...
 
             // Once you've set up EasyTab loading, unloading and event handling,
-            // use the EasyTab variable at any point in your program to access 
+            // use the EasyTab variable at any point in your program to access
             // the tablet state:
-            //    EasyTab->PosX 
+            //    EasyTab->PosX
             //    EasyTab->PosY
             //    EasyTab->Pressure
             // For more tablet information, look at the EasyTabInfo struct.
@@ -157,6 +157,8 @@
 #define EASYTAB_H
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __linux__
 #include <X11/extensions/XInput.h>
@@ -581,7 +583,7 @@ typedef struct
 #endif // WIN32
 } EasyTabInfo;
 
-static EasyTabInfo* EasyTab;
+extern EasyTabInfo* EasyTab;
 
 // -----------------------------------------------------------------------------
 // Function declarations
@@ -615,6 +617,8 @@ static EasyTabInfo* EasyTab;
 // =============================================================================
 
 #ifdef EASYTAB_IMPLEMENTATION
+
+EasyTabInfo* EasyTab;
 
 // -----------------------------------------------------------------------------
 // Linux implementation
