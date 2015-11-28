@@ -168,7 +168,7 @@ int main(int argc, char **argv)
     PapayaMemory Mem = {0};
 
     Mem.Debug.TicksPerSecond = 1000;
-    Util::StartTime(TimerScope_Startup, &Mem);
+    Util::StartTime(Timer_Startup, &Mem);
 
     XVisualInfo* VisualInfo;
     Atom WmDeleteMessage;
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
         }
     }
 
-    Util::StopTime(TimerScope_Startup, &Mem);
+    Util::StopTime(Timer_Startup, &Mem);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     Papaya::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);

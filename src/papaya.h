@@ -62,11 +62,12 @@ enum PapayaUndoOp_
     PapayaUndoOp_COUNT
 };
 
-enum TimerScope_ // TODO: Improve timing subsystem
+enum Timer_ // TODO: Improve timing subsystem
 {
-    TimerScope_Startup,
-    TimerScope_ImageOpen,
-    TimerScope_COUNT
+    Timer_Startup,
+    Timer_Frame,
+    Timer_ImageOpen,
+    Timer_COUNT
 };
 
 struct SystemInfo
@@ -185,7 +186,7 @@ struct DebugInfo
 {
     int64 Time;
     int64 TicksPerSecond;
-    TimerInfo Timers[TimerScope_COUNT];
+    TimerInfo Timers[Timer_COUNT];
 };
 
 struct MiscInfo // TODO: This entire struct is for stuff to be refactored at some point

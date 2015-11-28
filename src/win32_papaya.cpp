@@ -19,7 +19,7 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
-//#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
+#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
 #include "papaya.h"
 #include "papaya.cpp"
 
@@ -32,6 +32,7 @@ typedef double real64;
 //#include "win32_tablet.h"
 #define EASYTAB_IMPLEMENTATION
 #include "easytab.h"
+
 // =================================================================================================
 
 global_variable PapayaMemory Mem = {};
@@ -396,7 +397,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     
     QueryPerformanceFrequency((LARGE_INTEGER *)&Mem.Debug.TicksPerSecond);
     QueryPerformanceCounter((LARGE_INTEGER *)&Mem.Debug.Time);
-    Util::StartTime(TimerScope_Startup, &Mem);
+    Util::StartTime(Timer_Startup, &Mem);
 
     Mem.IsRunning = true;
 
@@ -516,6 +517,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
             glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
         }
+
+        // Disable Vsync
+        {
+            typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALFARPROC)( int );
+            PFNWGLSWAPINTERVALFARPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALFARPROC)wglGetProcAddress( "wglSwapIntervalEXT" );
+            wglSwapIntervalEXT(0);
+        }
     }
 
     // Initialize tablet
@@ -557,7 +565,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     QueryPerformanceCounter(&LastCounter);
     uint64 LastCycleCount = __rdtsc();
 
-    Util::StopTime(TimerScope_Startup, &Mem);
+    Util::StopTime(Timer_Startup, &Mem);
 
     // Handle command line arguments (if present)
     if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Mem); }
@@ -568,6 +576,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     while (Mem.IsRunning)
     {
+        Util::StartTime(Timer_Frame, &Mem);
+
         // Windows message handling
         {
             MSG Message;
@@ -722,7 +732,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         //ImGui::ShowTestWindow();
         Papaya::UpdateAndRender(&Mem);
         SwapBuffers(DeviceContext);
-        //=========================================
+
+        Util::StopTime(Timer_Frame, &Mem);
 
         //Sleep(15);
 
