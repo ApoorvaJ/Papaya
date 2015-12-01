@@ -66,13 +66,22 @@ enum Timer_ // TODO: Improve timing subsystem
 {
     Timer_Startup,
     Timer_Frame,
+    Timer_Sleep,
     Timer_ImageOpen,
     Timer_COUNT
+};
+
+enum PapayaRunMode_
+{
+    PapayaRunMode_60Hz,
+    PapayaRunMode_500Hz,
+    PapayaRunMode_COUNT
 };
 
 struct SystemInfo
 {
     int32 OpenGLVersion[2];
+    PapayaRunMode_ RunMode;
 };
 
 struct WindowInfo

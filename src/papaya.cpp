@@ -365,6 +365,8 @@ void Initialize(PapayaMemory* Mem)
 {
     // Init values
     {
+        Mem->System.RunMode = PapayaRunMode_500Hz;
+
         Mem->Brush.Diameter    = 50;
         Mem->Brush.MaxDiameter = 9999;
         Mem->Brush.Hardness    = 90.0f;
@@ -1522,6 +1524,10 @@ EndOfDoc:
                 ImGui::Text("Frame");                                                       ImGui::NextColumn();
                 ImGui::Text("%lu", Mem->Debug.Timers[Timer_Frame].CyclesElapsed);           ImGui::NextColumn();
                 ImGui::Text("%f" , Mem->Debug.Timers[Timer_Frame].MillisecondsElapsed);     ImGui::NextColumn();
+
+                ImGui::Text("Sleep");                                                       ImGui::NextColumn();
+                ImGui::Text("%lu", Mem->Debug.Timers[Timer_Sleep].CyclesElapsed);           ImGui::NextColumn();
+                ImGui::Text("%f" , Mem->Debug.Timers[Timer_Sleep].MillisecondsElapsed);     ImGui::NextColumn();
 
                 ImGui::Text("ImageOpen");                                                   ImGui::NextColumn();
                 ImGui::Text("%lu", Mem->Debug.Timers[Timer_ImageOpen].CyclesElapsed);       ImGui::NextColumn();

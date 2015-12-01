@@ -390,11 +390,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
-{
-    LARGE_INTEGER PerfCountFrequencyResult;
-    QueryPerformanceFrequency(&PerfCountFrequencyResult);
-    int64 PerfCountFrequency = PerfCountFrequencyResult.QuadPart;
-    
+{   
     QueryPerformanceFrequency((LARGE_INTEGER *)&Mem.Debug.TicksPerSecond);
     QueryPerformanceCounter((LARGE_INTEGER *)&Mem.Debug.Time);
     Util::StartTime(Timer_Startup, &Mem);
@@ -518,10 +514,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
         }
 
-        // Disable Vsync
+        // Disable vsync
         {
-            typedef BOOL (APIENTRY *PFNWGLSWAPINTERVALFARPROC)( int );
-            PFNWGLSWAPINTERVALFARPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALFARPROC)wglGetProcAddress( "wglSwapIntervalEXT" );
+            typedef BOOL(APIENTRY *PFNWGLSWAPINTERVALFARPROC) (int);
+            PFNWGLSWAPINTERVALFARPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALFARPROC)wglGetProcAddress("wglSwapIntervalEXT");
             wglSwapIntervalEXT(0);
         }
     }
@@ -561,10 +557,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     Mem.Window.TitleBarButtonsWidth = 109;
     Mem.Window.TitleBarHeight = 30;
 
-    LARGE_INTEGER LastCounter;
-    QueryPerformanceCounter(&LastCounter);
-    uint64 LastCycleCount = __rdtsc();
-
     Util::StopTime(Timer_Startup, &Mem);
 
     // Handle command line arguments (if present)
@@ -601,7 +593,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
 
         BOOL IsMaximized = IsMaximized(Window);
-        if (IsIconic(Window)) { continue; }
+        if (IsIconic(Window)) { goto EndOfFrame; }
 
         // Start new ImGui frame
         {
@@ -621,7 +613,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             INT64 current_time;
             QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
             io.DeltaTime = (float)(current_time - Mem.Debug.Time) / Mem.Debug.TicksPerSecond;
-            Mem.Debug.Time = current_time;
+            Mem.Debug.Time = current_time; // TODO: Move Imgui timers from Debug to their own struct
 
             // Hide OS mouse cursor if ImGui is drawing it
             //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
@@ -733,29 +725,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         Papaya::UpdateAndRender(&Mem);
         SwapBuffers(DeviceContext);
 
+    EndOfFrame:
         Util::StopTime(Timer_Frame, &Mem);
-
-        //Sleep(15);
-
-        uint64 EndCycleCount = __rdtsc();
-
-        LARGE_INTEGER EndCounter;
-        QueryPerformanceCounter(&EndCounter);
-
-        uint64 CyclesElapsed = EndCycleCount - LastCycleCount;
-        int64 CounterElapsed = EndCounter.QuadPart - LastCounter.QuadPart;
-        real64 MSPerFrame = (((1000.0f*(real64)CounterElapsed) / (real64)PerfCountFrequency));
-        real64 FPS = (real64)PerfCountFrequency / (real64)CounterElapsed;
-        real64 MCPF = ((real64)CyclesElapsed / (1000.0f * 1000.0f));
-
-#if 0
-        char Buffer[256];
-        sprintf(Buffer, "%.02fms/f,  %.02ff/s,  %.02fmc/f\n", MSPerFrame, FPS, MCPF);
-        OutputDebugStringA(Buffer);
-#endif
-
-        LastCounter = EndCounter;
-        LastCycleCount = EndCycleCount;
+        double FrameRate = (Mem.System.RunMode == PapayaRunMode_500Hz) ? 500.0 : 60.0;
+        double FrameTime = 1000.0 / FrameRate;
+        double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].MillisecondsElapsed;
+        Mem.Debug.Timers[Timer_Sleep].MillisecondsElapsed = SleepTime;
+        if (SleepTime > 0) { Sleep((int32)SleepTime); }
     }
 
     Papaya::Shutdown(&Mem);
