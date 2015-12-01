@@ -21,17 +21,6 @@ Papaya is very much a work in progress. The following features are functional so
 
 For development updates, you can follow [@PapayaEditor](https://twitter.com/PapayaEditor) on Twitter.
 
-Donate
-------
-
-[![Patreon](/web/patreon.png?raw=true)](http://www.patreon.com/Papaya)
-
-I am currently an independent developer. I make games, but I primarily rely on doing freelance work to pay the bills. By supporting me on Patreon, you allow me to spend more time working on Papaya, and thus have a direct impact on the project.
-
-Please consider supporting a free and open-source project instead of paying for a monthly subscription-based proprietary product.
-
-[**Support on Patreon**](http://www.patreon.com/Papaya)
-
 Building
 --------
 
