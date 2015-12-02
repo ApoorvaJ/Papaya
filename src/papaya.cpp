@@ -631,6 +631,40 @@ void Initialize(PapayaMemory* Mem)
         Mem->Picker.Pos + Mem->Picker.HueStripPos, Mem->Picker.HueStripSize, GL_STATIC_DRAW);
     }
 
+    // Alpha grid shader
+    {
+        const char* Frag =
+            "   #version 330                                                    \n"
+            "                                                                   \n"
+            "   uniform vec4  Color1;                                           \n" // Uniforms[1]
+            "   uniform vec4  Color2;                                           \n" // Uniforms[2]
+            "   uniform float Zoom;                                             \n" // Uniforms[3]
+            "   uniform float InvAspect;                                        \n" // Uniforms[4]
+            "                                                                   \n"
+            "   in  vec2 Frag_UV;                                               \n"
+            "   out vec4 Out_Color;                                             \n"
+            "                                                                   \n"
+            "   void main()                                                     \n"
+            "   {                                                               \n"
+            "       vec2 aspectUV;                                              \n"
+            "       if (InvAspect < 1.0)                                        \n"
+            "           aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);      \n"
+            "       else                                                        \n"
+            "           aspectUV = vec2(Frag_UV.x / InvAspect, Frag_UV.y);      \n"
+            "       vec2 uv = floor(aspectUV.xy * 500 * Zoom);                  \n"
+            "       float a = mod(uv.x + uv.y, 2.0);                            \n"
+            "       Out_Color = mix(Color1, Color2, a);                         \n"
+            "   }                                                               \n";
+
+        CompileShader(Mem->Shaders[PapayaShader_AlphaGrid], Vert, Frag, 3, 5,
+            "Position", "UV", "Color",
+            "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect");
+
+        InitMesh(Mem->Meshes[PapayaMesh_AlphaGrid],
+            Mem->Shaders[PapayaShader_AlphaGrid],
+            Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
+    }
+
     // ImGui default shader
     {
     const char* Frag =
@@ -715,6 +749,8 @@ void Initialize(PapayaMemory* Mem)
         Mem->Colors[PapayaCol_Button]        = Color(92,92,94);
         Mem->Colors[PapayaCol_ButtonHover]   = Color(64,64,64);
         Mem->Colors[PapayaCol_ButtonActive]  = Color(0,122,204);
+        Mem->Colors[PapayaCol_AlphaGrid1]    = Color(141,141,142);
+        Mem->Colors[PapayaCol_AlphaGrid2]    = Color(92,92,94);
     }
 
     // ImGui Style Settings
@@ -1391,6 +1427,65 @@ void UpdateAndRender(PapayaMemory* Mem)
                 Mem->Doc.CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
             }
         }
+    }
+
+    // Draw alpha grid
+    {
+        // TODO: Remove state setting and restoring if unnecessary
+        GLint last_program;
+        glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+        glEnable       (GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable      (GL_CULL_FACE);
+        glDisable      (GL_DEPTH_TEST);
+        glEnable       (GL_SCISSOR_TEST);
+
+        glUseProgram      (Mem->Shaders[PapayaShader_AlphaGrid].Handle);
+        glUniformMatrix4fv(Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]);  // Projection matrix uniform
+        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[1], Mem->Colors[PapayaCol_AlphaGrid1].r, 
+                                                                             Mem->Colors[PapayaCol_AlphaGrid1].g, 
+                                                                             Mem->Colors[PapayaCol_AlphaGrid1].b,1.0f); // Color1 uniform
+        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[2], Mem->Colors[PapayaCol_AlphaGrid2].r, 
+                                                                             Mem->Colors[PapayaCol_AlphaGrid2].g, 
+                                                                             Mem->Colors[PapayaCol_AlphaGrid2].b,1.0f); // Color2 uniform
+        glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[3], Mem->Doc.CanvasZoom);                      // Zoom uniform
+        glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[4], Mem->Doc.InverseAspect);                   // Inverse aspect uniform
+
+        ImDrawVert Verts[6];
+        {
+            Vec2 Position = Mem->Doc.CanvasPosition;
+            Vec2 Size     = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
+            Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+            Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+            Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+            Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+            Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+            Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+        }
+        glBindBuffer   (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_AlphaGrid].VboHandle);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
+
+        glBindVertexArray(Mem->Meshes[PapayaMesh_AlphaGrid].VaoHandle);
+
+        if (Mem->Misc.DrawCanvas)
+        {
+            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+        if (Mem->Misc.DrawOverlay)
+        {
+            glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glDrawArrays   (GL_TRIANGLES, 0, 6);
+        }
+
+        // Restore modified state
+        glBindVertexArray(0);
+        glUseProgram (last_program);
+        glDisable    (GL_SCISSOR_TEST);
+        glDisable    (GL_BLEND);
     }
 
     // Draw canvas

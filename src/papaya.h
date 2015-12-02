@@ -31,6 +31,8 @@ enum PapayaCol_
     PapayaCol_Button,
     PapayaCol_ButtonHover,
     PapayaCol_ButtonActive,
+    PapayaCol_AlphaGrid1,
+    PapayaCol_AlphaGrid2,
     PapayaCol_COUNT
 };
 
@@ -38,6 +40,7 @@ enum PapayaMesh_
 {
     PapayaMesh_ImGui,
     PapayaMesh_Canvas,
+    PapayaMesh_AlphaGrid,
     PapayaMesh_BrushCursor,
     PapayaMesh_PickerHStrip,
     PapayaMesh_PickerSVBox,
@@ -53,6 +56,7 @@ enum PapayaShader_
     PapayaShader_BrushCursor,
     PapayaShader_PickerHStrip,
     PapayaShader_PickerSVBox,
+    PapayaShader_AlphaGrid,
     PapayaShader_COUNT
 };
 
