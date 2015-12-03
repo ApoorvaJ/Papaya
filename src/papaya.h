@@ -167,7 +167,8 @@ struct BrushInfo
     int32 Diameter;
     int32 MaxDiameter;
     float Opacity;  // Range: 0.0 - 100.0 // TODO: Change to 0.0 - 1.0?
-    float Hardness; // Range: 0.0 - 100.0
+    float Hardness; // Range: 0.0 - 1.0
+    bool AntiAlias;
 
     // TODO: Move some of this stuff to the MouseInfo struct?
     Vec2 RtDragStartPos;

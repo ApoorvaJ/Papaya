@@ -369,8 +369,9 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Brush.Diameter    = 50;
         Mem->Brush.MaxDiameter = 9999;
-        Mem->Brush.Hardness    = 90.0f;
+        Mem->Brush.Hardness    = 1.0f;
         Mem->Brush.Opacity     = 100.0f;
+        Mem->Brush.AntiAlias   = true;
 
         Mem->Picker.CurrentColor = Color(220, 163, 89);
         Mem->Picker.Open         = false;
@@ -1080,9 +1081,13 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PopItemWidth();
         ImGui::PushItemWidth(80);
         ImGui::SameLine();
-        ImGui::SliderFloat("Hardness", &Mem->Brush.Hardness, 0.0f, 100.0f, "%.0f");
+        float ScaledHardness = Mem->Brush.Hardness * 100.0f;
+        ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
+        Mem->Brush.Hardness = ScaledHardness / 100.0f;
         ImGui::SameLine();
         ImGui::SliderFloat("Opacity", &Mem->Brush.Opacity, 0.0f, 100.0f, "%.0f");
+        ImGui::SameLine();
+        ImGui::Checkbox("Anti-alias", &Mem->Brush.AntiAlias); // TODO: Replace this with a toggleable icon button
 
         ImGui::PopItemWidth();
         ImGui::End();
@@ -1134,8 +1139,8 @@ void UpdateAndRender(PapayaMemory* Mem)
                     float Diameter = Mem->Brush.RtDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Mem->Doc.CanvasZoom * 2.0f);
                     Mem->Brush.Diameter = Math::Clamp((int32)Diameter, 1, Mem->Brush.MaxDiameter);
 
-                    float Hardness = Mem->Brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.25f);
-                    Mem->Brush.Hardness = Math::Clamp(Hardness, 0.0f, 100.0f);
+                    float Hardness = Mem->Brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
+                    Mem->Brush.Hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
                 }
             }
             else if (Mem->Mouse.Released[1])
@@ -1255,7 +1260,23 @@ void UpdateAndRender(PapayaMemory* Mem)
                                                                       Mem->Picker.CurrentColor.g,
                                                                       Mem->Picker.CurrentColor.b,
                                                                       Opacity);
-            glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Mem->Brush.Hardness / 100.0f);
+            // Brush hardness
+            {
+                float Hardness;
+                if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2) 
+                { 
+                    float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
+                    float Radius  = Mem->Brush.Diameter / 2.0f;
+                    Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius)); 
+                }
+                else
+                {
+                    Hardness      = Mem->Brush.Hardness; 
+                }
+
+                glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness);
+            }
+
             glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
 
             glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle);
@@ -1281,8 +1302,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         local_persist float Opacities[ArraySize] = { 0 };
 
         float MaxScale = 90.0f;
-        float t        = Mem->Brush.Hardness / 100.0f;
-        float Scale    = 1.0f / (1.0f - t);
+        float Scale    = 1.0f / (1.0f - Mem->Brush.Hardness);
         float Phase    = (1.0f - Scale) * (float)Math::Pi;
         float Period   = (float)Math::Pi * Scale / (float)ArraySize;
 
@@ -1561,7 +1581,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle);
         glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
         glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity/100.0f : 0.0f); // Brush color
-        glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness / 100.0f); // Hardness
+        glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness); // Hardness
         glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
 
         ImDrawVert Verts[6];
