@@ -18,6 +18,7 @@ Papaya is very much a work in progress. The following features are functional so
 * Color picker
 * Loading jpg & png images, saving png images
 * Undo/Redo
+* Drawing tablet support with pressure sensitivity
 
 For development updates, you can follow [@PapayaEditor](https://twitter.com/PapayaEditor) on Twitter.
 
@@ -26,9 +27,9 @@ Building
 
 Papaya supports Windows and Linux, and is set up to use single file compilation. Compile only win32_papaya.cpp or linux_papaya.cpp, and you're done.
 
-Project files for Visual Studio 2015, 2013 and 2012 and shell build scripts for gcc are provided in the /build folder.
+Project files for Visual Studio 2015 and shell build scripts for gcc are provided in the /build folder. If you're using other versions of Visual Studio, just set every c/cpp file except win32_papaya.cpp to be treated as a "C/C++ header" item type in the properties window.
 
-Currently, the linux build relies on GTK+ for open/save dialog boxes, but otherwise linking is optional. The build.sh script provides a flag to turn GTK+ on/off during compilation.
+Currently, the Linux build relies on GTK+ for open/save dialog boxes, but otherwise linking is optional. The build.sh script provides a flag to turn GTK+ on/off during compilation.
 
 Credits
 ------
