@@ -75,17 +75,17 @@ enum Timer_ // TODO: Improve timing subsystem
     Timer_COUNT
 };
 
-enum PapayaRunMode_
+enum PapayaTool_
 {
-    PapayaRunMode_60Hz,
-    PapayaRunMode_500Hz,
-    PapayaRunMode_COUNT
+    PapayaTool_None,
+    PapayaTool_Brush,
+    PapayaTool_EyeDropper,
+    PapayaTool_COUNT
 };
 
 struct SystemInfo
 {
     int32 OpenGLVersion[2];
-    PapayaRunMode_ RunMode;
 };
 
 struct WindowInfo
@@ -226,6 +226,8 @@ struct PapayaMemory
     Color Colors[PapayaCol_COUNT];
     MeshInfo Meshes[PapayaMesh_COUNT];
     ShaderInfo Shaders[PapayaShader_COUNT];
+
+    PapayaTool_ CurrentTool;
     BrushInfo Brush;
     PickerInfo Picker;
     MiscInfo Misc;

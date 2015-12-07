@@ -365,7 +365,7 @@ void Initialize(PapayaMemory* Mem)
 {
     // Init values
     {
-        Mem->System.RunMode = PapayaRunMode_500Hz;
+        Mem->CurrentTool    = PapayaTool_Brush;
 
         Mem->Brush.Diameter    = 50;
         Mem->Brush.MaxDiameter = 9999;
@@ -375,7 +375,7 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Picker.CurrentColor = Color(220, 163, 89);
         Mem->Picker.Open         = false;
-        Mem->Picker.Pos          = Vec2(34, 86);
+        Mem->Picker.Pos          = Vec2(34, 118);
         Mem->Picker.Size         = Vec2(292, 331);
         Mem->Picker.HueStripPos  = Vec2(259, 42);
         Mem->Picker.HueStripSize = Vec2(30, 256);
@@ -385,7 +385,7 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Misc.DrawCanvas        = true;
         Mem->Misc.DrawOverlay       = false;
-        Mem->Misc.ShowMetricsWindow = true;
+        Mem->Misc.ShowMetricsWindow = false;
 
         float OrthoMtx[4][4] =
         {
@@ -935,24 +935,35 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing , ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing      , ImVec2(0, 0));
 
-        ImGui::PushStyleColor(ImGuiCol_Button        , Mem->Colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered , Mem->Colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , Mem->Colors[PapayaCol_ButtonActive]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , Mem->Colors[PapayaCol_Button]);
         ImGui::PushStyleColor(ImGuiCol_WindowBg      , Mem->Colors[PapayaCol_Transparent]);
 
-        bool Show = true;
-        ImGui::Begin("Left toolbar", &Show, WindowFlags);
+        ImGui::Begin("Left toolbar", 0, WindowFlags);
 
         #define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
         {
             ImGui::PushID(0);
+            ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->CurrentTool == PapayaTool_Brush) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->CurrentTool == PapayaTool_Brush) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
             if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(20, 20), CALCUV(0, 0), CALCUV(1, 1), 6, ImVec4(0, 0, 0, 0)))
             {
+                Mem->CurrentTool = (Mem->CurrentTool != PapayaTool_Brush) ? PapayaTool_Brush : PapayaTool_None;
 
             }
+            ImGui::PopStyleColor(2);
             ImGui::PopID();
 
             ImGui::PushID(1);
+            ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->CurrentTool == PapayaTool_EyeDropper) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->CurrentTool == PapayaTool_EyeDropper) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(20, 20), CALCUV(1, 0), CALCUV(2, 1), 6, ImVec4(0, 0, 0, 0)))
+            {
+                Mem->CurrentTool = (Mem->CurrentTool != PapayaTool_EyeDropper) ? PapayaTool_EyeDropper : PapayaTool_None;
+            }
+            ImGui::PopStyleColor(2);
+            ImGui::PopID();
+
+            ImGui::PushID(2);
             if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Mem->Picker.CurrentColor))
             {
                 Mem->Picker.Open = !Mem->Picker.Open;
@@ -970,7 +981,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::End();
 
         ImGui::PopStyleVar(5);
-        ImGui::PopStyleColor(4);
+        ImGui::PopStyleColor(2);
     }
 
     // Color Picker
@@ -1120,208 +1131,211 @@ void UpdateAndRender(PapayaMemory* Mem)
         }
 */
 
-        // Right mouse dragging
+        if (Mem->CurrentTool == PapayaTool_Brush)
         {
-            if (Mem->Mouse.Pressed[1])
+            // Right mouse dragging
             {
-                Mem->Brush.RtDragStartPos      = Mem->Mouse.Pos;
-                Mem->Brush.RtDragStartDiameter = Mem->Brush.Diameter;
-                Mem->Brush.RtDragStartHardness = Mem->Brush.Hardness;
-                Mem->Brush.RtDragStartOpacity  = Mem->Brush.Opacity;
-                Mem->Brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
-                Platform::StartMouseCapture();
-                Platform::SetCursorVisibility(false);
-            }
-            else if (Mem->Mouse.IsDown[1])
-            {
-                if (Mem->Brush.RtDragWithShift)
+                if (Mem->Mouse.Pressed[1])
                 {
-                    float Opacity = Mem->Brush.RtDragStartOpacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
-                    Mem->Brush.Opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
+                    Mem->Brush.RtDragStartPos      = Mem->Mouse.Pos;
+                    Mem->Brush.RtDragStartDiameter = Mem->Brush.Diameter;
+                    Mem->Brush.RtDragStartHardness = Mem->Brush.Hardness;
+                    Mem->Brush.RtDragStartOpacity  = Mem->Brush.Opacity;
+                    Mem->Brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
+                    Platform::StartMouseCapture();
+                    Platform::SetCursorVisibility(false);
+                }
+                else if (Mem->Mouse.IsDown[1])
+                {
+                    if (Mem->Brush.RtDragWithShift)
+                    {
+                        float Opacity = Mem->Brush.RtDragStartOpacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
+                        Mem->Brush.Opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
+                    }
+                    else
+                    {
+                        float Diameter = Mem->Brush.RtDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Mem->Doc.CanvasZoom * 2.0f);
+                        Mem->Brush.Diameter = Math::Clamp((int32)Diameter, 1, Mem->Brush.MaxDiameter);
+
+                        float Hardness = Mem->Brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
+                        Mem->Brush.Hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
+                    }
+                }
+                else if (Mem->Mouse.Released[1])
+                {
+                    Platform::ReleaseMouseCapture();
+                    Platform::SetMousePosition(Mem->Brush.RtDragStartPos);
+                    Platform::SetCursorVisibility(true);
+                }
+            }
+
+            if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
+            {
+                Mem->Brush.BeingDragged = true;
+                if (Mem->Picker.Open)
+                {
+                    Mem->Picker.CurrentColor = Mem->Picker.NewColor;
+                }
+            }
+            else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
+            {
+                // Additive render-to-texture
+                {
+                    glDisable(GL_SCISSOR_TEST);
+                    glBindFramebuffer   (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
+
+                    glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
+                    glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
+
+                    glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
+                    //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+
+                    glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
+                    glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle);
+
+                    glEnable(GL_BLEND);
+                    glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                    glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
+                    glDrawArrays (GL_TRIANGLES, 0, 6);
+                    glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
+                    glDrawArrays (GL_TRIANGLES, 0, 6);
+
+                    uint32 Temp = Mem->Misc.FboRenderTexture;
+                    Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
+                    Mem->Doc.TextureID = Temp;
+
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+
+                    glDisable(GL_BLEND);
+                }
+
+                PushUndo(Mem);
+
+                Mem->Misc.DrawOverlay   = false;
+                Mem->Brush.BeingDragged = false;
+            }
+
+            if (Mem->Brush.BeingDragged)
+            {
+                Mem->Misc.DrawOverlay = true;
+
+                glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
+
+                if (Mem->Mouse.Pressed[0])
+                {
+                    GLuint clearColor[4] = {0, 0, 0, 0};
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboSampleTexture, 0);
+                    glClearBufferuiv(GL_COLOR, 0, clearColor);
+                    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
+                }
+                glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
+
+                glDisable(GL_BLEND);
+                glDisable(GL_SCISSOR_TEST);
+
+                // Setup orthographic projection matrix
+                float width  = (float)Mem->Doc.Width;
+                float height = (float)Mem->Doc.Height;
+                glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle);
+
+                Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                Vec2 CorrectedLastPos = Mem->Mouse.LastUV + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+
+    #if 0
+                // Brush testing routine
+                local_persist int32 i = 0;
+
+                if (i%2)
+                {
+                    local_persist int32 j = 0;
+                    CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                    CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                    j++;
                 }
                 else
                 {
-                    float Diameter = Mem->Brush.RtDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Mem->Doc.CanvasZoom * 2.0f);
-                    Mem->Brush.Diameter = Math::Clamp((int32)Diameter, 1, Mem->Brush.MaxDiameter);
-
-                    float Hardness = Mem->Brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
-                    Mem->Brush.Hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
+                    local_persist int32 k = 0;
+                    CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                    CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                    k++;
                 }
-            }
-            else if (Mem->Mouse.Released[1])
-            {
-                Platform::ReleaseMouseCapture();
-                Platform::SetMousePosition(Mem->Brush.RtDragStartPos);
-                Platform::SetCursorVisibility(true);
-            }
-        }
+                i++;
+    #endif
 
-        if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
-        {
-            Mem->Brush.BeingDragged = true;
-            if (Mem->Picker.Open)
-            {
-                Mem->Picker.CurrentColor = Mem->Picker.NewColor;
-            }
-        }
-        else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
-        {
-            // Additive render-to-texture
-            {
-                glDisable(GL_SCISSOR_TEST);
-                glBindFramebuffer   (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
-                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
+                glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
+                //glUniform1i(Mem->Shaders[PapayaShader_Brush].Uniforms[1], Mem->Doc.TextureID); // Texture uniform
+                glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect); // Pos uniform
+                glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect); // Lastpos uniform
+                glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f));
+                float Opacity = Mem->Brush.Opacity;
+                if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
+                glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
+                                                                          Mem->Picker.CurrentColor.g,
+                                                                          Mem->Picker.CurrentColor.b,
+                                                                          Opacity);
+                // Brush hardness
+                {
+                    float Hardness;
+                    if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2) 
+                    { 
+                        float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
+                        float Radius  = Mem->Brush.Diameter / 2.0f;
+                        Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius)); 
+                    }
+                    else
+                    {
+                        Hardness      = Mem->Brush.Hardness; 
+                    }
 
-                glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
-                glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
+                    glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness);
+                }
 
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
-                //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+                glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
 
-                glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
-                glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle);
+                glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle);
+                glBindVertexArray(Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle);
 
-                glEnable(GL_BLEND);
-                glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
-                glDrawArrays (GL_TRIANGLES, 0, 6);
                 glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-                glDrawArrays (GL_TRIANGLES, 0, 6);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
 
                 uint32 Temp = Mem->Misc.FboRenderTexture;
-                Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
+                Mem->Misc.FboRenderTexture = Mem->Misc.FboSampleTexture;
                 glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
-                Mem->Doc.TextureID = Temp;
+                Mem->Misc.FboSampleTexture = Temp;
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-
-                glDisable(GL_BLEND);
             }
-
-            PushUndo(Mem);
-
-            Mem->Misc.DrawOverlay   = false;
-            Mem->Brush.BeingDragged = false;
-        }
-
-        if (Mem->Brush.BeingDragged)
-        {
-            Mem->Misc.DrawOverlay = true;
-
-            glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
-
-            if (Mem->Mouse.Pressed[0])
-            {
-                GLuint clearColor[4] = {0, 0, 0, 0};
-                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboSampleTexture, 0);
-                glClearBufferuiv(GL_COLOR, 0, clearColor);
-                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
-            }
-            glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
-
-            glDisable(GL_BLEND);
-            glDisable(GL_SCISSOR_TEST);
-
-            // Setup orthographic projection matrix
-            float width  = (float)Mem->Doc.Width;
-            float height = (float)Mem->Doc.Height;
-            glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle);
-
-            Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-            Vec2 CorrectedLastPos = Mem->Mouse.LastUV + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
 
 #if 0
-            // Brush testing routine
-            local_persist int32 i = 0;
+            // =========================================================================================
+            // Visualization: Brush falloff
 
-            if (i%2)
+            const int32 ArraySize = 256;
+            local_persist float Opacities[ArraySize] = { 0 };
+
+            float MaxScale = 90.0f;
+            float Scale    = 1.0f / (1.0f - Mem->Brush.Hardness);
+            float Phase    = (1.0f - Scale) * (float)Math::Pi;
+            float Period   = (float)Math::Pi * Scale / (float)ArraySize;
+
+            for (int32 i = 0; i < ArraySize; i++)
             {
-                local_persist int32 j = 0;
-                CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                j++;
+                Opacities[i] = (cosf(((float)i * Period) + Phase) + 1.0f) * 0.5f;
+                if ((float)i < (float)ArraySize - ((float)ArraySize / Scale)) { Opacities[i] = 1.0f; }
             }
-            else
-            {
-                local_persist int32 k = 0;
-                CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                k++;
-            }
-            i++;
+
+            ImGui::Begin("Brush falloff");
+            ImGui::PlotLines("", Opacities, ArraySize, 0, 0, FLT_MIN, FLT_MAX, Vec2(256,256));
+            ImGui::End();
+            // =========================================================================================
 #endif
-
-            glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
-            //glUniform1i(Mem->Shaders[PapayaShader_Brush].Uniforms[1], Mem->Doc.TextureID); // Texture uniform
-            glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect); // Pos uniform
-            glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect); // Lastpos uniform
-            glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f));
-            float Opacity = Mem->Brush.Opacity;
-            if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
-            glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
-                                                                      Mem->Picker.CurrentColor.g,
-                                                                      Mem->Picker.CurrentColor.b,
-                                                                      Opacity);
-            // Brush hardness
-            {
-                float Hardness;
-                if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2) 
-                { 
-                    float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
-                    float Radius  = Mem->Brush.Diameter / 2.0f;
-                    Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius)); 
-                }
-                else
-                {
-                    Hardness      = Mem->Brush.Hardness; 
-                }
-
-                glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness);
-            }
-
-            glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
-
-            glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle);
-            glBindVertexArray(Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle);
-
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            uint32 Temp = Mem->Misc.FboRenderTexture;
-            Mem->Misc.FboRenderTexture = Mem->Misc.FboSampleTexture;
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, Mem->Misc.FboRenderTexture, 0);
-            Mem->Misc.FboSampleTexture = Temp;
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
         }
-
-#if 0
-        // =========================================================================================
-        // Visualization: Brush falloff
-
-        const int32 ArraySize = 256;
-        local_persist float Opacities[ArraySize] = { 0 };
-
-        float MaxScale = 90.0f;
-        float Scale    = 1.0f / (1.0f - Mem->Brush.Hardness);
-        float Phase    = (1.0f - Scale) * (float)Math::Pi;
-        float Period   = (float)Math::Pi * Scale / (float)ArraySize;
-
-        for (int32 i = 0; i < ArraySize; i++)
-        {
-            Opacities[i] = (cosf(((float)i * Period) + Phase) + 1.0f) * 0.5f;
-            if ((float)i < (float)ArraySize - ((float)ArraySize / Scale)) { Opacities[i] = 1.0f; }
-        }
-
-        ImGui::Begin("Brush falloff");
-        ImGui::PlotLines("", Opacities, ArraySize, 0, 0, FLT_MIN, FLT_MAX, Vec2(256,256));
-        ImGui::End();
-        // =========================================================================================
-#endif
 }
 
     // Undo/Redo
@@ -1572,53 +1586,56 @@ void UpdateAndRender(PapayaMemory* Mem)
 
     // Draw brush cursor
     {
-        // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-        GLint last_program, last_texture;
-        glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-        glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
-        glEnable       (GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable      (GL_CULL_FACE);
-        glDisable      (GL_DEPTH_TEST);
-        glEnable       (GL_SCISSOR_TEST);
-
-        glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle);
-        glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-        glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f); // Brush viz color
-        glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness); // Hardness
-        glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
-
-        ImDrawVert Verts[6];
+        if (Mem->CurrentTool == PapayaTool_Brush)
         {
-            float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
-            Vec2 Size            = Vec2(ScaledDiameter,ScaledDiameter);
-            Vec2 Position        = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
-            Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-            Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-            Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-            Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-            Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-            Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+            // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+            GLint last_program, last_texture;
+            glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+            glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
+            glEnable       (GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDisable      (GL_CULL_FACE);
+            glDisable      (GL_DEPTH_TEST);
+            glEnable       (GL_SCISSOR_TEST);
+
+            glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle);
+            glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
+            glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f); // Brush viz color
+            glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness); // Hardness
+            glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
+
+            ImDrawVert Verts[6];
+            {
+                float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
+                Vec2 Size            = Vec2(ScaledDiameter,ScaledDiameter);
+                Vec2 Position        = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
+                Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+                Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+                Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+                Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+                Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+                Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+            }
+            glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
+            glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
+            glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
+
+            /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
+                      3 + (int)Mem->Window.MaximizeOffset,
+                      (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
+                      (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+            // Restore modified state
+            glBindVertexArray(0);
+            glUseProgram (last_program);
+            glDisable    (GL_SCISSOR_TEST);
+            glDisable    (GL_BLEND);
+            glBindTexture(GL_TEXTURE_2D, last_texture);
         }
-        glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
-        glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
-        glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
-
-        /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
-                  3 + (int)Mem->Window.MaximizeOffset,
-                  (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
-                  (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
-
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
-        // Restore modified state
-        glBindVertexArray(0);
-        glUseProgram (last_program);
-        glDisable    (GL_SCISSOR_TEST);
-        glDisable    (GL_BLEND);
-        glBindTexture(GL_TEXTURE_2D, last_texture);
     }
 
 EndOfDoc:

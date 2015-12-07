@@ -727,7 +727,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     EndOfFrame:
         Util::StopTime(Timer_Frame, &Mem);
-        double FrameRate = (Mem.System.RunMode == PapayaRunMode_500Hz) ? 500.0 : 60.0;
+        double FrameRate = (Mem.CurrentTool == PapayaTool_Brush) ? 500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
         double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].MillisecondsElapsed;
         Mem.Debug.Timers[Timer_Sleep].MillisecondsElapsed = SleepTime;
