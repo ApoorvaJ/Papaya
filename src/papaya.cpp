@@ -1114,28 +1114,32 @@ void UpdateAndRender(PapayaMemory* Mem)
 
         bool Show = true;
         ImGui::Begin("Tool param bar", &Show, WindowFlags);
-        ImGui::PushItemWidth(85);
 
-        ImGui::InputInt("Diameter", &Mem->Brush.Diameter);
-        Mem->Brush.Diameter = Math::Clamp(Mem->Brush.Diameter, 1, Mem->Brush.MaxDiameter);
+        if (Mem->CurrentTool == PapayaTool_Brush)
+        {
+            ImGui::PushItemWidth(85);
+            ImGui::InputInt("Diameter", &Mem->Brush.Diameter);
+            Mem->Brush.Diameter = Math::Clamp(Mem->Brush.Diameter, 1, Mem->Brush.MaxDiameter);
 
-        ImGui::PopItemWidth();
-        ImGui::PushItemWidth(80);
-        ImGui::SameLine();
+            ImGui::PopItemWidth();
+            ImGui::PushItemWidth(80);
+            ImGui::SameLine();
 
-        float ScaledHardness = Mem->Brush.Hardness * 100.0f;
-        ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
-        Mem->Brush.Hardness = ScaledHardness / 100.0f;
-        ImGui::SameLine();
+            float ScaledHardness = Mem->Brush.Hardness * 100.0f;
+            ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
+            Mem->Brush.Hardness = ScaledHardness / 100.0f;
+            ImGui::SameLine();
 
-        float ScaledOpacity = Mem->Brush.Opacity * 100.0f;
-        ImGui::SliderFloat("Opacity", &ScaledOpacity, 0.0f, 100.0f, "%.0f");
-        Mem->Brush.Opacity = ScaledOpacity / 100.0f;
-        ImGui::SameLine();
+            float ScaledOpacity = Mem->Brush.Opacity * 100.0f;
+            ImGui::SliderFloat("Opacity", &ScaledOpacity, 0.0f, 100.0f, "%.0f");
+            Mem->Brush.Opacity = ScaledOpacity / 100.0f;
+            ImGui::SameLine();
 
-        ImGui::Checkbox("Anti-alias", &Mem->Brush.AntiAlias); // TODO: Replace this with a toggleable icon button
+            ImGui::Checkbox("Anti-alias", &Mem->Brush.AntiAlias); // TODO: Replace this with a toggleable icon button
 
-        ImGui::PopItemWidth();
+            ImGui::PopItemWidth();
+        }
+
         ImGui::End();
 
         ImGui::PopStyleVar(3);
