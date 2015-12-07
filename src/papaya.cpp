@@ -365,7 +365,7 @@ void Initialize(PapayaMemory* Mem)
 {
     // Init values
     {
-        Mem->CurrentTool    = PapayaTool_Brush;
+        Mem->CurrentTool    = PapayaTool_EyeDropper;
 
         Mem->Brush.Diameter    = 50;
         Mem->Brush.MaxDiameter = 9999;
@@ -547,6 +547,36 @@ void Initialize(PapayaMemory* Mem)
     InitMesh(Mem->Meshes[PapayaMesh_BrushCursor],
         Mem->Shaders[PapayaShader_BrushCursor],
         Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
+    }
+
+    // Eyedropper cursor shader
+    {
+        const char* Frag =
+            "   #version 330                                                                \n"
+            "                                                                               \n"
+            "   uniform vec3 Color1;                                                        \n" // Uniforms[1]
+            "   uniform vec3 Color2;                                                        \n" // Uniforms[2]
+            "                                                                               \n"
+            "   in vec2 Frag_UV;                                                            \n"
+            "                                                                               \n"
+            "   out vec4 Out_Color;                                                         \n"
+            "                                                                               \n"
+            "   void main()                                                                 \n"
+            "   {                                                                           \n"
+            "       float d = length(vec2(0.5,0.5) - Frag_UV);                              \n"
+            "       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);                    \n"
+            "       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);                       \n"
+            "       vec3 Color = mix(Color1, Color2, sign(Frag_UV.y - 0.5));                \n"
+            "       Out_Color = vec4(Color, t);                                             \n"
+            "   }                                                                           \n";
+
+        CompileShader(Mem->Shaders[PapayaShader_EyeDropperCursor], Vert, Frag, 3, 3,
+            "Position", "UV", "Color",
+            "ProjMtx", "Color1", "Color2");
+
+        InitMesh(Mem->Meshes[PapayaMesh_EyeDropperCursor],
+            Mem->Shaders[PapayaShader_EyeDropperCursor],
+            Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
 
     // Picker saturation-value shader
@@ -1625,6 +1655,58 @@ void UpdateAndRender(PapayaMemory* Mem)
                       3 + (int)Mem->Window.MaximizeOffset,
                       (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
                       (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+            // Restore modified state
+            glBindVertexArray(0);
+            glUseProgram (last_program);
+            glDisable    (GL_SCISSOR_TEST);
+            glDisable    (GL_BLEND);
+            glBindTexture(GL_TEXTURE_2D, last_texture);
+        }
+    }
+
+    // Draw eye dropper cursor
+    {
+        if (Mem->CurrentTool == PapayaTool_EyeDropper)
+        {
+            // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
+            GLint last_program, last_texture;
+            glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
+            glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
+            glEnable       (GL_BLEND);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDisable      (GL_CULL_FACE);
+            glDisable      (GL_DEPTH_TEST);
+            glEnable       (GL_SCISSOR_TEST);
+
+            glUseProgram      (Mem->Shaders[PapayaShader_EyeDropperCursor].Handle);
+            glUniformMatrix4fv(Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
+            glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[1], 1.0f, 0.0f, 0.0f); // Color1
+            glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[2], Mem->Picker.CurrentColor.r, Mem->Picker.CurrentColor.g, Mem->Picker.CurrentColor.b); // Color2
+
+            ImDrawVert Verts[6];
+            {
+                Vec2 Size    = Vec2(230,230);
+                Vec2 Pos     = Mem->Mouse.Pos - (Size * 0.5f);
+                Verts[0].pos = Vec2(Pos.x, Pos.y);                      Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+                Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);             Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+                Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+                Verts[3].pos = Vec2(Pos.x, Pos.y);                      Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+                Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+                Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);             Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+            }
+            glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle);
+            glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
+            glBindVertexArray(Mem->Meshes[PapayaMesh_EyeDropperCursor].VaoHandle);
+
+            /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
+            3 + (int)Mem->Window.MaximizeOffset,
+            (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
+            (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
