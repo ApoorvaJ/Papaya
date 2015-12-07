@@ -180,6 +180,11 @@ struct BrushInfo
     bool BeingDragged;
 };
 
+struct EyeDropperInfo
+{
+    Color Color;
+};
+
 struct PickerInfo
 {
     bool Open;
@@ -231,6 +236,7 @@ struct PapayaMemory
 
     PapayaTool_ CurrentTool;
     BrushInfo Brush;
+    EyeDropperInfo EyeDropper;
     PickerInfo Picker;
     MiscInfo Misc;
 };
