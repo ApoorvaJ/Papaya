@@ -365,7 +365,7 @@ void Initialize(PapayaMemory* Mem)
 {
     // Init values
     {
-        Mem->CurrentTool    = PapayaTool_EyeDropper;
+        Mem->CurrentTool    = PapayaTool_Brush;
 
         Mem->Brush.Diameter    = 50;
         Mem->Brush.MaxDiameter = 9999;
@@ -1165,7 +1165,8 @@ void UpdateAndRender(PapayaMemory* Mem)
         }
 */
 
-        if (Mem->CurrentTool == PapayaTool_Brush)
+        if (Mem->CurrentTool == PapayaTool_Brush && 
+            (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1] || Mem->Mouse.Released[1]))
         {
             // Right mouse dragging
             {
@@ -1620,7 +1621,8 @@ void UpdateAndRender(PapayaMemory* Mem)
 
     // Draw brush cursor
     {
-        if (Mem->CurrentTool == PapayaTool_Brush)
+        if (Mem->CurrentTool == PapayaTool_Brush && 
+            (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1]))
         {
             // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
             GLint last_program, last_texture;
@@ -1674,7 +1676,8 @@ void UpdateAndRender(PapayaMemory* Mem)
 
     // Draw eye dropper cursor
     {
-        if (Mem->CurrentTool == PapayaTool_EyeDropper && Mem->Mouse.InWorkspace)
+        if ((Mem->CurrentTool == PapayaTool_EyeDropper || (Mem->CurrentTool == PapayaTool_Brush && ImGui::GetIO().KeyAlt))
+            && Mem->Mouse.InWorkspace)
         {
             if (Mem->Mouse.IsDown[0])
             {
