@@ -2,7 +2,7 @@ Papaya is a free and open-source GPU-powered image editor, built with the follow
 
 ![screenshot 1](/web/img.0.0.jpg?raw=true)
 
-**Fast:** Papaya is designed for efficiency. It starts up quickly, and is already [significantly faster](http://thegamecoder.com/building-a-fast-modern-image-editor/) than other popular editors at zooming, panning and brushing.
+**Fast:** Papaya is designed for efficiency. It starts up quickly, and is already [significantly faster](http://apoorvaj.io/building-a-fast-modern-image-editor.html) than other popular editors at zooming, panning and brushing.
 
 **Open:** Papaya is completely free. The entire source code is open and is MIT-licensed, which means anyone is free to use and extend the code, even for commercial purposes.
 
@@ -34,7 +34,7 @@ Currently, the Linux build relies on GTK+ for open/save dialog boxes, but otherw
 Credits
 ------
 
-Developed by [Apoorva Joshi](http://thegamecoder.com).
+Developed by [Apoorva Joshi](http://apoorvaj.io/).
 
 Uses Omar Cornut's [ImGui](https://github.com/ocornut/imgui) for UI.
 
