@@ -154,7 +154,7 @@ int64 Platform::GetMilliseconds()
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
     if (EasyTab_HandleEvent(Window, Message, LParam, WParam) == EASYTAB_OK)
-    { 
+    {
         return true;  // Tablet input
     }
 
@@ -390,7 +390,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
-{   
+{
     QueryPerformanceFrequency((LARGE_INTEGER *)&Mem.Debug.TicksPerSecond);
     QueryPerformanceCounter((LARGE_INTEGER *)&Mem.Debug.Time);
     Util::StartTime(Timer_Startup, &Mem);
@@ -585,7 +585,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             }
         }
 
-        // Tablet input
+        // Tablet input // TODO: Put this in papaya.cpp
         {
             Mem.Tablet.Pressure = EasyTab->Pressure;
             Mem.Tablet.PosX = EasyTab->PosX;

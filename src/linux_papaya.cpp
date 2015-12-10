@@ -30,7 +30,6 @@ typedef double real64;
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
-//#include "linux_tablet.h"
 #define EASYTAB_IMPLEMENTATION
 #include "easytab.h"
 
@@ -273,6 +272,9 @@ int main(int argc, char **argv)
         glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
         glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
         printf("%d, %d\n", Mem.System.OpenGLVersion[0], Mem.System.OpenGLVersion[1]);
+
+        // TODO: Disable vsync
+        // glXSwapIntervalEXT(0);
     }
 
     EasyTab_Load(XlibDisplay, XlibWindow);
@@ -302,6 +304,8 @@ int main(int argc, char **argv)
 
     while (Mem.IsRunning)
     {
+        Util::StartTime(Timer_Frame, &Mem);
+
         // Event handling
         while (XPending(XlibDisplay))
         {
@@ -383,12 +387,6 @@ int main(int argc, char **argv)
         {
             ImGui::NewFrame();
 
-            ImGui::Begin("TABLET");
-            ImGui::Text("%d, %d", (int32)EasyTab->PosX, (int32)EasyTab->PosY);
-            ImGui::Text("%f", EasyTab->Pressure);
-            ImGui::End();
-            Mem.Tablet.Pressure = EasyTab->Pressure;
-
             Papaya::UpdateAndRender(&Mem);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
@@ -397,6 +395,14 @@ int main(int argc, char **argv)
         // Run a GTK+ loop, and *don't* block if there are no events pending
         gtk_main_iteration_do(FALSE);
 #endif
+
+        // End Of Frame
+        Util::StopTime(Timer_Frame, &Mem);
+        double FrameRate = (Mem.CurrentTool == PapayaTool_Brush) ? 500.0 : 60.0;
+        double FrameTime = 1000.0 / FrameRate;
+        double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].MillisecondsElapsed;
+        Mem.Debug.Timers[Timer_Sleep].MillisecondsElapsed = SleepTime;
+        if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 
     //Papaya::Shutdown(&Mem);
