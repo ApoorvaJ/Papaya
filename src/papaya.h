@@ -182,7 +182,7 @@ struct BrushInfo
 
 struct EyeDropperInfo
 {
-    Color Color;
+    Color CurrentColor;
 };
 
 struct PickerInfo

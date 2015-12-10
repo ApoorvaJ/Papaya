@@ -335,7 +335,7 @@ internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Fr
     Shader.Handle     = glCreateProgram();
     uint32 VertHandle = glCreateShader(GL_VERTEX_SHADER);
     uint32 FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-    
+
     glShaderSource (VertHandle, 1, &Vert, 0);
     glShaderSource (FragHandle, 1, &Frag, 0);
     glCompileShader(VertHandle);
@@ -400,7 +400,7 @@ void Initialize(PapayaMemory* Mem)
     const char* Vert;
     // Vertex shader
     {
-        Vert = 
+        Vert =
         "   #version 330                                        \n"
         "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
         "                                                       \n"
@@ -1165,7 +1165,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         }
 */
 
-        if (Mem->CurrentTool == PapayaTool_Brush && 
+        if (Mem->CurrentTool == PapayaTool_Brush &&
             (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1] || Mem->Mouse.Released[1]))
         {
             // Right mouse dragging
@@ -1316,15 +1316,15 @@ void UpdateAndRender(PapayaMemory* Mem)
                 // Brush hardness
                 {
                     float Hardness;
-                    if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2) 
-                    { 
+                    if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2)
+                    {
                         float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
                         float Radius  = Mem->Brush.Diameter / 2.0f;
-                        Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius)); 
+                        Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius));
                     }
                     else
                     {
-                        Hardness      = Mem->Brush.Hardness; 
+                        Hardness      = Mem->Brush.Hardness;
                     }
 
                     glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness);
@@ -1517,11 +1517,11 @@ void UpdateAndRender(PapayaMemory* Mem)
 
         glUseProgram      (Mem->Shaders[PapayaShader_AlphaGrid].Handle);
         glUniformMatrix4fv(Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]);  // Projection matrix uniform
-        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[1], Mem->Colors[PapayaCol_AlphaGrid1].r, 
-                                                                             Mem->Colors[PapayaCol_AlphaGrid1].g, 
+        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[1], Mem->Colors[PapayaCol_AlphaGrid1].r,
+                                                                             Mem->Colors[PapayaCol_AlphaGrid1].g,
                                                                              Mem->Colors[PapayaCol_AlphaGrid1].b,1.0f); // Color1 uniform
-        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[2], Mem->Colors[PapayaCol_AlphaGrid2].r, 
-                                                                             Mem->Colors[PapayaCol_AlphaGrid2].g, 
+        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[2], Mem->Colors[PapayaCol_AlphaGrid2].r,
+                                                                             Mem->Colors[PapayaCol_AlphaGrid2].g,
                                                                              Mem->Colors[PapayaCol_AlphaGrid2].b,1.0f); // Color2 uniform
         glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[3], Mem->Doc.CanvasZoom);                      // Zoom uniform
         glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[4], Mem->Doc.InverseAspect);                   // Inverse aspect uniform
@@ -1621,7 +1621,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
     // Draw brush cursor
     {
-        if (Mem->CurrentTool == PapayaTool_Brush && 
+        if (Mem->CurrentTool == PapayaTool_Brush &&
             (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1]))
         {
             // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
@@ -1685,7 +1685,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 {
                     float Pixel[3] = { 0 };
                     glReadPixels((int32)Mem->Mouse.Pos.x, Mem->Window.Height - (int32)Mem->Mouse.Pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel);
-                    Mem->EyeDropper.Color = Color(Pixel[0], Pixel[1], Pixel[2]);
+                    Mem->EyeDropper.CurrentColor = Color(Pixel[0], Pixel[1], Pixel[2]);
                 }
 
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
@@ -1701,7 +1701,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                 glUseProgram      (Mem->Shaders[PapayaShader_EyeDropperCursor].Handle);
                 glUniformMatrix4fv(Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-                glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[1], Mem->EyeDropper.Color.r, Mem->EyeDropper.Color.g, Mem->EyeDropper.Color.b); // Color1
+                glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[1], Mem->EyeDropper.CurrentColor.r, Mem->EyeDropper.CurrentColor.g, Mem->EyeDropper.CurrentColor.b); // Color1
                 glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[2], Mem->Picker.CurrentColor.r, Mem->Picker.CurrentColor.g, Mem->Picker.CurrentColor.b); // Color2
 
                 ImDrawVert Verts[6];
@@ -1736,7 +1736,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             }
             else if (Mem->Mouse.Released[0])
             {
-                Mem->Picker.CurrentColor = Mem->EyeDropper.Color;
+                Mem->Picker.CurrentColor = Mem->EyeDropper.CurrentColor;
             }
         }
     }
@@ -1799,9 +1799,9 @@ EndOfDoc:
                 ImGui::Text("PosY");                        ImGui::NextColumn();
                 ImGui::Text("%f", Mem->Mouse.Pos.y);        ImGui::NextColumn();
                 ImGui::Text("Buttons");                     ImGui::NextColumn();
-                ImGui::Text("%d %d %d", 
-                    Mem->Mouse.IsDown[0], 
-                    Mem->Mouse.IsDown[1], 
+                ImGui::Text("%d %d %d",
+                    Mem->Mouse.IsDown[0],
+                    Mem->Mouse.IsDown[1],
                     Mem->Mouse.IsDown[2]);                  ImGui::NextColumn();
                 ImGui::Columns(1);
                 ImGui::Separator();
