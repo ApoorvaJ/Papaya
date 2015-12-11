@@ -15,6 +15,7 @@ Development status
 
 Papaya is very much a work in progress. The following features are functional so far:
 * Brush with adjustable size, hardness and opacity
+* Eye dropper
 * Color picker
 * Loading jpg & png images, saving png images
 * Undo/Redo
