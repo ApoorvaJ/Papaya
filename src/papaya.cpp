@@ -343,8 +343,8 @@ internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Fr
     glAttachShader (Shader.Handle, VertHandle);
     glAttachShader (Shader.Handle, FragHandle);
 
-    Util::PrintGlShaderCompilationStatus(VertHandle); // TODO: Print name of compiled shader
-    Util::PrintGlShaderCompilationStatus(FragHandle);
+    GL::PrintGlShaderCompilationStatus(VertHandle); // TODO: Print name of compiled shader
+    GL::PrintGlShaderCompilationStatus(FragHandle);
     glLinkProgram(Shader.Handle); // TODO: Print linking errors
 
     va_list Args;
