@@ -5,7 +5,6 @@
 
 #include "papaya_math.h"
 #include "papaya_platform.h"
-#include "papaya_gl.h"
 #include "imgui.h"
 #include "imgui_draw.cpp"
 #include "imgui.cpp"
@@ -244,3 +243,4 @@ struct PapayaMemory
 
 
 #include "papaya_util.h"
+#include "papaya_gl.h"

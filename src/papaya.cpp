@@ -332,37 +332,6 @@ internal void CloseDocument(PapayaMemory* Mem)
     }
 }
 
-internal void CompileShader(ShaderInfo& Shader, const char* Vert, const char* Frag, int32 AttribCount, int32 UniformCount, ...)
-{
-    Shader.Handle     = glCreateProgram();
-    uint32 VertHandle = glCreateShader(GL_VERTEX_SHADER);
-    uint32 FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-
-    glShaderSource (VertHandle, 1, &Vert, 0);
-    glShaderSource (FragHandle, 1, &Frag, 0);
-    glCompileShader(VertHandle);
-    glCompileShader(FragHandle);
-    glAttachShader (Shader.Handle, VertHandle);
-    glAttachShader (Shader.Handle, FragHandle);
-
-    GL::PrintGlShaderCompilationStatus(VertHandle); // TODO: Print name of compiled shader
-    GL::PrintGlShaderCompilationStatus(FragHandle);
-    glLinkProgram(Shader.Handle); // TODO: Print linking errors
-
-    va_list Args;
-    va_start(Args, UniformCount);
-    for (int32 i = 0; i < AttribCount; i++)
-    {
-        Shader.Attributes[i] = glGetAttribLocation(Shader.Handle, va_arg(Args, const char*));
-    }
-
-    for (int32 i = 0; i < UniformCount; i++)
-    {
-        Shader.Uniforms[i] = glGetUniformLocation(Shader.Handle, va_arg(Args, const char*));
-    }
-    va_end(Args);
-}
-
 void Initialize(PapayaMemory* Mem)
 {
     // Init values
@@ -506,7 +475,8 @@ void Initialize(PapayaMemory* Mem)
 "                        clamp(FinalAlpha,0.0,1.0));                \n" // TODO: Needs improvement. Self-intersection corners look weird.
 "   }                                                               \n";
 
-    CompileShader(Mem->Shaders[PapayaShader_Brush], Vert, Frag, 3, 8,
+    GL::CompileShader(Mem->Shaders[PapayaShader_Brush], __FILE__, __LINE__,
+        Vert, Frag, 3, 8,
         "Position", "UV", "Color",
         "ProjMtx", "Texture", "Pos", "LastPos", "Radius", "BrushColor", "Hardness", "InvAspect");
 
@@ -542,7 +512,8 @@ void Initialize(PapayaMemory* Mem)
 "       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
 "   }                                                                           \n";
 
-    CompileShader(Mem->Shaders[PapayaShader_BrushCursor], Vert, Frag, 3, 4,
+    GL::CompileShader(Mem->Shaders[PapayaShader_BrushCursor], __FILE__, __LINE__,
+        Vert, Frag, 3, 4,
         "Position", "UV", "Color",
         "ProjMtx", "BrushColor", "Hardness", "PixelDiameter");
 
@@ -572,7 +543,8 @@ void Initialize(PapayaMemory* Mem)
             "       Out_Color = vec4(Color, t);                                             \n"
             "   }                                                                           \n";
 
-        CompileShader(Mem->Shaders[PapayaShader_EyeDropperCursor], Vert, Frag, 3, 3,
+        GL::CompileShader(Mem->Shaders[PapayaShader_EyeDropperCursor], __FILE__, __LINE__,
+            Vert, Frag, 3, 3,
             "Position", "UV", "Color",
             "ProjMtx", "Color1", "Color2");
 
@@ -617,7 +589,8 @@ void Initialize(PapayaMemory* Mem)
 "       }                                                                   \n"
 "   }                                                                       \n";
 
-    CompileShader(Mem->Shaders[PapayaShader_PickerSVBox], Vert, Frag, 3, 3,
+    GL::CompileShader(Mem->Shaders[PapayaShader_PickerSVBox], __FILE__, __LINE__,
+        Vert, Frag, 3, 3,
         "Position", "UV", "Color",
         "ProjMtx", "Hue", "Cursor");
 
@@ -655,7 +628,8 @@ void Initialize(PapayaMemory* Mem)
 "           Out_Color = Hue;                                        \n"
 "   }                                                               \n";
 
-    CompileShader(Mem->Shaders[PapayaShader_PickerHStrip], Vert, Frag, 3, 2,
+    GL::CompileShader(Mem->Shaders[PapayaShader_PickerHStrip], __FILE__, __LINE__,
+        Vert, Frag, 3, 2,
         "Position", "UV", "Color",
         "ProjMtx", "Cursor");
 
@@ -689,7 +663,8 @@ void Initialize(PapayaMemory* Mem)
             "       Out_Color = mix(Color1, Color2, a);                         \n"
             "   }                                                               \n";
 
-        CompileShader(Mem->Shaders[PapayaShader_AlphaGrid], Vert, Frag, 3, 5,
+        GL::CompileShader(Mem->Shaders[PapayaShader_AlphaGrid], __FILE__, __LINE__,
+            Vert, Frag, 3, 5,
             "Position", "UV", "Color",
             "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect");
 
@@ -713,7 +688,8 @@ void Initialize(PapayaMemory* Mem)
 "       Out_Color = Frag_Color * texture( Texture, Frag_UV.st); \n"
 "   }                                                           \n";
 
-    CompileShader(Mem->Shaders[PapayaShader_ImGui], Vert, Frag, 3, 2,
+    GL::CompileShader(Mem->Shaders[PapayaShader_ImGui], __FILE__, __LINE__,
+        Vert, Frag, 3, 2,
         "Position", "UV", "Color",
         "ProjMtx", "Texture");
 
