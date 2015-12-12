@@ -16,7 +16,8 @@ internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
     GLCHK( glBindTexture  (GL_TEXTURE_2D, Tex) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0) );
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, 
+                           GL_UNSIGNED_BYTE, 0) );
     return Tex;
 }
 
@@ -32,7 +33,8 @@ internal uint32 LoadAndBindImage(char* Path)
     GLCHK( glBindTexture  (GL_TEXTURE_2D, Id_GLuint) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image) );
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, 
+                           GL_RGBA, GL_UNSIGNED_BYTE, Image) );
 
     // Store our identifier
     free(Image);

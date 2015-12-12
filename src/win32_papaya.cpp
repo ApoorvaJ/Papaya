@@ -453,64 +453,38 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     // Initialize OpenGL
     {
         DeviceContext = GetDC(Window);
-        PIXELFORMATDESCRIPTOR PixelFormatDescriptor = {};
-        int32 PixelFormat;
 
         // Setup pixel format
         {
-            PixelFormatDescriptor.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-            PixelFormatDescriptor.nVersion = 1;
-            PixelFormatDescriptor.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-            PixelFormatDescriptor.iPixelType = PFD_TYPE_RGBA;
-            PixelFormatDescriptor.cColorBits = 32;
-            PixelFormatDescriptor.cDepthBits = 32;
-            PixelFormatDescriptor.dwLayerMask = PFD_MAIN_PLANE;
+            PIXELFORMATDESCRIPTOR PixelFormatDesc = { 0 };
+            // TODO: Program seems to work perfectly fine without all other params except dwFlags.
+            //       Can we skip other params for the sake of brevity?
+            PixelFormatDesc.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+            PixelFormatDesc.nVersion = 1;
+            PixelFormatDesc.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+            PixelFormatDesc.iPixelType = PFD_TYPE_RGBA;
+            PixelFormatDesc.cColorBits = 32;
+            PixelFormatDesc.cDepthBits = 32;
+            PixelFormatDesc.dwLayerMask = PFD_MAIN_PLANE;
+            //
 
-            PixelFormat = ChoosePixelFormat(DeviceContext, &PixelFormatDescriptor);
-            if (!PixelFormat)
-            {
-                // TODO: Log: Choose pixel format failed
-                exit(1);
-            }
-
-            if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDescriptor))
-            {
-                // TODO: Log: Set pixel format failed
-                exit(1);
-            }
+            int32 PixelFormat = ChoosePixelFormat(DeviceContext, &PixelFormatDesc);
+            if (!PixelFormat) { exit(1); } // TODO: Log: Choose pixel format failed
+            if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDesc)) { exit(1); } // TODO: Log: Set pixel format failed
         }
 
         // Create rendering context
         {
-            HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
-            wglMakeCurrent(DeviceContext, TempRenderingContext);
+            HGLRC RenderingContext = wglCreateContext(DeviceContext);
+            wglMakeCurrent(DeviceContext, RenderingContext);
 
             if (!GL::InitAndValidate()) { exit(1); }
-
-
-
-            RenderingContext = wglCreateContext(DeviceContext); // This creates a context of the latest supported version
-
-            if (!RenderingContext)
-            {
-                // TODO: Log: Failed to create rendering context
-                exit(1);
-            }
-
-            wglMakeCurrent(NULL,NULL);
-            wglDeleteContext(TempRenderingContext);
-            wglMakeCurrent(DeviceContext, RenderingContext);
 
             glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
             glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
         }
 
-        // Disable vsync
-        {
-            typedef BOOL(APIENTRY *PFNWGLSWAPINTERVALFARPROC) (int);
-            PFNWGLSWAPINTERVALFARPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALFARPROC)wglGetProcAddress("wglSwapIntervalEXT");
-            wglSwapIntervalEXT(0);
-        }
+        wglSwapIntervalEXT(0); // Disable vsync
     }
 
     // Initialize tablet
