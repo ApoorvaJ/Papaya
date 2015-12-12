@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #define internal static
 #define local_persist static
@@ -25,11 +26,9 @@ typedef double real64;
 
 #include <windows.h>
 #include <windowsx.h>
-#include <stdio.h>
 #include <malloc.h>
 #include <commdlg.h>
 
-//#include "win32_tablet.h"
 #define EASYTAB_IMPLEMENTATION
 #include "easytab.h"
 
@@ -486,17 +485,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             HGLRC TempRenderingContext = wglCreateContext(DeviceContext);
             wglMakeCurrent(DeviceContext, TempRenderingContext);
 
-            if (gl3wInit() != 0)
-            {
-                // TODO: Log: GL3W Init failed
-                exit(1);
-            }
+            if (!GL::InitAndValidate()) { exit(1); }
 
-            if (!gl3wIsSupported(3,1))
-            {
-                // TODO: Log: Required OpenGL version not supported
-                exit(1);
-            }
+
 
             RenderingContext = wglCreateContext(DeviceContext); // This creates a context of the latest supported version
 

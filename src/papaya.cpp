@@ -12,11 +12,11 @@ namespace Papaya
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {
     uint32 Tex;
-    glGenTextures  (1, &Tex);
-    glBindTexture  (GL_TEXTURE_2D, Tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    GLCHK( glGenTextures  (1, &Tex) );
+    GLCHK( glBindTexture  (GL_TEXTURE_2D, Tex) );
+    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0) );
     return Tex;
 }
 
@@ -28,11 +28,11 @@ internal uint32 LoadAndBindImage(char* Path)
 
     // Create texture
     GLuint Id_GLuint;
-    glGenTextures  (1, &Id_GLuint);
-    glBindTexture  (GL_TEXTURE_2D, Id_GLuint);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+    GLCHK( glGenTextures  (1, &Id_GLuint) );
+    GLCHK( glBindTexture  (GL_TEXTURE_2D, Id_GLuint) );
+    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image) );
 
     // Store our identifier
     free(Image);

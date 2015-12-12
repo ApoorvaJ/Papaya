@@ -1,10 +1,11 @@
 #pragma once
 
-#include "gl3w.h"
-#include "gl3w.c"
+#define GLEW_STATIC
+#include "glew.c"
 
 #include "papaya_math.h"
 #include "papaya_platform.h"
+#include "papaya_gl.h"
 #include "imgui.h"
 #include "imgui_draw.cpp"
 #include "imgui.cpp"
