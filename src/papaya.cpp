@@ -43,8 +43,8 @@ internal uint32 LoadAndBindImage(char* Path)
 
 internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, GLenum Usage)
 {
-    glGenBuffers     (1, &Mesh.VboHandle);
-    glBindBuffer     (GL_ARRAY_BUFFER, Mesh.VboHandle);
+    glGenBuffersARB  (1, &Mesh.VboHandle);
+    glBindBufferARB  (GL_ARRAY_BUFFER, Mesh.VboHandle);
     glGenVertexArrays(1, &Mesh.VaoHandle);
     glBindVertexArray(Mesh.VaoHandle);
 
@@ -700,12 +700,12 @@ void Initialize(PapayaMemory* Mem)
 
     // Setup for ImGui
     {
-        glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle);
-        glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
+        glGenBuffersARB(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle);
+        glGenBuffersARB(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
 
         glGenVertexArrays        (1, &Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
         glBindVertexArray        (Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
-        glBindBuffer             (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
+        glBindBufferARB          (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
         glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[0]);
         glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[1]);
         glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[2]);
@@ -716,7 +716,7 @@ void Initialize(PapayaMemory* Mem)
         glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col));
     #undef OFFSETOF
         glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBufferARB(GL_ARRAY_BUFFER, 0);
 
         // Create fonts texture
         ImGuiIO& io = ImGui::GetIO();
@@ -1204,7 +1204,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
                     //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
-                    glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
+                    glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
                     glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle);
 
                     glEnable(GL_BLEND);
@@ -1310,7 +1310,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                 glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
 
-                glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle);
+                glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle);
 
                 glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
@@ -1515,7 +1515,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBuffer   (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_AlphaGrid].VboHandle);
+        glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_AlphaGrid].VboHandle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
 
         glBindVertexArray(Mem->Meshes[PapayaMesh_AlphaGrid].VaoHandle);
@@ -1571,7 +1571,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBuffer   (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
+        glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
 
         glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle);
@@ -1631,7 +1631,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
                 Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
             }
-            glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
+            glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
             glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
             glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
 
@@ -1693,7 +1693,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
                     Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);             Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
                 }
-                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle);
+                glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle);
                 glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_EyeDropperCursor].VaoHandle);
 
@@ -1871,7 +1871,7 @@ EndOfDoc:
                 glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
                 glUniform1f       (Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH); // Cursor
 
-                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
+                glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_PickerHStrip].VaoHandle);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1900,7 +1900,7 @@ EndOfDoc:
                 glUniform1f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH); // Hue
                 glUniform2f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y); //Cursor                                 // Current
 
-                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
+                glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_PickerSVBox].VaoHandle);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1960,11 +1960,11 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
         const ImDrawList* cmd_list = DrawData->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
 
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
-        glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), (GLvoid*)&cmd_list->VtxBuffer.front(), GL_STREAM_DRAW);
+        glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
+        glBufferData   (GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), (GLvoid*)&cmd_list->VtxBuffer.front(), GL_STREAM_DRAW);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
+        glBufferData   (GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW);
 
         for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
         {
@@ -1985,8 +1985,8 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     // Restore modified GL state
     glUseProgram     (last_program);
     glBindTexture    (GL_TEXTURE_2D, last_texture);
-    glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer);
-    glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+    glBindBufferARB  (GL_ARRAY_BUFFER, last_array_buffer);
+    glBindBufferARB  (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
     glBindVertexArray(last_vertex_array);
     glDisable        (GL_SCISSOR_TEST);
 }

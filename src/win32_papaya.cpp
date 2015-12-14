@@ -475,6 +475,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         // Create rendering context
         {
+            // TODO: Create "proper" context?
+            //       https://www.opengl.org/wiki/Creating_an_OpenGL_Context_(WGL)#Proper_Context_Creation
+
             HGLRC RenderingContext = wglCreateContext(DeviceContext);
             wglMakeCurrent(DeviceContext, RenderingContext);
 
