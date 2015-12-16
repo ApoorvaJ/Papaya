@@ -21,6 +21,8 @@ namespace GL
         if      (!GL_ARB_vertex_buffer_object)  { return false; }   // OpenGL 1.4
         else if (!GL_ARB_vertex_program)        { return false; }   // OpenGL 1.3
         else if (!GL_ARB_fragment_program)      { return false; }   // OpenGL 1.3
+        else if (!GL_ARB_draw_buffers)          { return false; }   // OpenGL 1.3
+        else if (!GL_ARB_framebuffer_object)    { return false; }   // OpenGL 1.1
         else if (!GL_ARB_shader_objects)        { return false; }   // OpenGL 1.0
 
         return true;
