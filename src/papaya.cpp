@@ -43,19 +43,19 @@ internal uint32 LoadAndBindImage(char* Path)
 
 internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, GLenum Usage)
 {
-    GLCHK( glGenBuffersARB  (1, &Mesh.VboHandle) );
-    GLCHK( glBindBufferARB  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
+    GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
+    GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
     glGenVertexArrays(1, &Mesh.VaoHandle); // GLTODO
     glBindVertexArray(Mesh.VaoHandle); // GLTODO
 
-    GLCHK( glEnableVertexAttribArrayARB(Shader.Attributes[0]) ); // Position attribute
-    GLCHK( glEnableVertexAttribArrayARB(Shader.Attributes[1]) ); // UV attribute
-    GLCHK( glEnableVertexAttribArrayARB(Shader.Attributes[2]) ); // Color attribute
+    GLCHK( glEnableVertexAttribArray(Shader.Attributes[0]) ); // Position attribute
+    GLCHK( glEnableVertexAttribArray(Shader.Attributes[1]) ); // UV attribute
+    GLCHK( glEnableVertexAttribArray(Shader.Attributes[2]) ); // Color attribute
 
 #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-    GLCHK( glVertexAttribPointerARB(Shader.Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );   // Position attribute
-    GLCHK( glVertexAttribPointerARB(Shader.Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );    // UV attribute
-    GLCHK( glVertexAttribPointerARB(Shader.Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) ); // Color attribute
+    GLCHK( glVertexAttribPointer(Shader.Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );   // Position attribute
+    GLCHK( glVertexAttribPointer(Shader.Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );    // UV attribute
+    GLCHK( glVertexAttribPointer(Shader.Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) ); // Color attribute
 #undef OFFSETOF
 
     ImDrawVert Verts[6];
@@ -66,7 +66,7 @@ internal void InitMesh(MeshInfo& Mesh, ShaderInfo Shader, Vec2 Pos, Vec2 Size, G
     Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
     Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);          Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
 
-    GLCHK( glBufferDataARB(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage) );
+    GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage) );
 }
 
 internal void PushUndo(PapayaMemory* Mem)
@@ -213,11 +213,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
 
         static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-         
-        // TODO: Check if following call is needed, because if not,
-        //       GL_ARB_draw_buffers extension dependency can be removed.
-        GLCHK( glDrawBuffersARB(1, draw_buffers) );
-        //
+        GLCHK( glDrawBuffers(1, draw_buffers) );
 
         GLenum Status = GLCHK( glCheckFramebufferStatus(GL_FRAMEBUFFER) );
         if(Status != GL_FRAMEBUFFER_COMPLETE)
@@ -327,7 +323,7 @@ internal void CloseDocument(PapayaMemory* Mem)
     // Vertex Buffer: RTTAdd
     if (Mem->Meshes[PapayaMesh_RTTAdd].VboHandle)
     {
-        GLCHK( glDeleteBuffersARB(1, &Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
+        GLCHK( glDeleteBuffers(1, &Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
         Mem->Meshes[PapayaMesh_RTTAdd].VboHandle = 0;
     }
 
@@ -706,23 +702,23 @@ void Initialize(PapayaMemory* Mem)
 
     // Setup for ImGui
     {
-        GLCHK( glGenBuffersARB(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
-        GLCHK( glGenBuffersARB(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle) );
+        GLCHK( glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
+        GLCHK( glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle) );
 
         glGenVertexArrays(1, &Mem->Meshes[PapayaMesh_ImGui].VaoHandle); // GLTODO
         glBindVertexArray(Mem->Meshes[PapayaMesh_ImGui].VaoHandle); // GLTODO
-        GLCHK( glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
-        GLCHK( glEnableVertexAttribArrayARB(Mem->Shaders[PapayaShader_ImGui].Attributes[0]) );
-        GLCHK( glEnableVertexAttribArrayARB(Mem->Shaders[PapayaShader_ImGui].Attributes[1]) );
-        GLCHK( glEnableVertexAttribArrayARB(Mem->Shaders[PapayaShader_ImGui].Attributes[2]) );
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
+        GLCHK( glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[0]) );
+        GLCHK( glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[1]) );
+        GLCHK( glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[2]) );
 
     #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-        GLCHK( glVertexAttribPointerARB(Mem->Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
-        GLCHK( glVertexAttribPointerARB(Mem->Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
-        GLCHK( glVertexAttribPointerARB(Mem->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) );
+        GLCHK( glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
+        GLCHK( glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
+        GLCHK( glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) );
     #undef OFFSETOF
         glBindVertexArray(0); // GLTODO
-        glBindBufferARB(GL_ARRAY_BUFFER, 0); // GLTODO
+        glBindBuffer(GL_ARRAY_BUFFER, 0); // GLTODO
 
         // Create fonts texture
         ImGuiIO& io = ImGui::GetIO();
@@ -903,10 +899,10 @@ void UpdateAndRender(PapayaMemory* Mem)
                     uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
                     if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
                     {
-                        glFinish();
-                        glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-                        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture);
-                        glFinish();
+                        GLCHK( glFinish() ); // TODO: Is this necessary?
+                        GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
+                        GLCHK( glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture) );
+                        GLCHK( glFinish() ); // TODO: Is this necessary?
 
                         int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
                         if (!Result)
@@ -1209,37 +1205,37 @@ void UpdateAndRender(PapayaMemory* Mem)
             {
                 // Additive render-to-texture
                 {
-                    glDisable(GL_SCISSOR_TEST);
-                    glBindFramebuffer   (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
+                    GLCHK( glDisable(GL_SCISSOR_TEST) );
+                    GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
 
-                    glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
-                    glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle);
+                    GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
+                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
 
-                    glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
+                    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
                     //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
-                    glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle);
-                    glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle);
+                    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
+                    glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle); // GLTODO
 
-                    glEnable(GL_BLEND);
-                    glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX); // TODO: Handle the case where the original texture has an alpha below 1.0
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    GLCHK( glEnable(GL_BLEND) );
+                    GLCHK( glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX) ); // TODO: Handle the case where the original texture has an alpha below 1.0
+                    GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
 
-                    glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
-                    glDrawArrays (GL_TRIANGLES, 0, 6);
-                    glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-                    glDrawArrays (GL_TRIANGLES, 0, 6);
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
                     uint32 Temp = Mem->Misc.FboRenderTexture;
                     Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
                     Mem->Doc.TextureID = Temp;
 
-                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+                    GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+                    GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
 
-                    glDisable(GL_BLEND);
+                    GLCHK( glDisable(GL_BLEND) );
                 }
 
                 PushUndo(Mem);
@@ -1252,24 +1248,24 @@ void UpdateAndRender(PapayaMemory* Mem)
             {
                 Mem->Misc.DrawOverlay = true;
 
-                glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject);
+                GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
 
                 if (Mem->Mouse.Pressed[0])
                 {
                     GLuint clearColor[4] = {0, 0, 0, 0};
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboSampleTexture, 0) );
-                    glClearBufferuiv(GL_COLOR, 0, clearColor);
+                    glClearBufferuiv(GL_COLOR, 0, clearColor); // GLTODO
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
                 }
-                glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height);
+                GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
 
-                glDisable(GL_BLEND);
-                glDisable(GL_SCISSOR_TEST);
+                GLCHK( glDisable(GL_BLEND) );
+                GLCHK( glDisable(GL_SCISSOR_TEST) );
 
                 // Setup orthographic projection matrix
                 float width  = (float)Mem->Doc.Width;
                 float height = (float)Mem->Doc.Height;
-                glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle);
+                GLCHK( glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle) );
 
                 Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 Vec2 CorrectedLastPos = Mem->Mouse.LastUV + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
@@ -1295,17 +1291,17 @@ void UpdateAndRender(PapayaMemory* Mem)
                 i++;
     #endif
 
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]);
+                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
                 //glUniform1i(Mem->Shaders[PapayaShader_Brush].Uniforms[1], Mem->Doc.TextureID); // Texture uniform
-                glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect); // Pos uniform
-                glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect); // Lastpos uniform
-                glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f));
+                GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect) ); // Pos uniform
+                GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect) ); // Lastpos uniform
+                GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f)) );
                 float Opacity = Mem->Brush.Opacity;
                 if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
-                glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
+                GLCHK( glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
                                                                           Mem->Picker.CurrentColor.g,
                                                                           Mem->Picker.CurrentColor.b,
-                                                                          Opacity);
+                                                                          Opacity) );
                 // Brush hardness
                 {
                     float Hardness;
@@ -1320,24 +1316,24 @@ void UpdateAndRender(PapayaMemory* Mem)
                         Hardness      = Mem->Brush.Hardness;
                     }
 
-                    glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness);
+                    GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness) );
                 }
 
-                glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect); // Inverse Aspect uniform
+                GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect) ); // Inverse Aspect uniform
 
-                glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle);
-                glBindVertexArray(Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle);
+                GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle) );
+                glBindVertexArray(Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle); // GLTODO
 
-                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
                 uint32 Temp = Mem->Misc.FboRenderTexture;
                 Mem->Misc.FboRenderTexture = Mem->Misc.FboSampleTexture;
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
                 Mem->Misc.FboSampleTexture = Temp;
 
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
+                GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+                GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
             }
 
 #if 0
@@ -1410,8 +1406,8 @@ void UpdateAndRender(PapayaMemory* Mem)
                     memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)(Data.Size - (BytesToRight - sizeof(UndoData))));
                 }
 
-                glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID);
-                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image);
+                GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
+                GLCHK( glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image) );
 
                 if (AllocUsed) { free(Image); }
             }
@@ -1500,24 +1496,24 @@ void UpdateAndRender(PapayaMemory* Mem)
     {
         // TODO: Remove state setting and restoring if unnecessary
         GLint last_program;
-        glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-        glEnable       (GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable      (GL_CULL_FACE);
-        glDisable      (GL_DEPTH_TEST);
-        glEnable       (GL_SCISSOR_TEST);
+        GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+        GLCHK( glEnable       (GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+        GLCHK( glDisable      (GL_CULL_FACE) );
+        GLCHK( glDisable      (GL_DEPTH_TEST) );
+        GLCHK( glEnable       (GL_SCISSOR_TEST) );
 
-        glUseProgram      (Mem->Shaders[PapayaShader_AlphaGrid].Handle);
-        glUniformMatrix4fv(Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]);  // Projection matrix uniform
-        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[1], Mem->Colors[PapayaCol_AlphaGrid1].r,
-                                                                             Mem->Colors[PapayaCol_AlphaGrid1].g,
-                                                                             Mem->Colors[PapayaCol_AlphaGrid1].b,1.0f); // Color1 uniform
-        glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[2], Mem->Colors[PapayaCol_AlphaGrid2].r,
-                                                                             Mem->Colors[PapayaCol_AlphaGrid2].g,
-                                                                             Mem->Colors[PapayaCol_AlphaGrid2].b,1.0f); // Color2 uniform
-        glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[3], Mem->Doc.CanvasZoom);                      // Zoom uniform
-        glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[4], Mem->Doc.InverseAspect);                   // Inverse aspect uniform
+        GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_AlphaGrid].Handle) );
+        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) );  // Projection matrix uniform
+        GLCHK( glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[1], Mem->Colors[PapayaCol_AlphaGrid1].r,
+                                                                                    Mem->Colors[PapayaCol_AlphaGrid1].g,
+                                                                                    Mem->Colors[PapayaCol_AlphaGrid1].b, 1.0f) ); // Color1 uniform
+        GLCHK( glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[2], Mem->Colors[PapayaCol_AlphaGrid2].r,
+                                                                                    Mem->Colors[PapayaCol_AlphaGrid2].g,
+                                                                                    Mem->Colors[PapayaCol_AlphaGrid2].b, 1.0f) ); // Color2 uniform
+        GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[3], Mem->Doc.CanvasZoom) );                      // Zoom uniform
+        GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[4], Mem->Doc.InverseAspect) );                   // Inverse aspect uniform
 
         ImDrawVert Verts[6];
         {
@@ -1530,29 +1526,29 @@ void UpdateAndRender(PapayaMemory* Mem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_AlphaGrid].VboHandle);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_AlphaGrid].VboHandle) );
+        GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
 
-        glBindVertexArray(Mem->Meshes[PapayaMesh_AlphaGrid].VaoHandle);
+        glBindVertexArray(Mem->Meshes[PapayaMesh_AlphaGrid].VaoHandle); // GLTODO
 
         if (Mem->Misc.DrawCanvas)
         {
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
         }
         if (Mem->Misc.DrawOverlay)
         {
-            glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glDrawArrays   (GL_TRIANGLES, 0, 6);
+            GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
+            GLCHK( glDrawArrays   (GL_TRIANGLES, 0, 6) );
         }
 
         // Restore modified state
-        glBindVertexArray(0);
-        glUseProgram (last_program);
-        glDisable    (GL_SCISSOR_TEST);
-        glDisable    (GL_BLEND);
+        GLCHK( glBindVertexArray(0) );
+        GLCHK( glUseProgram (last_program) );
+        GLCHK( glDisable    (GL_SCISSOR_TEST) );
+        GLCHK( glDisable    (GL_BLEND) );
     }
 
     // Draw canvas
@@ -1586,7 +1582,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
+        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
 
         glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle);
@@ -1646,7 +1642,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
                 Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
             }
-            glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
+            glBindBuffer  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
             glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
             glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
 
@@ -1708,7 +1704,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
                     Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);             Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
                 }
-                glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle);
+                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle);
                 glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_EyeDropperCursor].VaoHandle);
 
@@ -1886,7 +1882,7 @@ EndOfDoc:
                 glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
                 glUniform1f       (Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH); // Cursor
 
-                glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
+                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_PickerHStrip].VaoHandle);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1915,7 +1911,7 @@ EndOfDoc:
                 glUniform1f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH); // Hue
                 glUniform2f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y); //Cursor                                 // Current
 
-                glBindBufferARB  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
+                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
                 glBindVertexArray(Mem->Meshes[PapayaMesh_PickerSVBox].VaoHandle);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1975,10 +1971,10 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
         const ImDrawList* cmd_list = DrawData->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
 
-        glBindBufferARB(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
+        glBindBuffer   (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
         glBufferData   (GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), (GLvoid*)&cmd_list->VtxBuffer.front(), GL_STREAM_DRAW);
 
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
+        glBindBuffer   (GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
         glBufferData   (GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW);
 
         for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
@@ -2000,8 +1996,8 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     // Restore modified GL state
     glUseProgram     (last_program);
     glBindTexture    (GL_TEXTURE_2D, last_texture);
-    glBindBufferARB  (GL_ARRAY_BUFFER, last_array_buffer);
-    glBindBufferARB  (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+    glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer);
+    glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
     glBindVertexArray(last_vertex_array);
     glDisable        (GL_SCISSOR_TEST);
 }

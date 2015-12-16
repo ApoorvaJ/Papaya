@@ -13,17 +13,12 @@ namespace GL
         if (glewInit() != GLEW_OK) { return false; }
 
         // Core profile capability check
-        if (!GL_VERSION_1_4) { return false; }
+        if (!GL_VERSION_2_1) { return false; }
         
         // Extension capability checks
         //        Extension                                         OpenGL dependency version
         //        ==========                                        =========================
-        if      (!GL_ARB_vertex_buffer_object)  { return false; }   // OpenGL 1.4
-        else if (!GL_ARB_vertex_program)        { return false; }   // OpenGL 1.3
-        else if (!GL_ARB_fragment_program)      { return false; }   // OpenGL 1.3
-        else if (!GL_ARB_draw_buffers)          { return false; }   // OpenGL 1.3
-        else if (!GL_ARB_framebuffer_object)    { return false; }   // OpenGL 1.1
-        else if (!GL_ARB_shader_objects)        { return false; }   // OpenGL 1.0
+        if (!GL_ARB_framebuffer_object)    { return false; }        // OpenGL 1.1
 
         return true;
     }
