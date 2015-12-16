@@ -81,16 +81,34 @@ namespace GL
 
         GLCHK( glLinkProgram(Shader.Handle) ); // TODO: Print linking errors
 
+        Shader.AttribCount = AttribCount;
+        Shader.UniformCount = UniformCount;
         va_list Args;
         va_start(Args, UniformCount);
         for (int32 i = 0; i < AttribCount; i++)
         {
-            Shader.Attributes[i] = GLCHK( glGetAttribLocation(Shader.Handle, va_arg(Args, const char*)) );
+            const char* Name = va_arg(Args, const char*);
+            Shader.Attributes[i] = GLCHK( glGetAttribLocation(Shader.Handle, Name) );
+
+            if (Shader.Attributes[i] == -1)
+            {
+                char Buffer[256];
+                snprintf(Buffer, 256, "Attribute %s not found in shader at %s:%d\n", Name, File, Line);
+                Platform::Print(Buffer);
+            }
         }
 
         for (int32 i = 0; i < UniformCount; i++)
         {
-            Shader.Uniforms[i] = GLCHK( glGetUniformLocation(Shader.Handle, va_arg(Args, const char*)) );
+            const char* Name = va_arg(Args, const char*);
+            Shader.Uniforms[i] = GLCHK( glGetUniformLocation(Shader.Handle, Name) );
+
+            if (Shader.Uniforms[i] == -1)
+            {
+                char Buffer[256];
+                snprintf(Buffer, 256, "Uniform %s not found in shader at %s:%d\n", Name, File, Line);
+                Platform::Print(Buffer);
+            }
         }
         va_end(Args);
     }

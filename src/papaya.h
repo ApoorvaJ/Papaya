@@ -163,6 +163,7 @@ struct TabletInfo
 struct ShaderInfo
 {
     uint32 Handle;
+    int32 AttribCount, UniformCount;
     int32 Attributes[8];
     int32 Uniforms[8];
 };
