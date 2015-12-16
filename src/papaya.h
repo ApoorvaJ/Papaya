@@ -62,6 +62,15 @@ enum PapayaShader_
     PapayaShader_COUNT
 };
 
+enum UniformType_
+{
+    UniformType_Float,
+    UniformType_Vec2,
+    UniformType_Matrix4,
+    UniformType_Color,
+    UniformType_COUNT
+};
+
 enum PapayaUndoOp_
 {
     PapayaUndoOp_Brush,

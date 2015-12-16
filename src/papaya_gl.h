@@ -94,4 +94,78 @@ namespace GL
         }
         va_end(Args);
     }
+
+    void TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)
+    {
+        ImDrawVert Verts[6];
+        {
+            Verts[0].pos = Vec2(Pos.x, Pos.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
+            Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
+            Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+            Verts[3].pos = Vec2(Pos.x, Pos.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
+            Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+            Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+        }
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh.VboHandle) );
+        GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
+    }
+
+    void DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, int32 UniformCount, ...)
+    {
+        GLint last_program, last_texture;
+        GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+        GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
+        GLCHK( glEnable       (GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+        GLCHK( glDisable      (GL_CULL_FACE) );
+        GLCHK( glDisable      (GL_DEPTH_TEST) );
+        GLCHK( glEnable       (GL_SCISSOR_TEST) );
+
+        GLCHK( glUseProgram   (Shader.Handle) );
+
+        // Uniforms
+        {
+            va_list Args;
+            va_start(Args, UniformCount);
+            for (int32 i = 0; i < UniformCount; i++)
+            {
+                switch (va_arg(Args, UniformType_))
+                {
+                    case UniformType_Float:
+                    {
+                        GLCHK( glUniform1f(Shader.Uniforms[i], (float)va_arg(Args, double)) );
+                    } break;
+
+                    case UniformType_Matrix4:
+                    {
+                        GLCHK( glUniformMatrix4fv(Shader.Uniforms[i], 1, GL_FALSE, va_arg(Args, float*)) );
+                    } break;
+
+                    case UniformType_Vec2:
+                    {
+                        Vec2 Vec = va_arg(Args, Vec2);
+                        GLCHK( glUniform2f(Shader.Uniforms[i], Vec.x, Vec.y) );
+                    } break;
+
+                    case UniformType_Color:
+                    {
+                        Color Col = va_arg(Args, Color);
+                        GLCHK( glUniform4f(Shader.Uniforms[i], Col.r, Col.g, Col.b, Col.a) );
+                    } break;
+                }
+            }
+            va_end(Args);
+        }
+
+        glBindVertexArray(Mesh.VaoHandle); // GLTODO
+        GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
+
+        // Restore modified state
+        glBindVertexArray(0); // GLTODO
+        GLCHK( glUseProgram (last_program) );                // TODO: Necessary?
+        GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
+        GLCHK( glDisable    (GL_BLEND) );                    //
+        GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
+    }
 }

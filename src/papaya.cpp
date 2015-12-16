@@ -529,8 +529,8 @@ void Initialize(PapayaMemory* Mem)
         const char* Frag =
             "   #version 330                                                                \n"
             "                                                                               \n"
-            "   uniform vec3 Color1;                                                        \n" // Uniforms[1]
-            "   uniform vec3 Color2;                                                        \n" // Uniforms[2]
+            "   uniform vec4 Color1;                                                        \n" // Uniforms[1]
+            "   uniform vec4 Color2;                                                        \n" // Uniforms[2]
             "                                                                               \n"
             "   in vec2 Frag_UV;                                                            \n"
             "                                                                               \n"
@@ -541,8 +541,8 @@ void Initialize(PapayaMemory* Mem)
             "       float d = length(vec2(0.5,0.5) - Frag_UV);                              \n"
             "       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);                    \n"
             "       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);                       \n"
-            "       vec3 Color = (Frag_UV.y < 0.5) ? Color1 : Color2;                       \n"
-            "       Out_Color = vec4(Color, t);                                             \n"
+            "       Out_Color = (Frag_UV.y < 0.5) ? Color1 : Color2;                        \n"
+            "       Out_Color.a = t;                                                        \n"
             "   }                                                                           \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_EyeDropperCursor], __FILE__, __LINE__,
@@ -1494,118 +1494,44 @@ void UpdateAndRender(PapayaMemory* Mem)
 
     // Draw alpha grid
     {
-        // TODO: Remove state setting and restoring if unnecessary
-        GLint last_program;
-        GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
-        GLCHK( glEnable       (GL_BLEND) );
-        GLCHK( glBlendEquation(GL_FUNC_ADD) );
-        GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-        GLCHK( glDisable      (GL_CULL_FACE) );
-        GLCHK( glDisable      (GL_DEPTH_TEST) );
-        GLCHK( glEnable       (GL_SCISSOR_TEST) );
+        GL::TransformQuad(Mem->Meshes[PapayaMesh_AlphaGrid],
+            Mem->Doc.CanvasPosition,
+            Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
-        GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_AlphaGrid].Handle) );
-        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) );  // Projection matrix uniform
-        GLCHK( glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[1], Mem->Colors[PapayaCol_AlphaGrid1].r,
-                                                                                    Mem->Colors[PapayaCol_AlphaGrid1].g,
-                                                                                    Mem->Colors[PapayaCol_AlphaGrid1].b, 1.0f) ); // Color1 uniform
-        GLCHK( glUniform4f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[2], Mem->Colors[PapayaCol_AlphaGrid2].r,
-                                                                                    Mem->Colors[PapayaCol_AlphaGrid2].g,
-                                                                                    Mem->Colors[PapayaCol_AlphaGrid2].b, 1.0f) ); // Color2 uniform
-        GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[3], Mem->Doc.CanvasZoom) );                      // Zoom uniform
-        GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_AlphaGrid].Uniforms[4], Mem->Doc.InverseAspect) );                   // Inverse aspect uniform
-
-        ImDrawVert Verts[6];
-        {
-            Vec2 Position = Mem->Doc.CanvasPosition;
-            Vec2 Size     = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
-            Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-            Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-            Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-            Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-            Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-            Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
-        }
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_AlphaGrid].VboHandle) );
-        GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
-
-        glBindVertexArray(Mem->Meshes[PapayaMesh_AlphaGrid].VaoHandle); // GLTODO
-
-        if (Mem->Misc.DrawCanvas)
-        {
-            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
-            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
-        }
-        if (Mem->Misc.DrawOverlay)
-        {
-            GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            GLCHK( glDrawArrays   (GL_TRIANGLES, 0, 6) );
-        }
-
-        // Restore modified state
-        GLCHK( glBindVertexArray(0) );
-        GLCHK( glUseProgram (last_program) );
-        GLCHK( glDisable    (GL_SCISSOR_TEST) );
-        GLCHK( glDisable    (GL_BLEND) );
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid],
+            5,
+            UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+            UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid1],
+            UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid2],
+            UniformType_Float, Mem->Doc.CanvasZoom,
+            UniformType_Float, Mem->Doc.InverseAspect);
     }
 
     // Draw canvas
     {
-        // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-        GLint last_program, last_texture;
-        GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
-        GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
-        GLCHK( glEnable       (GL_BLEND) );
-        GLCHK( glBlendEquation(GL_FUNC_ADD) );
-        GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-        GLCHK( glDisable      (GL_CULL_FACE) );
-        GLCHK( glDisable      (GL_DEPTH_TEST) );
-        GLCHK( glEnable       (GL_SCISSOR_TEST) );
+        GL::TransformQuad(Mem->Meshes[PapayaMesh_Canvas],
+            Mem->Doc.CanvasPosition,
+            Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
+        
         GLCHK( glActiveTexture(GL_TEXTURE0) );
-        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
-        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_NEAREST) );
-
-        GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle) );
-        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
-        GLCHK( glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0) ); // Texture uniform
-
-        ImDrawVert Verts[6];
-        {
-            Vec2 Position = Mem->Doc.CanvasPosition;
-            Vec2 Size     = Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom);
-            Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-            Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-            Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-            Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-            Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-            Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
-        }
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle) );
-        GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
-
-        glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle); // GLTODO
 
         if (Mem->Misc.DrawCanvas)
         {
-            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
-            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
+            GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 
+                1,
+                UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
         if (Mem->Misc.DrawOverlay)
         {
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            GLCHK( glDrawArrays   (GL_TRIANGLES, 0, 6) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 1,
+                UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
-
-        // Restore modified state
-        glBindVertexArray(0); // GLTODO
-        GLCHK( glUseProgram (last_program) );                // TODO: Necessary?
-        GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
-        GLCHK( glDisable    (GL_BLEND) );                    //
-        GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
     }
 
     // Draw brush cursor
@@ -1613,54 +1539,18 @@ void UpdateAndRender(PapayaMemory* Mem)
         if (Mem->CurrentTool == PapayaTool_Brush &&
             (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1]))
         {
-            // TODO: Similar code in multiple places. Hoist into function.
-            // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-            GLint last_program, last_texture;
-            GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
-            GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
-            GLCHK( glEnable       (GL_BLEND) );
-            GLCHK( glBlendEquation(GL_FUNC_ADD) );
-            GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-            GLCHK( glDisable      (GL_CULL_FACE) );
-            GLCHK( glDisable      (GL_DEPTH_TEST) );
-            GLCHK( glEnable       (GL_SCISSOR_TEST) );
+            float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
 
-            GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle) );
-            GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
-            GLCHK( glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f) ); // Brush viz color
-            GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness) ); // Hardness
-            GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom) ); // PixelDiameter
+            GL::TransformQuad(Mem->Meshes[PapayaMesh_BrushCursor],
+                (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
+                Vec2(ScaledDiameter,ScaledDiameter));
 
-            ImDrawVert Verts[6];
-            {
-                float ScaledDiameter = Mem->Brush.Diameter * Mem->Doc.CanvasZoom;
-                Vec2 Size            = Vec2(ScaledDiameter,ScaledDiameter);
-                Vec2 Position        = (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Size * 0.5f);
-                Verts[0].pos = Vec2(Position.x, Position.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-                Verts[1].pos = Vec2(Size.x + Position.x, Position.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-                Verts[2].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-                Verts[3].pos = Vec2(Position.x, Position.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-                Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-                Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
-            }
-            GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle) );
-            GLCHK( glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
-            glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle); // GLTODO
-
-            /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
-                      3 + (int)Mem->Window.MaximizeOffset,
-                      (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
-                      (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
-
-            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
-
-
-            // Restore modified state
-            glBindVertexArray(0); // GLTODO
-            GLCHK( glUseProgram (last_program) );                // TODO: Necessary?
-            GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
-            GLCHK( glDisable    (GL_BLEND) );                    //
-            GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_BrushCursor], Mem->Shaders[PapayaShader_BrushCursor],
+                4,
+                UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+                UniformType_Color, Color(1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f),
+                UniformType_Float, Mem->Brush.Hardness,
+                UniformType_Float, ScaledDiameter);
         }
     }
 
@@ -1678,51 +1568,16 @@ void UpdateAndRender(PapayaMemory* Mem)
                     Mem->EyeDropper.CurrentColor = Color(Pixel[0], Pixel[1], Pixel[2]);
                 }
 
-                // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-                GLint last_program, last_texture;
-                GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
-                GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
-                GLCHK( glEnable       (GL_BLEND) );
-                GLCHK( glBlendEquation(GL_FUNC_ADD) );
-                GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-                GLCHK( glDisable      (GL_CULL_FACE) );
-                GLCHK( glDisable      (GL_DEPTH_TEST) );
-                GLCHK( glEnable       (GL_SCISSOR_TEST) );
+                Vec2 Size = Vec2(230,230);
+                GL::TransformQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor],
+                    Mem->Mouse.Pos - (Size * 0.5f), 
+                    Size);
 
-                GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_EyeDropperCursor].Handle) );
-                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
-                GLCHK( glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[1], Mem->EyeDropper.CurrentColor.r, Mem->EyeDropper.CurrentColor.g, Mem->EyeDropper.CurrentColor.b) ); // Color1
-                GLCHK( glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[2], Mem->Picker.CurrentColor.r, Mem->Picker.CurrentColor.g, Mem->Picker.CurrentColor.b) ); // Color2
-
-                ImDrawVert Verts[6];
-                {
-                    Vec2 Size    = Vec2(230,230);
-                    Vec2 Pos     = Mem->Mouse.Pos - (Size * 0.5f);
-                    Verts[0].pos = Vec2(Pos.x, Pos.y);                      Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-                    Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);             Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-                    Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-                    Verts[3].pos = Vec2(Pos.x, Pos.y);                      Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-                    Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-                    Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);             Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
-                }
-                GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle) );
-                GLCHK( glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
-                glBindVertexArray(Mem->Meshes[PapayaMesh_EyeDropperCursor].VaoHandle); // GLTODO
-
-                /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
-                3 + (int)Mem->Window.MaximizeOffset,
-                (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
-                (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
-
-                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
-
-
-                // Restore modified state
-                glBindVertexArray(0); // GLTODO
-                GLCHK( glUseProgram (last_program) );
-                GLCHK( glDisable    (GL_SCISSOR_TEST) );
-                GLCHK( glDisable    (GL_BLEND) );
-                GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) );
+                GL::DrawQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor], Mem->Shaders[PapayaShader_EyeDropperCursor],
+                    3,
+                    UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+                    UniformType_Color, Mem->EyeDropper.CurrentColor,
+                    UniformType_Color, Mem->Picker.CurrentColor);
             }
             else if (Mem->Mouse.Released[0])
             {
@@ -1868,61 +1723,17 @@ EndOfDoc:
             }
 
             // Draw hue picker
-            {
-                // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-                GLint last_program, last_texture;
-                GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
-                GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
-                GLCHK( glEnable       (GL_BLEND) );
-                GLCHK( glBlendEquation(GL_FUNC_ADD) );
-                GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-                GLCHK( glDisable      (GL_CULL_FACE) );
-                GLCHK( glDisable      (GL_DEPTH_TEST) );
-
-                GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_PickerHStrip].Handle) );
-                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
-                GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH) ); // Cursor
-
-                GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle) );
-                glBindVertexArray(Mem->Meshes[PapayaMesh_PickerHStrip].VaoHandle); // GLTODO
-
-                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
-
-                // Restore modified state
-                glBindVertexArray(0); // GLTODO
-                GLCHK( glUseProgram (last_program) );
-                GLCHK( glDisable    (GL_BLEND) );
-                GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) );
-            }
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip],
+                2,
+                UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+                UniformType_Float, Mem->Picker.CursorH);
 
             // Draw saturation-value picker
-            {
-                // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-                GLint last_program, last_texture;
-                GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
-                GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
-                GLCHK( glEnable       (GL_BLEND) );
-                GLCHK( glBlendEquation(GL_FUNC_ADD) );
-                GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-                GLCHK( glDisable      (GL_CULL_FACE) );
-                GLCHK( glDisable      (GL_DEPTH_TEST) );
-
-                GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_PickerSVBox].Handle) );
-                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
-                GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH) ); // Hue
-                GLCHK( glUniform2f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y) ); //Cursor
-
-                GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle) );
-                glBindVertexArray(Mem->Meshes[PapayaMesh_PickerSVBox].VaoHandle); // GLTODO
-
-                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
-
-                // Restore modified state
-                glBindVertexArray(0); // GLTODO
-                GLCHK( glUseProgram (last_program) );
-                GLCHK( glDisable    (GL_BLEND) );
-                GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) );
-            }
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox],
+                3,
+                UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+                UniformType_Float, Mem->Picker.CursorH,
+                UniformType_Vec2, Mem->Picker.CursorSV);
         }
     }
 
