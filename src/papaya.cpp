@@ -1555,21 +1555,21 @@ void UpdateAndRender(PapayaMemory* Mem)
     {
         // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
         GLint last_program, last_texture;
-        glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-        glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
-        glEnable       (GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable      (GL_CULL_FACE);
-        glDisable      (GL_DEPTH_TEST);
-        glEnable       (GL_SCISSOR_TEST);
-        glActiveTexture(GL_TEXTURE0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_NEAREST);// : GL_LINEAR);
+        GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+        GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
+        GLCHK( glEnable       (GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+        GLCHK( glDisable      (GL_CULL_FACE) );
+        GLCHK( glDisable      (GL_DEPTH_TEST) );
+        GLCHK( glEnable       (GL_SCISSOR_TEST) );
+        GLCHK( glActiveTexture(GL_TEXTURE0) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_NEAREST) );
 
-        glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle);
-        glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-        glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+        GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle) );
+        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
+        GLCHK( glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0) ); // Texture uniform
 
         ImDrawVert Verts[6];
         {
@@ -1582,30 +1582,30 @@ void UpdateAndRender(PapayaMemory* Mem)
             Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
             Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
         }
-        glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_Canvas].VboHandle) );
+        GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
 
-        glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle);
+        glBindVertexArray(Mem->Meshes[PapayaMesh_Canvas].VaoHandle); // GLTODO
 
         if (Mem->Misc.DrawCanvas)
         {
-            glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
         }
         if (Mem->Misc.DrawOverlay)
         {
-            glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glDrawArrays   (GL_TRIANGLES, 0, 6);
+            GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
+            GLCHK( glDrawArrays   (GL_TRIANGLES, 0, 6) );
         }
 
         // Restore modified state
-        glBindVertexArray(0);
-        glUseProgram (last_program);
-        glDisable    (GL_SCISSOR_TEST);
-        glDisable    (GL_BLEND);
-        glBindTexture(GL_TEXTURE_2D, last_texture);
+        glBindVertexArray(0); // GLTODO
+        GLCHK( glUseProgram (last_program) );                // TODO: Necessary?
+        GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
+        GLCHK( glDisable    (GL_BLEND) );                    //
+        GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
     }
 
     // Draw brush cursor
@@ -1613,22 +1613,23 @@ void UpdateAndRender(PapayaMemory* Mem)
         if (Mem->CurrentTool == PapayaTool_Brush &&
             (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1]))
         {
+            // TODO: Similar code in multiple places. Hoist into function.
             // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
             GLint last_program, last_texture;
-            glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-            glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
-            glEnable       (GL_BLEND);
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glDisable      (GL_CULL_FACE);
-            glDisable      (GL_DEPTH_TEST);
-            glEnable       (GL_SCISSOR_TEST);
+            GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+            GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
+            GLCHK( glEnable       (GL_BLEND) );
+            GLCHK( glBlendEquation(GL_FUNC_ADD) );
+            GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+            GLCHK( glDisable      (GL_CULL_FACE) );
+            GLCHK( glDisable      (GL_DEPTH_TEST) );
+            GLCHK( glEnable       (GL_SCISSOR_TEST) );
 
-            glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle);
-            glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-            glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f); // Brush viz color
-            glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness); // Hardness
-            glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom); // PixelDiameter
+            GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_BrushCursor].Handle) );
+            GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_BrushCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
+            GLCHK( glUniform4f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[1], 1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f) ); // Brush viz color
+            GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[2], Mem->Brush.Hardness) ); // Hardness
+            GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_BrushCursor].Uniforms[3], Mem->Brush.Diameter * Mem->Doc.CanvasZoom) ); // PixelDiameter
 
             ImDrawVert Verts[6];
             {
@@ -1642,24 +1643,24 @@ void UpdateAndRender(PapayaMemory* Mem)
                 Verts[4].pos = Vec2(Size.x + Position.x, Size.y + Position.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
                 Verts[5].pos = Vec2(Position.x, Size.y + Position.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
             }
-            glBindBuffer  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle);
-            glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
-            glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle);
+            GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_BrushCursor].VboHandle) );
+            GLCHK( glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
+            glBindVertexArray(Mem->Meshes[PapayaMesh_BrushCursor].VaoHandle); // GLTODO
 
             /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
                       3 + (int)Mem->Window.MaximizeOffset,
                       (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
                       (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
 
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
 
             // Restore modified state
-            glBindVertexArray(0);
-            glUseProgram (last_program);
-            glDisable    (GL_SCISSOR_TEST);
-            glDisable    (GL_BLEND);
-            glBindTexture(GL_TEXTURE_2D, last_texture);
+            glBindVertexArray(0); // GLTODO
+            GLCHK( glUseProgram (last_program) );                // TODO: Necessary?
+            GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
+            GLCHK( glDisable    (GL_BLEND) );                    //
+            GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
         }
     }
 
@@ -1673,25 +1674,25 @@ void UpdateAndRender(PapayaMemory* Mem)
                 // Get pixel color
                 {
                     float Pixel[3] = { 0 };
-                    glReadPixels((int32)Mem->Mouse.Pos.x, Mem->Window.Height - (int32)Mem->Mouse.Pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel);
+                    GLCHK( glReadPixels((int32)Mem->Mouse.Pos.x, Mem->Window.Height - (int32)Mem->Mouse.Pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel) );
                     Mem->EyeDropper.CurrentColor = Color(Pixel[0], Pixel[1], Pixel[2]);
                 }
 
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
-                glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-                glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
-                glEnable       (GL_BLEND);
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glDisable      (GL_CULL_FACE);
-                glDisable      (GL_DEPTH_TEST);
-                glEnable       (GL_SCISSOR_TEST);
+                GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+                GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
+                GLCHK( glEnable       (GL_BLEND) );
+                GLCHK( glBlendEquation(GL_FUNC_ADD) );
+                GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+                GLCHK( glDisable      (GL_CULL_FACE) );
+                GLCHK( glDisable      (GL_DEPTH_TEST) );
+                GLCHK( glEnable       (GL_SCISSOR_TEST) );
 
-                glUseProgram      (Mem->Shaders[PapayaShader_EyeDropperCursor].Handle);
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-                glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[1], Mem->EyeDropper.CurrentColor.r, Mem->EyeDropper.CurrentColor.g, Mem->EyeDropper.CurrentColor.b); // Color1
-                glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[2], Mem->Picker.CurrentColor.r, Mem->Picker.CurrentColor.g, Mem->Picker.CurrentColor.b); // Color2
+                GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_EyeDropperCursor].Handle) );
+                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
+                GLCHK( glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[1], Mem->EyeDropper.CurrentColor.r, Mem->EyeDropper.CurrentColor.g, Mem->EyeDropper.CurrentColor.b) ); // Color1
+                GLCHK( glUniform3f       (Mem->Shaders[PapayaShader_EyeDropperCursor].Uniforms[2], Mem->Picker.CurrentColor.r, Mem->Picker.CurrentColor.g, Mem->Picker.CurrentColor.b) ); // Color2
 
                 ImDrawVert Verts[6];
                 {
@@ -1704,24 +1705,24 @@ void UpdateAndRender(PapayaMemory* Mem)
                     Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);    Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
                     Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);             Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
                 }
-                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle);
-                glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts);
-                glBindVertexArray(Mem->Meshes[PapayaMesh_EyeDropperCursor].VaoHandle);
+                GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_EyeDropperCursor].VboHandle) );
+                GLCHK( glBufferSubData  (GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
+                glBindVertexArray(Mem->Meshes[PapayaMesh_EyeDropperCursor].VaoHandle); // GLTODO
 
                 /*glScissor(34 + (int)Mem->Window.MaximizeOffset,
                 3 + (int)Mem->Window.MaximizeOffset,
                 (int)Mem->Window.Width - 37 - (2 * (int)Mem->Window.MaximizeOffset),
                 (int)Mem->Window.Height - 58 - (2 * (int)Mem->Window.MaximizeOffset));*/
 
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
 
                 // Restore modified state
-                glBindVertexArray(0);
-                glUseProgram (last_program);
-                glDisable    (GL_SCISSOR_TEST);
-                glDisable    (GL_BLEND);
-                glBindTexture(GL_TEXTURE_2D, last_texture);
+                glBindVertexArray(0); // GLTODO
+                GLCHK( glUseProgram (last_program) );
+                GLCHK( glDisable    (GL_SCISSOR_TEST) );
+                GLCHK( glDisable    (GL_BLEND) );
+                GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) );
             }
             else if (Mem->Mouse.Released[0])
             {
@@ -1870,57 +1871,57 @@ EndOfDoc:
             {
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
-                glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-                glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
-                glEnable       (GL_BLEND);
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glDisable      (GL_CULL_FACE);
-                glDisable      (GL_DEPTH_TEST);
+                GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+                GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
+                GLCHK( glEnable       (GL_BLEND) );
+                GLCHK( glBlendEquation(GL_FUNC_ADD) );
+                GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+                GLCHK( glDisable      (GL_CULL_FACE) );
+                GLCHK( glDisable      (GL_DEPTH_TEST) );
 
-                glUseProgram      (Mem->Shaders[PapayaShader_PickerHStrip].Handle);
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-                glUniform1f       (Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH); // Cursor
+                GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_PickerHStrip].Handle) );
+                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
+                GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_PickerHStrip].Uniforms[1], Mem->Picker.CursorH) ); // Cursor
 
-                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle);
-                glBindVertexArray(Mem->Meshes[PapayaMesh_PickerHStrip].VaoHandle);
+                GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerHStrip].VboHandle) );
+                glBindVertexArray(Mem->Meshes[PapayaMesh_PickerHStrip].VaoHandle); // GLTODO
 
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
                 // Restore modified state
-                glBindVertexArray(0);
-                glUseProgram (last_program);
-                glDisable    (GL_BLEND);
-                glBindTexture(GL_TEXTURE_2D, last_texture);
+                glBindVertexArray(0); // GLTODO
+                GLCHK( glUseProgram (last_program) );
+                GLCHK( glDisable    (GL_BLEND) );
+                GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) );
             }
 
             // Draw saturation-value picker
             {
                 // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
                 GLint last_program, last_texture;
-                glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program);
-                glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture);
-                glEnable       (GL_BLEND);
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glDisable      (GL_CULL_FACE);
-                glDisable      (GL_DEPTH_TEST);
+                GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
+                GLCHK( glGetIntegerv  (GL_TEXTURE_BINDING_2D, &last_texture) );
+                GLCHK( glEnable       (GL_BLEND) );
+                GLCHK( glBlendEquation(GL_FUNC_ADD) );
+                GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+                GLCHK( glDisable      (GL_CULL_FACE) );
+                GLCHK( glDisable      (GL_DEPTH_TEST) );
 
-                glUseProgram      (Mem->Shaders[PapayaShader_PickerSVBox].Handle);
-                glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]); // Projection matrix uniform
-                glUniform1f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH); // Hue
-                glUniform2f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y); //Cursor                                 // Current
+                GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_PickerSVBox].Handle) );
+                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) ); // Projection matrix uniform
+                GLCHK( glUniform1f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[1], Mem->Picker.CursorH) ); // Hue
+                GLCHK( glUniform2f       (Mem->Shaders[PapayaShader_PickerSVBox].Uniforms[2], Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y) ); //Cursor
 
-                glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle);
-                glBindVertexArray(Mem->Meshes[PapayaMesh_PickerSVBox].VaoHandle);
+                GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_PickerSVBox].VboHandle) );
+                glBindVertexArray(Mem->Meshes[PapayaMesh_PickerSVBox].VaoHandle); // GLTODO
 
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
                 // Restore modified state
-                glBindVertexArray(0);
-                glUseProgram (last_program);
-                glDisable    (GL_BLEND);
-                glBindTexture(GL_TEXTURE_2D, last_texture);
+                glBindVertexArray(0); // GLTODO
+                GLCHK( glUseProgram (last_program) );
+                GLCHK( glDisable    (GL_BLEND) );
+                GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) );
             }
         }
     }
@@ -1941,41 +1942,41 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
 
     // Backup GL state
     GLint last_program, last_texture, last_array_buffer, last_element_array_buffer, last_vertex_array;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+    GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
+    GLCHK( glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture) );
+    GLCHK( glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer) );
+    GLCHK( glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer) );
+    GLCHK( glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array) );
 
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-    glEnable       (GL_BLEND);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable      (GL_CULL_FACE);
-    glDisable      (GL_DEPTH_TEST);
-    glEnable       (GL_SCISSOR_TEST);
-    glActiveTexture(GL_TEXTURE0);
+    GLCHK( glEnable       (GL_BLEND) );
+    GLCHK( glBlendEquation(GL_FUNC_ADD) );
+    GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+    GLCHK( glDisable      (GL_CULL_FACE) );
+    GLCHK( glDisable      (GL_DEPTH_TEST) );
+    GLCHK( glEnable       (GL_SCISSOR_TEST) );
+    GLCHK( glActiveTexture(GL_TEXTURE0) );
 
     // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
     ImGuiIO& io     = ImGui::GetIO();
     float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
     DrawData->ScaleClipRects(io.DisplayFramebufferScale);
 
-    glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle);
-    glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0);
-    glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]);
-    glBindVertexArray (Mem->Meshes[PapayaMesh_ImGui].VaoHandle);
+    GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle) );
+    GLCHK( glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0) );
+    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) );
+    glBindVertexArray (Mem->Meshes[PapayaMesh_ImGui].VaoHandle); // GLTODO
 
     for (int n = 0; n < DrawData->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = DrawData->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
 
-        glBindBuffer   (GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle);
-        glBufferData   (GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), (GLvoid*)&cmd_list->VtxBuffer.front(), GL_STREAM_DRAW);
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
+        GLCHK( glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), (GLvoid*)&cmd_list->VtxBuffer.front(), GL_STREAM_DRAW) );
 
-        glBindBuffer   (GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle);
-        glBufferData   (GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW);
+        GLCHK( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle) );
+        GLCHK( glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW) );
 
         for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
         {
@@ -1985,9 +1986,9 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
             }
             else
             {
-                glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId);
-                glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y));
-                glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset);
+                GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId) );
+                GLCHK( glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y)) );
+                GLCHK( glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset) );
             }
             idx_buffer_offset += pcmd->ElemCount;
         }

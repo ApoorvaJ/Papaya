@@ -16,9 +16,9 @@ namespace GL
         if (!GL_VERSION_2_1) { return false; }
         
         // Extension capability checks
-        //        Extension                                         OpenGL dependency version
-        //        ==========                                        =========================
-        if (!GL_ARB_framebuffer_object)    { return false; }        // OpenGL 1.1
+        //   Extension                                         OpenGL dependency version
+        //   ==========                                        =========================
+        if (!GL_ARB_framebuffer_object)    { return false; }   // OpenGL 1.1
 
         return true;
     }
@@ -48,7 +48,7 @@ namespace GL
     internal void PrintCompileErrors(uint32 Handle, const char* Type, const char* File, int Line)
     {
         int32 Status;
-        glGetShaderiv(Handle, GL_COMPILE_STATUS, &Status);
+        GLCHK( glGetShaderiv(Handle, GL_COMPILE_STATUS, &Status) );
         if (Status != GL_TRUE)
         {
             char Buffer[256];
@@ -57,7 +57,7 @@ namespace GL
 
             char ErrorLog[4096];
             int32 OutLength;
-            glGetShaderInfoLog(Handle, 4096, &OutLength, ErrorLog);
+            GLCHK( glGetShaderInfoLog(Handle, 4096, &OutLength, ErrorLog) );
             Platform::Print(ErrorLog);
             Platform::Print("\n");
         }
@@ -65,32 +65,32 @@ namespace GL
 
     void CompileShader(ShaderInfo& Shader, const char* File, int Line, const char* Vert, const char* Frag, int32 AttribCount, int32 UniformCount, ...)
     {
-        Shader.Handle     = glCreateProgram();
-        uint32 VertHandle = glCreateShader(GL_VERTEX_SHADER);
-        uint32 FragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+        Shader.Handle     = GLCHK( glCreateProgram() );
+        uint32 VertHandle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
+        uint32 FragHandle = GLCHK( glCreateShader(GL_FRAGMENT_SHADER) );
 
-        glShaderSource (VertHandle, 1, &Vert, 0);
-        glShaderSource (FragHandle, 1, &Frag, 0);
-        glCompileShader(VertHandle);
-        glCompileShader(FragHandle);
-        glAttachShader (Shader.Handle, VertHandle);
-        glAttachShader (Shader.Handle, FragHandle);
+        GLCHK( glShaderSource (VertHandle, 1, &Vert, 0) );
+        GLCHK( glShaderSource (FragHandle, 1, &Frag, 0) );
+        GLCHK( glCompileShader(VertHandle) );
+        GLCHK( glCompileShader(FragHandle) );
+        GLCHK( glAttachShader (Shader.Handle, VertHandle) );
+        GLCHK( glAttachShader (Shader.Handle, FragHandle) );
 
         PrintCompileErrors(VertHandle, "vertex"  , File, Line);
         PrintCompileErrors(FragHandle, "fragment", File, Line);
 
-        glLinkProgram(Shader.Handle); // TODO: Print linking errors
+        GLCHK( glLinkProgram(Shader.Handle) ); // TODO: Print linking errors
 
         va_list Args;
         va_start(Args, UniformCount);
         for (int32 i = 0; i < AttribCount; i++)
         {
-            Shader.Attributes[i] = glGetAttribLocation(Shader.Handle, va_arg(Args, const char*));
+            Shader.Attributes[i] = GLCHK( glGetAttribLocation(Shader.Handle, va_arg(Args, const char*)) );
         }
 
         for (int32 i = 0; i < UniformCount; i++)
         {
-            Shader.Uniforms[i] = glGetUniformLocation(Shader.Handle, va_arg(Args, const char*));
+            Shader.Uniforms[i] = GLCHK( glGetUniformLocation(Shader.Handle, va_arg(Args, const char*)) );
         }
         va_end(Args);
     }

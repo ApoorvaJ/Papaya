@@ -279,11 +279,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             Mem.IsRunning = false;
         } break;
 
-        case WM_ACTIVATEAPP:
-        {
-            OutputDebugStringA("WM_ACTIVATEAPP\n");
-        } break;
-
         case WM_SIZE:
         {
             if (WParam == SIZE_MAXIMIZED)
