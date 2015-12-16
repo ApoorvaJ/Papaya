@@ -113,6 +113,39 @@ namespace GL
         va_end(Args);
     }
 
+    void SetVertexAttribs(const ShaderInfo& Shader)
+    {
+        for (int32 i = 0; i < Shader.AttribCount; i++)
+        {
+            GLCHK( glEnableVertexAttribArray(Shader.Attributes[i]) );
+        }
+
+        #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+        GLCHK( glVertexAttribPointer(Shader.Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );   // Position attribute
+        GLCHK( glVertexAttribPointer(Shader.Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );    // UV attribute
+        if (Shader.AttribCount > 2)
+        {
+            GLCHK( glVertexAttribPointer(Shader.Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) ); // Color attribute
+        }
+        #undef OFFSETOF
+    }
+
+    void InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, GLenum Usage)
+    {
+        GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
+        GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
+
+        ImDrawVert Verts[6];
+        Verts[0].pos = Vec2(Pos.x, Pos.y);                   Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
+        Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);          Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
+        Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[2].uv = Vec2(1.0f, 0.0f); Verts[2].col = 0xffffffff;
+        Verts[3].pos = Vec2(Pos.x, Pos.y);                   Verts[3].uv = Vec2(0.0f, 1.0f); Verts[3].col = 0xffffffff;
+        Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
+        Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);          Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
+
+        GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage) );
+    }
+
     void TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)
     {
         ImDrawVert Verts[6];
@@ -140,6 +173,7 @@ namespace GL
         GLCHK( glDisable      (GL_DEPTH_TEST) );
         GLCHK( glEnable       (GL_SCISSOR_TEST) );
 
+        GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
         GLCHK( glUseProgram   (Shader.Handle) );
 
         // Uniforms
@@ -176,11 +210,13 @@ namespace GL
             va_end(Args);
         }
 
-        glBindVertexArray(Mesh.VaoHandle); // GLTODO
+        // Attribs
+        SetVertexAttribs(Shader);
+
         GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
         // Restore modified state
-        glBindVertexArray(0); // GLTODO
+        GLCHK( glBindBuffer (GL_ARRAY_BUFFER, 0) );
         GLCHK( glUseProgram (last_program) );                // TODO: Necessary?
         GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
         GLCHK( glDisable    (GL_BLEND) );                    //

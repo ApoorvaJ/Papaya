@@ -41,40 +41,6 @@ internal uint32 LoadAndBindImage(char* Path)
     return (uint32)Id_GLuint;
 }
 
-internal void InitMesh(MeshInfo& Mesh, const ShaderInfo& Shader, Vec2 Pos, Vec2 Size, GLenum Usage)
-{
-    GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
-    GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
-    glGenVertexArrays(1, &Mesh.VaoHandle); // GLTODO
-    glBindVertexArray(Mesh.VaoHandle); // GLTODO
-
-    GLCHK( glEnableVertexAttribArray(Shader.Attributes[0]) ); // Position attribute
-    GLCHK( glEnableVertexAttribArray(Shader.Attributes[1]) ); // UV attribute
-    if (Shader.AttribCount > 2)
-    {
-        GLCHK(glEnableVertexAttribArray(Shader.Attributes[2])); // Color attribute
-    }
-
-#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-    GLCHK( glVertexAttribPointer(Shader.Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );   // Position attribute
-    GLCHK( glVertexAttribPointer(Shader.Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );    // UV attribute
-    if (Shader.AttribCount > 2)
-    {
-        GLCHK( glVertexAttribPointer(Shader.Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) ); // Color attribute
-    }
-#undef OFFSETOF
-
-    ImDrawVert Verts[6];
-    Verts[0].pos = Vec2(Pos.x, Pos.y);                   Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
-    Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);          Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
-    Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[2].uv = Vec2(1.0f, 0.0f); Verts[2].col = 0xffffffff;
-    Verts[3].pos = Vec2(Pos.x, Pos.y);                   Verts[3].uv = Vec2(0.0f, 1.0f); Verts[3].col = 0xffffffff;
-    Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
-    Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);          Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
-
-    GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage) );
-}
-
 internal void PushUndo(PapayaMemory* Mem)
 {
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
@@ -235,12 +201,10 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
     {
         Vec2 Size = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height);
 
-        InitMesh(Mem->Meshes[PapayaMesh_RTTBrush],
-            Mem->Shaders[PapayaShader_Brush],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_RTTBrush],
             Vec2(0,0), Size, GL_STATIC_DRAW);
 
-        InitMesh(Mem->Meshes[PapayaMesh_RTTAdd],
-            Mem->Shaders[PapayaShader_ImGui],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_RTTAdd],
             Vec2(0, 0), Size, GL_STATIC_DRAW);
     }
 
@@ -320,23 +284,11 @@ internal void CloseDocument(PapayaMemory* Mem)
         Mem->Meshes[PapayaMesh_RTTBrush].VboHandle = 0;
     }
 
-    if (Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle)
-    {
-        glDeleteVertexArrays(1, &Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle); // GLTODO
-        Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle = 0;
-    }
-
     // Vertex Buffer: RTTAdd
     if (Mem->Meshes[PapayaMesh_RTTAdd].VboHandle)
     {
         GLCHK( glDeleteBuffers(1, &Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
         Mem->Meshes[PapayaMesh_RTTAdd].VboHandle = 0;
-    }
-
-    if (Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle)
-    {
-        glDeleteVertexArrays(1, &Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle); // GLTODO
-        Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle = 0;
     }
 }
 
@@ -525,8 +477,7 @@ void Initialize(PapayaMemory* Mem)
             "Position", "UV",
             "ProjMtx", "BrushColor", "Hardness", "PixelDiameter");
 
-        InitMesh(Mem->Meshes[PapayaMesh_BrushCursor],
-            Mem->Shaders[PapayaShader_BrushCursor],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_BrushCursor],
             Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
 
@@ -556,8 +507,7 @@ void Initialize(PapayaMemory* Mem)
             "Position", "UV",
             "ProjMtx", "Color1", "Color2");
 
-        InitMesh(Mem->Meshes[PapayaMesh_EyeDropperCursor],
-            Mem->Shaders[PapayaShader_EyeDropperCursor],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor],
             Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
 
@@ -602,8 +552,7 @@ void Initialize(PapayaMemory* Mem)
             "Position", "UV",
             "ProjMtx", "Hue", "Cursor");
 
-        InitMesh(Mem->Meshes[PapayaMesh_PickerSVBox],
-            Mem->Shaders[PapayaShader_PickerSVBox],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_PickerSVBox],
             Mem->Picker.Pos + Mem->Picker.SVBoxPos, Mem->Picker.SVBoxSize, GL_STATIC_DRAW);
     }
 
@@ -641,8 +590,7 @@ void Initialize(PapayaMemory* Mem)
             "Position", "UV",
             "ProjMtx", "Cursor");
 
-        InitMesh(Mem->Meshes[PapayaMesh_PickerHStrip],
-            Mem->Shaders[PapayaShader_PickerHStrip],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_PickerHStrip],
             Mem->Picker.Pos + Mem->Picker.HueStripPos, Mem->Picker.HueStripSize, GL_STATIC_DRAW);
     }
 
@@ -676,8 +624,7 @@ void Initialize(PapayaMemory* Mem)
             "Position", "UV",
             "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect");
 
-        InitMesh(Mem->Meshes[PapayaMesh_AlphaGrid],
-            Mem->Shaders[PapayaShader_AlphaGrid],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_AlphaGrid],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
@@ -701,8 +648,7 @@ void Initialize(PapayaMemory* Mem)
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
 
-        InitMesh(Mem->Meshes[PapayaMesh_Canvas],
-            Mem->Shaders[PapayaShader_ImGui],
+        GL::InitQuad(Mem->Meshes[PapayaMesh_Canvas],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
@@ -710,21 +656,6 @@ void Initialize(PapayaMemory* Mem)
     {
         GLCHK( glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
         GLCHK( glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].ElementsHandle) );
-
-        glGenVertexArrays(1, &Mem->Meshes[PapayaMesh_ImGui].VaoHandle); // GLTODO
-        glBindVertexArray(Mem->Meshes[PapayaMesh_ImGui].VaoHandle); // GLTODO
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
-        GLCHK( glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[0]) );
-        GLCHK( glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[1]) );
-        GLCHK( glEnableVertexAttribArray(Mem->Shaders[PapayaShader_ImGui].Attributes[2]) );
-
-    #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
-        GLCHK( glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[0], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
-        GLCHK( glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[1], 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
-        GLCHK( glVertexAttribPointer(Mem->Shaders[PapayaShader_ImGui].Attributes[2], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid*)OFFSETOF(ImDrawVert, col)) );
-    #undef OFFSETOF
-        glBindVertexArray(0); // GLTODO
-        glBindBuffer(GL_ARRAY_BUFFER, 0); // GLTODO
 
         // Create fonts texture
         ImGuiIO& io = ImGui::GetIO();
@@ -1209,6 +1140,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             }
             else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
             {
+                // TODO: Make a vararg-based RTT function
                 // Additive render-to-texture
                 {
                     GLCHK( glDisable(GL_SCISSOR_TEST) );
@@ -1222,7 +1154,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
                     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
-                    glBindVertexArray(Mem->Meshes[PapayaMesh_RTTAdd].VaoHandle); // GLTODO
+                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
 
                     GLCHK( glEnable(GL_BLEND) );
                     GLCHK( glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX) ); // TODO: Handle the case where the original texture has an alpha below 1.0
@@ -1328,7 +1260,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect) ); // Inverse Aspect uniform
 
                 GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle) );
-                glBindVertexArray(Mem->Meshes[PapayaMesh_RTTBrush].VaoHandle); // GLTODO
+                GL::SetVertexAttribs(Mem->Shaders[PapayaShader_Brush]);
 
                 GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
                 GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
@@ -1341,6 +1273,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
                 GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
             }
+
 
 #if 0
             // =========================================================================================
@@ -1782,7 +1715,9 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     GLCHK( glUseProgram      (Mem->Shaders[PapayaShader_ImGui].Handle) );
     GLCHK( glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0) );
     GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) );
-    glBindVertexArray (Mem->Meshes[PapayaMesh_ImGui].VaoHandle); // GLTODO
+
+    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
+    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
 
     for (int n = 0; n < DrawData->CmdListsCount; n++)
     {

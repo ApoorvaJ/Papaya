@@ -171,7 +171,7 @@ struct ShaderInfo
 struct MeshInfo
 {
     size_t VboSize;
-    uint32 VboHandle, VaoHandle, ElementsHandle;
+    uint32 VboHandle, ElementsHandle;
 };
 
 struct BrushInfo
