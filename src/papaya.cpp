@@ -16,7 +16,7 @@ internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
     GLCHK( glBindTexture  (GL_TEXTURE_2D, Tex) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA, 
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA,
                            GL_UNSIGNED_BYTE, 0) );
     return Tex;
 }
@@ -33,7 +33,7 @@ internal uint32 LoadAndBindImage(char* Path)
     GLCHK( glBindTexture  (GL_TEXTURE_2D, Id_GLuint) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0, 
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0,
                            GL_RGBA, GL_UNSIGNED_BYTE, Image) );
 
     // Store our identifier
@@ -187,8 +187,8 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
         GLCHK( glDrawBuffers(1, draw_buffers) );
 
-        GLenum Status = GLCHK( glCheckFramebufferStatus(GL_FRAMEBUFFER) );
-        if(Status != GL_FRAMEBUFFER_COMPLETE)
+        GLenum FrameBufferStatus = GLCHK( glCheckFramebufferStatus(GL_FRAMEBUFFER) );
+        if(FrameBufferStatus != GL_FRAMEBUFFER_COMPLETE)
         {
             // TODO: Log: Frame buffer not initialized correctly
             exit(1);
@@ -766,7 +766,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
             GLCHK( glEnable(GL_SCISSOR_TEST) );
             GLCHK( glScissor(34, 3,
-                             (int)Mem->Window.Width  - 37, 
+                             (int)Mem->Window.Width  - 37,
                              (int)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
 
             GLCHK( glClearColor(Mem->Colors[PapayaCol_Workspace].r,
@@ -1451,7 +1451,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         GL::TransformQuad(Mem->Meshes[PapayaMesh_Canvas],
             Mem->Doc.CanvasPosition,
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
-        
+
         GLCHK( glActiveTexture(GL_TEXTURE0) );
 
         if (Mem->Misc.DrawCanvas)
@@ -1459,7 +1459,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
                 1,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
@@ -1509,7 +1509,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                 Vec2 Size = Vec2(230,230);
                 GL::TransformQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor],
-                    Mem->Mouse.Pos - (Size * 0.5f), 
+                    Mem->Mouse.Pos - (Size * 0.5f),
                     Size);
 
                 GL::DrawQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor], Mem->Shaders[PapayaShader_EyeDropperCursor],

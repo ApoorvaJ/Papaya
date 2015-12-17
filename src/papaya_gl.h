@@ -14,7 +14,7 @@ namespace GL
 
         // Core profile capability check
         if (!GL_VERSION_2_1) { return false; }
-        
+
         // Extension capability checks
         //   Extension                                         OpenGL dependency version
         //   ==========                                        =========================
@@ -27,7 +27,7 @@ namespace GL
     {
         GLenum Error = glGetError();
         const char* Str = "";
-        
+
         if      (Error == GL_NO_ERROR)                      { return; }
         else if (Error == GL_INVALID_ENUM)                  { Str = "Invalid enum"; }
         else if (Error == GL_INVALID_VALUE)                 { Str = "Invalid value"; }
@@ -37,7 +37,7 @@ namespace GL
         else if (Error == GL_STACK_UNDERFLOW)               { Str = "Stack underflow"; }
         else if (Error == GL_STACK_OVERFLOW)                { Str = "Stack overflow"; }
         else                                                { Str = "Undefined error"; }
-        
+
         char Buffer[256];
         snprintf(Buffer, 256, "OpenGL Error: %s in %s:%d\n", Str, File, Line);
         Platform::Print(Buffer);
@@ -45,11 +45,11 @@ namespace GL
         Platform::Print(Buffer);
     }
 
-    internal void PrintCompileErrors(uint32 Handle, const char* Type, const char* File, int Line)
+    internal void PrintCompileErrors(uint32 Handle, const char* Type, const char* File, int32 Line)
     {
-        int32 Status;
-        GLCHK( glGetShaderiv(Handle, GL_COMPILE_STATUS, &Status) );
-        if (Status != GL_TRUE)
+        int32 CompileStatus;
+        GLCHK( glGetShaderiv(Handle, GL_COMPILE_STATUS, &CompileStatus) );
+        if (CompileStatus != GL_TRUE)
         {
             char Buffer[256];
             snprintf(Buffer, 256, "Compilation error in %s shader in %s:%d\n", Type, File, Line);
@@ -182,7 +182,7 @@ namespace GL
             va_start(Args, UniformCount);
             for (int32 i = 0; i < UniformCount; i++)
             {
-                switch (va_arg(Args, UniformType_))
+                switch (va_arg(Args, int))
                 {
                     case UniformType_Float:
                     {

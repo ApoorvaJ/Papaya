@@ -22,7 +22,10 @@ typedef double real64;
 #pragma GCC diagnostic ignored "-Wwrite-strings" //TODO: Check if all string warnings can be eliminated without suppression
 #include <x86intrin.h>
 
+#define GLEW_NO_GLU
+
 #define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/test4k.jpg"
+
 #include "papaya.h"
 #include "papaya.cpp"
 
@@ -255,26 +258,14 @@ int main(int argc, char **argv)
     {
         GLXContext GraphicsContext = glXCreateContext(XlibDisplay, VisualInfo, 0, GL_TRUE);
         glXMakeCurrent(XlibDisplay, XlibWindow, GraphicsContext);
-        if (gl3wInit() != 0)
-        {
-            // TODO: Log: GL3W Init failed
-            Platform::Print("Gl3w init failed.\n");
-            exit(1);
-        }
 
-        if (!gl3wIsSupported(3,1))
-        {
-            // TODO: Log: Required OpenGL version not supported
-            Platform::Print("Required OpenGL version not supported.\n");
-            exit(1);
-        }
+        if (!GL::InitAndValidate()) { exit(1); }
 
         glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
         glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
-        printf("%d, %d\n", Mem.System.OpenGLVersion[0], Mem.System.OpenGLVersion[1]);
 
         // TODO: Disable vsync
-        // glXSwapIntervalEXT(0);
+        glXSwapIntervalEXT(XlibDisplay, XlibWindow, 0);
     }
 
     EasyTab_Load(XlibDisplay, XlibWindow);
