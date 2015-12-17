@@ -1190,9 +1190,9 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                 if (Mem->Mouse.Pressed[0])
                 {
-                    GLuint clearColor[4] = {0, 0, 0, 0};
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboSampleTexture, 0) );
-                    glClearBufferuiv(GL_COLOR, 0, clearColor); // GLTODO
+                    GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
+                    GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
                 }
                 GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
@@ -1230,7 +1230,6 @@ void UpdateAndRender(PapayaMemory* Mem)
     #endif
 
                 GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                //glUniform1i(Mem->Shaders[PapayaShader_Brush].Uniforms[1], Mem->Doc.TextureID); // Texture uniform
                 GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect) ); // Pos uniform
                 GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect) ); // Lastpos uniform
                 GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f)) );
@@ -1746,11 +1745,11 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     }
 
     // Restore modified GL state
-    glUseProgram     (last_program);
-    glBindTexture    (GL_TEXTURE_2D, last_texture);
-    glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer);
-    glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
-    glDisable        (GL_SCISSOR_TEST);
+    GLCHK( glUseProgram     (last_program) );
+    GLCHK( glBindTexture    (GL_TEXTURE_2D, last_texture) );
+    GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer) );
+    GLCHK( glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer) );
+    GLCHK( glDisable        (GL_SCISSOR_TEST) );
 }
 
 }
