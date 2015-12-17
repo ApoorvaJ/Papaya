@@ -1715,9 +1715,6 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     GLCHK( glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0) );
     GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) );
 
-    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
-    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
-
     for (int n = 0; n < DrawData->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = DrawData->CmdLists[n];
@@ -1728,6 +1725,8 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
 
         GLCHK( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_ImGui].ElementsHandle) );
         GLCHK( glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW) );
+
+        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
 
         for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
         {
