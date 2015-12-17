@@ -1691,12 +1691,11 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     PapayaMemory* Mem = (PapayaMemory*)MemPtr;
 
     // Backup GL state
-    GLint last_program, last_texture, last_array_buffer, last_element_array_buffer, last_vertex_array;
+    GLint last_program, last_texture, last_array_buffer, last_element_array_buffer;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
     GLCHK( glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture) );
     GLCHK( glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer) );
     GLCHK( glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer) );
-    GLCHK( glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array) );
 
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
     GLCHK( glEnable       (GL_BLEND) );
@@ -1751,7 +1750,6 @@ void RenderImGui(ImDrawData* DrawData, void* MemPtr)
     glBindTexture    (GL_TEXTURE_2D, last_texture);
     glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer);
     glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
-    glBindVertexArray(last_vertex_array);
     glDisable        (GL_SCISSOR_TEST);
 }
 
