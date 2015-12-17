@@ -13,12 +13,12 @@ namespace GL
         if (glewInit() != GLEW_OK) { return false; }
 
         // Core profile capability check
-        if (!GL_VERSION_2_1) { return false; }
+        if (!glewIsSupported("GL_VERSION_2_1")) { return false; }
 
         // Extension capability checks
-        //   Extension                                         OpenGL dependency version
-        //   ==========                                        =========================
-        if (!GL_ARB_framebuffer_object)    { return false; }   // OpenGL 1.1
+        //                    Extension                                      OpenGL dependency version
+        //                    ==========                                     =========================
+        if (!glewIsSupported("GL_ARB_framebuffer_object")) { return false; } // OpenGL 1.1
 
         return true;
     }
