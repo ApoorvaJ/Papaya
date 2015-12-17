@@ -332,15 +332,16 @@ void Initialize(PapayaMemory* Mem)
     // Vertex shader
     {
         Vert =
-        "   #version 330                                        \n"
+        "   #version 120                                        \n"
         "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
         "                                                       \n"
-        "   in vec2 Position;                                   \n" // Attributes[0]
-        "   in vec2 UV;                                         \n" // Attributes[1]
-        "   in vec4 Color;                                      \n" // Attributes[2]
+        "   attribute vec2 Position;                            \n" // Attributes[0]
+        "   attribute vec2 UV;                                  \n" // Attributes[1]
+        "   attribute vec4 Color;                               \n" // Attributes[2]
         "                                                       \n"
-        "   out vec2 Frag_UV;                                   \n"
-        "   out vec4 Frag_Color;                                \n"
+        "   varying vec2 Frag_UV;                               \n"
+        "   varying vec4 Frag_Color;                            \n"
+        "                                                       \n"
         "   void main()                                         \n"
         "   {                                                   \n"
         "       Frag_UV = UV;                                   \n"
@@ -352,7 +353,7 @@ void Initialize(PapayaMemory* Mem)
     // Brush shader
     {
         const char* Frag =
-        "   #version 330                                                    \n"
+        "   #version 120                                                    \n"
         "                                                                   \n"
         "   #define M_PI 3.1415926535897932384626433832795                  \n"
         "                                                                   \n"
@@ -364,8 +365,13 @@ void Initialize(PapayaMemory* Mem)
         "   uniform float Hardness;                                         \n" // Uniforms[6]
         "   uniform float InvAspect;                                        \n" // Uniforms[7]
         "                                                                   \n"
-        "   in vec2 Frag_UV;                                                \n"
-        "   out vec4 Out_Color;                                             \n"
+        "   varying vec2 Frag_UV;                                           \n"
+        "                                                                   \n"
+        "   bool isnan( float val )                                         \n"
+        "   {                                                               \n"
+        "       return ( val < 0.0 || 0.0 < val || val == 0.0 ) ?           \n"
+        "       false : true;                                               \n"
+        "   }                                                               \n"
         "                                                                   \n"
         "   void line(vec2 p1, vec2 p2, vec2 uv, float radius, 	            \n"
         "             out float distLine, out float distp1)                 \n"
@@ -416,7 +422,7 @@ void Initialize(PapayaMemory* Mem)
         "                                                                   \n"
         "   void main()                                                     \n"
         "   {                                                               \n"
-        "       vec4 t = texture(Texture, Frag_UV.st);                      \n"
+        "       vec4 t = texture2D(Texture, Frag_UV.st);                    \n"
         "                                                                   \n"
         "       float distLine, distp1;                                     \n"
         "       vec2 aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);     \n"
@@ -431,8 +437,10 @@ void Initialize(PapayaMemory* Mem)
         "                                                                   \n"
         "       float FinalAlpha = max(t.a, Alpha * BrushColor.a);          \n"
         "                                                                   \n"
-        "       Out_Color = vec4(BrushColor.r, BrushColor.g, BrushColor.b,  \n"
-        "                        clamp(FinalAlpha,0.0,1.0));                \n" // TODO: Needs improvement. Self-intersection corners look weird.
+        "       gl_FragColor = vec4(BrushColor.r,                           \n"
+        "                           BrushColor.g,                           \n"
+        "                           BrushColor.b,                           \n"
+        "                           clamp(FinalAlpha,0.0,1.0));             \n" // TODO: Needs improvement. Self-intersection corners look weird.
         "   }                                                               \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_Brush], __FILE__, __LINE__,
@@ -445,7 +453,7 @@ void Initialize(PapayaMemory* Mem)
     // Brush cursor shader
     {
         const char* Frag =
-        "   #version 330                                                                \n"
+        "   #version 120                                                                \n"
         "                                                                               \n"
         "   #define M_PI 3.1415926535897932384626433832795                              \n"
         "                                                                               \n"
@@ -453,9 +461,8 @@ void Initialize(PapayaMemory* Mem)
         "   uniform float Hardness;                                                     \n" // Uniforms[2]
         "   uniform float PixelDiameter;                                                \n" // Uniforms[3]
         "                                                                               \n"
-        "   in vec2 Frag_UV;                                                            \n"
+        "   varying vec2 Frag_UV;                                                       \n"
         "                                                                               \n"
-        "   out vec4 Out_Color;                                                         \n"
         "                                                                               \n"
         "   void main()                                                                 \n"
         "   {                                                                           \n"
@@ -467,7 +474,7 @@ void Initialize(PapayaMemory* Mem)
         "       if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;                              \n"
         "       else if (Dist > 0.5)          Alpha = 0.0;                              \n"
         "       float BorderThickness = 1.0 / PixelDiameter;                            \n"
-        "       Out_Color = (Dist > 0.5 - BorderThickness && Dist < 0.5) ?              \n"
+        "       gl_FragColor = (Dist > 0.5 - BorderThickness && Dist < 0.5) ?           \n"
         "       vec4(0.0,0.0,0.0,1.0) :                                                 \n"
         "       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
         "   }                                                                           \n";
@@ -484,22 +491,20 @@ void Initialize(PapayaMemory* Mem)
     // Eyedropper cursor shader
     {
         const char* Frag =
-        "   #version 330                                                                \n"
+        "   #version 120                                                                \n"
         "                                                                               \n"
         "   uniform vec4 Color1;                                                        \n" // Uniforms[1]
         "   uniform vec4 Color2;                                                        \n" // Uniforms[2]
         "                                                                               \n"
-        "   in vec2 Frag_UV;                                                            \n"
-        "                                                                               \n"
-        "   out vec4 Out_Color;                                                         \n"
+        "   varying vec2 Frag_UV;                                                       \n"
         "                                                                               \n"
         "   void main()                                                                 \n"
         "   {                                                                           \n"
         "       float d = length(vec2(0.5,0.5) - Frag_UV);                              \n"
         "       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);                    \n"
         "       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);                       \n"
-        "       Out_Color = (Frag_UV.y < 0.5) ? Color1 : Color2;                        \n"
-        "       Out_Color.a = t;                                                        \n"
+        "       gl_FragColor = (Frag_UV.y < 0.5) ? Color1 : Color2;                     \n"
+        "       gl_FragColor.a = t;                                                     \n"
         "   }                                                                           \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_EyeDropperCursor], __FILE__, __LINE__,
@@ -514,15 +519,14 @@ void Initialize(PapayaMemory* Mem)
     // Picker saturation-value shader
     {
         const char* Frag =
-        "   #version 330                                                            \n"
+        "   #version 120                                                            \n"
         "                                                                           \n"
         "   uniform float Hue;                                                      \n" // Uniforms[1]
         "   uniform vec2 Cursor;                                                    \n" // Uniforms[2]
         "   uniform float Thickness = 1.0 / 256.0;                                  \n"
         "   uniform float Radius = 0.0075;                                          \n"
         "                                                                           \n"
-        "   in  vec2 Frag_UV;                                                       \n"
-        "   out vec4 Out_Color;                                                     \n"
+        "   varying  vec2 Frag_UV;                                                  \n"
         "                                                                           \n"
         "   vec3 hsv2rgb(vec3 c)                                                    \n" // Source: Fast branchless RGB to HSV conversion in GLSL
         "   {                                                                       \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
@@ -539,11 +543,11 @@ void Initialize(PapayaMemory* Mem)
         "       if (Dist > Radius && Dist < Radius + Thickness)                     \n"
         "       {                                                                   \n"
         "           float a = (Cursor.x < 0.4 && Cursor.y > 0.6) ? 0.0 : 1.0;       \n"
-        "           Out_Color = vec4(a, a, a, 1.0);                                 \n"
+        "           gl_FragColor = vec4(a, a, a, 1.0);                              \n"
         "       }                                                                   \n"
         "       else                                                                \n"
         "       {                                                                   \n"
-        "           Out_Color = vec4(RGB.x, RGB.y, RGB.z, 1.0);                     \n"
+        "           gl_FragColor = vec4(RGB.x, RGB.y, RGB.z, 1.0);                  \n"
         "       }                                                                   \n"
         "   }                                                                       \n";
 
@@ -559,12 +563,11 @@ void Initialize(PapayaMemory* Mem)
     // Picker hue shader
     {
         const char* Frag =
-        "   #version 330                                                    \n"
+        "   #version 120                                                    \n"
         "                                                                   \n"
         "   uniform float Cursor;                                           \n" // Uniforms[1]
         "                                                                   \n"
-        "   in  vec2 Frag_UV;                                               \n"
-        "   out vec4 Out_Color;                                             \n"
+        "   varying  vec2 Frag_UV;                                          \n"
         "                                                                   \n"
         "   vec3 hsv2rgb(vec3 c)                                            \n" // Source: Fast branchless RGB to HSV conversion in GLSL
         "   {                                                               \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
@@ -578,11 +581,11 @@ void Initialize(PapayaMemory* Mem)
         "       vec4 Hue = vec4(hsv2rgb(vec3(Frag_UV.y, 1.0, 1.0)).xyz,1.0);\n"
         "       if (abs(0.5 - Frag_UV.x) > 0.3333)                          \n"
         "       {                                                           \n"
-        "           Out_Color = vec4(0.36,0.36,0.37,                        \n"
+        "           gl_FragColor = vec4(0.36,0.36,0.37,                     \n"
         "                       float(abs(Frag_UV.y - Cursor) < 0.0039));   \n"
         "       }                                                           \n"
         "       else                                                        \n"
-        "           Out_Color = Hue;                                        \n"
+        "           gl_FragColor = Hue;                                     \n"
         "   }                                                               \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_PickerHStrip], __FILE__, __LINE__,
@@ -597,15 +600,14 @@ void Initialize(PapayaMemory* Mem)
     // Alpha grid shader
     {
         const char* Frag =
-        "   #version 330                                                    \n"
+        "   #version 120                                                    \n"
         "                                                                   \n"
         "   uniform vec4  Color1;                                           \n" // Uniforms[1]
         "   uniform vec4  Color2;                                           \n" // Uniforms[2]
         "   uniform float Zoom;                                             \n" // Uniforms[3]
         "   uniform float InvAspect;                                        \n" // Uniforms[4]
         "                                                                   \n"
-        "   in  vec2 Frag_UV;                                               \n"
-        "   out vec4 Out_Color;                                             \n"
+        "   varying  vec2 Frag_UV;                                          \n"
         "                                                                   \n"
         "   void main()                                                     \n"
         "   {                                                               \n"
@@ -616,7 +618,7 @@ void Initialize(PapayaMemory* Mem)
         "           aspectUV = vec2(Frag_UV.x / InvAspect, Frag_UV.y);      \n"
         "       vec2 uv = floor(aspectUV.xy * 500 * Zoom);                  \n"
         "       float a = mod(uv.x + uv.y, 2.0);                            \n"
-        "       Out_Color = mix(Color1, Color2, a);                         \n"
+        "       gl_FragColor = mix(Color1, Color2, a);                      \n"
         "   }                                                               \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_AlphaGrid], __FILE__, __LINE__,
@@ -631,17 +633,16 @@ void Initialize(PapayaMemory* Mem)
     // ImGui default shader
     {
         const char* Frag =
-        "   #version 330                                                \n"
-        "   uniform sampler2D Texture;                                  \n" // Uniforms[1]
-        "                                                               \n"
-        "   in vec2 Frag_UV;                                            \n"
-        "   in vec4 Frag_Color;                                         \n"
-        "                                                               \n"
-        "   out vec4 Out_Color;                                         \n"
-        "   void main()                                                 \n"
-        "   {                                                           \n"
-        "       Out_Color = Frag_Color * texture( Texture, Frag_UV.st); \n"
-        "   }                                                           \n";
+        "   #version 120                                                        \n"
+        "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
+        "                                                                       \n"
+        "   varying vec2 Frag_UV;                                               \n"
+        "   varying vec4 Frag_Color;                                            \n"
+        "                                                                       \n"
+        "   void main()                                                         \n"
+        "   {                                                                   \n"
+        "       gl_FragColor = Frag_Color * texture2D( Texture, Frag_UV.st);    \n"
+        "   }                                                                   \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_ImGui], __FILE__, __LINE__,
             Vert, Frag, 3, 2,
