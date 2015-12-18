@@ -1491,7 +1491,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         }
     }
 
-    // Draw eye dropper cursor
+    // Eye dropper
     {
         if ((Mem->CurrentTool == PapayaTool_EyeDropper || (Mem->CurrentTool == PapayaTool_Brush && ImGui::GetIO().KeyAlt))
             && Mem->Mouse.InWorkspace)
@@ -1519,6 +1519,12 @@ void UpdateAndRender(PapayaMemory* Mem)
             else if (Mem->Mouse.Released[0])
             {
                 Mem->Picker.CurrentColor = Mem->EyeDropper.CurrentColor;
+                if (Mem->Picker.Open)
+                {
+                    Mem->Picker.NewColor = Mem->Picker.CurrentColor;
+                    Math::RGBtoHSV(Mem->Picker.NewColor.r, Mem->Picker.NewColor.g, Mem->Picker.NewColor.b,
+                                   Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y);
+                }
             }
         }
     }
