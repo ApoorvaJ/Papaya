@@ -608,7 +608,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
             bool bTrue = true;
             ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
-            ImGui::Image((void*)(intptr_t)Mem.Textures[PapayaTex_TitleBarIcon], ImVec2(28,28));
+
+            #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
+            ImGui::Image((void*)(intptr_t)Mem.Textures[PapayaTex_UI], ImVec2(28,28), CALCUV(0,200), CALCUV(28,228));
+            #undef CALCUV
+
             ImGui::End();
 
             ImGui::PopStyleColor(1);
@@ -640,22 +644,24 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem.Colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
+
+            #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
             ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
 
             ImGui::PushID(0);
-            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0.5,0), ImVec2(1,0.5f), 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_UI], ImVec2(34,26), CALCUV(62,200),CALCUV(96,226), 1, ImVec4(0,0,0,0)))
             {
                 ShowWindow(Window, SW_MINIMIZE);
             }
 
-            ImVec2 StartUV = IsMaximized ? ImVec2(0.0f,0.5f) : ImVec2(0.5f,0.5f);
-            ImVec2 EndUV   = IsMaximized ? ImVec2(0.5f,1.0f) : ImVec2(1.0f,1.0f);
+            ImVec2 StartUV = IsMaximized ? CALCUV(28,226) : CALCUV(62,226);
+            ImVec2 EndUV   = IsMaximized ? CALCUV(62,252) : CALCUV(96,252);
 
             ImGui::PopID();
             ImGui::SameLine();
             ImGui::PushID(1);
 
-            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_UI], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
             {
                 if (IsMaximized)
                 {
@@ -671,7 +677,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SameLine();
             ImGui::PushID(2);
 
-            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_TitleBarButtons], ImVec2(34,26), ImVec2(0,0), ImVec2(0.5f,0.5f), 1, ImVec4(0,0,0,0)))
+            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_UI], ImVec2(34,26), CALCUV(28,200),CALCUV(62,226), 1, ImVec4(0,0,0,0)))
             {
                 SendMessage(Window, WM_CLOSE, 0, 0);
             }
@@ -679,6 +685,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PopID();
 
             ImGui::End();
+            #undef CALCUV
 
             ImGui::PopStyleVar(5);
             ImGui::PopStyleColor(4);

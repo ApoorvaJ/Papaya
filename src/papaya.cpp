@@ -683,9 +683,7 @@ void Initialize(PapayaMemory* Mem)
     // Load interface textures and colors
     {
         // Texture IDs
-        Mem->Textures[PapayaTex_TitleBarButtons] = LoadAndBindImage("../../img/win32_titlebar_buttons.png");
-        Mem->Textures[PapayaTex_TitleBarIcon]    = LoadAndBindImage("../../img/win32_titlebar_icon.png");
-        Mem->Textures[PapayaTex_InterfaceIcons]  = LoadAndBindImage("../../img/interface_icons.png");
+        Mem->Textures[PapayaTex_UI] = LoadAndBindImage("../../img/ui.png");
 
         // Colors
 #if 1
@@ -897,12 +895,12 @@ void UpdateAndRender(PapayaMemory* Mem)
 
         ImGui::Begin("Left toolbar", 0, WindowFlags);
 
-        #define CALCUV(X, Y) ImVec2((float)X*20.0f/256.0f, (float)Y*20.0f/256.0f)
+        #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
         {
             ImGui::PushID(0);
             ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->CurrentTool == PapayaTool_Brush) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->CurrentTool == PapayaTool_Brush) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(20, 20), CALCUV(0, 0), CALCUV(1, 1), 6, ImVec4(0, 0, 0, 0)))
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
             {
                 Mem->CurrentTool = (Mem->CurrentTool != PapayaTool_Brush) ? PapayaTool_Brush : PapayaTool_None;
 
@@ -913,7 +911,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             ImGui::PushID(1);
             ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->CurrentTool == PapayaTool_EyeDropper) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->CurrentTool == PapayaTool_EyeDropper) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(20, 20), CALCUV(1, 0), CALCUV(2, 1), 6, ImVec4(0, 0, 0, 0)))
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(20, 0), CALCUV(40, 20), 6, ImVec4(0, 0, 0, 0)))
             {
                 Mem->CurrentTool = (Mem->CurrentTool != PapayaTool_EyeDropper) ? PapayaTool_EyeDropper : PapayaTool_None;
             }
@@ -921,7 +919,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             ImGui::PopID();
 
             ImGui::PushID(2);
-            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Mem->Picker.CurrentColor))
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Mem->Picker.CurrentColor))
             {
                 Mem->Picker.Open = !Mem->Picker.Open;
                 if (Mem->Picker.Open)
@@ -970,13 +968,13 @@ void UpdateAndRender(PapayaMemory* Mem)
             {
                 float Width1 = (Mem->Picker.Size.x + 33.0f) / 2.0f;
                 float Width2 = Width1 - 33.0f;
-                if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(Width2, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Mem->Picker.CurrentColor))
+                if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(Width2, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Mem->Picker.CurrentColor))
                 {
                     Mem->Picker.Open = false;
                 }
                 ImGui::SameLine();
                 ImGui::PushID(1);
-                if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_InterfaceIcons], ImVec2(Width1, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Mem->Picker.NewColor))
+                if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(Width1, 34), ImVec2(0, 0), ImVec2(0, 0), 0, Mem->Picker.NewColor))
                 {
                     Mem->Picker.Open = false;
                     Mem->Picker.CurrentColor = Mem->Picker.NewColor;

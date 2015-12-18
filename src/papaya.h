@@ -17,9 +17,7 @@
 enum PapayaTex_
 {
     PapayaTex_Font,
-    PapayaTex_TitleBarButtons,
-    PapayaTex_TitleBarIcon,
-    PapayaTex_InterfaceIcons,
+    PapayaTex_UI,
     PapayaTex_COUNT
 };
 
