@@ -161,7 +161,7 @@ namespace GL
         GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
     }
 
-    void DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, int32 UniformCount, ...)
+    void DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...)
     {
         GLint last_program, last_texture;
         GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
@@ -171,7 +171,8 @@ namespace GL
         GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
         GLCHK( glDisable      (GL_CULL_FACE) );
         GLCHK( glDisable      (GL_DEPTH_TEST) );
-        GLCHK( glEnable       (GL_SCISSOR_TEST) );
+        if (Scissor) { GLCHK( glEnable (GL_SCISSOR_TEST) ); }
+        else         { GLCHK( glDisable(GL_SCISSOR_TEST) ); }
 
         GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
         GLCHK( glUseProgram   (Shader.Handle) );

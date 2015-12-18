@@ -1435,7 +1435,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             Mem->Doc.CanvasPosition,
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
-        GL::DrawQuad(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid],
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid], true,
             5,
             UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
             UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid1],
@@ -1457,7 +1457,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], true,
                 1,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
@@ -1466,7 +1466,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 1,
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 1, true,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
     }
@@ -1482,7 +1482,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
                 Vec2(ScaledDiameter,ScaledDiameter));
 
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_BrushCursor], Mem->Shaders[PapayaShader_BrushCursor],
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_BrushCursor], Mem->Shaders[PapayaShader_BrushCursor], true,
                 4,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Color, Color(1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f),
@@ -1510,7 +1510,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     Mem->Mouse.Pos - (Size * 0.5f),
                     Size);
 
-                GL::DrawQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor], Mem->Shaders[PapayaShader_EyeDropperCursor],
+                GL::DrawQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor], Mem->Shaders[PapayaShader_EyeDropperCursor], true,
                     3,
                     UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                     UniformType_Color, Mem->EyeDropper.CurrentColor,
@@ -1666,13 +1666,13 @@ EndOfDoc:
             }
 
             // Draw hue picker
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip],
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip], false,
                 2,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Float, Mem->Picker.CursorH);
 
             // Draw saturation-value picker
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox],
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox], false,
                 3,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Float, Mem->Picker.CursorH,
