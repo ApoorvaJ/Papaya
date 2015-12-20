@@ -10,15 +10,27 @@ namespace GL
     bool InitAndValidate()
     {
         // TODO: Reporting via message box or logging before returning false
-        if (glewInit() != GLEW_OK) { return false; }
+        if (glewInit() != GLEW_OK) 
+        { 
+            Platform::Print("GLEW initialization failed.\n");
+            return false; 
+        }
 
         // Core profile capability check
-        if (!glewIsSupported("GL_VERSION_2_1")) { return false; }
+        if (!glewIsSupported("GL_VERSION_2_1")) 
+        {
+            Platform::Print("This hardware doesn't support OpenGL 2.1.\n");
+            return false; 
+        }
 
         // Extension capability checks
-        //                    Extension                                      OpenGL dependency version
-        //                    ==========                                     =========================
-        if (!glewIsSupported("GL_ARB_framebuffer_object")) { return false; } // OpenGL 1.1
+        //                    Extension                     OpenGL dependency version
+        //                    ==========                    =========================
+        if (!glewIsSupported("GL_ARB_framebuffer_object"))  // OpenGL 1.1
+        {
+            Platform::Print("This hardware doesn't support OpenGL extension GL_ARB_framebuffer_object.\n");
+            return false;
+        }
 
         return true;
     }
