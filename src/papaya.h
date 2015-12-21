@@ -112,7 +112,7 @@ struct UndoData // TODO: Convert into a union of structs once multiple types of 
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
     UndoData* Prev, *Next;
     Vec2i Pos, Size; // Position and size of the suffixed data block
-    //size_t Size; 
+    bool IsSubRect; // If true, then the suffixed image data contains two subrects - before and after the brush
     // Image data goes after this
 };
 

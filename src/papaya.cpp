@@ -43,7 +43,7 @@ internal uint32 LoadAndBindImage(char* Path)
 
 // This function reads from the frame buffer and hence needs the appropriate frame buffer to be
 // bound before it is called.
-internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size)
+internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushImage)
 {
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
     {
@@ -53,7 +53,7 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size)
     else if (Mem->Doc.Undo.Current->Next != 0) // Not empty and not at end. Reposition for overwrite.
     {
         uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
-        uint64 ImageSize = 4 * Mem->Doc.Undo.Current->Size.x * Mem->Doc.Undo.Current->Size.y;
+        uint64 ImageSize = (Mem->Doc.Undo.Current->IsSubRect ? 8 : 4) * Mem->Doc.Undo.Current->Size.x * Mem->Doc.Undo.Current->Size.y;
         uint64 BlockSize = sizeof(UndoData) + ImageSize;
         if (BytesToRight >= BlockSize)
         {
@@ -72,7 +72,8 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size)
     Data.Prev      = Mem->Doc.Undo.Last;
     Data.Pos       = Pos;
     Data.Size      = Size;
-    uint64 BufSize = sizeof(UndoData) + 4 * Size.x * Size.y;
+    Data.IsSubRect = (PreBrushImage != 0);
+    uint64 BufSize = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
     void* Buf      = malloc((size_t)BufSize);
 
     Util::StartTime(Timer_GetImage, Mem);
@@ -83,6 +84,11 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size)
     
     GLCHK( glFinish() ); // TODO: Required?
     Util::StopTime(Timer_GetImage, Mem);
+
+    if (Data.IsSubRect)
+    {
+        memcpy((int8*)Buf + sizeof(UndoData) + 4 * Size.x * Size.y, PreBrushImage, 4 * Size.x * Size.y);
+    }
 
     uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Top;
     if (BytesToRight < sizeof(UndoData)) // Not enough space for UndoData. Go to start.
@@ -152,6 +158,35 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size)
     Mem->Doc.Undo.Current = Mem->Doc.Undo.Last;
     Mem->Doc.Undo.Count++;
     Mem->Doc.Undo.CurrentIndex++;
+}
+
+internal void LoadFromUndoBuffer(PapayaMemory* Mem, bool LoadPreBrushImage)
+{
+    UndoData Data  = {};
+    int8* Image    = 0;
+    bool AllocUsed = false;
+
+    memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
+
+    size_t BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
+    size_t ImageSize = (Mem->Doc.Undo.Current->IsSubRect ? 8 : 4) * Data.Size.x * Data.Size.y;
+    if (BytesToRight - sizeof(UndoData) >= ImageSize) // Image is contiguously stored
+    {
+        Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
+    }
+    else // Image is split
+    {
+        AllocUsed = true;
+        Image = (int8*)malloc(ImageSize);
+        memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
+        memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)(ImageSize - (BytesToRight - sizeof(UndoData))));
+    }
+
+    GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
+
+    GLCHK( glTexSubImage2D(GL_TEXTURE_2D, 0, Data.Pos.x, Data.Pos.y, Data.Size.x, Data.Size.y, GL_RGBA, GL_UNSIGNED_BYTE, Image + (LoadPreBrushImage ? 4 * Data.Size.x * Data.Size.y : 0)) );
+
+    if (AllocUsed) { free(Image); }
 }
 
 internal bool OpenDocument(char* Path, PapayaMemory* Mem)
@@ -261,7 +296,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
             GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-            PushUndo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height));
+            PushUndo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height), 0);
 
             uint32 Temp = Mem->Misc.FboRenderTexture;
             Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
@@ -1205,10 +1240,25 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+
+                    Vec2i Pos  = Mem->Brush.PaintArea1;
+                    Vec2i Size = Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1;
+                    int8* PreBrushImage = 0;
+
+                    // TODO: Potential point of optimization? The line below leads to incorrect undoing
+                    //       when undoing from, say, diagonal line to short intersecting squiggle.
+                    //if (8 * Size.x * Size.y < 4 * Mem->Doc.Width * Mem->Doc.Height)
+                    {
+                        PreBrushImage = (int8*)malloc(4 * Size.x * Size.y);
+                        GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, PreBrushImage) );
+                    }
+
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-                    PushUndo(Mem, Mem->Brush.PaintArea1, Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1);
+                    PushUndo(Mem, Pos, Size, PreBrushImage);
+
+                    if (PreBrushImage) { free(PreBrushImage); }
 
                     uint32 Temp = Mem->Misc.FboRenderTexture;
                     Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
@@ -1370,6 +1420,7 @@ void UpdateAndRender(PapayaMemory* Mem)
     {
         if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Z))) // Pop undo op
         {
+            // TODO: Clean up this workflow
             bool Refresh = false;
 
             if (ImGui::GetIO().KeyShift &&
@@ -1384,38 +1435,22 @@ void UpdateAndRender(PapayaMemory* Mem)
                      Mem->Doc.Undo.CurrentIndex > 0 &&
                      Mem->Doc.Undo.Current->Prev != 0) // Undo
             {
+                if (Mem->Doc.Undo.Current->IsSubRect)
+                {
+                    LoadFromUndoBuffer(Mem, true);
+                }
+                else
+                {
+                    Refresh = true;
+                }
+
                 Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Prev;
                 Mem->Doc.Undo.CurrentIndex--;
-                Refresh = true;
             }
 
             if (Refresh)
             {
-                UndoData Data  = {};
-                void* Image    = 0;
-                bool AllocUsed = false;
-
-                memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
-
-                size_t BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
-                size_t ImageSize = 4 * Data.Size.x * Data.Size.y;
-                if (BytesToRight - sizeof(UndoData) >= ImageSize) // Image is contiguously stored
-                {
-                    Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
-                }
-                else // Image is split
-                {
-                    AllocUsed = true;
-                    Image = malloc(ImageSize);
-                    memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
-                    memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)(ImageSize - (BytesToRight - sizeof(UndoData))));
-                }
-
-                GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
-
-                GLCHK( glTexSubImage2D(GL_TEXTURE_2D, 0, Data.Pos.x, Data.Pos.y, Data.Size.x, Data.Size.y, GL_RGBA, GL_UNSIGNED_BYTE, Image) );
-
-                if (AllocUsed) { free(Image); }
+                LoadFromUndoBuffer(Mem, false);
             }
         }
 
