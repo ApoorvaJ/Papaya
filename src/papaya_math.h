@@ -22,6 +22,21 @@ inline Vec2& operator-=(Vec2& lhs, const Vec2& rhs)     { lhs.x -= rhs.x; lhs.y 
 inline Vec2& operator*=(Vec2& lhs, const float rhs)     { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
 inline Vec2& operator/=(Vec2& lhs, const float rhs)     { lhs.x /= rhs; lhs.y /= rhs; return lhs; }
 
+struct Vec2i
+{
+    int32 x, y;
+    Vec2i() { x = y = 0; }
+    Vec2i(int32 _x, int32 _y) { x = _x; y = _y; }
+};
+
+inline Vec2i operator*(const Vec2i& lhs, const int32 rhs)  { return Vec2i(lhs.x*rhs, lhs.y*rhs); }
+inline Vec2i operator+(const Vec2i& lhs, const Vec2i& rhs) { return Vec2i(lhs.x+rhs.x, lhs.y+rhs.y); }
+inline Vec2i operator-(const Vec2i& lhs, const Vec2i& rhs) { return Vec2i(lhs.x-rhs.x, lhs.y-rhs.y); }
+inline Vec2i operator*(const Vec2i& lhs, const Vec2i rhs)  { return Vec2i(lhs.x*rhs.x, lhs.y*rhs.y); }
+inline Vec2i& operator+=(Vec2i& lhs, const Vec2i& rhs)     { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
+inline Vec2i& operator-=(Vec2i& lhs, const Vec2i& rhs)     { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
+inline Vec2i& operator*=(Vec2i& lhs, const int32 rhs)      { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
+
 struct Color
 {
     float r, g, b, a;
@@ -37,25 +52,11 @@ namespace Math
 {
     const double Pi = 3.14159265358979323846;
 
-    float Min(float a, float b)
-    {
-        return (a < b ? a : b);
-    }
+    template<class T> 
+    T Min(T a, T b) { return (a < b ? a : b); }
 
-    uint64 Min(uint64 a, uint64 b)
-    {
-        return (a < b ? a : b);
-    }
-
-    float Max(float a, float b)
-    {
-        return (a > b ? a : b);
-    }
-
-    uint64 Max(uint64 a, uint64 b)
-    {
-        return (a > b ? a : b);
-    }
+    template<class T> 
+    T Max(T a, T b) { return (a > b ? a : b); }
 
     float Abs(float a)
     {

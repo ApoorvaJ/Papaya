@@ -81,6 +81,7 @@ enum Timer_ // TODO: Improve timing subsystem
     Timer_Frame,
     Timer_Sleep,
     Timer_ImageOpen,
+    Timer_GetImage,
     Timer_COUNT
 };
 
@@ -110,7 +111,8 @@ struct UndoData // TODO: Convert into a union of structs once multiple types of 
 {
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
     UndoData* Prev, *Next;
-    size_t Size; // Size of the suffixed data block
+    Vec2i Pos, Size; // Position and size of the suffixed data block
+    //size_t Size; 
     // Image data goes after this
 };
 
@@ -179,6 +181,8 @@ struct BrushInfo
     float Opacity;  // Range: [0.0, 1.0]
     float Hardness; // Range: [0.0, 1.0]
     bool AntiAlias;
+
+    Vec2i PaintArea1, PaintArea2;
 
     // TODO: Move some of this stuff to the MouseInfo struct?
     Vec2 RtDragStartPos;

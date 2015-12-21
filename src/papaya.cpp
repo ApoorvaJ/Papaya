@@ -41,7 +41,9 @@ internal uint32 LoadAndBindImage(char* Path)
     return (uint32)Id_GLuint;
 }
 
-internal void PushUndo(PapayaMemory* Mem)
+// This function reads from the frame buffer and hence needs the appropriate frame buffer to be
+// bound before it is called.
+internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size)
 {
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
     {
@@ -51,7 +53,8 @@ internal void PushUndo(PapayaMemory* Mem)
     else if (Mem->Doc.Undo.Current->Next != 0) // Not empty and not at end. Reposition for overwrite.
     {
         uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
-        uint64 BlockSize = sizeof(UndoData) + Mem->Doc.Undo.Current->Size;
+        uint64 ImageSize = 4 * Mem->Doc.Undo.Current->Size.x * Mem->Doc.Undo.Current->Size.y;
+        uint64 BlockSize = sizeof(UndoData) + ImageSize;
         if (BytesToRight >= BlockSize)
         {
             Mem->Doc.Undo.Top = (int8*)Mem->Doc.Undo.Current + BlockSize;
@@ -67,15 +70,19 @@ internal void PushUndo(PapayaMemory* Mem)
     UndoData Data  = {};
     Data.OpCode    = PapayaUndoOp_Brush;
     Data.Prev      = Mem->Doc.Undo.Last;
-    Data.Size      = 4 * Mem->Doc.Width * Mem->Doc.Height;
-    uint64 BufSize = sizeof(UndoData) + Data.Size;
+    Data.Pos       = Pos;
+    Data.Size      = Size;
+    uint64 BufSize = sizeof(UndoData) + 4 * Size.x * Size.y;
     void* Buf      = malloc((size_t)BufSize);
 
+    Util::StartTime(Timer_GetImage, Mem);
     memcpy(Buf, &Data, sizeof(UndoData));
     GLCHK( glFinish() ); // TODO: Required?
-    GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
-    GLCHK( glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
+
+    GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
+    
     GLCHK( glFinish() ); // TODO: Required?
+    Util::StopTime(Timer_GetImage, Mem);
 
     uint64 BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Top;
     if (BytesToRight < sizeof(UndoData)) // Not enough space for UndoData. Go to start.
@@ -232,7 +239,40 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
         Mem->Doc.Undo.CurrentIndex = -1;
 
-        PushUndo(Mem);
+        // TODO: Near-duplicate code from brush release. Combine.
+        // Additive render-to-texture
+        {
+            GLCHK( glDisable(GL_SCISSOR_TEST) );
+            GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
+
+            GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
+            GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
+
+            GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+
+            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
+            GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
+
+            GLCHK( glEnable(GL_BLEND) );
+            GLCHK( glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX) ); // TODO: Handle the case where the original texture has an alpha below 1.0
+            GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+
+            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+            GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+
+            PushUndo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height));
+
+            uint32 Temp = Mem->Misc.FboRenderTexture;
+            Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
+            Mem->Doc.TextureID = Temp;
+
+            GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+            GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
+
+            GLCHK( glDisable(GL_BLEND) );
+        }
     }
 
     Util::StopTime(Timer_ImageOpen, Mem);
@@ -316,7 +356,7 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Misc.DrawCanvas        = true;
         Mem->Misc.DrawOverlay       = false;
-        Mem->Misc.ShowMetricsWindow = false;
+        Mem->Misc.ShowMetricsWindow = true;
 
         float OrthoMtx[4][4] =
         {
@@ -1071,6 +1111,11 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PopStyleColor(5);
     }
 
+    ImGui::Begin("Paint Area");
+    ImGui::Text("Min: %d, %d", Mem->Brush.PaintArea1.x , Mem->Brush.PaintArea1.y);
+    ImGui::Text("Max: %d, %d", Mem->Brush.PaintArea2.x, Mem->Brush.PaintArea2.y);
+    ImGui::End();
+
     // Brush tool
     {
 /*
@@ -1132,10 +1177,9 @@ void UpdateAndRender(PapayaMemory* Mem)
             if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
             {
                 Mem->Brush.BeingDragged = true;
-                if (Mem->Picker.Open)
-                {
-                    Mem->Picker.CurrentColor = Mem->Picker.NewColor;
-                }
+                if (Mem->Picker.Open) { Mem->Picker.CurrentColor = Mem->Picker.NewColor; }
+                Mem->Brush.PaintArea1 = Vec2i(Mem->Doc.Width + 1, Mem->Doc.Height + 1);
+                Mem->Brush.PaintArea2 = Vec2i(0,0);
             }
             else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
             {
@@ -1150,7 +1194,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
 
                     GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                    //glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
+                    // glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
 
                     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
                     GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
@@ -1164,6 +1208,8 @@ void UpdateAndRender(PapayaMemory* Mem)
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
+                    PushUndo(Mem, Mem->Brush.PaintArea1, Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1);
+
                     uint32 Temp = Mem->Misc.FboRenderTexture;
                     Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
@@ -1174,8 +1220,6 @@ void UpdateAndRender(PapayaMemory* Mem)
 
                     GLCHK( glDisable(GL_BLEND) );
                 }
-
-                PushUndo(Mem);
 
                 Mem->Misc.DrawOverlay   = false;
                 Mem->Brush.BeingDragged = false;
@@ -1227,6 +1271,29 @@ void UpdateAndRender(PapayaMemory* Mem)
                 }
                 i++;
     #endif
+
+                // Paint area calculation
+                {
+                    float UVMinX = Math::Min(CorrectedPos.x, CorrectedLastPos.x);
+                    float UVMinY = Math::Min(CorrectedPos.y, CorrectedLastPos.y);
+                    float UVMaxX = Math::Max(CorrectedPos.x, CorrectedLastPos.x);
+                    float UVMaxY = Math::Max(CorrectedPos.y, CorrectedLastPos.y);
+
+                    int32 PixelMinX = Math::RoundToInt(UVMinX * Mem->Doc.Width  - 0.5f * Mem->Brush.Diameter);
+                    int32 PixelMinY = Math::RoundToInt(UVMinY * Mem->Doc.Height - 0.5f * Mem->Brush.Diameter);
+                    int32 PixelMaxX = Math::RoundToInt(UVMaxX * Mem->Doc.Width  + 0.5f * Mem->Brush.Diameter);
+                    int32 PixelMaxY = Math::RoundToInt(UVMaxY * Mem->Doc.Height + 0.5f * Mem->Brush.Diameter);
+
+                    Mem->Brush.PaintArea1.x = Math::Min(Mem->Brush.PaintArea1.x, PixelMinX);
+                    Mem->Brush.PaintArea1.y = Math::Min(Mem->Brush.PaintArea1.y, PixelMinY);
+                    Mem->Brush.PaintArea2.x = Math::Max(Mem->Brush.PaintArea2.x, PixelMaxX);
+                    Mem->Brush.PaintArea2.y = Math::Max(Mem->Brush.PaintArea2.y, PixelMaxY);
+
+                    Mem->Brush.PaintArea1.x = Math::Clamp(Mem->Brush.PaintArea1.x, 0, Mem->Doc.Width);
+                    Mem->Brush.PaintArea1.y = Math::Clamp(Mem->Brush.PaintArea1.y, 0, Mem->Doc.Height);
+                    Mem->Brush.PaintArea2.x = Math::Clamp(Mem->Brush.PaintArea2.x, 0, Mem->Doc.Width);
+                    Mem->Brush.PaintArea2.y = Math::Clamp(Mem->Brush.PaintArea2.y, 0, Mem->Doc.Height);
+                }
 
                 GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
                 GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect) ); // Pos uniform
@@ -1331,26 +1398,28 @@ void UpdateAndRender(PapayaMemory* Mem)
                 memcpy(&Data, Mem->Doc.Undo.Current, sizeof(UndoData));
 
                 size_t BytesToRight = (int8*)Mem->Doc.Undo.Start + Mem->Doc.Undo.Size - (int8*)Mem->Doc.Undo.Current;
-                if (BytesToRight - sizeof(UndoData) >= Data.Size) // Image is contiguously stored
+                size_t ImageSize = 4 * Data.Size.x * Data.Size.y;
+                if (BytesToRight - sizeof(UndoData) >= ImageSize) // Image is contiguously stored
                 {
                     Image = (int8*)Mem->Doc.Undo.Current + sizeof(UndoData);
                 }
                 else // Image is split
                 {
                     AllocUsed = true;
-                    Image = malloc((size_t)Data.Size);
+                    Image = malloc(ImageSize);
                     memcpy(Image, (int8*)Mem->Doc.Undo.Current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
-                    memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)(Data.Size - (BytesToRight - sizeof(UndoData))));
+                    memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->Doc.Undo.Start, (size_t)(ImageSize - (BytesToRight - sizeof(UndoData))));
                 }
 
                 GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
-                GLCHK( glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Image) );
+
+                GLCHK( glTexSubImage2D(GL_TEXTURE_2D, 0, Data.Pos.x, Data.Pos.y, Data.Size.x, Data.Size.y, GL_RGBA, GL_UNSIGNED_BYTE, Image) );
 
                 if (AllocUsed) { free(Image); }
             }
         }
 
-#if 0
+#if 1
         // =========================================================================================
         // Visualization: Undo buffer
 
@@ -1456,7 +1525,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         {
             GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
             GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], true,
                 1,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
@@ -1465,7 +1534,7 @@ void UpdateAndRender(PapayaMemory* Mem)
         {
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (Mem->Doc.CanvasZoom >= 2.0f) ? GL_NEAREST : GL_LINEAR) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
             GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 1, true,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
@@ -1560,6 +1629,10 @@ EndOfDoc:
                 ImGui::Text("ImageOpen");                                                   ImGui::NextColumn();
                 ImGui::Text("%lu", Mem->Debug.Timers[Timer_ImageOpen].CyclesElapsed);       ImGui::NextColumn();
                 ImGui::Text("%f" , Mem->Debug.Timers[Timer_ImageOpen].MillisecondsElapsed); ImGui::NextColumn();
+
+                ImGui::Text("GetImage");                                                   ImGui::NextColumn();
+                ImGui::Text("%lu", Mem->Debug.Timers[Timer_GetImage].CyclesElapsed);       ImGui::NextColumn();
+                ImGui::Text("%f" , Mem->Debug.Timers[Timer_GetImage].MillisecondsElapsed); ImGui::NextColumn();
 
                 ImGui::Columns(1);
                 ImGui::Separator();
