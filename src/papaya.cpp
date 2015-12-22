@@ -81,7 +81,7 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushI
     GLCHK( glFinish() ); // TODO: Required?
 
     GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
-    
+
     GLCHK( glFinish() ); // TODO: Required?
     Util::StopTime(Timer_GetImage, Mem);
 
@@ -1528,8 +1528,8 @@ void UpdateAndRender(PapayaMemory* Mem)
             if ((NewCanvasSize.x > Mem->Window.Width || NewCanvasSize.y > Mem->Window.Height))
             {
                 Vec2 PreScaleMousePos = Vec2(Mem->Mouse.Pos - Mem->Doc.CanvasPosition) / OldCanvasZoom;
-                Vec2 NewPos = Vec2(Mem->Doc.CanvasPosition) - 
-                              Vec2(PreScaleMousePos.x * ScaleDelta * (float)Mem->Doc.Width, 
+                Vec2 NewPos = Vec2(Mem->Doc.CanvasPosition) -
+                              Vec2(PreScaleMousePos.x * ScaleDelta * (float)Mem->Doc.Width,
                                    PreScaleMousePos.y * ScaleDelta * (float)Mem->Doc.Height);
                 Mem->Doc.CanvasPosition = Math::RoundToVec2i(NewPos);
             }
@@ -1702,9 +1702,9 @@ EndOfDoc:
                 ImGui::Columns(2, "inputcolumns");
                 ImGui::Separator();
                 ImGui::Text("PosX");                        ImGui::NextColumn();
-                ImGui::Text("%f", Mem->Mouse.Pos.x);        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->Mouse.Pos.x);        ImGui::NextColumn();
                 ImGui::Text("PosY");                        ImGui::NextColumn();
-                ImGui::Text("%f", Mem->Mouse.Pos.y);        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->Mouse.Pos.y);        ImGui::NextColumn();
                 ImGui::Text("Buttons");                     ImGui::NextColumn();
                 ImGui::Text("%d %d %d",
                     Mem->Mouse.IsDown[0],
