@@ -264,8 +264,11 @@ int main(int argc, char **argv)
         glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
         glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
 
-        // TODO: Disable vsync
-        glXSwapIntervalEXT(XlibDisplay, XlibWindow, 0);
+        // Disable vsync
+        if (glxewIsSupported("GLX_EXT_swap_control"))
+        {
+            glXSwapIntervalEXT(XlibDisplay, XlibWindow, 0);
+        }
     }
 
     EasyTab_Load(XlibDisplay, XlibWindow);
