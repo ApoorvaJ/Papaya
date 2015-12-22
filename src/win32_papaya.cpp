@@ -56,11 +56,11 @@ void Platform::ReleaseMouseCapture()
     ReleaseCapture();
 }
 
-void Platform::SetMousePosition(Vec2 Pos)
+void Platform::SetMousePosition(Vec2i Pos)
 {
     RECT Rect;
     GetWindowRect(GetActiveWindow(), &Rect);
-    SetCursorPos(Rect.left + (int32)Pos.x, Rect.top + (int32)Pos.y);
+    SetCursorPos(Rect.left + Pos.x, Rect.top + Pos.y);
 }
 
 void Platform::SetCursorVisibility(bool Visible)

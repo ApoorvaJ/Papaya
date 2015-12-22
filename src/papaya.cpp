@@ -209,8 +209,13 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
         Mem->Doc.InverseAspect = (float)Mem->Doc.Height / (float)Mem->Doc.Width;
         Mem->Doc.CanvasZoom = 0.8f * Math::Min((float)Mem->Window.Width/(float)Mem->Doc.Width, (float)Mem->Window.Height/(float)Mem->Doc.Height);
         if (Mem->Doc.CanvasZoom > 1.0f) { Mem->Doc.CanvasZoom = 1.0f; }
-        Mem->Doc.CanvasPosition = Vec2((Mem->Window.Width  - (float)Mem->Doc.Width  * Mem->Doc.CanvasZoom)/2.0f,
-                                               (Mem->Window.Height - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom)/2.0f); // TODO: Center with respect to canvas, not window
+        // Center canvas
+        {
+            int32 TopMargin = 53; // TODO: Put common layout constants in struct
+            int32 PosX = Math::RoundToInt((Mem->Window.Width - (float)Mem->Doc.Width * Mem->Doc.CanvasZoom) / 2.0f);
+            int32 PosY = TopMargin + Math::RoundToInt((Mem->Window.Height - TopMargin - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom) / 2.0f);
+            Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
+        }
         free(Texture);
     }
 
@@ -794,7 +799,7 @@ void UpdateAndRender(PapayaMemory* Mem)
     {
         // Current mouse info
         {
-            Mem->Mouse.Pos = ImGui::GetMousePos();
+            Mem->Mouse.Pos = Math::RoundToVec2i(ImGui::GetMousePos());
             Vec2 MousePixelPos = Vec2(Math::Floor((Mem->Mouse.Pos.x - Mem->Doc.CanvasPosition.x) / Mem->Doc.CanvasZoom),
                                       Math::Floor((Mem->Mouse.Pos.y - Mem->Doc.CanvasPosition.y) / Mem->Doc.CanvasZoom));
             Mem->Mouse.UV = Vec2(MousePixelPos.x / (float) Mem->Doc.Width, MousePixelPos.y / (float) Mem->Doc.Height);
@@ -1454,7 +1459,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             }
         }
 
-#if 1
+#if 0
         // =========================================================================================
         // Visualization: Undo buffer
 
@@ -1505,7 +1510,7 @@ void UpdateAndRender(PapayaMemory* Mem)
     // Canvas zooming and panning
     {
         // Panning
-        Mem->Doc.CanvasPosition += ImGui::GetMouseDragDelta(2);
+        Mem->Doc.CanvasPosition += Math::RoundToVec2i(ImGui::GetMouseDragDelta(2));
         ImGui::ResetMouseDragDelta(2);
 
         // Zooming
@@ -1518,17 +1523,23 @@ void UpdateAndRender(PapayaMemory* Mem)
 
             Mem->Doc.CanvasZoom += ScaleDelta;
             if (Mem->Doc.CanvasZoom < MinZoom) { Mem->Doc.CanvasZoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-            Vec2 NewCanvasSize = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height) * Mem->Doc.CanvasZoom;
+            Vec2i NewCanvasSize = Math::RoundToVec2i(Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height) * Mem->Doc.CanvasZoom);
 
             if ((NewCanvasSize.x > Mem->Window.Width || NewCanvasSize.y > Mem->Window.Height))
             {
-                Vec2 PreScaleMousePos = (Mem->Mouse.Pos - Mem->Doc.CanvasPosition) / OldCanvasZoom;
-                Mem->Doc.CanvasPosition -= Vec2(PreScaleMousePos.x * ScaleDelta * (float)Mem->Doc.Width, PreScaleMousePos.y * ScaleDelta * (float)Mem->Doc.Height);
+                Vec2 PreScaleMousePos = Vec2(Mem->Mouse.Pos - Mem->Doc.CanvasPosition) / OldCanvasZoom;
+                Vec2 NewPos = Vec2(Mem->Doc.CanvasPosition) - 
+                              Vec2(PreScaleMousePos.x * ScaleDelta * (float)Mem->Doc.Width, 
+                                   PreScaleMousePos.y * ScaleDelta * (float)Mem->Doc.Height);
+                Mem->Doc.CanvasPosition = Math::RoundToVec2i(NewPos);
             }
-            else // TODO: Maybe disable centering on zoom out. Needs more usability testing.
+            else // Center canvas
             {
-                Vec2 WindowSize         = Vec2((float)Mem->Window.Width, (float)Mem->Window.Height);
-                Mem->Doc.CanvasPosition = (WindowSize - NewCanvasSize) * 0.5f;
+                // TODO: Maybe disable centering on zoom out. Needs more usability testing.
+                int32 TopMargin = 53; // TODO: Put common layout constants in struct
+                int32 PosX = Math::RoundToInt((Mem->Window.Width - (float)Mem->Doc.Width * Mem->Doc.CanvasZoom) / 2.0f);
+                int32 PosY = TopMargin + Math::RoundToInt((Mem->Window.Height - TopMargin - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom) / 2.0f);
+                Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
             }
         }
     }
@@ -1790,7 +1801,7 @@ EndOfDoc:
 
     // Last mouse info
     {
-        Mem->Mouse.LastPos    = ImGui::GetMousePos();
+        Mem->Mouse.LastPos    = Math::RoundToVec2i(ImGui::GetMousePos());
         Mem->Mouse.LastUV     = Mem->Mouse.UV;
         Mem->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
         Mem->Mouse.WasDown[1] = ImGui::IsMouseDown(1);

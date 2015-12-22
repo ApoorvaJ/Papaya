@@ -100,7 +100,7 @@ struct SystemInfo
 
 struct WindowInfo
 {
-    uint32 Width, Height;
+    int32 Width, Height;
     uint32 MenuHorizontalOffset, TitleBarButtonsWidth, TitleBarHeight;
     float ProjMtx[4][4];
 };
@@ -134,7 +134,7 @@ struct DocumentInfo
     int32 Width, Height;
     int32 ComponentsPerPixel;
     uint32 TextureID;
-    Vec2 CanvasPosition;
+    Vec2i CanvasPosition;
     float CanvasZoom;
     float InverseAspect;
     float ProjMtx[4][4];
@@ -143,8 +143,8 @@ struct DocumentInfo
 
 struct MouseInfo
 {
-    Vec2 Pos;     // TODO: Switch to int32s
-    Vec2 LastPos; // TODO: Switch to int32s
+    Vec2i Pos;    
+    Vec2i LastPos;
     Vec2 UV;
     Vec2 LastUV;
     bool IsDown[3];
@@ -185,7 +185,7 @@ struct BrushInfo
     Vec2i PaintArea1, PaintArea2;
 
     // TODO: Move some of this stuff to the MouseInfo struct?
-    Vec2 RtDragStartPos;
+    Vec2i RtDragStartPos;
     bool RtDragWithShift;
     int32 RtDragStartDiameter;
     float RtDragStartHardness, RtDragStartOpacity;

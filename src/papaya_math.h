@@ -2,25 +2,6 @@
 
 #include <math.h>
 
-struct ImVec2;
-
-struct Vec2
-{
-    float x, y;
-    Vec2() { x = y = 0.0f; }
-    Vec2(float _x, float _y) { x = _x; y = _y; }
-};
-
-inline Vec2 operator*(const Vec2& lhs, const float rhs) { return Vec2(lhs.x*rhs, lhs.y*rhs); }
-inline Vec2 operator/(const Vec2& lhs, const float rhs) { return Vec2(lhs.x/rhs, lhs.y/rhs); }
-inline Vec2 operator+(const Vec2& lhs, const Vec2& rhs) { return Vec2(lhs.x+rhs.x, lhs.y+rhs.y); }
-inline Vec2 operator-(const Vec2& lhs, const Vec2& rhs) { return Vec2(lhs.x-rhs.x, lhs.y-rhs.y); }
-inline Vec2 operator*(const Vec2& lhs, const Vec2 rhs)  { return Vec2(lhs.x*rhs.x, lhs.y*rhs.y); }
-inline Vec2 operator/(const Vec2& lhs, const Vec2 rhs)  { return Vec2(lhs.x/rhs.x, lhs.y/rhs.y); }
-inline Vec2& operator+=(Vec2& lhs, const Vec2& rhs)     { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
-inline Vec2& operator-=(Vec2& lhs, const Vec2& rhs)     { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
-inline Vec2& operator*=(Vec2& lhs, const float rhs)     { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
-inline Vec2& operator/=(Vec2& lhs, const float rhs)     { lhs.x /= rhs; lhs.y /= rhs; return lhs; }
 
 struct Vec2i
 {
@@ -36,6 +17,27 @@ inline Vec2i operator*(const Vec2i& lhs, const Vec2i rhs)  { return Vec2i(lhs.x*
 inline Vec2i& operator+=(Vec2i& lhs, const Vec2i& rhs)     { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
 inline Vec2i& operator-=(Vec2i& lhs, const Vec2i& rhs)     { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
 inline Vec2i& operator*=(Vec2i& lhs, const int32 rhs)      { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
+
+struct ImVec2;
+
+struct Vec2
+{
+    float x, y;
+    Vec2() { x = y = 0.0f; }
+    Vec2(float _x, float _y) { x = _x; y = _y; }
+    Vec2(Vec2i v) { x = (float)v.x; y = float(v.y); }
+};
+
+inline Vec2 operator*(const Vec2& lhs, const float rhs) { return Vec2(lhs.x*rhs, lhs.y*rhs); }
+inline Vec2 operator/(const Vec2& lhs, const float rhs) { return Vec2(lhs.x/rhs, lhs.y/rhs); }
+inline Vec2 operator+(const Vec2& lhs, const Vec2& rhs) { return Vec2(lhs.x+rhs.x, lhs.y+rhs.y); }
+inline Vec2 operator-(const Vec2& lhs, const Vec2& rhs) { return Vec2(lhs.x-rhs.x, lhs.y-rhs.y); }
+inline Vec2 operator*(const Vec2& lhs, const Vec2 rhs)  { return Vec2(lhs.x*rhs.x, lhs.y*rhs.y); }
+inline Vec2 operator/(const Vec2& lhs, const Vec2 rhs)  { return Vec2(lhs.x/rhs.x, lhs.y/rhs.y); }
+inline Vec2& operator+=(Vec2& lhs, const Vec2& rhs)     { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
+inline Vec2& operator-=(Vec2& lhs, const Vec2& rhs)     { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
+inline Vec2& operator*=(Vec2& lhs, const float rhs)     { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
+inline Vec2& operator/=(Vec2& lhs, const float rhs)     { lhs.x /= rhs; lhs.y /= rhs; return lhs; }
 
 struct Color
 {
@@ -97,6 +99,11 @@ namespace Math
     int32 RoundToInt(float a)
     {
         return (int32)Floor(a + 0.5f);
+    }
+
+    Vec2i RoundToVec2i(Vec2 a)
+    {
+        return Vec2i(RoundToInt(a.x), RoundToInt(a.y));
     }
     
     float Distance(Vec2 a, Vec2 b)
