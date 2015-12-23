@@ -482,7 +482,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
         }
 
-        wglSwapIntervalEXT(0); // Disable vsync
+        // Disable vsync
+        if (wglewIsSupported("WGL_EXT_swap_control")) { wglSwapIntervalEXT(0); }
     }
 
     // Initialize tablet
