@@ -396,7 +396,8 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Misc.DrawCanvas        = true;
         Mem->Misc.DrawOverlay       = false;
-        Mem->Misc.ShowMetricsWindow = true;
+        Mem->Misc.ShowMetricsWindow = false;
+        Mem->Misc.MenuOpen          = false;
 
         float OrthoMtx[4][4] =
         {
@@ -886,13 +887,15 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PushStyleVar  (ImGuiStyleVar_WindowPadding , ImVec2(8, 4));
         ImGui::PushStyleColor(ImGuiCol_Header             , Mem->Colors[PapayaCol_Transparent]);
 
-        bool bTrue = true;
-        ImGui::Begin("Title Bar Menu", &bTrue, WindowFlags);
+        Mem->Misc.MenuOpen = false;
+
+        ImGui::Begin("Title Bar Menu", 0, WindowFlags);
         if (ImGui::BeginMenuBar())
         {
             ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->Colors[PapayaCol_Clear]);
             if (ImGui::BeginMenu("FILE"))
             {
+                Mem->Misc.MenuOpen = true;
                 if (ImGui::MenuItem("Open"))
                 {
                     char* Path = Platform::OpenFileDialog();
@@ -909,7 +912,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                     CloseDocument(Mem);
                 }
 
-                if (ImGui::MenuItem("Save", "Ctrl+S"))
+                if (ImGui::MenuItem("Save"))
                 {
                     char* Path = Platform::SaveFileDialog();
                     uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
@@ -931,7 +934,6 @@ void UpdateAndRender(PapayaMemory* Mem)
                         free(Path);
                     }
                 }
-                if (ImGui::MenuItem("Save As..")) {}
                 ImGui::Separator();
                 if (ImGui::MenuItem("Quit", "Alt+F4")) { Mem->IsRunning = false; }
                 ImGui::EndMenu();
@@ -939,6 +941,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 
             if (ImGui::BeginMenu("VIEW"))
             {
+                Mem->Misc.MenuOpen = true;
                 ImGui::MenuItem("Metrics Window", NULL, &Mem->Misc.ShowMetricsWindow);
                 ImGui::EndMenu();
             }
@@ -1151,11 +1154,6 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PopStyleColor(5);
     }
 
-    ImGui::Begin("Paint Area");
-    ImGui::Text("Min: %d, %d", Mem->Brush.PaintArea1.x , Mem->Brush.PaintArea1.y);
-    ImGui::Text("Max: %d, %d", Mem->Brush.PaintArea2.x, Mem->Brush.PaintArea2.y);
-    ImGui::End();
-
     // Brush tool
     {
 /*
@@ -1176,6 +1174,7 @@ void UpdateAndRender(PapayaMemory* Mem)
 */
 
         if (Mem->CurrentTool == PapayaTool_Brush &&
+            !Mem->Misc.MenuOpen &&
             (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1] || Mem->Mouse.Released[1]))
         {
             // Right mouse dragging
