@@ -377,10 +377,19 @@ int main(int argc, char **argv)
             }
         }
 
+        // Start new ImGui Frame
+        {
+            timespec Time;
+            clock_gettime(CLOCK_MONOTONIC, &Time);
+            float CurTime = Time.tv_sec + (float)Time.tv_nsec / 1000000000.0f;
+            ImGui::GetIO().DeltaTime = (float)(CurTime - Mem.Debug.LastFrameTime);
+            Mem.Debug.LastFrameTime = CurTime;
+
+            ImGui::NewFrame();
+        }
+
         // Update and render
         {
-            ImGui::NewFrame();
-
             Papaya::UpdateAndRender(&Mem);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }

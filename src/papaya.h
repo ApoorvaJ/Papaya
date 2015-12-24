@@ -143,7 +143,7 @@ struct DocumentInfo
 
 struct MouseInfo
 {
-    Vec2i Pos;    
+    Vec2i Pos;
     Vec2i LastPos;
     Vec2 UV;
     Vec2 LastUV;
@@ -217,7 +217,8 @@ struct TimerInfo
 
 struct DebugInfo
 {
-    int64 Time;
+    int64 Time;          // Used on Windows.
+    float LastFrameTime; // Used on Linux. TODO: Combine this var and the one above.
     int64 TicksPerSecond;
     TimerInfo Timers[Timer_COUNT];
 };
