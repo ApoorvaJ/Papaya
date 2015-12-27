@@ -398,7 +398,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
         WindowClass.lpfnWndProc = Win32MainWindowCallback;
         WindowClass.hInstance = Instance;
-        // TODO: Add an icon
         WindowClass.hIcon = (HICON)LoadImage(0, "../../img/papaya.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
         WindowClass.lpszClassName = "PapayaWindowClass";
 
@@ -431,18 +430,28 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         SystemParametersInfo(SPI_GETWORKAREA, 0, &WindowsWorkArea, 0);
 
+#ifdef _DEBUG
         uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
         uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-        float WindowSize = 0.8f;
-        Mem.Window.Width = (uint32)((float)ScreenWidth * WindowSize);
-        Mem.Window.Height = (uint32)((float)ScreenHeight * WindowSize);
+        Mem.Window.Width = (uint32)((float)ScreenWidth * 0.5);
+        Mem.Window.Height = (uint32)((float)ScreenHeight * 0.8);
 
         uint32 WindowX = (ScreenWidth - Mem.Window.Width) / 2;
         uint32 WindowY = (ScreenHeight - Mem.Window.Height) / 2;
 
         SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Mem.Window.Width, Mem.Window.Height, NULL);
-        //SetWindowPos(Window, HWND_TOP, 0, 0, 1280, 720, NULL);
+#else
+        ShowWindow(Window, SW_MAXIMIZE);
+#endif
+
+        // Get window size
+        {
+            RECT WindowRect = { 0 };
+            BOOL foo = GetClientRect(Window, &WindowRect);
+            Mem.Window.Width  = WindowRect.right - WindowRect.left;
+            Mem.Window.Height = WindowRect.bottom - WindowRect.top;
+        }
     }
 
     // Initialize OpenGL
