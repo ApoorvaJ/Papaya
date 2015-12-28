@@ -20,7 +20,12 @@ typedef uint64_t uint64;
 typedef float real32;
 typedef double real64;
 
-#define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
+//#define PAPAYARELEASE // User-ready release mode
+
+#ifndef PAPAYARELEASE
+    #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
+#endif
+
 #include "papaya.h"
 #include "papaya.cpp"
 
@@ -398,7 +403,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
         WindowClass.lpfnWndProc = Win32MainWindowCallback;
         WindowClass.hInstance = Instance;
-        WindowClass.hIcon = (HICON)LoadImage(0, "../../img/papaya.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+#ifdef PAPAYARELEASE
+        const char* IcoPath = "papaya.ico";
+#else
+        const char* IcoPath = "../../img/papaya.ico";
+#endif
+        WindowClass.hIcon = (HICON)LoadImage(0, IcoPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
         WindowClass.lpszClassName = "PapayaWindowClass";
 
         if (!RegisterClassA(&WindowClass))
@@ -430,7 +440,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         SystemParametersInfo(SPI_GETWORKAREA, 0, &WindowsWorkArea, 0);
 
-#ifdef _DEBUG
+#ifdef PAPAYARELEASE
+
+        ShowWindow(Window, SW_MAXIMIZE);
+#else
         uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
         uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
@@ -441,8 +454,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         uint32 WindowY = (ScreenHeight - Mem.Window.Height) / 2;
 
         SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Mem.Window.Width, Mem.Window.Height, NULL);
-#else
-        ShowWindow(Window, SW_MAXIMIZE);
 #endif
 
         // Get window size

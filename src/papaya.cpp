@@ -374,7 +374,7 @@ internal void CloseDocument(PapayaMemory* Mem)
 
 void Initialize(PapayaMemory* Mem)
 {
-    // Init values
+    // Init values and load textures
     {
         Mem->CurrentTool    = PapayaTool_Brush;
 
@@ -407,6 +407,21 @@ void Initialize(PapayaMemory* Mem)
             { -1.0f,  1.0f,   0.0f,   1.0f },
         };
         memcpy(Mem->Window.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
+
+        Mem->Colors[PapayaCol_Clear]        = Color(45, 45, 48);
+        Mem->Colors[PapayaCol_Workspace]    = Color(30, 30, 30);
+        Mem->Colors[PapayaCol_Button]       = Color(92, 92, 94);
+        Mem->Colors[PapayaCol_ButtonHover]  = Color(64, 64, 64);
+        Mem->Colors[PapayaCol_ButtonActive] = Color(0, 122, 204);
+        Mem->Colors[PapayaCol_AlphaGrid1]   = Color(141, 141, 142);
+        Mem->Colors[PapayaCol_AlphaGrid2]   = Color(92, 92, 94);
+        Mem->Colors[PapayaCol_Transparent]  = Color(0, 0, 0, 0);
+
+#ifdef PAPAYARELEASE
+        Mem->Textures[PapayaTex_UI] = LoadAndBindImage("ui.png");
+#else
+        Mem->Textures[PapayaTex_UI] = LoadAndBindImage("../../img/ui.png");
+#endif
     }
 
     const char* Vert;
@@ -759,26 +774,6 @@ void Initialize(PapayaMemory* Mem)
         // Cleanup
         io.Fonts->ClearInputData();
         io.Fonts->ClearTexData();
-    }
-
-    // Load interface textures and colors
-    {
-        // Texture IDs
-        Mem->Textures[PapayaTex_UI] = LoadAndBindImage("../../img/ui.png");
-
-        // Colors
-#if 1
-        Mem->Colors[PapayaCol_Clear]         = Color(45,45,48); // Dark grey
-#else
-        Mem->Colors[PapayaCol_Clear]         = Color(114,144,154); // Light blue
-#endif
-        Mem->Colors[PapayaCol_Workspace]     = Color(30,30,30); // Light blue
-        Mem->Colors[PapayaCol_Transparent]   = Color(0,0,0,0);
-        Mem->Colors[PapayaCol_Button]        = Color(92,92,94);
-        Mem->Colors[PapayaCol_ButtonHover]   = Color(64,64,64);
-        Mem->Colors[PapayaCol_ButtonActive]  = Color(0,122,204);
-        Mem->Colors[PapayaCol_AlphaGrid1]    = Color(141,141,142);
-        Mem->Colors[PapayaCol_AlphaGrid2]    = Color(92,92,94);
     }
 
     // ImGui Style Settings
