@@ -229,7 +229,8 @@ struct MiscInfo // TODO: This entire struct is for stuff to be refactored at som
     uint32 FboRenderTexture, FboSampleTexture;
     bool DrawOverlay;
     bool DrawCanvas;
-    bool ShowMetricsWindow;
+    bool ShowMetrics;
+    bool ShowUndoBuffer;
     bool MenuOpen;
 };
 

@@ -394,10 +394,11 @@ void Initialize(PapayaMemory* Mem)
         Mem->Picker.SVBoxSize    = Vec2(256, 256);
         Mem->Picker.CursorSV     = Vec2(0.5f, 0.5f);
 
-        Mem->Misc.DrawCanvas        = true;
-        Mem->Misc.DrawOverlay       = false;
-        Mem->Misc.ShowMetricsWindow = false;
-        Mem->Misc.MenuOpen          = false;
+        Mem->Misc.DrawCanvas     = true;
+        Mem->Misc.DrawOverlay    = false;
+        Mem->Misc.ShowMetrics    = false;
+        Mem->Misc.ShowUndoBuffer = false;
+        Mem->Misc.MenuOpen       = false;
 
         float OrthoMtx[4][4] =
         {
@@ -937,7 +938,8 @@ void UpdateAndRender(PapayaMemory* Mem)
             if (ImGui::BeginMenu("VIEW"))
             {
                 Mem->Misc.MenuOpen = true;
-                ImGui::MenuItem("Metrics Window", NULL, &Mem->Misc.ShowMetricsWindow);
+                ImGui::MenuItem("Metrics Window", NULL, &Mem->Misc.ShowMetrics);
+                ImGui::MenuItem("Undo Buffer Window", NULL, &Mem->Misc.ShowUndoBuffer);
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -1413,7 +1415,7 @@ void UpdateAndRender(PapayaMemory* Mem)
             // =========================================================================================
 #endif
         }
-}
+    }
 
     // Undo/Redo
     {
@@ -1453,52 +1455,50 @@ void UpdateAndRender(PapayaMemory* Mem)
             }
         }
 
-#if 0
-        // =========================================================================================
         // Visualization: Undo buffer
+        if (Mem->Misc.ShowUndoBuffer)
+        {
+            ImGui::Begin("Undo buffer");
 
-        ImGui::Begin("Undo buffer");
+            ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
-        ImDrawList* DrawList = ImGui::GetWindowDrawList();
+            // Buffer line
+            float Width = ImGui::GetWindowSize().x;
+            Vec2 Pos    = ImGui::GetWindowPos();
+            Vec2 P1     = Pos + Vec2(10, 40);
+            Vec2 P2     = Pos + Vec2(Width - 10, 40);
+            DrawList->AddLine(P1, P2, 0xFFFFFFFF);
 
-        // Buffer line
-        float Width = ImGui::GetWindowSize().x;
-        Vec2 Pos    = ImGui::GetWindowPos();
-        Vec2 P1     = Pos + Vec2(10, 40);
-        Vec2 P2     = Pos + Vec2(Width - 10, 40);
-        DrawList->AddLine(P1, P2, 0xFFFFFFFF);
+            // Base mark
+            uint64 BaseOffset = (int8*)Mem->Doc.Undo.Base - (int8*)Mem->Doc.Undo.Start;
+            float BaseX       = P1.x + (float)BaseOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+            DrawList->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
 
-        // Base mark
-        uint64 BaseOffset = (int8*)Mem->Doc.Undo.Base - (int8*)Mem->Doc.Undo.Start;
-        float BaseX       = P1.x + (float)BaseOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
-        DrawList->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
+            // Current mark
+            uint64 CurrOffset = (int8*)Mem->Doc.Undo.Current - (int8*)Mem->Doc.Undo.Start;
+            float CurrX       = P1.x + (float)CurrOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+            DrawList->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
 
-        // Current mark
-        uint64 CurrOffset = (int8*)Mem->Doc.Undo.Current - (int8*)Mem->Doc.Undo.Start;
-        float CurrX       = P1.x + (float)CurrOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
-        DrawList->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
+            // Last mark
+            uint64 LastOffset = (int8*)Mem->Doc.Undo.Last - (int8*)Mem->Doc.Undo.Start;
+            float LastX       = P1.x + (float)LastOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+            //DrawList->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
 
-        // Last mark
-        uint64 LastOffset = (int8*)Mem->Doc.Undo.Last - (int8*)Mem->Doc.Undo.Start;
-        float LastX       = P1.x + (float)LastOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
-        //DrawList->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
+            // Top mark
+            uint64 TopOffset = (int8*)Mem->Doc.Undo.Top - (int8*)Mem->Doc.Undo.Start;
+            float TopX       = P1.x + (float)TopOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
+            DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
-        // Top mark
-        uint64 TopOffset = (int8*)Mem->Doc.Undo.Top - (int8*)Mem->Doc.Undo.Start;
-        float TopX       = P1.x + (float)TopOffset / (float)Mem->Doc.Undo.Size * (P2.x - P1.x);
-        DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
+            ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
+            ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
+            ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
+            //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
+            ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
+            ImGui::Text         ("Count   %lu", Mem->Doc.Undo.Count);
+            ImGui::Text         ("Index   %lu", Mem->Doc.Undo.CurrentIndex);
 
-        ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
-        ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
-        ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
-        //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
-        ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
-        ImGui::Text         ("Count   %lu", Mem->Doc.Undo.Count);
-        ImGui::Text         ("Index   %lu", Mem->Doc.Undo.CurrentIndex);
-
-        ImGui::End();
-        // =========================================================================================
-#endif
+            ImGui::End();
+        }
     }
 
     // Canvas zooming and panning
@@ -1642,7 +1642,7 @@ EndOfDoc:
 
     // Metrics window
     {
-        if (Mem->Misc.ShowMetricsWindow)
+        if (Mem->Misc.ShowMetrics)
         {
             ImGui::Begin("Metrics");
             if (ImGui::CollapsingHeader("Profiler", 0, true, true))
