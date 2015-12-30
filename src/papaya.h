@@ -57,6 +57,8 @@ enum PapayaShader_
     PapayaShader_PickerHStrip,
     PapayaShader_PickerSVBox,
     PapayaShader_AlphaGrid,
+    PapayaShader_PreMultiplyAlpha,
+    PapayaShader_DeMultiplyAlpha,
     PapayaShader_COUNT
 };
 

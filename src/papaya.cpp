@@ -294,10 +294,6 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
             GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
             GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
 
-            GLCHK( glEnable(GL_BLEND) );
-            GLCHK( glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX) ); // TODO: Handle the case where the original texture has an alpha below 1.0
-            GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
             GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
@@ -725,6 +721,48 @@ void Initialize(PapayaMemory* Mem)
 
         GL::InitQuad(Mem->Meshes[PapayaMesh_AlphaGrid],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
+    }
+
+    // PreMultiply Alpha shader
+    {
+        const char* Frag =
+        "   #version 120                                                        \n"
+        "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
+        "                                                                       \n"
+        "   varying vec2 Frag_UV;                                               \n"
+        "   varying vec4 Frag_Color;                                            \n"
+        "                                                                       \n"
+        "   void main()                                                         \n"
+        "   {                                                                   \n"
+        "       vec4 col = Frag_Color * texture2D( Texture, Frag_UV.st);        \n"
+        "       gl_FragColor = vec4(col.r, col.g, col.b, 1.0) * col.a;          \n"
+        "   }                                                                   \n";
+
+        GL::CompileShader(Mem->Shaders[PapayaShader_PreMultiplyAlpha], __FILE__, __LINE__,
+            Vert, Frag, 3, 2,
+            "Position", "UV", "Color",
+            "ProjMtx", "Texture");
+    }
+
+    // DeMultiply Alpha shader
+    {
+        const char* Frag =
+        "   #version 120                                                        \n"
+        "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
+        "                                                                       \n"
+        "   varying vec2 Frag_UV;                                               \n"
+        "   varying vec4 Frag_Color;                                            \n"
+        "                                                                       \n"
+        "   void main()                                                         \n"
+        "   {                                                                   \n"
+        "       vec4 col = Frag_Color * texture2D( Texture, Frag_UV.st);        \n"
+        "       gl_FragColor = vec4(col.rgb/col.a, col.a);                      \n"
+        "   }                                                                   \n";
+
+        GL::CompileShader(Mem->Shaders[PapayaShader_DeMultiplyAlpha], __FILE__, __LINE__,
+            Vert, Frag, 3, 2,
+            "Position", "UV", "Color",
+            "ProjMtx", "Texture");
     }
 
     // ImGui default shader
@@ -1223,48 +1261,71 @@ void UpdateAndRender(PapayaMemory* Mem)
                 // Additive render-to-texture
                 {
                     GLCHK( glDisable(GL_SCISSOR_TEST) );
+                    GLCHK( glDisable(GL_DEPTH_TEST) );
                     GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
-
                     GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
-                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
-
-                    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                    // glUniform1i(Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0); // Texture uniform
-
-                    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
-                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
-
-                    GLCHK( glEnable(GL_BLEND) );
-                    GLCHK( glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX) ); // TODO: Handle the case where the original texture has an alpha below 1.0
-                    GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-
-                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
-                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
                     Vec2i Pos  = Mem->Brush.PaintArea1;
                     Vec2i Size = Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1;
                     int8* PreBrushImage = 0;
 
-                    // TODO: Potential point of optimization? The line below leads to incorrect undoing
-                    //       when undoing from, say, diagonal line to short intersecting squiggle.
-                    //if (8 * Size.x * Size.y < 4 * Mem->Doc.Width * Mem->Doc.Height)
+                    // Render base image for pre-brush undo
                     {
+                        GLCHK( glDisable(GL_BLEND) );
+
+                        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
+                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
+                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
+
+                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+
                         PreBrushImage = (int8*)malloc(4 * Size.x * Size.y);
                         GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, PreBrushImage) );
                     }
 
-                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
-                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    // Render base image with premultiplied alpha
+                    {
+                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Handle) );
+                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_PreMultiplyAlpha]);
+
+                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    }
+
+                    // Render brush overlay with premultiplied alpha
+                    {
+                        GLCHK( glEnable(GL_BLEND) );
+                        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+                        GLCHK( glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
+
+                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Handle) );
+                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_PreMultiplyAlpha]);
+
+                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    }
+
+                    // Render blended result with demultiplied alpha
+                    {
+                        GLCHK( glDisable(GL_BLEND) );
+
+                        GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Doc.TextureID, 0) );
+                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Handle) );
+                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_DeMultiplyAlpha]);
+
+                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboRenderTexture) );
+                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    }
 
                     PushUndo(Mem, Pos, Size, PreBrushImage);
 
                     if (PreBrushImage) { free(PreBrushImage); }
-
-                    uint32 Temp = Mem->Misc.FboRenderTexture;
-                    Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
-                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
-                    Mem->Doc.TextureID = Temp;
 
                     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
                     GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
