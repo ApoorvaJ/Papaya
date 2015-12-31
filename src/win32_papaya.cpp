@@ -23,7 +23,7 @@ typedef float real32;
 typedef double real64;
 
 #ifndef PAPAYARELEASE
-    #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"
+    #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\transparent4k.png"
 #endif
 
 #include "papaya.h"
@@ -442,6 +442,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 #ifdef PAPAYARELEASE
 
+        SetWindowPos(Window, HWND_TOP, 0, 0, 600, 600, NULL);
         ShowWindow(Window, SW_MAXIMIZE);
 #else
         uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
