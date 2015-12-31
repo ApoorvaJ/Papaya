@@ -1413,7 +1413,7 @@ void UpdateAndRender(PapayaMemory* Mem)
                 GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect) ); // Lastpos uniform
                 GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f)) );
                 float Opacity = Mem->Brush.Opacity;
-                if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
+                //if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
                 GLCHK( glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
                                                                           Mem->Picker.CurrentColor.g,
                                                                           Mem->Picker.CurrentColor.b,

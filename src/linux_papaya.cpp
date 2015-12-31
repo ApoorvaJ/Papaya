@@ -224,7 +224,7 @@ int main(int argc, char **argv)
         Mem.Window.Height = 600;
 
         XMapWindow(XlibDisplay, XlibWindow);
-         XStoreName(XlibDisplay, XlibWindow, "Papaya");
+        XStoreName(XlibDisplay, XlibWindow, "Papaya");
 
         WmDeleteMessage = XInternAtom(XlibDisplay, "WM_DELETE_WINDOW", False);
         XSetWMProtocols(XlibDisplay, XlibWindow, &WmDeleteMessage, 1);
@@ -393,6 +393,13 @@ int main(int argc, char **argv)
                     }
                 } break;
             }
+        }
+
+        // Tablet input // TODO: Put this in papaya.cpp
+        {
+            Mem.Tablet.Pressure = EasyTab->Pressure;
+            Mem.Tablet.PosX = EasyTab->PosX;
+            Mem.Tablet.PosY = EasyTab->PosY;
         }
 
         // Start new ImGui Frame
