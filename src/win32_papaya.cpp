@@ -1,3 +1,5 @@
+//#define PAPAYARELEASE // User-ready release mode
+
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -19,8 +21,6 @@ typedef uint64_t uint64;
 
 typedef float real32;
 typedef double real64;
-
-//#define PAPAYARELEASE // User-ready release mode
 
 #ifndef PAPAYARELEASE
     #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\test4k.jpg"

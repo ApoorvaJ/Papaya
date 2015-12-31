@@ -222,6 +222,7 @@ internal bool OpenDocument(char* Path, PapayaMemory* Mem)
     // Set up the frame buffer
     {
         // Create a framebuffer object and bind it
+        GLCHK( glDisable(GL_BLEND) );
         GLCHK( glGenFramebuffers(1, &Mem->Misc.FrameBufferObject) );
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
 

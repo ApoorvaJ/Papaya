@@ -1,3 +1,5 @@
+#define PAPAYARELEASE
+
 #include <stdint.h>
 #include <stdarg.h>
 
@@ -24,13 +26,17 @@ typedef double real64;
 
 #define GLEW_NO_GLU
 
-#define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/test4k.jpg"
+#ifndef PAPAYARELEASE
+    #define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/transparent4k.png"
+#endif
 
 #include "papaya.h"
 #include "papaya.cpp"
 
 #include <X11/Xlib.h>
 #include <unistd.h>
+#include <limits.h>
+#include <errno.h>
 #include <stdio.h>
 #include <time.h>
 #define EASYTAB_IMPLEMENTATION
@@ -179,6 +185,18 @@ int main(int argc, char **argv)
     // Initialize GTK for Open/Save file dialogs
     gtk_init(&argc, &argv);
 #endif
+
+    // Set path to executable path
+    {
+        char PathBuffer[PATH_MAX];
+        size_t PathLength = readlink("/proc/self/exe", PathBuffer, sizeof(PathBuffer)-1);
+        if (PathLength != -1)
+        {
+            char *LastSlash = strrchr(PathBuffer, '/');
+            if (LastSlash != NULL) { *LastSlash = '\0'; }
+            chdir(PathBuffer);
+        }
+    }
 
     // Create window
     {
