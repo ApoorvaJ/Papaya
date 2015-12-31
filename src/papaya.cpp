@@ -700,6 +700,7 @@ void Initialize(PapayaMemory* Mem)
         "   uniform vec4  Color2;                                           \n" // Uniforms[2]
         "   uniform float Zoom;                                             \n" // Uniforms[3]
         "   uniform float InvAspect;                                        \n" // Uniforms[4]
+        "   uniform float MaxDim;                                           \n" // Uniforms[5]
         "                                                                   \n"
         "   varying  vec2 Frag_UV;                                          \n"
         "                                                                   \n"
@@ -710,15 +711,15 @@ void Initialize(PapayaMemory* Mem)
         "           aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);      \n"
         "       else                                                        \n"
         "           aspectUV = vec2(Frag_UV.x / InvAspect, Frag_UV.y);      \n"
-        "       vec2 uv = floor(aspectUV.xy * 500 * Zoom);                  \n"
+        "       vec2 uv = floor(aspectUV.xy * 0.1 * MaxDim * Zoom);         \n"
         "       float a = mod(uv.x + uv.y, 2.0);                            \n"
         "       gl_FragColor = mix(Color1, Color2, a);                      \n"
         "   }                                                               \n";
 
         GL::CompileShader(Mem->Shaders[PapayaShader_AlphaGrid], __FILE__, __LINE__,
-            Vert, Frag, 2, 5,
+            Vert, Frag, 2, 6,
             "Position", "UV",
-            "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect");
+            "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect", "MaxDim");
 
         GL::InitQuad(Mem->Meshes[PapayaMesh_AlphaGrid],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
@@ -1607,12 +1608,13 @@ void UpdateAndRender(PapayaMemory* Mem)
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
         GL::DrawQuad(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid], true,
-            5,
+            6,
             UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
             UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid1],
             UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid2],
             UniformType_Float, Mem->Doc.CanvasZoom,
-            UniformType_Float, Mem->Doc.InverseAspect);
+            UniformType_Float, Mem->Doc.InverseAspect,
+            UniformType_Float, Math::Max((float)Mem->Doc.Width, (float)Mem->Doc.Height));
     }
 
     // Draw canvas
