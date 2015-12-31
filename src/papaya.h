@@ -126,8 +126,8 @@ struct UndoBufferInfo
     UndoData* Current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
     UndoData* Last;    // Last undo data block in the buffer. Should be located just before Top.
     size_t Size;  // Size of the undo buffer in bytes
-    int64 Count;  // Number of undo ops in buffer
-    int64 CurrentIndex; // Index of the current undo data block from the beginning
+    size_t Count;  // Number of undo ops in buffer
+    size_t CurrentIndex; // Index of the current undo data block from the beginning
 };
 #pragma endregion
 
