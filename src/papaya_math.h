@@ -60,6 +60,9 @@ namespace Math
     template<class T> 
     T Max(T a, T b) { return (a > b ? a : b); }
 
+    template<class T>
+    T Clamp(T a, T min, T max) { return Math::Min(Math::Max(a, min), max); }
+
     float Abs(float a)
     {
         return (a < 0.0f ? a * -1.0f : a);
@@ -74,26 +77,6 @@ namespace Math
     {
         int32 i = (int32)a;
         return (float)(i - (i > a));
-    }
-
-    int32 Clamp(int32 a, int32 min, int32 max)
-    {
-        int32 result;
-        if (a < min)      { result = min; }
-        else if (a > max) { result = max; }
-        else              { result = a;   }
-
-        return result;
-    }
-
-    float Clamp(float a, float min, float max)
-    {
-        float result;
-        if (a < min)      { result = min; }
-        else if (a > max) { result = max; }
-        else              { result = a;   }
-
-        return result;
     }
 
     int32 RoundToInt(float a)
