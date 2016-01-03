@@ -1,4 +1,4 @@
-//#define PAPAYARELEASE // User-ready release mode
+#define PAPAYARELEASE // User-ready release mode
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -396,6 +396,21 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     Mem.IsRunning = true;
 
+#ifdef PAPAYARELEASE
+    // Set current path to this executable's path
+    {
+        HMODULE Module = GetModuleHandleA(NULL);
+        char PathString[MAX_PATH];
+        uint32 PathLength = GetModuleFileNameA(Module, PathString, MAX_PATH);
+        if (PathLength != -1)
+        {
+            char *LastSlash = strrchr(PathString, '\\');
+            if (LastSlash) { *LastSlash = '\0'; }
+            SetCurrentDirectoryA(PathString);
+        }
+    }
+#endif
+
     HWND Window;
     // Create Window
     {
@@ -545,7 +560,21 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     Util::StopTime(Timer_Startup, &Mem);
 
     // Handle command line arguments (if present)
-    if (strlen(CommandLine)) { Papaya::OpenDocument(CommandLine, &Mem); }
+    if (strlen(CommandLine)) 
+    {
+        // Remove double quotes from string if present
+        {
+            char* PtrRead  = CommandLine;
+            char* PtrWrite = CommandLine;
+            while (*PtrRead) 
+            {
+                *PtrWrite = *PtrRead++;
+                if (*PtrWrite != '\"') { PtrWrite++; }
+            }
+            *PtrWrite = '\0';
+        }
+        Papaya::OpenDocument(CommandLine, &Mem); 
+    }
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     Papaya::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
