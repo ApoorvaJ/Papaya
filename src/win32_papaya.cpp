@@ -1,4 +1,6 @@
-#define PAPAYARELEASE // User-ready release mode
+#ifndef _DEBUG
+    #define PAPAYARELEASE // User-ready release mode
+#endif // !_DEBUG
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -24,7 +26,7 @@ typedef double real64;
 
 #ifndef PAPAYARELEASE
     #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\transparent4k.png"
-#endif
+#endif // !PAPAYARELEASE
 
 #include "papaya.h"
 #include "papaya.cpp"
@@ -409,7 +411,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             SetCurrentDirectoryA(PathString);
         }
     }
-#endif
+#endif // PAPAYARELEASE
 
     HWND Window;
     // Create Window
@@ -422,7 +424,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         const char* IcoPath = "papaya.ico";
 #else
         const char* IcoPath = "../../img/papaya.ico";
-#endif
+#endif // PAPAYARELEASE
         WindowClass.hIcon = (HICON)LoadImage(0, IcoPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
         WindowClass.lpszClassName = "PapayaWindowClass";
 
@@ -470,7 +472,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         uint32 WindowY = (ScreenHeight - Mem.Window.Height) / 2;
 
         SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Mem.Window.Width, Mem.Window.Height, NULL);
-#endif
+#endif // PAPAYARELEASE
 
         // Get window size
         {
@@ -578,7 +580,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     Papaya::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
-#endif
+#endif // PAPAYA_DEFAULT_IMAGE
 
     while (Mem.IsRunning)
     {
