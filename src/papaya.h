@@ -77,16 +77,6 @@ enum PapayaUndoOp_
     PapayaUndoOp_COUNT
 };
 
-enum Timer_ // TODO: Improve timing subsystem
-{
-    Timer_Startup,
-    Timer_Frame,
-    Timer_Sleep,
-    Timer_ImageOpen,
-    Timer_GetImage,
-    Timer_COUNT
-};
-
 enum PapayaTool_
 {
     PapayaTool_None,
@@ -216,6 +206,29 @@ struct TimerInfo
     int64 StartMilliseconds, StopMilliseconds;
     double MillisecondsElapsed;
 };
+
+#define FOREACH_TIMER(TIMER)    \
+        TIMER(Startup)    \
+        TIMER(Frame)      \
+        TIMER(Sleep)      \
+        TIMER(ImageOpen)  \
+        TIMER(GetImage)   \
+        TIMER(COUNT)      \
+
+#define GENERATE_ENUM(ENUM) Timer_##ENUM,
+#define GENERATE_STRING(STRING) #STRING,
+
+enum Timer_ {
+    FOREACH_TIMER(GENERATE_ENUM)
+};
+
+static const char* TimerNames[] = {
+    FOREACH_TIMER(GENERATE_STRING)
+};
+
+#undef FOREACH_TIMER
+#undef GENERATE_ENUM
+#undef GENERATE_STRING
 
 struct DebugInfo
 {

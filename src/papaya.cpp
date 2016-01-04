@@ -1718,25 +1718,12 @@ EndOfDoc:
                 ImGui::Text("Millisecs");           ImGui::NextColumn();
                 ImGui::Separator();
 
-                ImGui::Text("Startup");                                                     ImGui::NextColumn();
-                ImGui::Text("%lu", Mem->Debug.Timers[Timer_Startup].CyclesElapsed);         ImGui::NextColumn();
-                ImGui::Text("%f" , Mem->Debug.Timers[Timer_Startup].MillisecondsElapsed);   ImGui::NextColumn();
-
-                ImGui::Text("Frame");                                                       ImGui::NextColumn();
-                ImGui::Text("%lu", Mem->Debug.Timers[Timer_Frame].CyclesElapsed);           ImGui::NextColumn();
-                ImGui::Text("%f" , Mem->Debug.Timers[Timer_Frame].MillisecondsElapsed);     ImGui::NextColumn();
-
-                ImGui::Text("Sleep");                                                       ImGui::NextColumn();
-                ImGui::Text("%lu", Mem->Debug.Timers[Timer_Sleep].CyclesElapsed);           ImGui::NextColumn();
-                ImGui::Text("%f" , Mem->Debug.Timers[Timer_Sleep].MillisecondsElapsed);     ImGui::NextColumn();
-
-                ImGui::Text("ImageOpen");                                                   ImGui::NextColumn();
-                ImGui::Text("%lu", Mem->Debug.Timers[Timer_ImageOpen].CyclesElapsed);       ImGui::NextColumn();
-                ImGui::Text("%f" , Mem->Debug.Timers[Timer_ImageOpen].MillisecondsElapsed); ImGui::NextColumn();
-
-                ImGui::Text("GetImage");                                                   ImGui::NextColumn();
-                ImGui::Text("%lu", Mem->Debug.Timers[Timer_GetImage].CyclesElapsed);       ImGui::NextColumn();
-                ImGui::Text("%f" , Mem->Debug.Timers[Timer_GetImage].MillisecondsElapsed); ImGui::NextColumn();
+                for (int32 i = 0; i < Timer_COUNT; i++)
+                {
+                    ImGui::Text(TimerNames[i]);                                     ImGui::NextColumn();
+                    ImGui::Text("%lu", Mem->Debug.Timers[i].CyclesElapsed);         ImGui::NextColumn();
+                    ImGui::Text("%f" , Mem->Debug.Timers[i].MillisecondsElapsed);   ImGui::NextColumn();
+                }
 
                 ImGui::Columns(1);
                 ImGui::Separator();
