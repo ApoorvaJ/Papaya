@@ -25,7 +25,7 @@ typedef float real32;
 typedef double real64;
 
 #ifndef PAPAYARELEASE
-    #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\transparent4k.png"
+    #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png"
 #endif // !PAPAYARELEASE
 
 #include "papaya.h"

@@ -879,15 +879,18 @@ void UpdateAndRender(PapayaMemory* Mem)
                                 Mem->Colors[PapayaCol_Clear].b, 1.0f) );
             GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
 
-            GLCHK( glEnable(GL_SCISSOR_TEST) );
-            GLCHK( glScissor(34, 3,
-                             (int)Mem->Window.Width  - 37,
-                             (int)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
+            if (!Mem->Misc.PrefsOpen)
+            {
+                GLCHK( glEnable(GL_SCISSOR_TEST) );
+                GLCHK( glScissor(34, 3,
+                                 (int)Mem->Window.Width  - 37,
+                                 (int)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
 
-            GLCHK( glClearColor(Mem->Colors[PapayaCol_Workspace].r,
-                                Mem->Colors[PapayaCol_Workspace].g,
-                                Mem->Colors[PapayaCol_Workspace].b, 1.0f) );
-            GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
+                GLCHK( glClearColor(Mem->Colors[PapayaCol_Workspace].r,
+                                    Mem->Colors[PapayaCol_Workspace].g,
+                                    Mem->Colors[PapayaCol_Workspace].b, 1.0f) );
+                GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
+            }
 
             GLCHK( glDisable(GL_SCISSOR_TEST) );
         }
@@ -895,6 +898,15 @@ void UpdateAndRender(PapayaMemory* Mem)
         // Set projection matrix
         Mem->Window.ProjMtx[0][0] =  2.0f / ImGui::GetIO().DisplaySize.x;
         Mem->Window.ProjMtx[1][1] = -2.0f / ImGui::GetIO().DisplaySize.y;
+    }
+
+    // Preferences Window
+    {
+        if (Mem->Misc.PrefsOpen)
+        {
+            Prefs::ShowWindow(Mem);
+            goto EndOfDoc;
+        }
     }
 
     // Title Bar Menu
@@ -975,6 +987,13 @@ void UpdateAndRender(PapayaMemory* Mem)
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("EDIT"))
+            {
+                Mem->Misc.MenuOpen = true;
+                if (ImGui::MenuItem("Preferences...", 0)) { Mem->Misc.PrefsOpen = true; }
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("VIEW"))
             {
                 Mem->Misc.MenuOpen = true;
@@ -989,6 +1008,13 @@ void UpdateAndRender(PapayaMemory* Mem)
 
         ImGui::PopStyleColor(4);
         ImGui::PopStyleVar(5);
+    }
+
+    // Preferences window
+    if (Mem->Misc.PrefsOpen)
+    {
+        Prefs::ShowWindow(Mem);
+        goto EndOfDoc;
     }
 
     // Left toolbar

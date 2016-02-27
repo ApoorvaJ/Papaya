@@ -230,6 +230,22 @@ static const char* TimerNames[] = {
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
+enum class PapayaPrefType
+{
+    Int,
+    Float,
+    String,
+    Enum
+};
+
+struct PapayaPref
+{
+    PapayaPrefType Type;
+    char Name[256];
+    char Description[1024];
+    char Tags[256][5];
+};
+
 struct DebugInfo
 {
     int64 Time;          // Used on Windows.
@@ -247,6 +263,7 @@ struct MiscInfo // TODO: This entire struct is for stuff to be refactored at som
     bool ShowMetrics;
     bool ShowUndoBuffer;
     bool MenuOpen;
+    bool PrefsOpen;
 };
 
 struct PapayaMemory
@@ -274,3 +291,4 @@ struct PapayaMemory
 
 #include "papaya_util.h"
 #include "papaya_gl.h"
+#include "papaya_preferences.cpp"
