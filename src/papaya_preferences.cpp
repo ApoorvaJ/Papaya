@@ -31,7 +31,7 @@ namespace Prefs
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2( 0, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(30, 0));
+        //ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(30, 0));
 
         ImGui::PushStyleColor(ImGuiCol_Button           , Mem->Colors[PapayaCol_Button]);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered    , Mem->Colors[PapayaCol_ButtonHover]);
@@ -39,14 +39,30 @@ namespace Prefs
         ImGui::PushStyleColor(ImGuiCol_WindowBg         , Mem->Colors[PapayaCol_Transparent]);
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive , Mem->Colors[PapayaCol_ButtonActive]);
 
-        ImGui::Begin("Preferences Window");
+        ImGui::Begin("Preferences Window", 0, WindowFlags);
+
+        ImGui::BeginChild("A1", ImVec2(ImGui::GetContentRegionAvailWidth() - 350, 20));
+        ImGui::Text("Preferences");
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+
+        char buf[512] = {0};
+        ImGui::BeginChild("A2", ImVec2(0, 20));
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth());
+        ImGui::InputText("", buf, 512);
+        ImGui::PopItemWidth();
+        ImGui::EndChild();
+
+        ImGui::Separator();
+
         if (ImGui::Button("OK"))
         {
             Mem->Misc.PrefsOpen = false;
         }
         ImGui::End();
 
-        ImGui::PopStyleVar(3);
+        ImGui::PopStyleVar(2);
         ImGui::PopStyleColor(5);
     }
 }
