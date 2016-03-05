@@ -383,7 +383,7 @@ void Initialize(PapayaMemory* Mem)
 
         Mem->Picker.CurrentColor = Color(220, 163, 89);
         Mem->Picker.Open         = false;
-        Mem->Picker.Pos          = Vec2(34, 118);
+        Mem->Picker.Pos          = Vec2(34, 120);
         Mem->Picker.Size         = Vec2(292, 331);
         Mem->Picker.HueStripPos  = Vec2(259, 42);
         Mem->Picker.HueStripSize = Vec2(30, 256);
@@ -396,6 +396,7 @@ void Initialize(PapayaMemory* Mem)
         Mem->Misc.ShowMetrics    = false;
         Mem->Misc.ShowUndoBuffer = false;
         Mem->Misc.MenuOpen       = false;
+        Mem->Misc.PrefsOpen      = false;
 
         float OrthoMtx[4][4] =
         {
@@ -879,18 +880,15 @@ void UpdateAndRender(PapayaMemory* Mem)
                                 Mem->Colors[PapayaCol_Clear].b, 1.0f) );
             GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
 
-            if (!Mem->Misc.PrefsOpen)
-            {
-                GLCHK( glEnable(GL_SCISSOR_TEST) );
-                GLCHK( glScissor(34, 3,
-                                 (int)Mem->Window.Width  - 37,
-                                 (int)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
+            GLCHK( glEnable(GL_SCISSOR_TEST) );
+            GLCHK( glScissor(34, 3,
+                        (int)Mem->Window.Width  - 70,
+                        (int)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
 
-                GLCHK( glClearColor(Mem->Colors[PapayaCol_Workspace].r,
-                                    Mem->Colors[PapayaCol_Workspace].g,
-                                    Mem->Colors[PapayaCol_Workspace].b, 1.0f) );
-                GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
-            }
+            GLCHK( glClearColor(Mem->Colors[PapayaCol_Workspace].r,
+                                Mem->Colors[PapayaCol_Workspace].g,
+                                Mem->Colors[PapayaCol_Workspace].b, 1.0f) );
+            GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
 
             GLCHK( glDisable(GL_SCISSOR_TEST) );
         }
@@ -898,15 +896,6 @@ void UpdateAndRender(PapayaMemory* Mem)
         // Set projection matrix
         Mem->Window.ProjMtx[0][0] =  2.0f / ImGui::GetIO().DisplaySize.x;
         Mem->Window.ProjMtx[1][1] = -2.0f / ImGui::GetIO().DisplaySize.y;
-    }
-
-    // Preferences Window
-    {
-        if (Mem->Misc.PrefsOpen)
-        {
-            Prefs::ShowWindow(Mem);
-            goto EndOfDoc;
-        }
     }
 
     // Title Bar Menu
@@ -1010,17 +999,10 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PopStyleVar(5);
     }
 
-    // Preferences window
-    if (Mem->Misc.PrefsOpen)
-    {
-        Prefs::ShowWindow(Mem);
-        goto EndOfDoc;
-    }
-
     // Left toolbar
     {
         ImGui::SetNextWindowSize(ImVec2(36, 650));
-        ImGui::SetNextWindowPos (ImVec2( 1, 55));
+        ImGui::SetNextWindowPos (ImVec2( 1, 57));
 
         ImGuiWindowFlags WindowFlags = 0;
         WindowFlags |= ImGuiWindowFlags_NoTitleBar;
@@ -1084,6 +1066,52 @@ void UpdateAndRender(PapayaMemory* Mem)
         ImGui::PopStyleVar(5);
         ImGui::PopStyleColor(2);
     }
+
+    // Right toolbar
+    {
+        ImGui::SetNextWindowSize(ImVec2(36, 650));
+        ImGui::SetNextWindowPos (ImVec2((float)Mem->Window.Width - 36, 57));
+
+        ImGuiWindowFlags WindowFlags = 0;
+        WindowFlags |= ImGuiWindowFlags_NoTitleBar;
+        WindowFlags |= ImGuiWindowFlags_NoResize;
+        WindowFlags |= ImGuiWindowFlags_NoMove;
+        WindowFlags |= ImGuiWindowFlags_NoScrollbar;
+        WindowFlags |= ImGuiWindowFlags_NoCollapse;
+        WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding   , 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding    , ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding     , ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing , ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing      , ImVec2(0, 0));
+
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , Mem->Colors[PapayaCol_Button]);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg      , Mem->Colors[PapayaCol_Transparent]);
+
+        ImGui::Begin("Right toolbar", 0, WindowFlags);
+
+        #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
+        {
+            ImGui::PushID(0);
+            ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->Misc.PrefsOpen) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->Misc.PrefsOpen) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
+            {
+                Mem->Misc.PrefsOpen = !Mem->Misc.PrefsOpen;
+            }
+            ImGui::PopStyleColor(2);
+            ImGui::PopID();
+        }
+        #undef CALCUV
+
+        ImGui::End();
+
+        ImGui::PopStyleVar(5);
+        ImGui::PopStyleColor(2);
+    }
+
+    if (Mem->Misc.PrefsOpen) { Prefs::ShowPanel(Mem); }
 
     // Color Picker
     {

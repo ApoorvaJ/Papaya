@@ -139,6 +139,7 @@
     <ClInclude Include="..\..\src\papaya.cpp" />
     <ClInclude Include="..\..\src\imgui_demo.cpp" />
     <ClInclude Include="..\..\src\imgui_draw.cpp" />
+    <ClInclude Include="..\..\src\papaya_preferences.cpp" />
     <ClCompile Include="..\..\src\win32_papaya.cpp" />
     <ClInclude Include="..\..\src\papaya.h" />
     <ClInclude Include="..\..\src\papaya_gl.h" />
