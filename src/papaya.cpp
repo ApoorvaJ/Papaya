@@ -1658,11 +1658,11 @@ void UpdateAndRender(PapayaMemory* Mem)
                     3,
                     UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                     UniformType_Color, Mem->EyeDropper.CurrentColor,
-                    UniformType_Color, Mem->Picker.CurrentColor);
+                    UniformType_Color, Mem->Picker.NewColor);
             }
             else if (Mem->Mouse.Released[0])
             {
-                Picker::SetColor(Mem->EyeDropper.CurrentColor, Mem);
+                Picker::SetColor(Mem->EyeDropper.CurrentColor, Mem, Mem->Picker.Open);
             }
         }
     }

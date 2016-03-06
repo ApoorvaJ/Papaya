@@ -14,10 +14,10 @@ namespace Picker
         Mem->Picker.BoundColor   = 0;
     }
 
-    void SetColor(Color Col, PapayaMemory* Mem)
+    void SetColor(Color Col, PapayaMemory* Mem, bool SetNewColorOnly = false)
     {
-        Mem->Picker.CurrentColor = Col;
-        Mem->Picker.NewColor = Mem->Picker.CurrentColor;
+        if (!SetNewColorOnly) { Mem->Picker.CurrentColor = Col; }
+        Mem->Picker.NewColor = Col;
         Math::RGBtoHSV(Mem->Picker.NewColor.r, Mem->Picker.NewColor.g, Mem->Picker.NewColor.b,
                        Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y);
     }
