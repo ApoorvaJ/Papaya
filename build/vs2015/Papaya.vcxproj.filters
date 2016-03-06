@@ -83,6 +83,9 @@
     <ClInclude Include="..\..\src\papaya_preferences.cpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\papaya_picker.cpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Papaya.rc">

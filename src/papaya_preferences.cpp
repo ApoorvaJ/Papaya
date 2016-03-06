@@ -30,9 +30,9 @@ namespace Prefs
         WindowFlags |= ImGuiWindowFlags_NoCollapse;
         WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2(5 , 5));
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding   , ImVec2(2 , 1));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding   , 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding    , ImVec2(5 , 5));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing , ImVec2(2 , 2));
 
         ImGui::PushStyleColor(ImGuiCol_Button           , Mem->Colors[PapayaCol_Button]);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered    , Mem->Colors[PapayaCol_ButtonHover]);
@@ -42,13 +42,10 @@ namespace Prefs
 
         ImGui::Begin("Preferences Window", 0, WindowFlags);
 
-        // Title and search box
-        {
-            char buf[512] = {0};
-            ImGui::InputText("Search", buf, 512);
-        }
-
-        ImGui::Separator();
+        // char buf[512] = {0};
+        // ImGui::InputText("Search", buf, 512);
+        //
+        // ImGui::Separator();
 
         // Grid
         {
@@ -67,15 +64,45 @@ namespace Prefs
 
             if (currentCategory == 1) // Appearance
             {
-                float col[3];
-                col[0] = Mem->Colors[PapayaCol_Clear].r;
-                col[1] = Mem->Colors[PapayaCol_Clear].g;
-                col[2] = Mem->Colors[PapayaCol_Clear].b;
-                ImGui::ColorEdit3("Background color", col);
-                
-                Mem->Colors[PapayaCol_Clear].r = col[0];
-                Mem->Colors[PapayaCol_Clear].g = col[1];
-                Mem->Colors[PapayaCol_Clear].b = col[2];
+                const char* colorNames[] = { "Window color",
+                                             "Workspace color",
+                                             "Button color",
+                                             "Button hover color",
+                                             "Button pressed color",
+                                             "Alpha grid color 1",
+                                             "Alpha grid color 2" };
+                for (int32 i = PapayaCol_Clear; i <= PapayaCol_AlphaGrid2; i++)
+                {
+                    char str[8];
+                    Color col = Mem->Colors[i];
+                    snprintf(str, 8, "#%02x%02x%02x", 
+                             (uint32)(col.r * 255.0),
+                             (uint32)(col.g * 255.0),
+                             (uint32)(col.b * 255.0));
+
+                    ImGui::PushStyleColor(ImGuiCol_Button       , col);
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive , col);
+                    ImGui::PushID(i);
+                    if (ImGui::Button(str))
+                    {
+                        if (Mem->Picker.BoundColor == &Mem->Colors[i]) // This color is bound
+                        {
+                            Mem->Picker.BoundColor = 0;
+                            Mem->Picker.Open = false;
+                        }
+                        else // Some other color is bound or picker is unbound
+                        {
+                            Mem->Picker.BoundColor = &Mem->Colors[i];
+                            Picker::SetColor(Mem->Colors[i], Mem);
+                            Mem->Picker.Open = true;
+                        }
+                    }
+                    ImGui::PopID();
+                    ImGui::PopStyleColor(2);
+
+                    ImGui::SameLine();
+                    ImGui::Text(colorNames[i]);
+                }
             }
             ImGui::EndChild();
         }

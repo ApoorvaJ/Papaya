@@ -744,7 +744,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PopStyleColor(4);
         }
 
-        //ImGui::ShowTestWindow();
+        // ImGui::ShowTestWindow();
         Papaya::UpdateAndRender(&Mem);
         SwapBuffers(DeviceContext);
 

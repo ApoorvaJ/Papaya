@@ -25,12 +25,12 @@ enum PapayaCol_
 {
     PapayaCol_Clear,
     PapayaCol_Workspace,
-    PapayaCol_Transparent,
     PapayaCol_Button,
     PapayaCol_ButtonHover,
     PapayaCol_ButtonActive,
     PapayaCol_AlphaGrid1,
     PapayaCol_AlphaGrid2,
+    PapayaCol_Transparent,
     PapayaCol_COUNT
 };
 
@@ -193,6 +193,7 @@ struct PickerInfo
 {
     bool Open;
     Color CurrentColor, NewColor;
+    Color* BoundColor; // Change this along with CurrentColor. Zero if no color is bound.
     Vec2 CursorSV;
     float CursorH;
 
@@ -291,4 +292,5 @@ struct PapayaMemory
 
 #include "papaya_util.h"
 #include "papaya_gl.h"
+#include "papaya_picker.cpp"
 #include "papaya_preferences.cpp"
