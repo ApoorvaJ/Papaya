@@ -76,6 +76,9 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -89,6 +92,9 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -104,6 +110,8 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -121,6 +129,8 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -130,35 +140,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\easytab.h" />
-    <ClInclude Include="..\..\src\glcorearb.h" />
-    <ClInclude Include="..\..\src\imconfig.h" />
-    <ClInclude Include="..\..\src\imgui.cpp" />
-    <ClInclude Include="..\..\src\imgui.h" />
-    <ClInclude Include="..\..\src\imgui_internal.h" />
-    <ClInclude Include="..\..\src\papaya.cpp" />
-    <ClInclude Include="..\..\src\imgui_demo.cpp" />
-    <ClInclude Include="..\..\src\imgui_draw.cpp" />
-    <ClInclude Include="..\..\src\papaya_preferences.cpp" />
-    <ClInclude Include="..\..\src\papaya_picker.cpp" />
-    <ClCompile Include="..\..\src\win32_papaya.cpp" />
-    <ClInclude Include="..\..\src\papaya.h" />
-    <ClInclude Include="..\..\src\papaya_gl.h" />
-    <ClInclude Include="..\..\src\papaya_math.h" />
-    <ClInclude Include="..\..\src\papaya_platform.h" />
-    <ClInclude Include="..\..\src\papaya_util.h" />
-    <ClInclude Include="..\..\src\stb_image.h" />
-    <ClInclude Include="..\..\src\stb_image_write.h" />
-    <ClInclude Include="..\..\src\stb_rect_pack.h" />
-    <ClInclude Include="..\..\src\stb_textedit.h" />
-    <ClInclude Include="..\..\src\stb_truetype.h" />
-    <ClInclude Include="resource.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="Papaya.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\img\papaya.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\imgui.cpp" />
+    <ClCompile Include="..\..\src\papaya_core.cpp" />
+    <ClCompile Include="..\..\src\papaya_lib.cpp" />
+    <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />
+    <ClCompile Include="..\..\src\papaya_util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\imgui.h" />
+    <ClInclude Include="..\..\src\papaya_core.h" />
+    <ClInclude Include="..\..\src\papaya_lib.h" />
+    <ClInclude Include="..\..\src\papaya_platform.h" />
+    <ClInclude Include="..\..\src\papaya_util.h" />
+    <ClInclude Include="..\..\src\util\gl.h" />
+    <ClInclude Include="..\..\src\util\mathlib.h" />
+    <ClInclude Include="..\..\src\util\timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

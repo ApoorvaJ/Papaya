@@ -5,10 +5,10 @@ namespace Platform
     void Print(char* Message);
     void StartMouseCapture();
     void ReleaseMouseCapture();
-    void SetMousePosition(Vec2i Pos);
+    void SetMousePosition(int32 x, int32 y);
     void SetCursorVisibility(bool Visible);
     char* OpenFileDialog();
     char* SaveFileDialog();
 
-    int64 GetMilliseconds();
+    double GetMilliseconds();
 }

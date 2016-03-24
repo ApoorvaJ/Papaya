@@ -59,7 +59,7 @@ namespace IMGUI_STB_NAMESPACE
 #define STBRP_STATIC
 #define STB_RECT_PACK_IMPLEMENTATION
 #endif
-#include "stb_rect_pack.h"
+#include "lib/stb_rect_pack.h"
 
 #define STBTT_malloc(x,u)  ((void)(u), ImGui::MemAlloc(x))
 #define STBTT_free(x,u)    ((void)(u), ImGui::MemFree(x))
@@ -70,7 +70,7 @@ namespace IMGUI_STB_NAMESPACE
 #else
 #define STBTT_DEF extern
 #endif
-#include "stb_truetype.h"
+#include "lib/stb_truetype.h"
 
 #ifdef __clang__
 #pragma clang diagnostic pop

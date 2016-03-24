@@ -1,18 +1,16 @@
 #pragma once
 
-#define GLEW_STATIC
-#include "glew.c"
+//#if !defined(_DEBUG ) // TODO: Make this work for gcc
+//    #define PAPAYARELEASE // User-ready release mode
+//#endif // !_DEBUG
 
-#include "papaya_math.h"
-#include "papaya_platform.h"
-#include "imgui.h"
-#include "imgui_draw.cpp"
-#include "imgui.cpp"
-#pragma warning (disable: 4312) // Warning C4312 during 64 bit compilation: 'type cast': conversion from 'uint32' to 'void *' of greater size
-#include "imgui_demo.cpp"
-#pragma warning (default: 4312)
+#include "platform/types.h"
+#include "papaya_util.h"
 
-#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+//#include "papaya_platform.h"
+//#include "imgui.h"
+
+//#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
 enum PapayaTex_
 {
@@ -62,15 +60,6 @@ enum PapayaShader_
     PapayaShader_COUNT
 };
 
-enum UniformType_
-{
-    UniformType_Float,
-    UniformType_Vec2,
-    UniformType_Matrix4,
-    UniformType_Color,
-    UniformType_COUNT
-};
-
 enum PapayaUndoOp_
 {
     PapayaUndoOp_Brush,
@@ -96,6 +85,9 @@ struct WindowInfo
     uint32 MenuHorizontalOffset, TitleBarButtonsWidth, TitleBarHeight;
     float ProjMtx[4][4];
 };
+
+#include "core/picker.h"
+#include "core/prefs.h"
 
 #pragma region Undo structs
 
@@ -152,20 +144,6 @@ struct TabletInfo
     float Pressure;
 };
 
-struct ShaderInfo
-{
-    uint32 Handle;
-    int32 AttribCount, UniformCount;
-    int32 Attributes[8];
-    int32 Uniforms[8];
-};
-
-struct MeshInfo
-{
-    size_t VboSize;
-    uint32 VboHandle, ElementsHandle;
-};
-
 struct BrushInfo
 {
     int32 Diameter;
@@ -189,47 +167,6 @@ struct EyeDropperInfo
     Color CurrentColor;
 };
 
-struct PickerInfo
-{
-    bool Open;
-    Color CurrentColor, NewColor;
-    Color* BoundColor; // Change this along with CurrentColor. Zero if no color is bound.
-    Vec2 CursorSV;
-    float CursorH;
-
-    Vec2 Pos, Size, HueStripPos, HueStripSize, SVBoxPos, SVBoxSize;
-    bool DraggingHue, DraggingSV;
-};
-
-struct TimerInfo
-{
-    uint64 StartCycleCount,   StopCycleCount,   CyclesElapsed;
-    int64 StartMilliseconds, StopMilliseconds;
-    double MillisecondsElapsed;
-};
-
-#define FOREACH_TIMER(TIMER)    \
-        TIMER(Startup)    \
-        TIMER(Frame)      \
-        TIMER(Sleep)      \
-        TIMER(ImageOpen)  \
-        TIMER(GetImage)   \
-        TIMER(COUNT)      \
-
-#define GENERATE_ENUM(ENUM) Timer_##ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-
-enum Timer_ {
-    FOREACH_TIMER(GENERATE_ENUM)
-};
-
-static const char* TimerNames[] = {
-    FOREACH_TIMER(GENERATE_STRING)
-};
-
-#undef FOREACH_TIMER
-#undef GENERATE_ENUM
-#undef GENERATE_STRING
 
 enum class PapayaPrefType
 {
@@ -289,8 +226,12 @@ struct PapayaMemory
     MiscInfo Misc;
 };
 
-
-#include "papaya_util.h"
-#include "papaya_gl.h"
-#include "papaya_picker.cpp"
-#include "papaya_preferences.cpp"
+namespace Core
+{
+    void Initialize(PapayaMemory* Mem);
+    void Shutdown(PapayaMemory* Mem);
+    void UpdateAndRender(PapayaMemory* Mem);
+    void RenderImGui(ImDrawData* DrawData, void* MemPtr);
+    bool OpenDocument(char* Path, PapayaMemory* Mem);
+    void CloseDocument(PapayaMemory* Mem);
+}
