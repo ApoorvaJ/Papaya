@@ -2,6 +2,7 @@
 #ifndef PREFS_H
 #define PREFS_H
 
+struct WindowInfo;
 
 namespace Prefs
 {

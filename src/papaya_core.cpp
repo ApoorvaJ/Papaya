@@ -76,14 +76,14 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushI
     uint64 BufSize = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
     void* Buf      = malloc((size_t)BufSize);
 
-    Timer::StartTime(&Mem->Debug.Timers[Timer_GetImage]);
+    Timer::StartTime(&Mem->Debug.Timers[Timer_GetUndoImage]);
     memcpy(Buf, &Data, sizeof(UndoData));
     GLCHK( glFinish() ); // TODO: Required?
 
     GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
 
     GLCHK( glFinish() ); // TODO: Required?
-    Timer::StopTime(&Mem->Debug.Timers[Timer_GetImage]);
+    Timer::StopTime(&Mem->Debug.Timers[Timer_GetUndoImage]);
 
     if (Data.IsSubRect)
     {

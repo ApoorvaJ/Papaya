@@ -1,16 +1,10 @@
 #pragma once
 
-//#if !defined(_DEBUG ) // TODO: Make this work for gcc
-//    #define PAPAYARELEASE // User-ready release mode
-//#endif // !_DEBUG
-
 #include "platform/types.h"
 #include "papaya_util.h"
 
-//#include "papaya_platform.h"
-//#include "imgui.h"
-
-//#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+#include "core/picker.h"
+#include "core/prefs.h"
 
 enum PapayaTex_
 {
@@ -86,8 +80,6 @@ struct WindowInfo
     float ProjMtx[4][4];
 };
 
-#include "core/picker.h"
-#include "core/prefs.h"
 
 #pragma region Undo structs
 
@@ -188,7 +180,6 @@ struct DebugInfo
 {
     int64 Time;          // Used on Windows.
     float LastFrameTime; // Used on Linux. TODO: Combine this var and the one above.
-    int64 TicksPerSecond;
     TimerInfo Timers[Timer_COUNT];
 };
 

@@ -370,7 +370,13 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
 {
-    QueryPerformanceFrequency((LARGE_INTEGER *)&Mem.Debug.TicksPerSecond);
+    // Tick frequency
+    {
+        int64 TicksPerSecond;
+        QueryPerformanceFrequency((LARGE_INTEGER *)&TicksPerSecond);
+        Timer::Init(1000.0 / TicksPerSecond);
+    }
+
     QueryPerformanceCounter((LARGE_INTEGER *)&Mem.Debug.Time);
     Timer::StartTime(&Mem.Debug.Timers[Timer_Startup]);
 
@@ -606,7 +612,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             // Setup time step
             INT64 current_time;
             QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-            io.DeltaTime = (float)(current_time - Mem.Debug.Time) / Mem.Debug.TicksPerSecond;
+            io.DeltaTime = (float)(current_time - Mem.Debug.Time) * 
+                           (float)Timer::GetFrequency() / 1000.0f;
             Mem.Debug.Time = current_time; // TODO: Move Imgui timers from Debug to their own struct
 
             // Hide OS mouse cursor if ImGui is drawing it

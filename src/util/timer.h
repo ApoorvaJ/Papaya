@@ -13,7 +13,7 @@ struct TimerInfo
         TIMER(Frame)            \
         TIMER(Sleep)            \
         TIMER(ImageOpen)        \
-        TIMER(GetImage)         \
+        TIMER(GetUndoImage)     \
         TIMER(COUNT)            \
 
 #define GENERATE_ENUM(ENUM) Timer_##ENUM,
@@ -30,6 +30,7 @@ static const char* TimerNames[] = {
 namespace Timer
 {
     void Init(double TickFrequency);
+    double GetFrequency();
     void StartTime(TimerInfo* Timer);
     void StopTime(TimerInfo* Timer);
 }
@@ -49,6 +50,11 @@ double TickFrequency;
 void Timer::Init(double _TickFrequency)
 {
     TickFrequency = _TickFrequency;
+}
+
+double Timer::GetFrequency()
+{
+    return TickFrequency;
 }
 
 void Timer::StartTime(TimerInfo* Timer)
