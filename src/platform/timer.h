@@ -2,7 +2,9 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+#ifdef __linux__ // TODO: remove platform-specific directives
 #include <x86intrin.h>
+#endif
 
 struct TimerInfo
 {

@@ -133,6 +133,9 @@ double Platform::GetMilliseconds()
     return (double)ms.QuadPart;
 }
 
+#define TIMER_IMPLEMENTATION
+#include "platform/timer.h"
+
 // =================================================================================================
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
