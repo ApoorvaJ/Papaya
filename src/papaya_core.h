@@ -159,18 +159,8 @@ struct EyeDropperInfo
     Color CurrentColor;
 };
 
-
-enum class PapayaPrefType
-{
-    Int,
-    Float,
-    String,
-    Enum
-};
-
 struct PapayaPref
 {
-    PapayaPrefType Type;
     char Name[256];
     char Description[1024];
     char Tags[256][5];

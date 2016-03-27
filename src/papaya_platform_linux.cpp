@@ -1,46 +1,26 @@
-#define PAPAYARELEASE
+#include "platform/types.h"
 
-#include <stdint.h>
-#include <stdarg.h>
-
-#define internal static
-#define local_persist static
-#define global_variable static
-
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-typedef int32 bool32;
-
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
-
-typedef float real32;
-typedef double real64;
-
-#pragma GCC diagnostic ignored "-Wwrite-strings" //TODO: Check if all string warnings can be eliminated without suppression
-#include <x86intrin.h>
+#include "papaya_platform.h"
+#include "papaya_util.h"
+#include "papaya_core.h"
+#include "util/glew/glxew.h"
 
 #define GLEW_NO_GLU
 
 #ifndef PAPAYARELEASE
-    #define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/transparent4k.png"
+#define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/transparent4k.png"
 #endif
 
-#include "papaya.h"
-#include "papaya.cpp"
-
 #include <X11/Xlib.h>
+#include <GL/glx.h>
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
+
 #define EASYTAB_IMPLEMENTATION
-#include "easytab.h"
+#include "lib/easytab.h"
 
 #ifdef USE_GTK
 #include <gtk/gtk.h>
@@ -65,9 +45,9 @@ void Platform::ReleaseMouseCapture()
     //
 }
 
-void Platform::SetMousePosition(Vec2i Pos)
+void Platform::SetMousePosition(int32 x, int32 y)
 {
-    XWarpPointer(XlibDisplay, None, XlibWindow, 0, 0, 0, 0, Pos.x, Pos.y);
+    XWarpPointer(XlibDisplay, None, XlibWindow, 0, 0, 0, 0, x, y);
     XFlush(XlibDisplay);
 }
 
@@ -162,12 +142,15 @@ char* Platform::SaveFileDialog()
 #endif
 }
 
-int64 Platform::GetMilliseconds()
+double Platform::GetMilliseconds()
 {
     timespec Time;
     clock_gettime(CLOCK_MONOTONIC, &Time);
-    return (int64)(Time.tv_sec * 1000 + Time.tv_nsec / 1000000);
+    return (double)(Time.tv_sec * 1000 + Time.tv_nsec / 1000000);
 }
+
+#define TIMER_IMPLEMENTATION
+#include "platform/timer.h"
 
 // =================================================================================================
 
@@ -175,8 +158,8 @@ int main(int argc, char **argv)
 {
     PapayaMemory Mem = {0};
 
-    Mem.Debug.TicksPerSecond = 1000;
-    Util::StartTime(Timer_Startup, &Mem);
+    Timer::Init(1000.0); // TODO: Check linux timer manual. Is this correct?
+    Timer::StartTime(&Mem.Debug.Timers[Timer_Startup]);
 
     XVisualInfo* VisualInfo;
     Atom WmDeleteMessage;
@@ -291,14 +274,14 @@ int main(int argc, char **argv)
 
     EasyTab_Load(XlibDisplay, XlibWindow);
 
-    Papaya::Initialize(&Mem);
+    Core::Initialize(&Mem);
 
     // Initialize ImGui
     {
         // TODO: Profiler timer setup
 
         ImGuiIO& io = ImGui::GetIO();
-        io.RenderDrawListsFn = Papaya::RenderImGui;
+        io.RenderDrawListsFn = Core::RenderImGui;
 
         // Keyboard mappings
         {
@@ -306,17 +289,17 @@ int main(int argc, char **argv)
         }
     }
 
-    Util::StopTime(Timer_Startup, &Mem);
+    Timer::StopTime(&Mem.Debug.Timers[Timer_Startup]);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
-    Papaya::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
+    Core::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
 #endif
 
     Mem.IsRunning = true;
 
     while (Mem.IsRunning)
     {
-        Util::StartTime(Timer_Frame, &Mem);
+        Timer::StartTime(&Mem.Debug.Timers[Timer_Frame]);
 
         // Event handling
         while (XPending(XlibDisplay))
@@ -415,7 +398,7 @@ int main(int argc, char **argv)
 
         // Update and render
         {
-            Papaya::UpdateAndRender(&Mem);
+            Core::UpdateAndRender(&Mem);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
 
@@ -425,15 +408,15 @@ int main(int argc, char **argv)
 #endif
 
         // End Of Frame
-        Util::StopTime(Timer_Frame, &Mem);
+        Timer::StopTime(&Mem.Debug.Timers[Timer_Frame]);
         double FrameRate = (Mem.CurrentTool == PapayaTool_Brush) ? 500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].MillisecondsElapsed;
-        Mem.Debug.Timers[Timer_Sleep].MillisecondsElapsed = SleepTime;
+        double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].ElapsedMs;
+        Mem.Debug.Timers[Timer_Sleep].ElapsedMs = SleepTime;
         if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 
-    //Papaya::Shutdown(&Mem);
+    //Core::Shutdown(&Mem);
     EasyTab_Unload();
 
     return 0;

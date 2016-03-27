@@ -60,9 +60,9 @@ struct Color
 
 namespace Math
 {
-    template<class T> T Math::Min(T a, T b) { return (a < b ? a : b); }
-    template<class T> T Math::Max(T a, T b) { return (a > b ? a : b); }
-    template<class T> T Math::Clamp(T a, T min, T max) { return Math::Min(Math::Max(a, min), max); }
+    template<class T> T Min(T a, T b) { return (a < b ? a : b); }
+    template<class T> T Max(T a, T b) { return (a > b ? a : b); }
+    template<class T> T Clamp(T a, T min, T max) { return Math::Min(Math::Max(a, min), max); }
 
     float Abs(float a);
     int32 Abs(int32 a);

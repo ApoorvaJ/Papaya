@@ -2,6 +2,8 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+#include <x86intrin.h>
+
 struct TimerInfo
 {
     uint64 StartCycles, StopCycles, ElapsedCycles;

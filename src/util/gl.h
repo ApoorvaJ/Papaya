@@ -59,14 +59,14 @@ bool GL::InitAndValidate()
     // TODO: Reporting via message box or logging before returning false
     if (glewInit() != GLEW_OK) 
     { 
-        Platform::Print("GLEW initialization failed.\n");
+        printf("GLEW initialization failed.\n");
         return false; 
     }
 
     // Core profile capability check
     if (!glewIsSupported("GL_VERSION_2_1")) 
     {
-        Platform::Print("This hardware doesn't support OpenGL 2.1.\n");
+        printf("This hardware doesn't support OpenGL 2.1.\n");
         return false; 
     }
 
@@ -75,7 +75,7 @@ bool GL::InitAndValidate()
     //                    ==========                    =========================
     if (!glewIsSupported("GL_ARB_framebuffer_object"))  // OpenGL 1.1
     {
-        Platform::Print("This hardware doesn't support OpenGL extension GL_ARB_framebuffer_object.\n");
+        printf("This hardware doesn't support OpenGL extension GL_ARB_framebuffer_object.\n");
         return false;
     }
 
@@ -97,11 +97,8 @@ void GL::CheckError(const char* Expr, const char* File, int Line)
     else if (Error == GL_STACK_OVERFLOW)                { Str = "Stack overflow"; }
     else                                                { Str = "Undefined error"; }
 
-    char Buffer[256];
-    snprintf(Buffer, 256, "OpenGL Error: %s in %s:%d\n", Str, File, Line);
-    Platform::Print(Buffer);
-    snprintf(Buffer, 256, "    --- Expression: %s\n", Expr);
-    Platform::Print(Buffer);
+    printf("OpenGL Error: %s in %s:%d\n", Str, File, Line);
+    printf("    --- Expression: %s\n", Expr);
 }
 
 internal void PrintCompileErrors(uint32 Handle, const char* Type, const char* File, int32 Line)
@@ -110,15 +107,13 @@ internal void PrintCompileErrors(uint32 Handle, const char* Type, const char* Fi
     GLCHK( glGetShaderiv(Handle, GL_COMPILE_STATUS, &CompileStatus) );
     if (CompileStatus != GL_TRUE)
     {
-        char Buffer[256];
-        snprintf(Buffer, 256, "Compilation error in %s shader in %s:%d\n", Type, File, Line);
-        Platform::Print(Buffer);
+        printf("Compilation error in %s shader in %s:%d\n", Type, File, Line);
 
         char ErrorLog[4096];
         int32 OutLength;
         GLCHK( glGetShaderInfoLog(Handle, 4096, &OutLength, ErrorLog) );
-        Platform::Print(ErrorLog);
-        Platform::Print("\n");
+        printf("%s", ErrorLog);
+        printf("\n");
     }
 }
 
@@ -151,9 +146,7 @@ void GL::CompileShader(ShaderInfo& Shader, const char* File, int Line, const cha
 
         if (Shader.Attributes[i] == -1)
         {
-            char Buffer[256];
-            snprintf(Buffer, 256, "Attribute %s not found in shader at %s:%d\n", Name, File, Line);
-            Platform::Print(Buffer);
+            printf("Attribute %s not found in shader at %s:%d\n", Name, File, Line);
         }
     }
 
@@ -164,9 +157,7 @@ void GL::CompileShader(ShaderInfo& Shader, const char* File, int Line, const cha
 
         if (Shader.Uniforms[i] == -1)
         {
-            char Buffer[256];
-            snprintf(Buffer, 256, "Uniform %s not found in shader at %s:%d\n", Name, File, Line);
-            Platform::Print(Buffer);
+            printf("Uniform %s not found in shader at %s:%d\n", Name, File, Line);
         }
     }
     va_end(Args);
