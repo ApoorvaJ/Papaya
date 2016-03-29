@@ -26,11 +26,11 @@ For development updates, you can follow [@PapayaEditor](https://twitter.com/Papa
 Building
 --------
 
-Papaya supports Windows and Linux, and is set up to use single file compilation. Compile only win32_papaya.cpp or linux_papaya.cpp, and you're done.
+(I am currently in the process of changing the build process a little, so the following instructions might be a bit rough around the edges.)
 
-Project files for Visual Studio 2015 and shell build scripts for gcc are provided in the /build folder. If you're using other versions of Visual Studio, just set every c/cpp file except win32_papaya.cpp to be treated as a "C/C++ header" item type in the properties window.
+To build on Linux, go to `build/linux/` in your Papaya folder, and run the `make` command in your terminal. Papaya currently depends on GTK+ on Linux, for open/save dialog boxes, so you will need to install that before building Papaya.
 
-Currently, the Linux build relies on GTK+ for open/save dialog boxes, but otherwise linking is optional. The build.sh script provides a flag to turn GTK+ on/off during compilation.
+To build on Windows, go to `build/windows` and open the Visual Studio 2015 solution. You should also be able build successfully in older versions of Visual Studio by changing the `Platform Toolset` in the Project Properties page in the General tab.
 
 Credits
 ------
