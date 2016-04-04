@@ -2,6 +2,7 @@ imgui.ini
 
 build/linux/*.o
 build/linux/*.d
+build/linux/*.png
 build/linux/papaya
 
 ## Vim files
