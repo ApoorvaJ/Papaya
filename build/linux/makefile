@@ -1,6 +1,6 @@
 SRC =../../src
 CFLAGS=-I$(SRC) -O0 -Wno-write-strings -Wno-format-security
-LIBS=-ldl -lGL -lX11 -lXi
+LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
 
 papaya: $(SRC)/papaya_platform_linux.cpp papaya_core.o papaya_lib.o papaya_util.o ./imgui.o
 	g++ -MMD -MF $@.d $^ $(LIBS) $(CFLAGS) -o $@
