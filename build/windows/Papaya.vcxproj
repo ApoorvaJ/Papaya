@@ -146,21 +146,12 @@
     <Image Include="..\..\img\papaya.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\imgui.cpp" />
     <ClCompile Include="..\..\src\papaya_core.cpp" />
-    <ClCompile Include="..\..\src\papaya_lib.cpp" />
     <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />
-    <ClCompile Include="..\..\src\papaya_util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\imgui.h" />
     <ClInclude Include="..\..\src\papaya_core.h" />
-    <ClInclude Include="..\..\src\papaya_lib.h" />
     <ClInclude Include="..\..\src\papaya_platform.h" />
-    <ClInclude Include="..\..\src\papaya_util.h" />
-    <ClInclude Include="..\..\src\util\gl.h" />
-    <ClInclude Include="..\..\src\util\mathlib.h" />
-    <ClInclude Include="..\..\src\util\timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

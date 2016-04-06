@@ -1,10 +1,14 @@
 #pragma once
 
-#include "platform/types.h"
-#include "papaya_util.h"
+#include "papaya_platform.h"
+#include "lib/mathlib.h"
+#include "lib/gl.h"
+#include "lib/timer.h"
 
 #include "core/picker.h"
 #include "core/prefs.h"
+
+struct ImDrawData;
 
 enum PapayaTex_
 {

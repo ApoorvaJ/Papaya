@@ -6,6 +6,8 @@
 #include <x86intrin.h>
 #endif
 
+// TODO: No need to expose the TimerInfo struct to the caller. Improve API.
+
 struct TimerInfo
 {
     uint64 StartCycles, StopCycles, ElapsedCycles;
@@ -31,6 +33,10 @@ static const char* TimerNames[] = {
     FOREACH_TIMER(GENERATE_STRING)
 };
 
+#undef FOREACH_TIMER
+#undef GENERATE_ENUM
+#undef GENERATE_STRING
+
 namespace Timer
 {
     void Init(double TickFrequency);
@@ -38,10 +44,6 @@ namespace Timer
     void StartTime(TimerInfo* Timer);
     void StopTime(TimerInfo* Timer);
 }
-
-#undef FOREACH_TIMER
-#undef GENERATE_ENUM
-#undef GENERATE_STRING
 
 #endif // TIMER_H
 

@@ -3,11 +3,7 @@
 #define GL_H
 
 #include <stdio.h>
-
-#include "platform/types.h"
-#include "util/glew/glew.h"
-#include "imgui.h"
-#include "papaya_platform.h"
+#include "lib/glew/glew.h"
 
 #define GLCHK(stmt) stmt; GL::CheckError(#stmt, __FILE__, __LINE__)
 

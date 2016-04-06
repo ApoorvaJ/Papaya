@@ -1,9 +1,12 @@
 
 #include "papaya_core.h"
 
+#include "lib/stb_image.h"
+#include "lib/stb_image_write.h"
+#include "lib/imgui/imgui.h"
+
 #define PICKER_IMPLEMENTATION
 #include "core/picker.h"
-
 #define PREFS_IMPLEMENTATION
 #include "core/prefs.h"
 
