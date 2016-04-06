@@ -2,6 +2,7 @@
 #include "papaya_core.h"
 
 #include "lib/stb_image.h"
+#include "lib/mathlib.h"
 #include "lib/stb_image_write.h"
 #include "lib/imgui/imgui.h"
 
@@ -9,8 +10,6 @@
 #include "core/picker.h"
 #define PREFS_IMPLEMENTATION
 #include "core/prefs.h"
-
-#include "papaya_lib.h"
 
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {
@@ -378,7 +377,7 @@ void Core::Initialize(PapayaMemory* Mem)
     {
         Mem->CurrentTool    = PapayaTool_Brush;
 
-        Mem->Brush.Diameter    = 50;
+        Mem->Brush.Diameter    = 0;
         Mem->Brush.MaxDiameter = 9999;
         Mem->Brush.Hardness    = 1.0f;
         Mem->Brush.Opacity     = 1.0f;
