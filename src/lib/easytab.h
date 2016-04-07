@@ -164,6 +164,10 @@
 #include <X11/extensions/XInput.h>
 #endif // __linux__
 
+#ifdef _WIN32
+#include <windows.h>
+#endif // _WIN32
+
 typedef enum
 {
     EASYTAB_OK = 0,

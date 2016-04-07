@@ -1,19 +1,8 @@
 
-#ifndef PREFS_H
-#define PREFS_H
-
-struct WindowInfo;
-
-namespace Prefs
-{
-    void ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window);
-}
-
-#endif // PREFS_H
-
-// =======================================================================================
-
-#ifdef PREFS_IMPLEMENTATION
+#include "prefs.h"
+#include <stdio.h>
+#include "imgui/imgui.h"
+#include "papaya_core.h"
 
 void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window)
 {
@@ -113,4 +102,3 @@ void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window)
     ImGui::PopStyleColor(5);
 }
 
-#endif // PREFS_IMPLEMENTATION

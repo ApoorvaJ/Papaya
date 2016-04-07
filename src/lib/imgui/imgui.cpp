@@ -473,7 +473,7 @@ The list below consist mostly of notes of things to do before they are requested
 - optimization: better clipping for multi-component widgets
 */
 
-#include "lib/imgui/imgui_draw.cpp"
+#include "imgui/imgui_draw.cpp"
 
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS
@@ -481,7 +481,7 @@ The list below consist mostly of notes of things to do before they are requested
 
 #include "imgui.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "lib/imgui/imgui_internal.h"
+#include "imgui/imgui_internal.h"
 
 #include <ctype.h>      // toupper, isprint
 #include <math.h>       // sqrtf, fabsf, fmodf, powf, cosf, sinf, floorf, ceilf
@@ -6897,7 +6897,7 @@ namespace ImGuiStb
 #define STB_TEXTEDIT_K_SHIFT        0x20000
 
 #define STB_TEXTEDIT_IMPLEMENTATION
-#include "lib/stb_textedit.h"
+#include "stb_textedit.h"
 
 }
 

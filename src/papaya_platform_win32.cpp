@@ -1,42 +1,18 @@
 
+#include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <malloc.h>
 #include <commdlg.h>
 #undef GetWindowFont // Windows API macro clashes with ImGui function
+
 #include "papaya_platform.h"
-
-// =================================================================================================
-
-#pragma warning (disable: 4312) // Warning C4312 during 64 bit compilation: 'type cast': conversion from 'uint32' to 'void *' of greater size
-#define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
-#pragma warning (default: 4312)
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "lib/stb_image_write.h"
-
-// =================================================================================================
 #include "papaya_core.h"
 
-#define GLEW_STATIC
-#include "lib/glew/glew.c"
-#include "lib/glew/wglew.h"
-
-#include "lib/imgui/imgui.h"
-#include "lib/imgui/imgui.cpp"
-
-
-#define MATHLIB_IMPLEMENTATION
-#include "lib/mathlib.h"
-
-#define GL_IMPLEMENTATION
-#include "lib/gl.h"
-#define TIMER_IMPLEMENTATION
-#include "lib/timer.h"
-#define EASYTAB_IMPLEMENTATION
-#include "lib/easytab.h"
-
+#include "glew/glew.h"
+#include "glew/wglew.h"
+#include "imgui/imgui.h"
+#include "easytab.h"
 
 #ifndef PAPAYARELEASE
 #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png"

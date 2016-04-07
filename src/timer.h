@@ -51,6 +51,8 @@ namespace Timer
 
 #ifdef TIMER_IMPLEMENTATION
 
+#include "papaya_platform.h" // TODO: Remove this dependency
+
 double TickFrequency;
 
 void Timer::Init(double _TickFrequency)

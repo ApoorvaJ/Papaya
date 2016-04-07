@@ -146,12 +146,32 @@
     <Image Include="..\..\img\papaya.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\glew\glew.c" />
+    <ClCompile Include="..\..\src\imgui\imgui.cpp" />
     <ClCompile Include="..\..\src\papaya_core.cpp" />
     <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />
+    <ClCompile Include="..\..\src\picker.cpp" />
+    <ClCompile Include="..\..\src\prefs.cpp" />
+    <ClCompile Include="..\..\src\single_libs.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\easytab.h" />
+    <ClInclude Include="..\..\src\gl.h" />
+    <ClInclude Include="..\..\src\glew\glew.h" />
+    <ClInclude Include="..\..\src\glew\wglew.h" />
+    <ClInclude Include="..\..\src\imgui\imgui.h" />
+    <ClInclude Include="..\..\src\mathlib.h" />
     <ClInclude Include="..\..\src\papaya_core.h" />
     <ClInclude Include="..\..\src\papaya_platform.h" />
+    <ClInclude Include="..\..\src\picker.h" />
+    <ClInclude Include="..\..\src\prefs.h" />
+    <ClInclude Include="..\..\src\stb_image.h" />
+    <ClInclude Include="..\..\src\stb_image_write.h" />
+    <ClInclude Include="..\..\src\stb_rect_pack.h" />
+    <ClInclude Include="..\..\src\stb_textedit.h" />
+    <ClInclude Include="..\..\src\stb_truetype.h" />
+    <ClInclude Include="..\..\src\timer.h" />
+    <ClInclude Include="..\..\src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

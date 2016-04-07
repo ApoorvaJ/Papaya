@@ -1,15 +1,10 @@
 
 #include "papaya_core.h"
-
-#include "lib/stb_image.h"
-#include "lib/mathlib.h"
-#include "lib/stb_image_write.h"
-#include "lib/imgui/imgui.h"
-
-#define PICKER_IMPLEMENTATION
-#include "core/picker.h"
-#define PREFS_IMPLEMENTATION
-#include "core/prefs.h"
+#include "glew/glew.h"
+#include "stb_image.h"
+#include "stb_image_write.h"
+#include "imgui/imgui.h"
+#include "mathlib.h"
 
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {

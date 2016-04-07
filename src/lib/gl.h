@@ -2,8 +2,7 @@
 #ifndef GL_H
 #define GL_H
 
-#include <stdio.h>
-#include "lib/glew/glew.h"
+#include "types.h"
 
 #define GLCHK(stmt) stmt; GL::CheckError(#stmt, __FILE__, __LINE__)
 
@@ -36,7 +35,7 @@ namespace GL
     void CheckError(const char* Expr, const char* File, int Line);
     void CompileShader(ShaderInfo& Shader, const char* File, int Line, const char* Vert, const char* Frag, int32 AttribCount, int32 UniformCount, ...);
     void SetVertexAttribs(const ShaderInfo& Shader);
-    void InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, GLenum Usage);
+    void InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage);
     void TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size);
     void DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...);
 }
@@ -176,7 +175,7 @@ void GL::SetVertexAttribs(const ShaderInfo& Shader)
     #undef OFFSETOF
 }
 
-void GL::InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, GLenum Usage)
+void GL::InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage)
 {
     GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
@@ -189,7 +188,7 @@ void GL::InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, GLenum Usage)
     Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
     Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);          Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
 
-    GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, Usage) );
+    GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, (GLenum)Usage) );
 }
 
 void GL::TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)

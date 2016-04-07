@@ -1,30 +1,8 @@
 
-#ifndef PICKER_H
-#define PICKER_H
-
-struct PickerInfo
-{
-    bool Open;
-    Color CurrentColor, NewColor;
-    Color* BoundColor; // This color is changed along with CurrentColor. Zero if no color is bound.
-    Vec2 CursorSV;
-    float CursorH;
-
-    Vec2 Pos, Size, HueStripPos, HueStripSize, SVBoxPos, SVBoxSize;
-    bool DraggingHue, DraggingSV;
-};
-
-namespace Picker
-{
-    void Init(PickerInfo* Picker);
-    void SetColor(Color Col, PickerInfo* Picker, bool SetNewColorOnly = false);
-    void Show(PickerInfo* Picker, Color* Colors, uint32 BlankTexture);
-}
-#endif // PICKER_H
-
-// =======================================================================================
-
-#ifdef PICKER_IMPLEMENTATION
+#include "picker.h"
+#include "imgui/imgui.h"
+#include "mathlib.h"
+#include "papaya_core.h"
 
 void Picker::Init(PickerInfo* Picker)
 {
@@ -122,4 +100,3 @@ void Picker::Show(PickerInfo* Picker, Color* Colors, uint32 BlankTexture) // TOD
     if (Picker->BoundColor) { *Picker->BoundColor = Picker->NewColor; }
 }
 
-#endif // PICKER_IMPLEMENTATION
