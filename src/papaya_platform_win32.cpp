@@ -384,7 +384,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
     Mem.IsRunning = true;
 
-#ifdef PAPAYARELEASE
     // Set current path to this executable's path
     {
         HMODULE Module = GetModuleHandleA(NULL);
@@ -397,7 +396,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             SetCurrentDirectoryA(PathString);
         }
     }
-#endif // PAPAYARELEASE
 
     HWND Window;
     // Create Window
@@ -406,11 +404,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
         WindowClass.lpfnWndProc = Win32MainWindowCallback;
         WindowClass.hInstance = Instance;
-#ifdef PAPAYARELEASE
         const char* IcoPath = "papaya.ico";
-#else
-        const char* IcoPath = "../../img/papaya.ico";
-#endif // PAPAYARELEASE
         WindowClass.hIcon = (HICON)LoadImage(0, IcoPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
         WindowClass.lpszClassName = "PapayaWindowClass";
 

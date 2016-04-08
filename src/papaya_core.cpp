@@ -406,11 +406,7 @@ void Core::Initialize(PapayaMemory* Mem)
         Mem->Colors[PapayaCol_AlphaGrid2]   = Color(92, 92, 94);
         Mem->Colors[PapayaCol_Transparent]  = Color(0, 0, 0, 0);
 
-#ifdef PAPAYARELEASE
         Mem->Textures[PapayaTex_UI] = LoadAndBindImage("ui.png");
-#else
-        Mem->Textures[PapayaTex_UI] = LoadAndBindImage("../../img/ui.png");
-#endif
     }
 
     const char* Vert;
