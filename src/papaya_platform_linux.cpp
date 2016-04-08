@@ -9,12 +9,12 @@
 #include "papaya_platform.h"
 #include "papaya_core.h"
 
-#include "glew/glew.h"
-#include "glew/glxew.h"
+#include "libs/glew/glew.h"
+#include "libs/glew/glxew.h"
 #include <X11/Xlib.h>
 #include <GL/glx.h>
-#include "imgui/imgui.h"
-#include "easytab.h"
+#include "libs/imgui/imgui.h"
+#include "libs/easytab.h"
 
 #define GLEW_NO_GLU
 

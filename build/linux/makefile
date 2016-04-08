@@ -1,15 +1,20 @@
-VPATH=../../src ../../src/imgui ../../src/glew
-SRCS=papaya_platform_linux.cpp \
-	 papaya_core.cpp \
-	 glew.cpp \
-	 imgui.cpp \
-	 single_libs.cpp \
-	 picker.cpp \
+VPATH=../../src 				\
+	  ../../src/core 			\
+	  ../../src/libs 			\
+	  ../../src/libs/imgui 		\
+	  ../../src/libs/glew
+
+SRCS=papaya_platform_linux.cpp 	\
+	 papaya_core.cpp 			\
+	 glew.cpp 					\
+	 imgui.cpp 					\
+	 single_header_libs.cpp 	\
+	 picker.cpp 				\
 	 prefs.cpp 
 
 OBJS=$(subst .cpp,.o,$(SRCS))
-CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
+CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security
 
 
 papaya: $(OBJS) img
