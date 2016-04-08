@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "libs/types.h"
 
 #if !defined(_DEBUG ) // TODO: Make this work for gcc
 #define PAPAYARELEASE // User-ready release mode
@@ -16,6 +16,5 @@ namespace Platform
     void SetCursorVisibility(bool Visible);
     char* OpenFileDialog();
     char* SaveFileDialog();
-
     double GetMilliseconds();
 }

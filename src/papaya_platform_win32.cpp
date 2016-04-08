@@ -9,10 +9,10 @@
 #include "papaya_platform.h"
 #include "papaya_core.h"
 
-#include "glew/glew.h"
-#include "glew/wglew.h"
-#include "imgui/imgui.h"
-#include "easytab.h"
+#include "libs/glew/glew.h"
+#include "libs/glew/wglew.h"
+#include "libs/imgui/imgui.h"
+#include "libs/easytab.h"
 
 #ifndef PAPAYARELEASE
 #define PAPAYA_DEFAULT_IMAGE "C:\\Users\\Apoorva\\Pictures\\ImageTest\\fruits.png"

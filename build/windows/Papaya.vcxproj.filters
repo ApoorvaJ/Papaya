@@ -13,6 +13,18 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{d3e5d53f-5914-4fc4-bf92-9824ce442910}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libs">
+      <UniqueIdentifier>{1a8d5a6e-3686-4b38-8087-4fc4be844e17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{f8bf9636-c6a4-4065-a6d3-05d66f8c1c61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\libs">
+      <UniqueIdentifier>{6ad8a5c7-8d4b-4369-85e1-9d28c4760174}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Papaya.rc">
@@ -31,73 +43,76 @@
     <ClCompile Include="..\..\src\papaya_core.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\picker.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\core\picker.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\prefs.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\core\prefs.cpp">
+      <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\single_libs.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\libs\single_header_libs.cpp">
+      <Filter>Source Files\libs</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\glew\glew.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\libs\glew\glew.cpp">
+      <Filter>Source Files\libs</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\imgui\imgui.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\libs\imgui\imgui.cpp">
+      <Filter>Source Files\libs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\imgui\imgui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\glew\glew.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\glew\wglew.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\easytab.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\gl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\mathlib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\papaya_core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\papaya_platform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\picker.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\core\picker.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\prefs.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\core\prefs.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\stb_image.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\easytab.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\stb_image_write.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\gl.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\stb_rect_pack.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\mathlib.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\stb_textedit.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\stb_image.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\stb_truetype.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\stb_image_write.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\timer.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\stb_rect_pack.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\types.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\libs\stb_textedit.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\stb_truetype.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\timer.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\types.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\glew\glew.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\glew\wglew.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\imgui\imconfig.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\imgui\imgui.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

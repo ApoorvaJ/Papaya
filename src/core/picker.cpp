@@ -1,7 +1,7 @@
 
 #include "picker.h"
-#include "imgui/imgui.h"
-#include "mathlib.h"
+#include "libs/imgui/imgui.h"
+#include "libs/mathlib.h"
 #include "papaya_core.h"
 
 void Picker::Init(PickerInfo* Picker)

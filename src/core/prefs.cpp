@@ -1,7 +1,7 @@
 
 #include "prefs.h"
 #include <stdio.h>
-#include "imgui/imgui.h"
+#include "libs/imgui/imgui.h"
 #include "papaya_core.h"
 
 void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window)

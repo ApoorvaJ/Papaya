@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types.h"
+#include "libs/types.h"
 
 // Implicit conversions between papaya_math.h structs and imgui.h structs
 #define IM_VEC2_CLASS_EXTRA                                               \

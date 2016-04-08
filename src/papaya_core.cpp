@@ -1,10 +1,11 @@
 
 #include "papaya_core.h"
-#include "glew/glew.h"
-#include "stb_image.h"
-#include "stb_image_write.h"
-#include "imgui/imgui.h"
-#include "mathlib.h"
+
+#include "libs/glew/glew.h"
+#include "libs/stb_image.h"
+#include "libs/stb_image_write.h"
+#include "libs/imgui/imgui.h"
+#include "libs/mathlib.h"
 
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {

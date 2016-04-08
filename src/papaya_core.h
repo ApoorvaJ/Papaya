@@ -1,11 +1,11 @@
 #pragma once
 
 #include "papaya_platform.h"
-#include "gl.h"
-#include "timer.h"
+#include "libs/gl.h"
+#include "libs/timer.h"
 
-#include "picker.h"
-#include "prefs.h"
+#include "core/picker.h"
+#include "core/prefs.h"
 
 struct ImDrawData;
 
