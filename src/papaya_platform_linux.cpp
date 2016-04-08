@@ -1,9 +1,20 @@
-#include "platform/types.h"
+
+#include <unistd.h>
+#include <limits.h>
+#include <errno.h>
+#include <stdio.h>
+#include <time.h>
+#include <gtk/gtk.h>
 
 #include "papaya_platform.h"
-#include "papaya_util.h"
 #include "papaya_core.h"
-#include "util/glew/glxew.h"
+
+#include "glew/glew.h"
+#include "glew/glxew.h"
+#include <X11/Xlib.h>
+#include <GL/glx.h>
+#include "imgui/imgui.h"
+#include "easytab.h"
 
 #define GLEW_NO_GLU
 
@@ -11,20 +22,7 @@
 #define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/transparent4k.png"
 #endif
 
-#include <X11/Xlib.h>
-#include <GL/glx.h>
-#include <unistd.h>
-#include <limits.h>
-#include <errno.h>
-#include <stdio.h>
-#include <time.h>
 
-#define EASYTAB_IMPLEMENTATION
-#include "lib/easytab.h"
-
-#ifdef USE_GTK
-#include <gtk/gtk.h>
-#endif
 
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
@@ -72,9 +70,6 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
-#ifndef USE_GTK
-    return 0;
-#else
     GtkWidget *Dialog = gtk_file_chooser_dialog_new(
         "Open File",
         NULL,
@@ -103,14 +98,10 @@ char* Platform::OpenFileDialog()
     gtk_widget_destroy(Dialog);
 
     return OutFilename;
-#endif
 }
 
 char* Platform::SaveFileDialog()
 {
-#ifndef USE_GTK
-    return 0;
-#else
     GtkWidget *Dialog = gtk_file_chooser_dialog_new(
         "Save File",
         NULL,
@@ -139,7 +130,6 @@ char* Platform::SaveFileDialog()
     gtk_widget_destroy(Dialog);
 
     return OutFilename;
-#endif
 }
 
 double Platform::GetMilliseconds()
@@ -148,9 +138,6 @@ double Platform::GetMilliseconds()
     clock_gettime(CLOCK_MONOTONIC, &Time);
     return (double)(Time.tv_sec * 1000 + Time.tv_nsec / 1000000);
 }
-
-#define TIMER_IMPLEMENTATION
-#include "platform/timer.h"
 
 // =================================================================================================
 
@@ -164,10 +151,8 @@ int main(int argc, char **argv)
     XVisualInfo* VisualInfo;
     Atom WmDeleteMessage;
 
-#ifdef USE_GTK
     // Initialize GTK for Open/Save file dialogs
     gtk_init(&argc, &argv);
-#endif
 
     // Set path to executable path
     {
@@ -402,10 +387,8 @@ int main(int argc, char **argv)
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
 
-#ifdef USE_GTK
         // Run a GTK+ loop, and *don't* block if there are no events pending
         gtk_main_iteration_do(FALSE);
-#endif
 
         // End Of Frame
         Timer::StopTime(&Mem.Debug.Timers[Timer_Frame]);
