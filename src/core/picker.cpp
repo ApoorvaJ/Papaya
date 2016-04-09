@@ -9,7 +9,7 @@ void Picker::Init(PickerInfo* Picker)
     Picker->CurrentColor = Color(220, 163, 89);
     Picker->Open         = false;
     Picker->Pos          = Vec2(34, 120);
-    Picker->Size         = Vec2(292, 331);
+    Picker->Size         = Vec2(292, 350);
     Picker->HueStripPos  = Vec2(259, 42);
     Picker->HueStripSize = Vec2(30, 256);
     Picker->SVBoxPos     = Vec2(0, 42);
@@ -82,15 +82,39 @@ void Picker::Show(PickerInfo* Picker, Color* Colors, uint32 BlankTexture) // TOD
     {
         ImGui::BeginChild("HSV Gradients", Vec2(315, 258));
         ImGui::EndChild();
-        int32 col[3];
-        col[0] = (int)(Picker->NewColor.r * 255.0f);
-        col[1] = (int)(Picker->NewColor.g * 255.0f);
-        col[2] = (int)(Picker->NewColor.b * 255.0f);
-        if (ImGui::InputInt3("RGB", col))
+        int32 rgbColor[3];
+        rgbColor[0] = (int32)(Picker->NewColor.r * 255.0f);
+        rgbColor[1] = (int32)(Picker->NewColor.g * 255.0f);
+        rgbColor[2] = (int32)(Picker->NewColor.b * 255.0f);
+        if (ImGui::InputInt3("RGB", rgbColor))
         {
-            Picker->NewColor = Color(col[0], col[1], col[2]); // TODO: Clamping
+            int32 r = Math::Clamp(rgbColor[0], 0, 255);
+            int32 g = Math::Clamp(rgbColor[1], 0, 255);
+            int32 b = Math::Clamp(rgbColor[2], 0, 255);
+            Picker->NewColor = Color(r, g, b);
             Math::RGBtoHSV(Picker->NewColor.r, Picker->NewColor.g, Picker->NewColor.b,
-                    Picker->CursorH, Picker->CursorSV.x, Picker->CursorSV.y);
+                Picker->CursorH, Picker->CursorSV.x, Picker->CursorSV.y);
+        }
+        char hexColor[6 + 1]; // null-terminated
+        snprintf(hexColor, sizeof(hexColor), "%02x%02x%02x",
+            (int32)(Picker->NewColor.r * 255.0f),
+            (int32)(Picker->NewColor.g * 255.0f),
+            (int32)(Picker->NewColor.b * 255.0f));
+        if (ImGui::InputText("Hex", hexColor, sizeof(hexColor), ImGuiInputTextFlags_CharsHexadecimal))
+        {
+            int32 r = 0, g = 0, b = 0;
+            switch (strlen(hexColor))
+            {
+                case 1: sscanf(hexColor, "%1x", &b); break;
+                case 2: sscanf(hexColor, "%2x", &b); break;
+                case 3: sscanf(hexColor, "%1x%2x", &g, &b); break;
+                case 4: sscanf(hexColor, "%2x%2x", &g, &b); break;
+                case 5: sscanf(hexColor, "%1x%2x%2x", &r, &g, &b); break;
+                case 6: sscanf(hexColor, "%2x%2x%2x", &r, &g, &b); break;
+            }
+            Picker->NewColor = Color(r, g, b);
+            Math::RGBtoHSV(Picker->NewColor.r, Picker->NewColor.g, Picker->NewColor.b,
+                Picker->CursorH, Picker->CursorSV.x, Picker->CursorSV.y);
         }
     }
     ImGui::End();
