@@ -8,7 +8,12 @@ Papaya is a free and open-source GPU-powered image editor, built with the follow
 
 **Beautiful:** While most other open editors use bulky UI toolkits, Papaya is rendered entirely on the GPU, with pixel-perfect precision and complete control over the visual design. I'm designing Papaya to be as beautiful as the images it will help create.
 
-**Cross-platform:** Papaya runs natively on Windows and Linux.
+**Cross-platform:** Papaya runs natively on Windows and Linux
+
+Download
+--------
+
+You can download a stable, inital version of Papaya on the [Releases page](https://github.com/ApoorvaJ/Papaya/releases).
 
 Development status
 ------------------
@@ -26,16 +31,19 @@ For development updates, you can follow [@PapayaEditor](https://twitter.com/Papa
 Building
 --------
 
-(I am currently in the process of changing the build process a little, so the following instructions might be a bit rough around the edges.)
-
 To build on Linux, go to `build/linux/` in your Papaya folder, and run the `make` command in your terminal. Papaya currently depends on GTK+ on Linux, for open/save dialog boxes, so you will need to install that before building Papaya.
 
 To build on Windows, go to `build/windows` and open the Visual Studio 2015 solution. You should also be able build successfully in older versions of Visual Studio by changing the `Platform Toolset` in the Project Properties page in the General tab.
 
+Contributing
+------------
+
+Papaya welcomes your contributions. If you are interested in helping, please read the pertinent [wiki page](https://github.com/ApoorvaJ/Papaya/wiki/Contributing-to-Papaya), an [overview of the structure of the project](https://github.com/ApoorvaJ/Papaya/wiki/Project-structure), and check out the [open issues](https://github.com/ApoorvaJ/Papaya/issues).
+
 Credits
 ------
 
-Developed by [Apoorva Joshi](http://apoorvaj.io/).
+Developed by [Apoorva Joshi](http://apoorvaj.io/) with the help of many wonderful people who have contributed directly and indirectly. I plan to have a more detailed credits section in-application when we ship a more substantial version.
 
 Uses Omar Cornut's [ImGui](https://github.com/ocornut/imgui) for UI.
 
