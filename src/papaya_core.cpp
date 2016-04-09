@@ -76,11 +76,7 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushI
 
     Timer::StartTime(&Mem->Debug.Timers[Timer_GetUndoImage]);
     memcpy(Buf, &Data, sizeof(UndoData));
-    GLCHK( glFinish() ); // TODO: Required?
-
     GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
-
-    GLCHK( glFinish() ); // TODO: Required?
     Timer::StopTime(&Mem->Debug.Timers[Timer_GetUndoImage]);
 
     if (Data.IsSubRect)
@@ -941,10 +937,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
                     if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
                     {
-                        GLCHK( glFinish() ); // TODO: Is this necessary?
                         GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
                         GLCHK( glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture) );
-                        GLCHK( glFinish() ); // TODO: Is this necessary?
 
                         int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
                         if (!Result)
