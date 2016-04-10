@@ -292,7 +292,10 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             }
         } break;
 
-        // WM_NCHITTEST
+        case WM_NCCALCSIZE:
+        {
+            return 0;
+        } break;
 
         case WM_NCHITTEST:
         {
@@ -416,18 +419,18 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         Window =
             CreateWindowExA(
-            0,                                                          // Extended window style
-            WindowClass.lpszClassName,                                  // Class name,
-            "Papaya",                                                   // Name,
-            WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,    // Window style
-            CW_USEDEFAULT,                                              // X,
-            CW_USEDEFAULT,                                              // Y,
-            CW_USEDEFAULT,                                              // Width,
-            CW_USEDEFAULT,                                              // Height,
-            0,                                                          // Window Parent,
-            0,                                                          // Menu,
-            Instance,                                                   // Handle to the instance,
-            0);                                                         // lpParam
+            0,                                                            // Extended window style
+            WindowClass.lpszClassName,                                    // Class name,
+            "Papaya",                                                     // Name,
+            WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE, // Window style
+            CW_USEDEFAULT,                                                // X,
+            CW_USEDEFAULT,                                                // Y,
+            CW_USEDEFAULT,                                                // Width,
+            CW_USEDEFAULT,                                                // Height,
+            0,                                                            // Window Parent,
+            0,                                                            // Menu,
+            Instance,                                                     // Handle to the instance,
+            0);                                                           // lpParam
 
         if (!Window)
         {
