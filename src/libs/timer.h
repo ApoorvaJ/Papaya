@@ -2,9 +2,28 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#ifdef __linux__ // TODO: remove platform-specific directives
+// TODO: Move rdtsc code into platform layer?
+#ifdef __linux__
 #include <x86intrin.h>
-#endif
+#elif defined(__APPLE__)
+    #if defined(__x86_64__)
+        static __inline__ unsigned long long __rdtsc()
+        {
+            unsigned Hi, Lo;
+            __asm__ __volatile__("rdtsc" : "=a"(Lo), "=d"(Hi));
+            return ((unsigned long long)Lo) | (((unsigned long long)Hi) << 32);
+        }
+    #elif defined(__i386__)
+        static __inline__ unsigned long long __rdtsc()
+        {
+            unsigned long long int Result;
+            __asm__ volatile(".byte 0x0f, 0x31" : "=A"(Result));
+            return Result;
+        }
+    #else
+        #error "No __rdtsc implementation"
+    #endif
+#endif // __APPLE__
 
 // TODO: No need to expose the TimerInfo struct to the caller. Improve API.
 

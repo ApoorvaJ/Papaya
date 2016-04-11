@@ -1512,10 +1512,10 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
             ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
-            ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %lu", BaseOffset);
-            ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %lu", CurrOffset);
-            //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %lu", LastOffset);
-            ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %lu", TopOffset);
+            ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %llu", BaseOffset);
+            ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %llu", CurrOffset);
+            //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %llu", LastOffset);
+            ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %llu", TopOffset);
             ImGui::Text         ("Count   %lu", Mem->Doc.Undo.Count);
             ImGui::Text         ("Index   %lu", Mem->Doc.Undo.CurrentIndex);
 
@@ -1674,7 +1674,7 @@ EndOfDoc:
                 for (int32 i = 0; i < Timer_COUNT; i++)
                 {
                     ImGui::Text(TimerNames[i]);                                 ImGui::NextColumn();
-                    ImGui::Text("%lu", Mem->Debug.Timers[i].ElapsedCycles);     ImGui::NextColumn();
+                    ImGui::Text("%llu", Mem->Debug.Timers[i].ElapsedCycles);    ImGui::NextColumn();
                     ImGui::Text("%f" , Mem->Debug.Timers[i].ElapsedMs);         ImGui::NextColumn();
                 }
 
