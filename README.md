@@ -10,7 +10,7 @@ Papaya is a free and open-source GPU-powered image editor, built with the follow
 
 **Cross-platform:** Papaya runs natively on Windows, Linux and OS X.
 
-This repository contains the Linux and Windows versions of Papaya. You can find the OS X version at [chemecse/Papaya](https://github.com/chemecse/Papaya).
+This repository contains the Linux and Windows versions of Papaya. You can find the OS X version at [chemecse/Papaya](https://github.com/chemecse/Papaya/tree/osx-dev).
 
 Download
 --------
