@@ -8,7 +8,9 @@ Papaya is a free and open-source GPU-powered image editor, built with the follow
 
 **Beautiful:** While most other open editors use bulky UI toolkits, Papaya is rendered entirely on the GPU, with pixel-perfect precision and complete control over the visual design. I'm designing Papaya to be as beautiful as the images it will help create.
 
-**Cross-platform:** Papaya runs natively on Windows and Linux
+**Cross-platform:** Papaya runs natively on Windows, Linux and OS X.
+
+This repository contains the Linux and Windows versions of Papaya. You can find the OS X version at [chemecse/Papaya](https://github.com/chemecse/Papaya).
 
 Download
 --------
