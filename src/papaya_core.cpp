@@ -1089,7 +1089,11 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     if (Mem->Misc.PrefsOpen) { Prefs::ShowPanel(&Mem->Picker, Mem->Colors, Mem->Window); }
 
     // Color Picker
-    if (Mem->Picker.Open) { Picker::Show(&Mem->Picker, Mem->Colors, Mem->Textures[PapayaTex_UI]); }
+    if (Mem->Picker.Open)
+    {
+        Picker::UpdateAndRender(&Mem->Picker, Mem->Colors, 
+                Mem->Mouse, Mem->Textures[PapayaTex_UI]);
+    }
 
     if (!Mem->Doc.TextureID) { goto EndOfDoc; }
 
@@ -1718,83 +1722,23 @@ EndOfDoc:
     ImGui::Render(Mem);
 
     // Color Picker Panel
+    if (Mem->Picker.Open)
     {
-        if (Mem->Picker.Open)
-        {
-            // Update hue picker
-            {
-                Vec2 Pos = Mem->Picker.Pos + Mem->Picker.HueStripPos;
+        // TODO: Investigate how to move this custom shaded quad drawing into
+        //       ImGui to get correct draw order.
 
-                if (Mem->Mouse.Pressed[0] &&
-                    Mem->Mouse.Pos.x > Pos.x &&
-                    Mem->Mouse.Pos.x < Pos.x + Mem->Picker.HueStripSize.x &&
-                    Mem->Mouse.Pos.y > Pos.y &&
-                    Mem->Mouse.Pos.y < Pos.y + Mem->Picker.HueStripSize.y)
-                {
-                    Mem->Picker.DraggingHue = true;
-                }
-                else if (Mem->Mouse.Released[0] && Mem->Picker.DraggingHue)
-                {
-                    Mem->Picker.DraggingHue = false;
-                }
-
-                if (Mem->Picker.DraggingHue)
-                {
-                    Mem->Picker.CursorH = 1.0f - (Mem->Mouse.Pos.y - Pos.y) / 256.0f;
-                    Mem->Picker.CursorH = Math::Clamp(Mem->Picker.CursorH, 0.0f, 1.0f);
-                }
-
-            }
-
-            // Update saturation-value picker
-            {
-                Vec2 Pos = Mem->Picker.Pos + Mem->Picker.SVBoxPos;
-
-                if (Mem->Mouse.Pressed[0] &&
-                    Mem->Mouse.Pos.x > Pos.x &&
-                    Mem->Mouse.Pos.x < Pos.x + Mem->Picker.SVBoxSize.x &&
-                    Mem->Mouse.Pos.y > Pos.y &&
-                    Mem->Mouse.Pos.y < Pos.y + Mem->Picker.SVBoxSize.y)
-                {
-                    Mem->Picker.DraggingSV = true;
-                }
-                else if (Mem->Mouse.Released[0] && Mem->Picker.DraggingSV)
-                {
-                    Mem->Picker.DraggingSV = false;
-                }
-
-                if (Mem->Picker.DraggingSV)
-                {
-                    Mem->Picker.CursorSV.x =        (Mem->Mouse.Pos.x - Pos.x) / 256.0f;
-                    Mem->Picker.CursorSV.y = 1.0f - (Mem->Mouse.Pos.y - Pos.y) / 256.0f;
-                    Mem->Picker.CursorSV.x = Math::Clamp(Mem->Picker.CursorSV.x, 0.0f, 1.0f);
-                    Mem->Picker.CursorSV.y = Math::Clamp(Mem->Picker.CursorSV.y, 0.0f, 1.0f);
-
-                }
-            }
-
-            // Update new color
-            {
-                float r, g, b;
-                Math::HSVtoRGB(Mem->Picker.CursorH, Mem->Picker.CursorSV.x, Mem->Picker.CursorSV.y, r, g, b);
-                Mem->Picker.NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
-                    Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
-                    Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
-            }
-
-            // Draw hue picker
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip], false,
+        // Draw hue picker
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip], false,
                 2,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Float, Mem->Picker.CursorH);
 
-            // Draw saturation-value picker
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox], false,
+        // Draw saturation-value picker
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox], false,
                 3,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Float, Mem->Picker.CursorH,
                 UniformType_Vec2, Mem->Picker.CursorSV);
-        }
     }
 
     // Last mouse info
