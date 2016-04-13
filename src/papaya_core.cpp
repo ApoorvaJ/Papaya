@@ -187,9 +187,18 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
 {
     Timer::StartTime(&Mem->Debug.Timers[Timer_ImageOpen]);
 
-    // Load image
+    // Load/create image
     {
-        uint8* Texture = stbi_load(Path, &Mem->Doc.Width, &Mem->Doc.Height, &Mem->Doc.ComponentsPerPixel, 4);
+        uint8* Texture;
+        if (Path)
+        {
+            Texture = stbi_load(Path, &Mem->Doc.Width, &Mem->Doc.Height,
+                    &Mem->Doc.ComponentsPerPixel, 4);
+        }
+        else
+        {
+            Texture = (uint8*)calloc(1, Mem->Doc.Width * Mem->Doc.Height * 4);
+        }
 
         if (!Texture) { return false; }
 
@@ -915,20 +924,31 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             if (ImGui::BeginMenu("FILE"))
             {
                 Mem->Misc.MenuOpen = true;
-                if (ImGui::MenuItem("Open"))
-                {
-                    char* Path = Platform::OpenFileDialog();
-                    if (Path)
-                    {
-                        CloseDocument(Mem);
-                        OpenDocument(Path, Mem);
-                        free(Path);
-                    }
-                }
 
-                if (ImGui::MenuItem("Close"))
+                if (Mem->Doc.TextureID) // A document is already open
+                { 
+                    if (ImGui::MenuItem("Close")) { CloseDocument(Mem); }
+                }
+                else // No document open
                 {
-                    CloseDocument(Mem);
+                    if (ImGui::MenuItem("New"))
+                    {
+                        // TODO: New Document dialog box
+                        Mem->Doc.Width  = 800;
+                        Mem->Doc.Height = 600;
+                        Mem->Doc.ComponentsPerPixel = 4;
+                        OpenDocument(0, Mem);
+                    }
+
+                    if (ImGui::MenuItem("Open"))
+                    {
+                        char* Path = Platform::OpenFileDialog();
+                        if (Path)
+                        {
+                            OpenDocument(Path, Mem);
+                            free(Path);
+                        }
+                    }
                 }
 
                 if (ImGui::MenuItem("Save"))
