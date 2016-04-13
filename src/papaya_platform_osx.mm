@@ -1,7 +1,3 @@
-#include "papaya_platform.h"
-#include "papaya_core.h"
-#include "libs/imgui/imgui.h"
-
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/OpenGL.h>
 #import <CoreVideo/CVDisplayLink.h>
@@ -10,6 +6,10 @@
 #include <libproc.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "papaya_platform.h"
+#include "papaya_core.h"
+#include "libs/imgui/imgui.h"
 
 // NOTES:
 //  + window resizing is currently disabled because Cocoa's NSOpenGLView
