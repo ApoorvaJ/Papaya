@@ -376,6 +376,8 @@ void Core::Initialize(PapayaMemory* Mem)
 {
     // Init values and load textures
     {
+        Mem->Doc.Width = Mem->Doc.Height = 512;
+
         Mem->CurrentTool    = PapayaTool_Brush;
 
         Mem->Brush.Diameter    = 0;
@@ -931,15 +933,6 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 }
                 else // No document open
                 {
-                    if (ImGui::MenuItem("New"))
-                    {
-                        // TODO: New Document dialog box
-                        Mem->Doc.Width  = 800;
-                        Mem->Doc.Height = 600;
-                        Mem->Doc.ComponentsPerPixel = 4;
-                        OpenDocument(0, Mem);
-                    }
-
                     if (ImGui::MenuItem("Open"))
                     {
                         char* Path = Platform::OpenFileDialog();
@@ -1115,8 +1108,6 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 Mem->Mouse, Mem->Textures[PapayaTex_UI]);
     }
 
-    if (!Mem->Doc.TextureID) { goto EndOfDoc; }
-
     // Tool Param Bar
     {
         ImGui::SetNextWindowSize(ImVec2((float)Mem->Window.Width - 37, 30));
@@ -1143,7 +1134,34 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         bool Show = true;
         ImGui::Begin("Tool param bar", &Show, WindowFlags);
 
-        if (Mem->CurrentTool == PapayaTool_Brush)
+        // New document options. Might convert into modal window later.
+        if (!Mem->Doc.TextureID)
+        {
+            // Size
+            {
+                int32 size[2];
+                size[0] = Mem->Doc.Width;
+                size[1] = Mem->Doc.Height;
+                ImGui::PushItemWidth(85);
+                ImGui::InputInt2("Size", size);
+                ImGui::PopItemWidth();
+                Mem->Doc.Width  = Math::Clamp(size[0], 1, 9000);
+                Mem->Doc.Height = Math::Clamp(size[1], 1, 9000);
+                ImGui::SameLine(ImGui::GetWindowWidth() - 125); // TODO: Magic number alert
+            }
+
+            // "New" button
+            {
+                // ImGui::PushItemWidth(85);
+                if (ImGui::Button("Create Image"))
+                {
+                    Mem->Doc.ComponentsPerPixel = 4;
+                    OpenDocument(0, Mem);
+                }
+                // ImGui::PopItemWidth();
+            }
+        }
+        else if (Mem->CurrentTool == PapayaTool_Brush && Mem->Doc.TextureID)
         {
             ImGui::PushItemWidth(85);
             ImGui::InputInt("Diameter", &Mem->Brush.Diameter);
@@ -1173,6 +1191,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(5);
     }
+
+    if (!Mem->Doc.TextureID) { goto EndOfDoc; }
 
     // Brush tool
     {
