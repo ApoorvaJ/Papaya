@@ -1147,13 +1147,13 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 ImGui::PopItemWidth();
                 Mem->Doc.Width  = Math::Clamp(size[0], 1, 9000);
                 Mem->Doc.Height = Math::Clamp(size[1], 1, 9000);
-                ImGui::SameLine(ImGui::GetWindowWidth() - 125); // TODO: Magic number alert
+                ImGui::SameLine(ImGui::GetWindowWidth() - 104); // TODO: Magic number alert
             }
 
             // "New" button
             {
                 // ImGui::PushItemWidth(85);
-                if (ImGui::Button("Create Image"))
+                if (ImGui::Button("New Image"))
                 {
                     Mem->Doc.ComponentsPerPixel = 4;
                     OpenDocument(0, Mem);
