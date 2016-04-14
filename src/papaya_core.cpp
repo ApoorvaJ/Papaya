@@ -388,12 +388,13 @@ void Core::Initialize(PapayaMemory* Mem)
 
         Picker::Init(&Mem->Picker);
 
-        Mem->Misc.DrawCanvas     = true;
-        Mem->Misc.DrawOverlay    = false;
-        Mem->Misc.ShowMetrics    = false;
-        Mem->Misc.ShowUndoBuffer = false;
-        Mem->Misc.MenuOpen       = false;
-        Mem->Misc.PrefsOpen      = false;
+        Mem->Misc.DrawCanvas       = true;
+        Mem->Misc.DrawOverlay      = false;
+        Mem->Misc.ShowMetrics      = false;
+        Mem->Misc.ShowUndoBuffer   = false;
+        Mem->Misc.MenuOpen         = false;
+        Mem->Misc.PrefsOpen        = false;
+        Mem->Misc.PreviewImageSize = false;
 
         float OrthoMtx[4][4] =
         {
@@ -683,6 +684,34 @@ void Core::Initialize(PapayaMemory* Mem)
 
         GL::InitQuad(Mem->Meshes[PapayaMesh_PickerHStrip],
             Mem->Picker.Pos + Mem->Picker.HueStripPos, Mem->Picker.HueStripSize, GL_STATIC_DRAW);
+    }
+
+    // Imaze size preview shader
+    {
+        const char* Frag =
+            "   #version 120                                                    \n"
+            "                                                                   \n"
+            "   uniform float Width;                                            \n" // Uniforms[1]
+            "   uniform float Height;                                           \n" // Uniforms[2]
+            "                                                                   \n"
+            "   varying  vec2 Frag_UV;                                          \n"
+            "                                                                   \n"
+            "   void main()                                                     \n"
+            "   {                                                               \n"
+            "       float d = mod(Frag_UV.x * Width + Frag_UV.y * Height, 150); \n"
+            "       if (d < 75)                                                 \n"
+            "           gl_FragColor = vec4(0.22, 0.22, 0.22, 1);               \n"
+            "       else                                                        \n"
+            "           gl_FragColor = vec4(0.18, 0.18, 0.18, 1);               \n"
+            "   }                                                               \n";
+
+        GL::CompileShader(Mem->Shaders[PapayaShader_ImageSizePreview], __FILE__, __LINE__,
+            Vert, Frag, 2, 3,
+            "Position", "UV",
+            "ProjMtx", "Width", "Height");
+
+        GL::InitQuad(Mem->Meshes[PapayaMesh_ImageSizePreview],
+            Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
     // Alpha grid shader
@@ -1147,6 +1176,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 ImGui::PopItemWidth();
                 Mem->Doc.Width  = Math::Clamp(size[0], 1, 9000);
                 Mem->Doc.Height = Math::Clamp(size[1], 1, 9000);
+                ImGui::SameLine();
+                ImGui::Checkbox("Preview", &Mem->Misc.PreviewImageSize);
                 ImGui::SameLine(ImGui::GetWindowWidth() - 104); // TODO: Magic number alert
             }
 
@@ -1190,6 +1221,20 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(5);
+    }
+
+    // Image size preview
+    if (!Mem->Doc.TextureID && Mem->Misc.PreviewImageSize)
+    {
+        GL::TransformQuad(Mem->Meshes[PapayaMesh_ImageSizePreview],
+            Vec2((Mem->Window.Width - Mem->Doc.Width) / 2, (Mem->Window.Height - Mem->Doc.Height) / 2),
+            Vec2(Mem->Doc.Width, Mem->Doc.Height));
+
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_ImageSizePreview], Mem->Shaders[PapayaShader_ImageSizePreview], true,
+            3,
+            UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+            UniformType_Float, (float) Mem->Doc.Width,
+            UniformType_Float, (float) Mem->Doc.Height);
     }
 
     if (!Mem->Doc.TextureID) { goto EndOfDoc; }
