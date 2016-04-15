@@ -930,6 +930,26 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 if (Mem->Doc.TextureID) // A document is already open
                 { 
                     if (ImGui::MenuItem("Close")) { CloseDocument(Mem); }
+                    if (ImGui::MenuItem("Save"))
+                    {
+                        char* Path = Platform::SaveFileDialog();
+                        uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
+                        if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
+                        {
+                            GLCHK(glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID));
+                            GLCHK(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture));
+
+                            int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
+                            if (!Result)
+                            {
+                                // TODO: Log: Save failed
+                                Platform::Print("Save failed\n");
+                            }
+
+                            free(Texture);
+                            free(Path);
+                        }
+                    }
                 }
                 else // No document open
                 {
@@ -941,27 +961,6 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                             OpenDocument(Path, Mem);
                             free(Path);
                         }
-                    }
-                }
-
-                if (ImGui::MenuItem("Save"))
-                {
-                    char* Path = Platform::SaveFileDialog();
-                    uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
-                    if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
-                    {
-                        GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
-                        GLCHK( glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture) );
-
-                        int32 Result = stbi_write_png(Path, Mem->Doc.Width, Mem->Doc.Height, 4, Texture, 4 * Mem->Doc.Width);
-                        if (!Result)
-                        {
-                            // TODO: Log: Save failed
-                            Platform::Print("Save failed\n");
-                        }
-
-                        free(Texture);
-                        free(Path);
                     }
                 }
                 ImGui::Separator();
