@@ -388,12 +388,13 @@ void Core::Initialize(PapayaMemory* Mem)
 
         Picker::Init(&Mem->Picker);
 
-        Mem->Misc.DrawCanvas     = true;
-        Mem->Misc.DrawOverlay    = false;
-        Mem->Misc.ShowMetrics    = false;
-        Mem->Misc.ShowUndoBuffer = false;
-        Mem->Misc.MenuOpen       = false;
-        Mem->Misc.PrefsOpen      = false;
+        Mem->Misc.DrawCanvas       = true;
+        Mem->Misc.DrawOverlay      = false;
+        Mem->Misc.ShowMetrics      = false;
+        Mem->Misc.ShowUndoBuffer   = false;
+        Mem->Misc.MenuOpen         = false;
+        Mem->Misc.PrefsOpen        = false;
+        Mem->Misc.PreviewImageSize = false;
 
         float OrthoMtx[4][4] =
         {
@@ -404,14 +405,16 @@ void Core::Initialize(PapayaMemory* Mem)
         };
         memcpy(Mem->Window.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
 
-        Mem->Colors[PapayaCol_Clear]        = Color(45, 45, 48);
-        Mem->Colors[PapayaCol_Workspace]    = Color(30, 30, 30);
-        Mem->Colors[PapayaCol_Button]       = Color(92, 92, 94);
-        Mem->Colors[PapayaCol_ButtonHover]  = Color(64, 64, 64);
-        Mem->Colors[PapayaCol_ButtonActive] = Color(0, 122, 204);
-        Mem->Colors[PapayaCol_AlphaGrid1]   = Color(141, 141, 142);
-        Mem->Colors[PapayaCol_AlphaGrid2]   = Color(92, 92, 94);
-        Mem->Colors[PapayaCol_Transparent]  = Color(0, 0, 0, 0);
+        Mem->Colors[PapayaCol_Clear]             = Color(45, 45, 48);
+        Mem->Colors[PapayaCol_Workspace]         = Color(30, 30, 30);
+        Mem->Colors[PapayaCol_Button]            = Color(92, 92, 94);
+        Mem->Colors[PapayaCol_ButtonHover]       = Color(64, 64, 64);
+        Mem->Colors[PapayaCol_ButtonActive]      = Color(0, 122, 204);
+        Mem->Colors[PapayaCol_AlphaGrid1]        = Color(141, 141, 142);
+        Mem->Colors[PapayaCol_AlphaGrid2]        = Color(92, 92, 94);
+        Mem->Colors[PapayaCol_ImageSizePreview1] = Color(55, 55, 55);
+        Mem->Colors[PapayaCol_ImageSizePreview2] = Color(45, 45, 45);
+        Mem->Colors[PapayaCol_Transparent]       = Color(0, 0, 0, 0);
 
         Mem->Textures[PapayaTex_UI] = LoadAndBindImage("ui.png");
     }
@@ -683,6 +686,36 @@ void Core::Initialize(PapayaMemory* Mem)
 
         GL::InitQuad(Mem->Meshes[PapayaMesh_PickerHStrip],
             Mem->Picker.Pos + Mem->Picker.HueStripPos, Mem->Picker.HueStripSize, GL_STATIC_DRAW);
+    }
+
+    // Imaze size preview shader
+    {
+        const char* Frag =
+            "   #version 120                                                    \n"
+            "                                                                   \n"
+            "   uniform vec4  Color1;                                           \n" // Uniforms[1]
+            "   uniform vec4  Color2;                                           \n" // Uniforms[2]
+            "   uniform float Width;                                            \n" // Uniforms[3]
+            "   uniform float Height;                                           \n" // Uniforms[4]
+            "                                                                   \n"
+            "   varying  vec2 Frag_UV;                                          \n"
+            "                                                                   \n"
+            "   void main()                                                     \n"
+            "   {                                                               \n"
+            "       float d = mod(Frag_UV.x * Width + Frag_UV.y * Height, 150); \n"
+            "       if (d < 75)                                                 \n"
+            "           gl_FragColor = Color1;                                  \n"
+            "       else                                                        \n"
+            "           gl_FragColor = Color2;                                  \n"
+            "   }                                                               \n";
+
+        GL::CompileShader(Mem->Shaders[PapayaShader_ImageSizePreview], __FILE__, __LINE__,
+            Vert, Frag, 2, 5,
+            "Position", "UV",
+            "ProjMtx", "Color1", "Color2", "Width", "Height");
+
+        GL::InitQuad(Mem->Meshes[PapayaMesh_ImageSizePreview],
+            Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
     // Alpha grid shader
@@ -1146,6 +1179,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 ImGui::PopItemWidth();
                 Mem->Doc.Width  = Math::Clamp(size[0], 1, 9000);
                 Mem->Doc.Height = Math::Clamp(size[1], 1, 9000);
+                ImGui::SameLine();
+                ImGui::Checkbox("Preview", &Mem->Misc.PreviewImageSize);
                 ImGui::SameLine(ImGui::GetWindowWidth() - 104); // TODO: Magic number alert
             }
 
@@ -1189,6 +1224,23 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
         ImGui::PopStyleVar(3);
         ImGui::PopStyleColor(5);
+    }
+
+    // Image size preview
+    if (!Mem->Doc.TextureID && Mem->Misc.PreviewImageSize)
+    {
+        int32 TopMargin = 53; // TODO: Put common layout constants in struct
+        GL::TransformQuad(Mem->Meshes[PapayaMesh_ImageSizePreview],
+            Vec2((Mem->Window.Width - Mem->Doc.Width) / 2, TopMargin + (Mem->Window.Height - TopMargin - Mem->Doc.Height) / 2),
+            Vec2(Mem->Doc.Width, Mem->Doc.Height));
+
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_ImageSizePreview], Mem->Shaders[PapayaShader_ImageSizePreview], true,
+            5,
+            UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+            UniformType_Color, Mem->Colors[PapayaCol_ImageSizePreview1],
+            UniformType_Color, Mem->Colors[PapayaCol_ImageSizePreview2],
+            UniformType_Float, (float) Mem->Doc.Width,
+            UniformType_Float, (float) Mem->Doc.Height);
     }
 
     if (!Mem->Doc.TextureID) { goto EndOfDoc; }

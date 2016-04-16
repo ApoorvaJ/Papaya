@@ -25,6 +25,8 @@ enum PapayaCol_
     PapayaCol_ButtonActive,
     PapayaCol_AlphaGrid1,
     PapayaCol_AlphaGrid2,
+    PapayaCol_ImageSizePreview1,
+    PapayaCol_ImageSizePreview2,
     PapayaCol_Transparent,
     PapayaCol_COUNT
 };
@@ -33,6 +35,7 @@ enum PapayaMesh_
 {
     PapayaMesh_ImGui,
     PapayaMesh_Canvas,
+    PapayaMesh_ImageSizePreview,
     PapayaMesh_AlphaGrid,
     PapayaMesh_BrushCursor,
     PapayaMesh_EyeDropperCursor,
@@ -46,6 +49,7 @@ enum PapayaMesh_
 enum PapayaShader_
 {
     PapayaShader_ImGui,
+    PapayaShader_ImageSizePreview,
     PapayaShader_Brush,
     PapayaShader_BrushCursor,
     PapayaShader_EyeDropperCursor,
@@ -186,6 +190,7 @@ struct MiscInfo // TODO: This entire struct is for stuff to be refactored at som
     bool ShowUndoBuffer;
     bool MenuOpen;
     bool PrefsOpen;
+    bool PreviewImageSize;
 };
 
 struct PapayaMemory
