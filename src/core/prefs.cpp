@@ -59,8 +59,10 @@ void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window)
                 "Button hover color",
                 "Button pressed color",
                 "Alpha grid color 1",
-                "Alpha grid color 2" };
-            for (int32 i = PapayaCol_Clear; i <= PapayaCol_AlphaGrid2; i++)
+                "Alpha grid color 2",
+                "Image size preview color 1",
+                "Image size preview color 2" };
+            for (int32 i = PapayaCol_Clear; i <= PapayaCol_ImageSizePreview2; i++)
             {
                 char str[8];
                 Color col = Colors[i];

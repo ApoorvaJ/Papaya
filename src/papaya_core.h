@@ -25,6 +25,8 @@ enum PapayaCol_
     PapayaCol_ButtonActive,
     PapayaCol_AlphaGrid1,
     PapayaCol_AlphaGrid2,
+    PapayaCol_ImageSizePreview1,
+    PapayaCol_ImageSizePreview2,
     PapayaCol_Transparent,
     PapayaCol_COUNT
 };
