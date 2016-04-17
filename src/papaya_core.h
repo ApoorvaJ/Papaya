@@ -222,5 +222,6 @@ namespace Core
     void UpdateAndRender(PapayaMemory* Mem);
     void RenderImGui(ImDrawData* DrawData, void* MemPtr);
     bool OpenDocument(char* Path, PapayaMemory* Mem);
+    void CenterDocument(PapayaMemory* Mem);
     void CloseDocument(PapayaMemory* Mem);
 }
