@@ -6,6 +6,7 @@
 #include "libs/stb_image_write.h"
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
+#include "libs/linmath.h"
 
 internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
 {
@@ -378,7 +379,7 @@ void Core::Initialize(PapayaMemory* Mem)
     {
         Mem->Doc.Width = Mem->Doc.Height = 512;
 
-        Mem->CurrentTool    = PapayaTool_Brush;
+        Mem->CurrentTool = PapayaTool_CropRotate;
 
         Mem->Brush.Diameter    = 0;
         Mem->Brush.MaxDiameter = 9999;
@@ -961,7 +962,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 Mem->Misc.MenuOpen = true;
 
                 if (Mem->Doc.TextureID) // A document is already open
-                { 
+                {
                     if (ImGui::MenuItem("Close")) { CloseDocument(Mem); }
                     if (ImGui::MenuItem("Save"))
                     {
@@ -1072,6 +1073,16 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             ImGui::PopID();
 
             ImGui::PushID(2);
+            ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->CurrentTool == PapayaTool_CropRotate) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->CurrentTool == PapayaTool_CropRotate) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
+            {
+                Mem->CurrentTool = (Mem->CurrentTool != PapayaTool_CropRotate) ? PapayaTool_CropRotate : PapayaTool_None;
+            }
+            ImGui::PopStyleColor(2);
+            ImGui::PopID();
+
+            ImGui::PushID(3);
             if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Mem->Picker.CurrentColor))
             {
                 Mem->Picker.Open = !Mem->Picker.Open;
@@ -1136,7 +1147,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     // Color Picker
     if (Mem->Picker.Open)
     {
-        Picker::UpdateAndRender(&Mem->Picker, Mem->Colors, 
+        Picker::UpdateAndRender(&Mem->Picker, Mem->Colors,
                 Mem->Mouse, Mem->Textures[PapayaTex_UI]);
     }
 
@@ -1167,7 +1178,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         ImGui::Begin("Tool param bar", &Show, WindowFlags);
 
         // New document options. Might convert into modal window later.
-        if (!Mem->Doc.TextureID)
+        if (!Mem->Doc.TextureID) // No document is open
         {
             // Size
             {
@@ -1195,29 +1206,39 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 // ImGui::PopItemWidth();
             }
         }
-        else if (Mem->CurrentTool == PapayaTool_Brush && Mem->Doc.TextureID)
+        else  // Document is open
         {
-            ImGui::PushItemWidth(85);
-            ImGui::InputInt("Diameter", &Mem->Brush.Diameter);
-            Mem->Brush.Diameter = Math::Clamp(Mem->Brush.Diameter, 1, Mem->Brush.MaxDiameter);
+            if (Mem->CurrentTool == PapayaTool_Brush)
+            {
+                ImGui::PushItemWidth(85);
+                ImGui::InputInt("Diameter", &Mem->Brush.Diameter);
+                Mem->Brush.Diameter = Math::Clamp(Mem->Brush.Diameter, 1, Mem->Brush.MaxDiameter);
 
-            ImGui::PopItemWidth();
-            ImGui::PushItemWidth(80);
-            ImGui::SameLine();
+                ImGui::PopItemWidth();
+                ImGui::PushItemWidth(80);
+                ImGui::SameLine();
 
-            float ScaledHardness = Mem->Brush.Hardness * 100.0f;
-            ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
-            Mem->Brush.Hardness = ScaledHardness / 100.0f;
-            ImGui::SameLine();
+                float ScaledHardness = Mem->Brush.Hardness * 100.0f;
+                ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
+                Mem->Brush.Hardness = ScaledHardness / 100.0f;
+                ImGui::SameLine();
 
-            float ScaledOpacity = Mem->Brush.Opacity * 100.0f;
-            ImGui::SliderFloat("Opacity", &ScaledOpacity, 0.0f, 100.0f, "%.0f");
-            Mem->Brush.Opacity = ScaledOpacity / 100.0f;
-            ImGui::SameLine();
+                float ScaledOpacity = Mem->Brush.Opacity * 100.0f;
+                ImGui::SliderFloat("Opacity", &ScaledOpacity, 0.0f, 100.0f, "%.0f");
+                Mem->Brush.Opacity = ScaledOpacity / 100.0f;
+                ImGui::SameLine();
 
-            ImGui::Checkbox("Anti-alias", &Mem->Brush.AntiAlias); // TODO: Replace this with a toggleable icon button
+                ImGui::Checkbox("Anti-alias", &Mem->Brush.AntiAlias); // TODO: Replace this with a toggleable icon button
 
-            ImGui::PopItemWidth();
+                ImGui::PopItemWidth();
+            }
+            else if (Mem->CurrentTool == PapayaTool_CropRotate)
+            {
+                ImGui::PushItemWidth(85);
+                ImGui::SliderAngle("Rotate", &Mem->CropRotate.Angle, -90.0f, +90.0f);
+
+                ImGui::PopItemWidth();
+            }
         }
 
         ImGui::End();
@@ -1681,13 +1702,33 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
         if (Mem->Misc.DrawCanvas)
         {
+            mat4x4 M;
+            mat4x4_ortho(M, 0.f, (float)Mem->Window.Width,
+                         (float)Mem->Window.Height, 0.f,
+                         -1.f, 1.f);
+
+            // Rotate around center
+            {
+                mat4x4 R;
+                Vec2 Offset = Vec2(Mem->Doc.CanvasPosition.x + Mem->Doc.Width *
+                                   Mem->Doc.CanvasZoom * 0.5f,
+                                   Mem->Doc.CanvasPosition.y + Mem->Doc.Height *
+                                   Mem->Doc.CanvasZoom * 0.5f);
+
+                mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
+                mat4x4_rotate_Z(R, M, Mem->CropRotate.Angle);
+                mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
+                mat4x4_dup(M, R);
+            }
+
             GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], true,
-                1,
-                UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
+            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
+                true, 1,
+                UniformType_Matrix4, M);
         }
+
         if (Mem->Misc.DrawOverlay)
         {
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );

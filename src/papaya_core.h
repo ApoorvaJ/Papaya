@@ -72,6 +72,7 @@ enum PapayaTool_
     PapayaTool_None,
     PapayaTool_Brush,
     PapayaTool_EyeDropper,
+    PapayaTool_CropRotate,
     PapayaTool_COUNT
 };
 
@@ -166,6 +167,11 @@ struct EyeDropperInfo
     Color CurrentColor;
 };
 
+struct CropRotateInfo
+{
+    float Angle;
+};
+
 struct PapayaPref
 {
     char Name[256];
@@ -212,6 +218,7 @@ struct PapayaMemory
     BrushInfo Brush;
     EyeDropperInfo EyeDropper;
     PickerInfo Picker;
+    CropRotateInfo CropRotate;
     MiscInfo Misc;
 };
 
