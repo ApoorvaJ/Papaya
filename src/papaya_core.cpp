@@ -1153,7 +1153,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
     // Tool Param Bar
     {
-        ImGui::SetNextWindowSize(ImVec2((float)Mem->Window.Width - 37, 30));
+        ImGui::SetNextWindowSize(ImVec2((float)Mem->Window.Width - 70, 30));
         ImGui::SetNextWindowPos(ImVec2(34, 30));
 
         ImGuiWindowFlags WindowFlags = 0;
@@ -1192,18 +1192,16 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 Mem->Doc.Height = Math::Clamp(size[1], 1, 9000);
                 ImGui::SameLine();
                 ImGui::Checkbox("Preview", &Mem->Misc.PreviewImageSize);
-                ImGui::SameLine(ImGui::GetWindowWidth() - 104); // TODO: Magic number alert
             }
 
             // "New" button
             {
-                // ImGui::PushItemWidth(85);
+                ImGui::SameLine(ImGui::GetWindowWidth() - 104); // TODO: Magic number alert
                 if (ImGui::Button("New Image"))
                 {
                     Mem->Doc.ComponentsPerPixel = 4;
                     OpenDocument(0, Mem);
                 }
-                // ImGui::PopItemWidth();
             }
         }
         else  // Document is open
@@ -1235,9 +1233,62 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             else if (Mem->CurrentTool == PapayaTool_CropRotate)
             {
                 ImGui::PushItemWidth(85);
-                ImGui::SliderAngle("Rotate", &Mem->CropRotate.Angle, -90.0f, +90.0f);
-
+                ImGui::SliderAngle("Rotate", &Mem->CropRotate.Angle, -45.0f, 45.0f);
                 ImGui::PopItemWidth();
+
+                ImGui::SameLine(ImGui::GetWindowWidth() - 94); // TODO: Magic number alert
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2, 0));
+
+                if (ImGui::Button("Apply"))
+                {
+                    GLCHK( glDisable(GL_BLEND) );
+                    GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
+
+                    // Bind and clear the frame buffer
+                    GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
+                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                GL_TEXTURE_2D, Mem->Misc.FboSampleTexture, 0) );
+                    GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
+                    GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
+
+                    mat4x4 M, R;
+                    // Rotate around center
+                    {
+                        Vec2 Offset = Vec2(Mem->Doc.Width  * 0.5f,
+                                           Mem->Doc.Height * 0.5f);
+
+                        mat4x4_dup(M, Mem->Doc.ProjMtx);
+                        mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
+                        mat4x4_rotate_Z(R, M, -Mem->CropRotate.Angle);
+                        mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
+                    }
+
+                    // Draw the image onto the frame buffer
+                    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
+                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Handle) );
+                    GLCHK( glUniformMatrix4fv(
+                                Mem->Shaders[PapayaShader_ImGui].Uniforms[0],
+                                1, GL_FALSE, (GLfloat*)R) );
+                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_DeMultiplyAlpha]);
+                    GLCHK( glBindTexture(GL_TEXTURE_2D,
+                                (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+
+                    uint32 Temp = Mem->Misc.FboSampleTexture;
+                    Mem->Misc.FboSampleTexture = Mem->Doc.TextureID;
+                    Mem->Doc.TextureID = Temp;
+
+                    GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+                    GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+
+                    Mem->CropRotate.Angle = 0.f;
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel"))
+                {
+                }
+                ImGui::PopStyleVar();
             }
         }
 
@@ -1347,6 +1398,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     Vec2i Size = Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1;
                     int8* PreBrushImage = 0;
 
+                    // TODO: OPTIMIZE: The following block seems optimizable
                     // Render base image for pre-brush undo
                     {
                         GLCHK( glDisable(GL_BLEND) );
