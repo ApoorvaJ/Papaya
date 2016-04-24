@@ -1272,6 +1272,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     GL::SetVertexAttribs(Mem->Shaders[PapayaShader_DeMultiplyAlpha]);
                     GLCHK( glBindTexture(GL_TEXTURE_2D,
                                 (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+                    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
                     uint32 Temp = Mem->Misc.FboSampleTexture;
@@ -1287,6 +1289,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 ImGui::SameLine();
                 if (ImGui::Button("Cancel"))
                 {
+                    Mem->CropRotate.Angle = 0.f;
                 }
                 ImGui::PopStyleVar();
             }
