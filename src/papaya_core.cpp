@@ -1075,7 +1075,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             ImGui::PushID(2);
             ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->CurrentTool == PapayaTool_CropRotate) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->CurrentTool == PapayaTool_CropRotate) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
             {
                 Mem->CurrentTool = (Mem->CurrentTool != PapayaTool_CropRotate) ? PapayaTool_CropRotate : PapayaTool_None;
             }
@@ -1127,7 +1127,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             ImGui::PushID(0);
             ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->Misc.PrefsOpen) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_Transparent]);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->Misc.PrefsOpen) ? Mem->Colors[PapayaCol_Button] :  Mem->Colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->Textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
             {
                 Mem->Misc.PrefsOpen = !Mem->Misc.PrefsOpen;
             }
