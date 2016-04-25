@@ -8,17 +8,6 @@
 #include "libs/mathlib.h"
 #include "libs/linmath.h"
 
-internal uint32 AllocateEmptyTexture(int32 Width, int32 Height)
-{
-    uint32 Tex;
-    GLCHK( glGenTextures  (1, &Tex) );
-    GLCHK( glBindTexture  (GL_TEXTURE_2D, Tex) );
-    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
-    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, 0) );
-    return Tex;
-}
 
 internal uint32 LoadAndBindImage(char* Path)
 {
@@ -203,12 +192,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
 
         if (!Texture) { return false; }
 
-        // Create texture
-        GLCHK( glGenTextures  (1, &Mem->Doc.TextureID) );
-        GLCHK( glBindTexture  (GL_TEXTURE_2D, Mem->Doc.TextureID) );
-        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
-        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-        GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Mem->Doc.Width, Mem->Doc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture) );
+        Mem->Doc.TextureID = GL::AllocateTexture(Mem->Doc.Width, Mem->Doc.Height, Texture);
 
         Mem->Doc.InverseAspect = (float)Mem->Doc.Height / (float)Mem->Doc.Width;
         Mem->Doc.CanvasZoom = 0.8f * Math::Min((float)Mem->Window.Width/(float)Mem->Doc.Width, (float)Mem->Window.Height/(float)Mem->Doc.Height);
@@ -230,8 +214,8 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
         GLCHK( glGenFramebuffers(1, &Mem->Misc.FrameBufferObject) );
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
 
-        Mem->Misc.FboRenderTexture = AllocateEmptyTexture(Mem->Doc.Width, Mem->Doc.Height);
-        Mem->Misc.FboSampleTexture = AllocateEmptyTexture(Mem->Doc.Width, Mem->Doc.Height);
+        Mem->Misc.FboRenderTexture = GL::AllocateTexture(Mem->Doc.Width, Mem->Doc.Height);
+        Mem->Misc.FboSampleTexture = GL::AllocateTexture(Mem->Doc.Width, Mem->Doc.Height);
 
         // Attach the color texture to the FBO
         GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );

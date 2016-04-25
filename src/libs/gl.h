@@ -38,6 +38,7 @@ namespace GL
     void InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage);
     void TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size);
     void DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...);
+    uint32 AllocateTexture(int32 Width, int32 Height, uint8* Data = 0);
 }
 
 #endif //GL_H
@@ -267,6 +268,18 @@ void GL::DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, 
     GLCHK( glDisable    (GL_SCISSOR_TEST) );             //
     GLCHK( glDisable    (GL_BLEND) );                    //
     GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
+}
+
+uint32 GL::AllocateTexture(int32 Width, int32 Height, uint8* Data)
+{
+    uint32 Tex;
+    GLCHK( glGenTextures  (1, &Tex) );
+    GLCHK( glBindTexture  (GL_TEXTURE_2D, Tex) );
+    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, Width, Height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, Data) );
+    return Tex;
 }
 
 #endif //GL_IMPLEMENTATION
