@@ -1196,7 +1196,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
             // "New" button
             {
-                ImGui::SameLine(ImGui::GetWindowWidth() - 104); // TODO: Magic number alert
+                ImGui::SameLine(ImGui::GetWindowWidth() - 70); // TODO: Magic number alert
                 if (ImGui::Button("New Image"))
                 {
                     Mem->Doc.ComponentsPerPixel = 4;
