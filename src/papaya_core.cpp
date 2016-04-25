@@ -1232,8 +1232,21 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             }
             else if (Mem->CurrentTool == PapayaTool_CropRotate)
             {
+                if (ImGui::Button("-90"))
+                {
+                    Mem->CropRotate.BaseAngle -= Math::ToRadians(90.f);
+                }
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
+                ImGui::SameLine();
+                if (ImGui::Button("+90"))
+                {
+                    Mem->CropRotate.BaseAngle += Math::ToRadians(90.f);
+                }
+                ImGui::SameLine();
+                ImGui::PopStyleVar();
+
                 ImGui::PushItemWidth(85);
-                ImGui::SliderAngle("Rotate", &Mem->CropRotate.Angle, -45.0f, 45.0f);
+                ImGui::SliderAngle("Rotate", &Mem->CropRotate.SliderAngle, -45.0f, 45.0f);
                 ImGui::PopItemWidth();
 
                 ImGui::SameLine(ImGui::GetWindowWidth() - 94); // TODO: Magic number alert
@@ -1259,7 +1272,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                         mat4x4_dup(M, Mem->Doc.ProjMtx);
                         mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-                        mat4x4_rotate_Z(R, M, -Mem->CropRotate.Angle);
+                        mat4x4_rotate_Z(R, M, -(Mem->CropRotate.SliderAngle +
+                                    Mem->CropRotate.BaseAngle));
                         mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
                     }
 
@@ -1276,20 +1290,24 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
+                    // Swap render texture and document texture handles
                     uint32 Temp = Mem->Misc.FboSampleTexture;
                     Mem->Misc.FboSampleTexture = Mem->Doc.TextureID;
                     Mem->Doc.TextureID = Temp;
 
+                    // Reset stuff
                     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
                     GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
 
-                    Mem->CropRotate.Angle = 0.f;
+                    Mem->CropRotate.SliderAngle = 0.f;
+                    Mem->CropRotate.BaseAngle   = 0.f;
                 }
 
                 ImGui::SameLine();
                 if (ImGui::Button("Cancel"))
                 {
-                    Mem->CropRotate.Angle = 0.f;
+                    Mem->CropRotate.SliderAngle = 0.f;
+                    Mem->CropRotate.BaseAngle   = 0.f;
                 }
                 ImGui::PopStyleVar();
             }
@@ -1771,7 +1789,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                                    Mem->Doc.CanvasZoom * 0.5f);
 
                 mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-                mat4x4_rotate_Z(R, M, Mem->CropRotate.Angle);
+                mat4x4_rotate_Z(R, M, Mem->CropRotate.SliderAngle + 
+                        Mem->CropRotate.BaseAngle);
                 mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
                 mat4x4_dup(M, R);
             }

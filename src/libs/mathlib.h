@@ -41,6 +41,7 @@ namespace Math
     float DistanceSquared(Vec2 a, Vec2 b);
     void HSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float& out_b);
     void RGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float& out_v);
+    float ToRadians(float degrees);
 }
 
 #endif // MATHLIB_H
@@ -133,6 +134,11 @@ void Math::RGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float
     out_h = fabsf(K + (g - b) / (6.f * chroma + 1e-20f));
     out_s = chroma / (r + 1e-20f);
     out_v = r;
+}
+
+float Math::ToRadians(float degrees)
+{
+    return (float)(degrees * Pi / 180.f);
 }
 
 #endif // MATHLIB_IMPLEMENTATION

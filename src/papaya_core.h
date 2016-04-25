@@ -169,7 +169,8 @@ struct EyeDropperInfo
 
 struct CropRotateInfo
 {
-    float Angle;
+    float SliderAngle;
+    float BaseAngle;
 };
 
 struct PapayaPref
