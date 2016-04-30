@@ -1216,16 +1216,10 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             }
             else if (Mem->CurrentTool == PapayaTool_CropRotate)
             {
-                if (ImGui::Button("-90"))
-                {
-                    Mem->CropRotate.BaseAngle -= Math::ToRadians(90.f);
-                }
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
+                if (ImGui::Button("-90")) { Mem->CropRotate.BaseRotation--; }
                 ImGui::SameLine();
-                if (ImGui::Button("+90"))
-                {
-                    Mem->CropRotate.BaseAngle += Math::ToRadians(90.f);
-                }
+                if (ImGui::Button("+90")) { Mem->CropRotate.BaseRotation++; }
                 ImGui::SameLine();
                 ImGui::PopStyleVar();
 
@@ -1238,13 +1232,33 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 if (ImGui::Button("Apply"))
                 {
+                    bool SizeChanged = (Mem->CropRotate.BaseRotation % 2);
+
+                    // Swap render texture and document texture handles
+                    if (SizeChanged)
+                    {
+                        int32 Temp = Mem->Doc.Width;
+                        Mem->Doc.Width = Mem->Doc.Height;
+                        Mem->Doc.Height = Temp;
+
+                        Mem->Doc.ProjMtx[0][0] = 2.0f/Mem->Doc.Width;
+                        Mem->Doc.ProjMtx[1][1] = -2.0f/Mem->Doc.Height;
+                        Mem->Doc.InverseAspect = (float)Mem->Doc.Height / 
+                                                 (float)Mem->Doc.Width;
+                        GLCHK( glDeleteTextures(1, &Mem->Misc.FboSampleTexture) );
+                        Mem->Misc.FboSampleTexture = GL::AllocateTexture(Mem->Doc.Width,
+                            Mem->Doc.Height);
+                    }
+
                     GLCHK( glDisable(GL_BLEND) );
                     GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
 
                     // Bind and clear the frame buffer
                     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
+
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                 GL_TEXTURE_2D, Mem->Misc.FboSampleTexture, 0) );
+
                     GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
                     GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
 
@@ -1256,9 +1270,17 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                         mat4x4_dup(M, Mem->Doc.ProjMtx);
                         mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
+                        // mat4x4_rotate_Z(R, M, Math::ToRadians(-90));
                         mat4x4_rotate_Z(R, M, -(Mem->CropRotate.SliderAngle +
-                                    Mem->CropRotate.BaseAngle));
-                        mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
+                                Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation)));
+                        if (SizeChanged)
+                        {
+                            mat4x4_translate_in_place(R, -Offset.y, -Offset.x, 0.f);
+                        }
+                        else
+                        {
+                            mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
+                        }
                     }
 
                     // Draw the image onto the frame buffer
@@ -1274,24 +1296,45 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-                    // Swap render texture and document texture handles
                     uint32 Temp = Mem->Misc.FboSampleTexture;
                     Mem->Misc.FboSampleTexture = Mem->Doc.TextureID;
                     Mem->Doc.TextureID = Temp;
+
+                    if (SizeChanged)
+                    {
+                        // TODO: Lots of code duplication with OpenDocument
+                        GLCHK( glDeleteTextures(1, &Mem->Misc.FboSampleTexture) );
+                        Mem->Misc.FboSampleTexture = GL::AllocateTexture(Mem->Doc.Width,
+                                Mem->Doc.Height);
+                        GLCHK( glDeleteTextures(1, &Mem->Misc.FboRenderTexture) );
+                        Mem->Misc.FboRenderTexture = GL::AllocateTexture(Mem->Doc.Width,
+                                Mem->Doc.Height);
+
+                        // Set up meshes for rendering to texture
+                        {
+                            Vec2 Size = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height);
+
+                            GL::InitQuad(Mem->Meshes[PapayaMesh_RTTBrush],
+                                    Vec2(0,0), Size, GL_STATIC_DRAW);
+
+                            GL::InitQuad(Mem->Meshes[PapayaMesh_RTTAdd],
+                                    Vec2(0, 0), Size, GL_STATIC_DRAW);
+                        }
+                    }
 
                     // Reset stuff
                     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
                     GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
 
-                    Mem->CropRotate.SliderAngle = 0.f;
-                    Mem->CropRotate.BaseAngle   = 0.f;
+                    Mem->CropRotate.SliderAngle  = 0.f;
+                    Mem->CropRotate.BaseRotation = 0;
                 }
 
                 ImGui::SameLine();
                 if (ImGui::Button("Cancel"))
                 {
-                    Mem->CropRotate.SliderAngle = 0.f;
-                    Mem->CropRotate.BaseAngle   = 0.f;
+                    Mem->CropRotate.SliderAngle  = 0.f;
+                    Mem->CropRotate.BaseRotation = 0;
                 }
                 ImGui::PopStyleVar();
             }
@@ -1774,7 +1817,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
                 mat4x4_rotate_Z(R, M, Mem->CropRotate.SliderAngle + 
-                        Mem->CropRotate.BaseAngle);
+                        Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation));
                 mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
                 mat4x4_dup(M, R);
             }

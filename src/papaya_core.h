@@ -169,8 +169,8 @@ struct EyeDropperInfo
 
 struct CropRotateInfo
 {
+    int32 BaseRotation; // Multiply this by 90 to get the rotation in degrees
     float SliderAngle;
-    float BaseAngle;
 };
 
 struct PapayaPref
