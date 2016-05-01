@@ -392,7 +392,8 @@ int main(int argc, char **argv)
 
         // End Of Frame
         Timer::StopTime(&Mem.Debug.Timers[Timer_Frame]);
-        double FrameRate = (Mem.CurrentTool == PapayaTool_Brush) ? 500.0 : 60.0;
+        double FrameRate = (Mem.CurrentTool == PapayaTool_Brush && Mem.Mouse.IsDown[0]) ?
+                           500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
         double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].ElapsedMs;
         Mem.Debug.Timers[Timer_Sleep].ElapsedMs = SleepTime;
