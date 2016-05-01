@@ -1782,9 +1782,27 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             Mem->Doc.CanvasPosition,
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
+        mat4x4 M;
+        mat4x4_ortho(M, 0.f, (float)Mem->Window.Width,
+                     (float)Mem->Window.Height, 0.f,
+                     -1.f, 1.f);
+        // Rotate around center
+        {
+            mat4x4 R;
+            Vec2 Offset = Vec2(Mem->Doc.CanvasPosition.x + Mem->Doc.Width *
+                               Mem->Doc.CanvasZoom * 0.5f,
+                               Mem->Doc.CanvasPosition.y + Mem->Doc.Height *
+                               Mem->Doc.CanvasZoom * 0.5f);
+
+            mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
+            mat4x4_rotate_Z(R, M, Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation));
+            mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
+            mat4x4_dup(M, R);
+        }
+
         GL::DrawQuad(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid], true,
             6,
-            UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+            UniformType_Matrix4, M,
             UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid1],
             UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid2],
             UniformType_Float, Mem->Doc.CanvasZoom,
