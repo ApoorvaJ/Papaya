@@ -166,6 +166,7 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     <ClCompile Include="..\..\src\core\prefs.cpp" />
     <ClCompile Include="..\..\src\libs\glew\glew.cpp" />
     <ClCompile Include="..\..\src\libs\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\src\libs\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\..\src\libs\single_header_libs.cpp" />
     <ClCompile Include="..\..\src\papaya_core.cpp" />
     <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />

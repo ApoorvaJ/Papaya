@@ -58,6 +58,9 @@
     <ClCompile Include="..\..\src\libs\imgui\imgui.cpp">
       <Filter>Source Files\libs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\libs\imgui\imgui_demo.cpp">
+      <Filter>Source Files\libs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\papaya_core.h">
