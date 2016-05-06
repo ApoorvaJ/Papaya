@@ -1315,6 +1315,12 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     if (SizeChanged)
                     {
                         ResizeBuffers(Mem, Mem->Doc.Width, Mem->Doc.Height);
+
+                        // Reposition canvas to maintain apparent position
+                        int32 Delta = Math::RoundToInt((Mem->Doc.Height - Mem->Doc.Width)
+                                * 0.5f * Mem->Doc.CanvasZoom);
+                        Mem->Doc.CanvasPosition.x += Delta;
+                        Mem->Doc.CanvasPosition.y -= Delta;
                     }
 
                     // Reset stuff
