@@ -173,6 +173,30 @@ internal void LoadFromUndoBuffer(PapayaMemory* Mem, bool LoadPreBrushImage)
     if (AllocUsed) { free(Image); }
 }
 
+internal void ResizeBuffers(PapayaMemory* Mem, int32 Width, int32 Height)
+{
+    // Free existing texture memory
+    if (Mem->Misc.FboSampleTexture)
+    {
+        GLCHK( glDeleteTextures(1, &Mem->Misc.FboSampleTexture) );
+    }
+    if (Mem->Misc.FboRenderTexture)
+    {
+        GLCHK( glDeleteTextures(1, &Mem->Misc.FboRenderTexture) );
+    }
+
+    // Allocate new memory
+    Mem->Misc.FboSampleTexture = GL::AllocateTexture(Width, Height);
+    Mem->Misc.FboRenderTexture = GL::AllocateTexture(Width, Height);
+
+    // Set up meshes for rendering to texture
+    {
+        Vec2 Size = Vec2(Width, Height);
+        GL::InitQuad(Mem->Meshes[PapayaMesh_RTTBrush], Vec2(0,0), Size, GL_STATIC_DRAW);
+        GL::InitQuad(Mem->Meshes[PapayaMesh_RTTAdd]  , Vec2(0,0), Size, GL_STATIC_DRAW);
+    }
+}
+
 bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
 {
     Timer::StartTime(&Mem->Debug.Timers[Timer_ImageOpen]);
@@ -207,15 +231,14 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
         free(Texture);
     }
 
+    ResizeBuffers(Mem, Mem->Doc.Width, Mem->Doc.Height);
+
     // Set up the frame buffer
     {
         // Create a framebuffer object and bind it
         GLCHK( glDisable(GL_BLEND) );
         GLCHK( glGenFramebuffers(1, &Mem->Misc.FrameBufferObject) );
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
-
-        Mem->Misc.FboRenderTexture = GL::AllocateTexture(Mem->Doc.Width, Mem->Doc.Height);
-        Mem->Misc.FboSampleTexture = GL::AllocateTexture(Mem->Doc.Width, Mem->Doc.Height);
 
         // Attach the color texture to the FBO
         GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
@@ -231,17 +254,6 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
         }
 
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-    }
-
-    // Set up meshes for rendering to texture
-    {
-        Vec2 Size = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height);
-
-        GL::InitQuad(Mem->Meshes[PapayaMesh_RTTBrush],
-            Vec2(0,0), Size, GL_STATIC_DRAW);
-
-        GL::InitQuad(Mem->Meshes[PapayaMesh_RTTAdd],
-            Vec2(0, 0), Size, GL_STATIC_DRAW);
     }
 
     // Projection matrix
@@ -1302,24 +1314,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                     if (SizeChanged)
                     {
-                        // TODO: Lots of code duplication with OpenDocument
-                        GLCHK( glDeleteTextures(1, &Mem->Misc.FboSampleTexture) );
-                        Mem->Misc.FboSampleTexture = GL::AllocateTexture(Mem->Doc.Width,
-                                Mem->Doc.Height);
-                        GLCHK( glDeleteTextures(1, &Mem->Misc.FboRenderTexture) );
-                        Mem->Misc.FboRenderTexture = GL::AllocateTexture(Mem->Doc.Width,
-                                Mem->Doc.Height);
-
-                        // Set up meshes for rendering to texture
-                        {
-                            Vec2 Size = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height);
-
-                            GL::InitQuad(Mem->Meshes[PapayaMesh_RTTBrush],
-                                    Vec2(0,0), Size, GL_STATIC_DRAW);
-
-                            GL::InitQuad(Mem->Meshes[PapayaMesh_RTTAdd],
-                                    Vec2(0, 0), Size, GL_STATIC_DRAW);
-                        }
+                        ResizeBuffers(Mem, Mem->Doc.Width, Mem->Doc.Height);
                     }
 
                     // Reset stuff
