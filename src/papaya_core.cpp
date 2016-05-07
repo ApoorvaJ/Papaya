@@ -821,8 +821,8 @@ void Core::Initialize(PapayaMemory* Mem)
         // Create fonts texture
         ImGuiIO& io = ImGui::GetIO();
 
-        unsigned char* pixels;
-        int width, height;
+        uint8* pixels;
+        int32 width, height;
         //ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 15.0f);
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
@@ -895,7 +895,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
         // Clear screen buffer
         {
-            GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+            GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
 
             GLCHK( glClearColor(Mem->Colors[PapayaCol_Clear].r,
                 Mem->Colors[PapayaCol_Clear].g,
@@ -904,8 +904,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
             GLCHK( glEnable(GL_SCISSOR_TEST) );
             GLCHK( glScissor(34, 3,
-                (int)Mem->Window.Width  - 70,
-                (int)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
+                (int32)Mem->Window.Width  - 70,
+                (int32)Mem->Window.Height - 58) ); // TODO: Remove magic numbers
 
             GLCHK( glClearColor(Mem->Colors[PapayaCol_Workspace].r,
                 Mem->Colors[PapayaCol_Workspace].g,
@@ -1324,7 +1324,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                     // Reset stuff
                     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-                    GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+                    GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
 
                     Mem->CropRotate.SliderAngle  = 0.f;
                     Mem->CropRotate.BaseRotation = 0;
@@ -1487,7 +1487,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 if (PreBrushImage) { free(PreBrushImage); }
 
                 GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-                GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+                GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
 
                 GLCHK( glDisable(GL_BLEND) );
             }
@@ -1607,7 +1607,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             Mem->Misc.FboSampleTexture = Temp;
 
             GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-            GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+            GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
         }
 
 
@@ -2005,7 +2005,7 @@ void Core::RenderImGui(ImDrawData* DrawData, void* MemPtr)
     GLCHK( glUniform1i       (Mem->Shaders[PapayaShader_ImGui].Uniforms[1], 0) );
     GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Window.ProjMtx[0][0]) );
 
-    for (int n = 0; n < DrawData->CmdListsCount; n++)
+    for (int32 n = 0; n < DrawData->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = DrawData->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
@@ -2027,7 +2027,7 @@ void Core::RenderImGui(ImDrawData* DrawData, void* MemPtr)
             else
             {
                 GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId) );
-                GLCHK( glScissor((int)pcmd->ClipRect.x, (int)(fb_height - pcmd->ClipRect.w), (int)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int)(pcmd->ClipRect.w - pcmd->ClipRect.y)) );
+                GLCHK( glScissor((int32)pcmd->ClipRect.x, (int32)(fb_height - pcmd->ClipRect.w), (int32)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int32)(pcmd->ClipRect.w - pcmd->ClipRect.y)) );
                 GLCHK( glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset) );
             }
             idx_buffer_offset += pcmd->ElemCount;
