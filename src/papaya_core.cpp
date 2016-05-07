@@ -257,18 +257,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
     }
 
     // Projection matrix
-    {
-        float w = (float)Mem->Doc.Width;
-        float h = (float)Mem->Doc.Height;
-        float OrthoMtx[4][4] =
-        {
-            { 2.0f/w,  0.0f,    0.0f,   0.0f },
-            { 0.0f,   -2.0f/h,  0.0f,   0.0f },
-            { 0.0f,    0.0f,   -1.0f,   0.0f },
-            {-1.0f,    1.0f,    0.0f,   1.0f },
-        };
-        memcpy(Mem->Doc.ProjMtx, OrthoMtx, sizeof(OrthoMtx));
-    }
+    mat4x4_ortho(Mem->Doc.ProjMtx, 0.f, Mem->Doc.Width, 0.f, Mem->Doc.Height, -1.f, 1.f);
 
     // Init undo buffer
     {
@@ -375,9 +364,9 @@ void Core::Initialize(PapayaMemory* Mem)
     {
         Mem->Doc.Width = Mem->Doc.Height = 512;
 
-        Mem->CurrentTool = PapayaTool_CropRotate;
+        Mem->CurrentTool = PapayaTool_Brush;
 
-        Mem->Brush.Diameter    = 0;
+        Mem->Brush.Diameter    = 100;
         Mem->Brush.MaxDiameter = 9999;
         Mem->Brush.Hardness    = 1.0f;
         Mem->Brush.Opacity     = 1.0f;
@@ -1252,8 +1241,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                         Mem->Doc.Width = Mem->Doc.Height;
                         Mem->Doc.Height = Temp;
 
-                        Mem->Doc.ProjMtx[0][0] = 2.0f/Mem->Doc.Width;
-                        Mem->Doc.ProjMtx[1][1] = -2.0f/Mem->Doc.Height;
+                        mat4x4_ortho(Mem->Doc.ProjMtx, 0.f, Mem->Doc.Width, 0.f, Mem->Doc.Height, -1.f, 1.f);
                         Mem->Doc.InverseAspect = (float)Mem->Doc.Height / 
                                                  (float)Mem->Doc.Width;
                         GLCHK( glDeleteTextures(1, &Mem->Misc.FboSampleTexture) );
@@ -1282,8 +1270,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                         mat4x4_dup(M, Mem->Doc.ProjMtx);
                         mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
                         // mat4x4_rotate_Z(R, M, Math::ToRadians(-90));
-                        mat4x4_rotate_Z(R, M, -(Mem->CropRotate.SliderAngle +
-                                Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation)));
+                        mat4x4_rotate_Z(R, M, Mem->CropRotate.SliderAngle +
+                                Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation));
                         if (SizeChanged)
                         {
                             mat4x4_translate_in_place(R, -Offset.y, -Offset.x, 0.f);

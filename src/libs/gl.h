@@ -180,28 +180,24 @@ void GL::InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage)
 {
     GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
-
-    ImDrawVert Verts[6];
-    Verts[0].pos = Vec2(Pos.x, Pos.y);                   Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
-    Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);          Verts[1].uv = Vec2(1.0f, 1.0f); Verts[1].col = 0xffffffff;
-    Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[2].uv = Vec2(1.0f, 0.0f); Verts[2].col = 0xffffffff;
-    Verts[3].pos = Vec2(Pos.x, Pos.y);                   Verts[3].uv = Vec2(0.0f, 1.0f); Verts[3].col = 0xffffffff;
-    Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y); Verts[4].uv = Vec2(1.0f, 0.0f); Verts[4].col = 0xffffffff;
-    Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);          Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
-
-    GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(Verts), Verts, (GLenum)Usage) );
+    GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * 6, 0, (GLenum)Usage) );
+    TransformQuad(Mesh, Pos, Size);
 }
 
 void GL::TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)
 {
+    float X1 = Pos.x;
+    float X2 = Pos.x + Size.x;
+    float Y1 = Pos.y;
+    float Y2 = Pos.y + Size.y;
     ImDrawVert Verts[6];
     {
-        Verts[0].pos = Vec2(Pos.x, Pos.y);                    Verts[0].uv = Vec2(0.0f, 0.0f); Verts[0].col = 0xffffffff;
-        Verts[1].pos = Vec2(Size.x + Pos.x, Pos.y);           Verts[1].uv = Vec2(1.0f, 0.0f); Verts[1].col = 0xffffffff;
-        Verts[2].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);  Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
-        Verts[3].pos = Vec2(Pos.x, Pos.y);                    Verts[3].uv = Vec2(0.0f, 0.0f); Verts[3].col = 0xffffffff;
-        Verts[4].pos = Vec2(Size.x + Pos.x, Size.y + Pos.y);  Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
-        Verts[5].pos = Vec2(Pos.x, Size.y + Pos.y);           Verts[5].uv = Vec2(0.0f, 1.0f); Verts[5].col = 0xffffffff;
+        Verts[0].pos = Vec2(X1,Y2); Verts[0].uv = Vec2(0.0f, 1.0f); Verts[0].col = 0xffffffff;
+        Verts[1].pos = Vec2(X1,Y1); Verts[1].uv = Vec2(0.0f, 0.0f); Verts[1].col = 0xffffffff;
+        Verts[2].pos = Vec2(X2,Y2); Verts[2].uv = Vec2(1.0f, 1.0f); Verts[2].col = 0xffffffff;
+        Verts[3].pos = Vec2(X2,Y1); Verts[3].uv = Vec2(1.0f, 0.0f); Verts[3].col = 0xffffffff;
+        Verts[4].pos = Vec2(X2,Y2); Verts[4].uv = Vec2(1.0f, 1.0f); Verts[4].col = 0xffffffff;
+        Verts[5].pos = Vec2(X1,Y1); Verts[5].uv = Vec2(0.0f, 0.0f); Verts[5].col = 0xffffffff;
     }
     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh.VboHandle) );
     GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
