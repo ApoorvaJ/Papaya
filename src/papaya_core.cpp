@@ -385,7 +385,6 @@ void Core::Initialize(PapayaMemory* Mem)
 
         Picker::Init(&Mem->Picker);
 
-        Mem->Misc.DrawCanvas       = true;
         Mem->Misc.DrawOverlay      = false;
         Mem->Misc.ShowMetrics      = false;
         Mem->Misc.ShowUndoBuffer   = false;
@@ -1367,293 +1366,274 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     if (!Mem->Doc.TextureID) { goto EndOfDoc; }
 
     // Brush tool
-    {
-        /*
-        if (ImGui::IsKeyPressed(VK_UP, false))
-        {
-        Mem->Brush.Diameter++;
-        Mem->Misc.DrawCanvas = !Mem->Misc.DrawCanvas;
-        }
-        if (ImGui::IsKeyPressed(VK_DOWN, false))
-        {
-        Mem->Brush.Diameter--;
-        Mem->Misc.DrawOverlay = !Mem->Misc.DrawOverlay;
-        }
-        if (ImGui::IsKeyPressed(VK_NUMPAD1, false))
-        {
-        Mem->Doc.CanvasZoom = 1.0;
-        }
-        */
-
-        if (Mem->CurrentTool == PapayaTool_Brush &&
+    if (Mem->CurrentTool == PapayaTool_Brush &&
             !Mem->Misc.MenuOpen &&
             (!ImGui::GetIO().KeyAlt || Mem->Mouse.IsDown[1] || Mem->Mouse.Released[1]))
+    {
+        // Right mouse dragging
         {
-            // Right mouse dragging
+            if (Mem->Mouse.Pressed[1])
             {
-                if (Mem->Mouse.Pressed[1])
-                {
-                    Mem->Brush.RtDragStartPos      = Mem->Mouse.Pos;
-                    Mem->Brush.RtDragStartDiameter = Mem->Brush.Diameter;
-                    Mem->Brush.RtDragStartHardness = Mem->Brush.Hardness;
-                    Mem->Brush.RtDragStartOpacity  = Mem->Brush.Opacity;
-                    Mem->Brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
-                    Platform::StartMouseCapture();
-                    Platform::SetCursorVisibility(false);
-                }
-                else if (Mem->Mouse.IsDown[1])
-                {
-                    if (Mem->Brush.RtDragWithShift)
-                    {
-                        float Opacity = Mem->Brush.RtDragStartOpacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
-                        Mem->Brush.Opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
-                    }
-                    else
-                    {
-                        float Diameter = Mem->Brush.RtDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Mem->Doc.CanvasZoom * 2.0f);
-                        Mem->Brush.Diameter = Math::Clamp((int32)Diameter, 1, Mem->Brush.MaxDiameter);
-
-                        float Hardness = Mem->Brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
-                        Mem->Brush.Hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
-                    }
-                }
-                else if (Mem->Mouse.Released[1])
-                {
-                    Platform::ReleaseMouseCapture();
-                    Platform::SetMousePosition(Mem->Brush.RtDragStartPos.x, Mem->Brush.RtDragStartPos.y);
-                    Platform::SetCursorVisibility(true);
-                }
+                Mem->Brush.RtDragStartPos      = Mem->Mouse.Pos;
+                Mem->Brush.RtDragStartDiameter = Mem->Brush.Diameter;
+                Mem->Brush.RtDragStartHardness = Mem->Brush.Hardness;
+                Mem->Brush.RtDragStartOpacity  = Mem->Brush.Opacity;
+                Mem->Brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
+                Platform::StartMouseCapture();
+                Platform::SetCursorVisibility(false);
             }
-
-            if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
+            else if (Mem->Mouse.IsDown[1])
             {
-                Mem->Brush.BeingDragged = true;
-                if (Mem->Picker.Open) { Mem->Picker.CurrentColor = Mem->Picker.NewColor; }
-                Mem->Brush.PaintArea1 = Vec2i(Mem->Doc.Width + 1, Mem->Doc.Height + 1);
-                Mem->Brush.PaintArea2 = Vec2i(0,0);
-            }
-            else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
-            {
-                // TODO: Make a vararg-based RTT function
-                // Additive render-to-texture
+                if (Mem->Brush.RtDragWithShift)
                 {
-                    GLCHK( glDisable(GL_SCISSOR_TEST) );
-                    GLCHK( glDisable(GL_DEPTH_TEST) );
-                    GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
-                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
-                    GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
-
-                    Vec2i Pos  = Mem->Brush.PaintArea1;
-                    Vec2i Size = Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1;
-                    int8* PreBrushImage = 0;
-
-                    // TODO: OPTIMIZE: The following block seems optimizable
-                    // Render base image for pre-brush undo
-                    {
-                        GLCHK( glDisable(GL_BLEND) );
-
-                        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
-                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
-                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
-
-                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
-                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
-
-                        PreBrushImage = (int8*)malloc(4 * Size.x * Size.y);
-                        GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, PreBrushImage) );
-                    }
-
-                    // Render base image with premultiplied alpha
-                    {
-                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Handle) );
-                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_PreMultiplyAlpha]);
-
-                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
-                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
-                    }
-
-                    // Render brush overlay with premultiplied alpha
-                    {
-                        GLCHK( glEnable(GL_BLEND) );
-                        GLCHK( glBlendEquation(GL_FUNC_ADD) );
-                        GLCHK( glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
-
-                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Handle) );
-                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_PreMultiplyAlpha]);
-
-                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
-                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
-                    }
-
-                    // Render blended result with demultiplied alpha
-                    {
-                        GLCHK( glDisable(GL_BLEND) );
-
-                        GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Doc.TextureID, 0) );
-                        GLCHK( glUseProgram(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Handle) );
-                        GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                        GL::SetVertexAttribs(Mem->Shaders[PapayaShader_DeMultiplyAlpha]);
-
-                        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboRenderTexture) );
-                        GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
-                    }
-
-                    PushUndo(Mem, Pos, Size, PreBrushImage);
-
-                    if (PreBrushImage) { free(PreBrushImage); }
-
-                    GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-                    GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
-
-                    GLCHK( glDisable(GL_BLEND) );
-                }
-
-                Mem->Misc.DrawOverlay   = false;
-                Mem->Brush.BeingDragged = false;
-            }
-
-            if (Mem->Brush.BeingDragged)
-            {
-                Mem->Misc.DrawOverlay = true;
-
-                GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
-
-                if (Mem->Mouse.Pressed[0])
-                {
-                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboSampleTexture, 0) );
-                    GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
-                    GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
-                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
-                }
-                GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
-
-                GLCHK( glDisable(GL_BLEND) );
-                GLCHK( glDisable(GL_SCISSOR_TEST) );
-
-                // Setup orthographic projection matrix
-                float width  = (float)Mem->Doc.Width;
-                float height = (float)Mem->Doc.Height;
-                GLCHK( glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle) );
-
-                Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                Vec2 CorrectedLastPos = Mem->Mouse.LastUV + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-
-#if 0
-                // Brush testing routine
-                local_persist int32 i = 0;
-
-                if (i%2)
-                {
-                    local_persist int32 j = 0;
-                    CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                    CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                    j++;
+                    float Opacity = Mem->Brush.RtDragStartOpacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
+                    Mem->Brush.Opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
                 }
                 else
                 {
-                    local_persist int32 k = 0;
-                    CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                    CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                    k++;
+                    float Diameter = Mem->Brush.RtDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Mem->Doc.CanvasZoom * 2.0f);
+                    Mem->Brush.Diameter = Math::Clamp((int32)Diameter, 1, Mem->Brush.MaxDiameter);
+
+                    float Hardness = Mem->Brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
+                    Mem->Brush.Hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
                 }
-                i++;
-#endif
+            }
+            else if (Mem->Mouse.Released[1])
+            {
+                Platform::ReleaseMouseCapture();
+                Platform::SetMousePosition(Mem->Brush.RtDragStartPos.x, Mem->Brush.RtDragStartPos.y);
+                Platform::SetCursorVisibility(true);
+            }
+        }
 
-                // Paint area calculation
-                {
-                    float UVMinX = Math::Min(CorrectedPos.x, CorrectedLastPos.x);
-                    float UVMinY = Math::Min(CorrectedPos.y, CorrectedLastPos.y);
-                    float UVMaxX = Math::Max(CorrectedPos.x, CorrectedLastPos.x);
-                    float UVMaxY = Math::Max(CorrectedPos.y, CorrectedLastPos.y);
-
-                    int32 PixelMinX = Math::RoundToInt(UVMinX * Mem->Doc.Width  - 0.5f * Mem->Brush.Diameter);
-                    int32 PixelMinY = Math::RoundToInt(UVMinY * Mem->Doc.Height - 0.5f * Mem->Brush.Diameter);
-                    int32 PixelMaxX = Math::RoundToInt(UVMaxX * Mem->Doc.Width  + 0.5f * Mem->Brush.Diameter);
-                    int32 PixelMaxY = Math::RoundToInt(UVMaxY * Mem->Doc.Height + 0.5f * Mem->Brush.Diameter);
-
-                    Mem->Brush.PaintArea1.x = Math::Min(Mem->Brush.PaintArea1.x, PixelMinX);
-                    Mem->Brush.PaintArea1.y = Math::Min(Mem->Brush.PaintArea1.y, PixelMinY);
-                    Mem->Brush.PaintArea2.x = Math::Max(Mem->Brush.PaintArea2.x, PixelMaxX);
-                    Mem->Brush.PaintArea2.y = Math::Max(Mem->Brush.PaintArea2.y, PixelMaxY);
-
-                    Mem->Brush.PaintArea1.x = Math::Clamp(Mem->Brush.PaintArea1.x, 0, Mem->Doc.Width);
-                    Mem->Brush.PaintArea1.y = Math::Clamp(Mem->Brush.PaintArea1.y, 0, Mem->Doc.Height);
-                    Mem->Brush.PaintArea2.x = Math::Clamp(Mem->Brush.PaintArea2.x, 0, Mem->Doc.Width);
-                    Mem->Brush.PaintArea2.y = Math::Clamp(Mem->Brush.PaintArea2.y, 0, Mem->Doc.Height);
-                }
-
-                GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
-                GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect) ); // Pos uniform
-                GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect) ); // Lastpos uniform
-                GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f)) );
-                float Opacity = Mem->Brush.Opacity;
-                //if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
-                GLCHK( glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
-                    Mem->Picker.CurrentColor.g,
-                    Mem->Picker.CurrentColor.b,
-                    Opacity) );
-                // Brush hardness
-                {
-                    float Hardness;
-                    if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2)
-                    {
-                        float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
-                        float Radius  = Mem->Brush.Diameter / 2.0f;
-                        Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius));
-                    }
-                    else
-                    {
-                        Hardness      = Mem->Brush.Hardness;
-                    }
-
-                    GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness) );
-                }
-
-                GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect) ); // Inverse Aspect uniform
-
-                GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle) );
-                GL::SetVertexAttribs(Mem->Shaders[PapayaShader_Brush]);
-
-                GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
-                GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
-
-                uint32 Temp = Mem->Misc.FboRenderTexture;
-                Mem->Misc.FboRenderTexture = Mem->Misc.FboSampleTexture;
+        if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
+        {
+            Mem->Brush.BeingDragged = true;
+            if (Mem->Picker.Open) { Mem->Picker.CurrentColor = Mem->Picker.NewColor; }
+            Mem->Brush.PaintArea1 = Vec2i(Mem->Doc.Width + 1, Mem->Doc.Height + 1);
+            Mem->Brush.PaintArea2 = Vec2i(0,0);
+        }
+        else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
+        {
+            // TODO: Make a vararg-based RTT function
+            // Additive render-to-texture
+            {
+                GLCHK( glDisable(GL_SCISSOR_TEST) );
+                GLCHK( glDisable(GL_DEPTH_TEST) );
+                GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
-                Mem->Misc.FboSampleTexture = Temp;
+                GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
+
+                Vec2i Pos  = Mem->Brush.PaintArea1;
+                Vec2i Size = Mem->Brush.PaintArea2 - Mem->Brush.PaintArea1;
+                int8* PreBrushImage = 0;
+
+                // TODO: OPTIMIZE: The following block seems optimizable
+                // Render base image for pre-brush undo
+                {
+                    GLCHK( glDisable(GL_BLEND) );
+
+                    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTAdd].VboHandle) );
+                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_ImGui].Handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_ImGui]);
+
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+
+                    PreBrushImage = (int8*)malloc(4 * Size.x * Size.y);
+                    GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, PreBrushImage) );
+                }
+
+                // Render base image with premultiplied alpha
+                {
+                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_PreMultiplyAlpha]);
+
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                }
+
+                // Render brush overlay with premultiplied alpha
+                {
+                    GLCHK( glEnable(GL_BLEND) );
+                    GLCHK( glBlendEquation(GL_FUNC_ADD) );
+                    GLCHK( glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
+
+                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_PreMultiplyAlpha]);
+
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                }
+
+                // Render blended result with demultiplied alpha
+                {
+                    GLCHK( glDisable(GL_BLEND) );
+
+                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Doc.TextureID, 0) );
+                    GLCHK( glUseProgram(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_DeMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+                    GL::SetVertexAttribs(Mem->Shaders[PapayaShader_DeMultiplyAlpha]);
+
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboRenderTexture) );
+                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                }
+
+                PushUndo(Mem, Pos, Size, PreBrushImage);
+
+                if (PreBrushImage) { free(PreBrushImage); }
 
                 GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
                 GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+
+                GLCHK( glDisable(GL_BLEND) );
             }
+
+            Mem->Misc.DrawOverlay   = false;
+            Mem->Brush.BeingDragged = false;
+        }
+
+        if (Mem->Brush.BeingDragged)
+        {
+            Mem->Misc.DrawOverlay = true;
+
+            GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->Misc.FrameBufferObject) );
+
+            if (Mem->Mouse.Pressed[0])
+            {
+                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboSampleTexture, 0) );
+                GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
+                GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
+                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
+            }
+            GLCHK( glViewport(0, 0, Mem->Doc.Width, Mem->Doc.Height) );
+
+            GLCHK( glDisable(GL_BLEND) );
+            GLCHK( glDisable(GL_SCISSOR_TEST) );
+
+            // Setup orthographic projection matrix
+            float width  = (float)Mem->Doc.Width;
+            float height = (float)Mem->Doc.Height;
+            GLCHK( glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle) );
+
+            Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Vec2 CorrectedLastPos = Mem->Mouse.LastUV + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+
+#if 0
+            // Brush testing routine
+            local_persist int32 i = 0;
+
+            if (i%2)
+            {
+                local_persist int32 j = 0;
+                CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                j++;
+            }
+            else
+            {
+                local_persist int32 k = 0;
+                CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                k++;
+            }
+            i++;
+#endif
+
+            // Paint area calculation
+            {
+                float UVMinX = Math::Min(CorrectedPos.x, CorrectedLastPos.x);
+                float UVMinY = Math::Min(CorrectedPos.y, CorrectedLastPos.y);
+                float UVMaxX = Math::Max(CorrectedPos.x, CorrectedLastPos.x);
+                float UVMaxY = Math::Max(CorrectedPos.y, CorrectedLastPos.y);
+
+                int32 PixelMinX = Math::RoundToInt(UVMinX * Mem->Doc.Width  - 0.5f * Mem->Brush.Diameter);
+                int32 PixelMinY = Math::RoundToInt(UVMinY * Mem->Doc.Height - 0.5f * Mem->Brush.Diameter);
+                int32 PixelMaxX = Math::RoundToInt(UVMaxX * Mem->Doc.Width  + 0.5f * Mem->Brush.Diameter);
+                int32 PixelMaxY = Math::RoundToInt(UVMaxY * Mem->Doc.Height + 0.5f * Mem->Brush.Diameter);
+
+                Mem->Brush.PaintArea1.x = Math::Min(Mem->Brush.PaintArea1.x, PixelMinX);
+                Mem->Brush.PaintArea1.y = Math::Min(Mem->Brush.PaintArea1.y, PixelMinY);
+                Mem->Brush.PaintArea2.x = Math::Max(Mem->Brush.PaintArea2.x, PixelMaxX);
+                Mem->Brush.PaintArea2.y = Math::Max(Mem->Brush.PaintArea2.y, PixelMaxY);
+
+                Mem->Brush.PaintArea1.x = Math::Clamp(Mem->Brush.PaintArea1.x, 0, Mem->Doc.Width);
+                Mem->Brush.PaintArea1.y = Math::Clamp(Mem->Brush.PaintArea1.y, 0, Mem->Doc.Height);
+                Mem->Brush.PaintArea2.x = Math::Clamp(Mem->Brush.PaintArea2.x, 0, Mem->Doc.Width);
+                Mem->Brush.PaintArea2.y = Math::Clamp(Mem->Brush.PaintArea2.y, 0, Mem->Doc.Height);
+            }
+
+            GLCHK( glUniformMatrix4fv(Mem->Shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->Doc.ProjMtx[0][0]) );
+            GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->Doc.InverseAspect) ); // Pos uniform
+            GLCHK( glUniform2f(Mem->Shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->Doc.InverseAspect) ); // Lastpos uniform
+            GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->Brush.Diameter / ((float)Mem->Doc.Width * 2.0f)) );
+            float Opacity = Mem->Brush.Opacity;
+            //if (Mem->Tablet.Pressure > 0.0f) { Opacity *= Mem->Tablet.Pressure; }
+            GLCHK( glUniform4f(Mem->Shaders[PapayaShader_Brush].Uniforms[5], Mem->Picker.CurrentColor.r,
+                        Mem->Picker.CurrentColor.g,
+                        Mem->Picker.CurrentColor.b,
+                        Opacity) );
+            // Brush hardness
+            {
+                float Hardness;
+                if (Mem->Brush.AntiAlias && Mem->Brush.Diameter > 2)
+                {
+                    float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
+                    float Radius  = Mem->Brush.Diameter / 2.0f;
+                    Hardness      = Math::Min(Mem->Brush.Hardness, 1.0f - (AAWidth / Radius));
+                }
+                else
+                {
+                    Hardness      = Mem->Brush.Hardness;
+                }
+
+                GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[6], Hardness) );
+            }
+
+            GLCHK( glUniform1f(Mem->Shaders[PapayaShader_Brush].Uniforms[7], Mem->Doc.InverseAspect) ); // Inverse Aspect uniform
+
+            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_RTTBrush].VboHandle) );
+            GL::SetVertexAttribs(Mem->Shaders[PapayaShader_Brush]);
+
+            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
+            GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
+
+            uint32 Temp = Mem->Misc.FboRenderTexture;
+            Mem->Misc.FboRenderTexture = Mem->Misc.FboSampleTexture;
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
+            Mem->Misc.FboSampleTexture = Temp;
+
+            GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
+            GLCHK( glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y) );
+        }
 
 
 #if 0
-            // =========================================================================================
-            // Visualization: Brush falloff
+        // =========================================================================================
+        // Visualization: Brush falloff
 
-            const int32 ArraySize = 256;
-            local_persist float Opacities[ArraySize] = { 0 };
+        const int32 ArraySize = 256;
+        local_persist float Opacities[ArraySize] = { 0 };
 
-            float MaxScale = 90.0f;
-            float Scale    = 1.0f / (1.0f - Mem->Brush.Hardness);
-            float Phase    = (1.0f - Scale) * (float)Math::Pi;
-            float Period   = (float)Math::Pi * Scale / (float)ArraySize;
+        float MaxScale = 90.0f;
+        float Scale    = 1.0f / (1.0f - Mem->Brush.Hardness);
+        float Phase    = (1.0f - Scale) * (float)Math::Pi;
+        float Period   = (float)Math::Pi * Scale / (float)ArraySize;
 
-            for (int32 i = 0; i < ArraySize; i++)
-            {
-                Opacities[i] = (cosf(((float)i * Period) + Phase) + 1.0f) * 0.5f;
-                if ((float)i < (float)ArraySize - ((float)ArraySize / Scale)) { Opacities[i] = 1.0f; }
-            }
-
-            ImGui::Begin("Brush falloff");
-            ImGui::PlotLines("", Opacities, ArraySize, 0, 0, FLT_MIN, FLT_MAX, Vec2(256,256));
-            ImGui::End();
-            // =========================================================================================
-#endif
+        for (int32 i = 0; i < ArraySize; i++)
+        {
+            Opacities[i] = (cosf(((float)i * Period) + Phase) + 1.0f) * 0.5f;
+            if ((float)i < (float)ArraySize - ((float)ArraySize / Scale)) { Opacities[i] = 1.0f; }
         }
+
+        ImGui::Begin("Brush falloff");
+        ImGui::PlotLines("", Opacities, ArraySize, 0, 0, FLT_MIN, FLT_MAX, Vec2(256,256));
+        ImGui::End();
+        // =========================================================================================
+#endif
     }
 
     // Undo/Redo
@@ -1779,15 +1759,15 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
     // Draw alpha grid
     {
+        // TODO: Conflate PapayaMesh_AlphaGrid and PapayaMesh_Canvas?
         GL::TransformQuad(Mem->Meshes[PapayaMesh_AlphaGrid],
             Mem->Doc.CanvasPosition,
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
         mat4x4 M;
-        mat4x4_ortho(M, 0.f, (float)Mem->Window.Width,
-                     (float)Mem->Window.Height, 0.f,
-                     -1.f, 1.f);
-        // Rotate around center
+        mat4x4_ortho(M, 0.f, Mem->Window.Width, Mem->Window.Height, 0.f, -1.f, 1.f);
+
+        if (Mem->CurrentTool == PapayaTool_CropRotate) // Rotate around center
         {
             mat4x4 R;
             Vec2 Offset = Vec2(Mem->Doc.CanvasPosition.x + Mem->Doc.Width *
@@ -1817,37 +1797,30 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             Mem->Doc.CanvasPosition,
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
-        GLCHK( glActiveTexture(GL_TEXTURE0) );
+        mat4x4 M;
+        mat4x4_ortho(M, 0.f, Mem->Window.Width, Mem->Window.Height, 0.f, -1.f, 1.f);
 
-        if (Mem->Misc.DrawCanvas)
+        if (Mem->CurrentTool == PapayaTool_CropRotate) // Rotate around center
         {
-            mat4x4 M;
-            mat4x4_ortho(M, 0.f, (float)Mem->Window.Width,
-                         (float)Mem->Window.Height, 0.f,
-                         -1.f, 1.f);
+            mat4x4 R;
+            Vec2 Offset = Vec2(Mem->Doc.CanvasPosition.x + Mem->Doc.Width *
+                    Mem->Doc.CanvasZoom * 0.5f,
+                    Mem->Doc.CanvasPosition.y + Mem->Doc.Height *
+                    Mem->Doc.CanvasZoom * 0.5f);
 
-            // Rotate around center
-            {
-                mat4x4 R;
-                Vec2 Offset = Vec2(Mem->Doc.CanvasPosition.x + Mem->Doc.Width *
-                                   Mem->Doc.CanvasZoom * 0.5f,
-                                   Mem->Doc.CanvasPosition.y + Mem->Doc.Height *
-                                   Mem->Doc.CanvasZoom * 0.5f);
-
-                mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-                mat4x4_rotate_Z(R, M, Mem->CropRotate.SliderAngle + 
-                        Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation));
-                mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
-                mat4x4_dup(M, R);
-            }
-
-            GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
-                true, 1,
-                UniformType_Matrix4, M);
+            mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
+            mat4x4_rotate_Z(R, M, Mem->CropRotate.SliderAngle + 
+                    Math::ToRadians(90.0f * Mem->CropRotate.BaseRotation));
+            mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
+            mat4x4_dup(M, R);
         }
+
+        GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
+        GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
+            true, 1,
+            UniformType_Matrix4, M);
 
         if (Mem->Misc.DrawOverlay)
         {
