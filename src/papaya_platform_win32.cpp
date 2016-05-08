@@ -281,7 +281,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
                 Mem.Window.Width = (int32) LOWORD(LParam);
                 Mem.Window.Height = (int32) HIWORD(LParam);
             }
-
+            Core::CenterDocument(&Mem);
             // Clear and swap buffers
             {
                 if (Mem.Colors[PapayaCol_Clear])

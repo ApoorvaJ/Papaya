@@ -221,13 +221,14 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
         Mem->Doc.InverseAspect = (float)Mem->Doc.Height / (float)Mem->Doc.Width;
         Mem->Doc.CanvasZoom = 0.8f * Math::Min((float)Mem->Window.Width/(float)Mem->Doc.Width, (float)Mem->Window.Height/(float)Mem->Doc.Height);
         if (Mem->Doc.CanvasZoom > 1.0f) { Mem->Doc.CanvasZoom = 1.0f; }
-        // Center canvas
-        {
-            int32 TopMargin = 53; // TODO: Put common layout constants in struct
-            int32 PosX = Math::RoundToInt((Mem->Window.Width - (float)Mem->Doc.Width * Mem->Doc.CanvasZoom) / 2.0f);
-            int32 PosY = TopMargin + Math::RoundToInt((Mem->Window.Height - TopMargin - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom) / 2.0f);
-            Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
-        }
+        //// Center canvas
+        //{
+        //    int32 TopMargin = 53; // TODO: Put common layout constants in struct
+        //    int32 PosX = Math::RoundToInt((Mem->Window.Width - (float)Mem->Doc.Width * Mem->Doc.CanvasZoom) / 2.0f);
+        //    int32 PosY = TopMargin + Math::RoundToInt((Mem->Window.Height - TopMargin - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom) / 2.0f);
+        //    Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
+        //}
+        CenterDocument(Mem);
         free(Texture);
     }
 
@@ -2030,4 +2031,12 @@ void Core::RenderImGui(ImDrawData* DrawData, void* MemPtr)
     GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer) );
     GLCHK( glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer) );
     GLCHK( glDisable        (GL_SCISSOR_TEST) );
+}
+
+void Core::CenterDocument(PapayaMemory *Mem)
+{
+    int32 TopMargin = 53; // TODO: Put common layout constants in struct
+    int32 PosX = Math::RoundToInt((Mem->Window.Width - (float)Mem->Doc.Width * Mem->Doc.CanvasZoom) / 2.0f);
+    int32 PosY = TopMargin + Math::RoundToInt((Mem->Window.Height - TopMargin - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom) / 2.0f);
+    Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
 }

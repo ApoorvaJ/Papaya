@@ -303,6 +303,7 @@ int main(int argc, char **argv)
                     ImGui::GetIO().DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
                     Mem.Window.Width = WindowAttributes.width;
                     Mem.Window.Height = WindowAttributes.height;
+                    Core::CenterDocument(&Mem);
                 } break;
 
                 case ClientMessage:
