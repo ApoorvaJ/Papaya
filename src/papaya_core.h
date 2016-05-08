@@ -226,6 +226,7 @@ namespace Core
 {
     void Initialize(PapayaMemory* Mem);
     void Shutdown(PapayaMemory* Mem);
+    void OnWindowResize(PapayaMemory* Mem, int32 Width, int32 Height);
     void UpdateAndRender(PapayaMemory* Mem);
     void RenderImGui(ImDrawData* DrawData, void* MemPtr);
     bool OpenDocument(char* Path, PapayaMemory* Mem);

@@ -268,19 +268,23 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
         case WM_SIZE:
         {
+            int32 Width, Height;
+
             if (WParam == SIZE_MAXIMIZED)
             {
                 int32 WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
                 int32 WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
                 SetWindowPos(Window, HWND_TOP, WindowsWorkArea.left, WindowsWorkArea.top, WorkAreaWidth, WorkAreaHeight, NULL);
-                Mem.Window.Width = WorkAreaWidth;
-                Mem.Window.Height = WorkAreaHeight;
+                Width = WorkAreaWidth;
+                Height = WorkAreaHeight;
             }
             else
             {
-                Mem.Window.Width = (int32) LOWORD(LParam);
-                Mem.Window.Height = (int32) HIWORD(LParam);
+                Width = (int32) LOWORD(LParam);
+                Height = (int32) HIWORD(LParam);
             }
+
+            Core::OnWindowResize(&Mem, Width, Height);
 
             // Clear and swap buffers
             {

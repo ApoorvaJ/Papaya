@@ -364,7 +364,7 @@ void Core::Initialize(PapayaMemory* Mem)
     {
         Mem->Doc.Width = Mem->Doc.Height = 512;
 
-        Mem->CurrentTool = PapayaTool_Brush;
+        Mem->CurrentTool = PapayaTool_CropRotate;
 
         Mem->Brush.Diameter    = 100;
         Mem->Brush.MaxDiameter = 9999;
@@ -842,6 +842,20 @@ void Core::Initialize(PapayaMemory* Mem)
 void Core::Shutdown(PapayaMemory* Mem)
 {
     //TODO: Free stuff
+}
+
+void Core::OnWindowResize(PapayaMemory* Mem, int32 Width, int32 Height)
+{
+    Mem->Window.Width = Width;
+    Mem->Window.Height = Height;
+
+    // TODO: Intelligent centering. Recenter canvas only if the image was centered
+    //       before window was resized.
+    // Center canvas
+    int32 TopMargin = 53; // TODO: Put common layout constants in struct
+    int32 PosX = Math::RoundToInt((Mem->Window.Width - (float)Mem->Doc.Width * Mem->Doc.CanvasZoom) / 2.0f);
+    int32 PosY = TopMargin + Math::RoundToInt((Mem->Window.Height - TopMargin - (float)Mem->Doc.Height * Mem->Doc.CanvasZoom) / 2.0f);
+    Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
 }
 
 void Core::UpdateAndRender(PapayaMemory* Mem)
