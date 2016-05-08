@@ -8,7 +8,7 @@ void Picker::Init(PickerInfo* Picker)
 {
     Picker->CurrentColor = Color(220, 163, 89);
     Picker->Open         = false;
-    Picker->Pos          = Vec2(34, 120);
+    Picker->Pos          = Vec2(34, 152);
     Picker->Size         = Vec2(292, 350);
     Picker->HueStripPos  = Vec2(259, 42);
     Picker->HueStripSize = Vec2(30, 256);
@@ -147,8 +147,8 @@ void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse
 
         if (Picker->DraggingHue)
         {
-            Picker->CursorH = 1.0f - (Mouse.Pos.y - Pos.y) / 256.0f;
-            Picker->CursorH = Math::Clamp(Picker->CursorH, 0.0f, 1.0f);
+            Picker->CursorH = (Mouse.Pos.y - Pos.y) / 256.0f;
+            Picker->CursorH = 1.f - Math::Clamp(Picker->CursorH, 0.0f, 1.0f);
         }
 
     }
@@ -172,10 +172,10 @@ void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse
 
         if (Picker->DraggingSV)
         {
-            Picker->CursorSV.x =        (Mouse.Pos.x - Pos.x) / 256.0f;
-            Picker->CursorSV.y = 1.0f - (Mouse.Pos.y - Pos.y) / 256.0f;
-            Picker->CursorSV.x = Math::Clamp(Picker->CursorSV.x, 0.0f, 1.0f);
-            Picker->CursorSV.y = Math::Clamp(Picker->CursorSV.y, 0.0f, 1.0f);
+            Picker->CursorSV.x = (Mouse.Pos.x - Pos.x) / 256.f;
+            Picker->CursorSV.y = 1.f - (Mouse.Pos.y - Pos.y) / 256.f;
+            Picker->CursorSV.x = Math::Clamp(Picker->CursorSV.x, 0.f, 1.f);
+            Picker->CursorSV.y = Math::Clamp(Picker->CursorSV.y, 0.f, 1.f);
 
         }
     }
@@ -185,8 +185,8 @@ void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse
         float r, g, b;
         Math::HSVtoRGB(Picker->CursorH, Picker->CursorSV.x, Picker->CursorSV.y, r, g, b);
         Picker->NewColor = Color(Math::RoundToInt(r * 255.0f),  // Note: Rounding is essential.
-                Math::RoundToInt(g * 255.0f),  //       Without it, RGB->HSV->RGB
-                Math::RoundToInt(b * 255.0f)); //       is a lossy operation.
+                Math::RoundToInt(g * 255.0f),                   //       Without it, RGB->HSV->RGB
+                Math::RoundToInt(b * 255.0f));                  //       is a lossy operation.
     }
 
     if (Picker->BoundColor) { *Picker->BoundColor = Picker->NewColor; }
