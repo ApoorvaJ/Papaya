@@ -300,10 +300,7 @@ int main(int argc, char **argv)
                 {
                     XWindowAttributes WindowAttributes;
                     XGetWindowAttributes(XlibDisplay, XlibWindow, &WindowAttributes);
-                    ImGui::GetIO().DisplaySize = ImVec2((float)WindowAttributes.width, (float)WindowAttributes.height);
-                    // TODO: Call OnWindowResized() from here
-                    Mem.Window.Width = WindowAttributes.width;
-                    Mem.Window.Height = WindowAttributes.height;
+                    Core::OnWindowResize(&Mem, WindowAttributes.width,WindowAttributes.height);
                 } break;
 
                 case ClientMessage:

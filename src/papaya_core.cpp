@@ -848,6 +848,7 @@ void Core::OnWindowResize(PapayaMemory* Mem, int32 Width, int32 Height)
 {
     Mem->Window.Width = Width;
     Mem->Window.Height = Height;
+    ImGui::GetIO().DisplaySize = ImVec2((float)Width, (float)Height);
 
     // TODO: Intelligent centering. Recenter canvas only if the image was centered
     //       before window was resized.
