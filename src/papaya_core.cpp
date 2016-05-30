@@ -303,6 +303,10 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
 
     Timer::StopTime(&Mem->Debug.Timers[Timer_ImageOpen]);
 
+    //TODO: Move this to adjust after cropping and rotation
+    Mem->CropRotate.TopLeft = Vec2i(0,0);
+    Mem->CropRotate.BotRight = Vec2i(Mem->Doc.Width, Mem->Doc.Height);
+
     return true;
 }
 
@@ -373,6 +377,18 @@ void Core::Initialize(PapayaMemory* Mem)
         Mem->Brush.AntiAlias   = true;
 
         Picker::Init(&Mem->Picker);
+
+        // Initialize crop line mesh
+        // TODO: Move this into the CropRotate file
+        {
+            MeshInfo* Mesh = &Mem->Meshes[PapayaMesh_CropOutline];
+            Mesh->IsLineLoop = true;
+            Mesh->IndexCount = 4;
+            GLCHK( glGenBuffers(1, &Mesh->VboHandle) );
+            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh->VboHandle) );
+            GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) *
+                        Mesh->IndexCount , 0, GL_DYNAMIC_DRAW) );
+        }
 
         Mem->Misc.DrawOverlay      = false;
         Mem->Misc.ShowMetrics      = false;
@@ -1359,7 +1375,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             Vec2((Mem->Window.Width - Mem->Doc.Width) / 2, TopMargin + (Mem->Window.Height - TopMargin - Mem->Doc.Height) / 2),
             Vec2(Mem->Doc.Width, Mem->Doc.Height));
 
-        GL::DrawQuad(Mem->Meshes[PapayaMesh_ImageSizePreview], Mem->Shaders[PapayaShader_ImageSizePreview], true,
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_ImageSizePreview], Mem->Shaders[PapayaShader_ImageSizePreview], true,
             5,
             UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
             UniformType_Color, Mem->Colors[PapayaCol_ImageSizePreview1],
@@ -1786,7 +1802,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             mat4x4_dup(M, R);
         }
 
-        GL::DrawQuad(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid], true,
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_AlphaGrid], Mem->Shaders[PapayaShader_AlphaGrid], true,
             6,
             UniformType_Matrix4, M,
             UniformType_Color, Mem->Colors[PapayaCol_AlphaGrid1],
@@ -1823,7 +1839,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->Doc.TextureID) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-        GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui],
             true, 1,
             UniformType_Matrix4, M);
 
@@ -1832,9 +1848,35 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Misc.FboSampleTexture) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 1, true,
+            GL::DrawMesh(Mem->Meshes[PapayaMesh_Canvas], Mem->Shaders[PapayaShader_ImGui], 1, true,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
         }
+    }
+
+    // Draw crop outline
+    {
+        Vec2 V1 = Mem->Doc.CanvasPosition;
+        Vec2 V2 = V1 + Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height
+                * Mem->Doc.CanvasZoom);
+        MeshInfo* Mesh = &Mem->Meshes[PapayaMesh_CropOutline];
+
+        ImDrawVert Verts[4];
+        {
+            Verts[0].pos = V1;               Verts[0].uv = Vec2(0.0f, 0.0f);
+            Verts[1].pos = Vec2(V1.x, V2.y); Verts[1].uv = Vec2(0.0f, 1.0f);
+            Verts[2].pos = V2;               Verts[2].uv = Vec2(1.0f, 1.0f);
+            Verts[3].pos = Vec2(V2.x, V1.y); Verts[3].uv = Vec2(1.0f, 0.0f);
+        }
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh->VboHandle) );
+        GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
+
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_CropOutline], Mem->Shaders[PapayaShader_ImageSizePreview], true,
+            5,
+            UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
+            UniformType_Color, Color(255,0,0),
+            UniformType_Color, Color(0,255,0),
+            UniformType_Float, (float) Mem->Doc.Width,
+            UniformType_Float, (float) Mem->Doc.Height);
     }
 
     // Draw brush cursor
@@ -1848,7 +1890,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 (Mem->Mouse.IsDown[1] || Mem->Mouse.WasDown[1] ? Mem->Brush.RtDragStartPos : Mem->Mouse.Pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
                 Vec2(ScaledDiameter,ScaledDiameter));
 
-            GL::DrawQuad(Mem->Meshes[PapayaMesh_BrushCursor], Mem->Shaders[PapayaShader_BrushCursor], true,
+            GL::DrawMesh(Mem->Meshes[PapayaMesh_BrushCursor], Mem->Shaders[PapayaShader_BrushCursor], true,
                 4,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Color, Color(1.0f, 0.0f, 0.0f, Mem->Mouse.IsDown[1] ? Mem->Brush.Opacity : 0.0f),
@@ -1876,7 +1918,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     Mem->Mouse.Pos - (Size * 0.5f),
                     Size);
 
-                GL::DrawQuad(Mem->Meshes[PapayaMesh_EyeDropperCursor], Mem->Shaders[PapayaShader_EyeDropperCursor], true,
+                GL::DrawMesh(Mem->Meshes[PapayaMesh_EyeDropperCursor], Mem->Shaders[PapayaShader_EyeDropperCursor], true,
                     3,
                     UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                     UniformType_Color, Mem->EyeDropper.CurrentColor,
@@ -1958,13 +2000,13 @@ EndOfDoc:
         //       ImGui to get correct draw order.
 
         // Draw hue picker
-        GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip], false,
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_PickerHStrip], Mem->Shaders[PapayaShader_PickerHStrip], false,
                 2,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Float, Mem->Picker.CursorH);
 
         // Draw saturation-value picker
-        GL::DrawQuad(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox], false,
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_PickerSVBox], Mem->Shaders[PapayaShader_PickerSVBox], false,
                 3,
                 UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
                 UniformType_Float, Mem->Picker.CursorH,

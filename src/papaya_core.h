@@ -39,6 +39,7 @@ enum PapayaMesh_
     PapayaMesh_AlphaGrid,
     PapayaMesh_BrushCursor,
     PapayaMesh_EyeDropperCursor,
+    PapayaMesh_CropOutline,
     PapayaMesh_PickerHStrip,
     PapayaMesh_PickerSVBox,
     PapayaMesh_RTTBrush,
@@ -171,6 +172,8 @@ struct CropRotateInfo
 {
     int32 BaseRotation; // Multiply this by 90 to get the rotation in degrees
     float SliderAngle;
+    Vec2i TopLeft;
+    Vec2i BotRight;
 };
 
 struct PapayaPref

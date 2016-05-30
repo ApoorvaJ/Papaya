@@ -25,7 +25,8 @@ struct ShaderInfo
 
 struct MeshInfo
 {
-    size_t VboSize;
+    bool IsLineLoop; // 0 -> Triangle, !0 -> Line
+    size_t VboSize, IndexCount;
     uint32 VboHandle, ElementsHandle;
 };
 
@@ -37,7 +38,7 @@ namespace GL
     void SetVertexAttribs(const ShaderInfo& Shader);
     void InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage);
     void TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size);
-    void DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...);
+    void DrawMesh(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...);
     uint32 AllocateTexture(int32 Width, int32 Height, uint8* Data = 0);
 }
 
@@ -181,6 +182,7 @@ void GL::InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage)
     GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
     GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * 6, 0, (GLenum)Usage) );
+    Mesh.IndexCount = 6;
     TransformQuad(Mesh, Pos, Size);
 }
 
@@ -203,7 +205,8 @@ void GL::TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)
     GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
 }
 
-void GL::DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...)
+void GL::DrawMesh(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor,
+        int32 UniformCount, ...)
 {
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv  (GL_CURRENT_PROGRAM, &last_program) );
@@ -256,7 +259,7 @@ void GL::DrawQuad(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, 
     // Attribs
     SetVertexAttribs(Shader);
 
-    GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
+    GLCHK( glDrawArrays(Mesh.IsLineLoop ? GL_LINE_LOOP : GL_TRIANGLES, 0, Mesh.IndexCount) );
 
     // Restore modified state
     GLCHK( glBindBuffer (GL_ARRAY_BUFFER, 0) );
