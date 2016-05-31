@@ -820,6 +820,29 @@ void Core::Initialize(PapayaMemory* Mem)
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
+    // Unlit shader
+    {
+        const char* Frag =
+            "   #version 120                                                        \n"
+            "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
+            "                                                                       \n"
+            "   varying vec2 Frag_UV;                                               \n"
+            "   varying vec4 Frag_Color;                                            \n"
+            "                                                                       \n"
+            "   void main()                                                         \n"
+            "   {                                                                   \n"
+            "       gl_FragColor = Frag_Color;    \n"
+            "   }                                                                   \n";
+
+        GL::CompileShader(Mem->Shaders[PapayaShader_VertexColor], __FILE__, __LINE__,
+            Vert, Frag, 3, 2,
+            "Position", "UV", "Color",
+            "ProjMtx", "Texture");
+
+        GL::InitQuad(Mem->Meshes[PapayaMesh_Canvas],
+            Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
+    }
+
     // Setup for ImGui
     {
         GLCHK( glGenBuffers(1, &Mem->Meshes[PapayaMesh_ImGui].VboHandle) );
@@ -1862,21 +1885,30 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
         ImDrawVert Verts[4];
         {
-            Verts[0].pos = V1;               Verts[0].uv = Vec2(0.0f, 0.0f);
-            Verts[1].pos = Vec2(V1.x, V2.y); Verts[1].uv = Vec2(0.0f, 1.0f);
-            Verts[2].pos = V2;               Verts[2].uv = Vec2(1.0f, 1.0f);
-            Verts[3].pos = Vec2(V2.x, V1.y); Verts[3].uv = Vec2(1.0f, 0.0f);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            Verts[0].pos = V1;              
+            Verts[1].pos = Vec2(V1.x, V2.y);
+            Verts[2].pos = V2;              
+            Verts[3].pos = Vec2(V2.x, V1.y);
+
+            Verts[0].uv = Vec2(0.0f, 0.0f);
+            Verts[1].uv = Vec2(0.0f, 1.0f);
+            Verts[2].uv = Vec2(1.0f, 1.0f);
+            Verts[3].uv = Vec2(1.0f, 0.0f);
+
+            int32 Col1 = 0xffcc7a00;
+            int32 Col2 = 0xff1189e6;
+            Verts[0].col = Col1;
+            Verts[1].col = Col1;
+            Verts[2].col = Col2;
+            Verts[3].col = Col1;
         }
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh->VboHandle) );
         GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
 
-        GL::DrawMesh(Mem->Meshes[PapayaMesh_CropOutline], Mem->Shaders[PapayaShader_ImageSizePreview], true,
-            5,
-            UniformType_Matrix4, &Mem->Window.ProjMtx[0][0],
-            UniformType_Color, Color(255,0,0),
-            UniformType_Color, Color(0,255,0),
-            UniformType_Float, (float) Mem->Doc.Width,
-            UniformType_Float, (float) Mem->Doc.Height);
+        GL::DrawMesh(Mem->Meshes[PapayaMesh_CropOutline],
+                Mem->Shaders[PapayaShader_VertexColor], true,
+                1, UniformType_Matrix4, &Mem->Window.ProjMtx[0][0]);
     }
 
     // Draw brush cursor

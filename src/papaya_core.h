@@ -50,6 +50,7 @@ enum PapayaMesh_
 enum PapayaShader_
 {
     PapayaShader_ImGui,
+    PapayaShader_VertexColor,
     PapayaShader_ImageSizePreview,
     PapayaShader_Brush,
     PapayaShader_BrushCursor,
