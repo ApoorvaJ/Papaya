@@ -173,8 +173,9 @@ struct CropRotateInfo
 {
     int32 BaseRotation; // Multiply this by 90 to get the rotation in degrees
     float SliderAngle;
-    Vec2i TopLeft;
-    Vec2i BotRight;
+    uint8 CropMode;
+    Vec2 TopLeft;
+    Vec2 BotRight;
 };
 
 struct PapayaPref

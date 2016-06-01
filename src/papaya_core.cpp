@@ -304,8 +304,8 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
     Timer::StopTime(&Mem->Debug.Timers[Timer_ImageOpen]);
 
     //TODO: Move this to adjust after cropping and rotation
-    Mem->CropRotate.TopLeft = Vec2i(0,0);
-    Mem->CropRotate.BotRight = Vec2i(Mem->Doc.Width, Mem->Doc.Height);
+    Mem->CropRotate.TopLeft = Vec2(0,0);
+    Mem->CropRotate.BotRight = Vec2(Mem->Doc.Width, Mem->Doc.Height);
 
     return true;
 }
@@ -1876,32 +1876,52 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         }
     }
 
-    // Draw crop outline
+    // Update and draw crop outline
     {
-        Vec2 V1 = Mem->Doc.CanvasPosition;
-        Vec2 V2 = V1 + Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height
-                * Mem->Doc.CanvasZoom);
+        Vec2 P[4];
+        P[0] = Mem->Doc.CanvasPosition + Mem->CropRotate.TopLeft * Mem->Doc.CanvasZoom;
+        P[2] = P[0] + Mem->CropRotate.BotRight * Mem->Doc.CanvasZoom;
+        P[1] = Vec2(P[0].x, P[2].y);
+        P[3] = Vec2(P[2].x, P[0].y);
+
+        float MinDist = FLT_MAX;
+        int32 MinIndex = -1;
+        Vec2 Mouse = Vec2(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+        for (int32 i = 0; i < 4; i++)
+        {
+            float Dist = Math::Distance(P[i], Mouse);
+            if (MinDist > Dist)
+            {
+                MinDist = Dist;
+                MinIndex = i;
+            }
+        }
+
+        if (MinDist < 10.f) { Mem->CropRotate.CropMode = 1 << (MinIndex * 2); }
+        else                { Mem->CropRotate.CropMode = 0; }
+
         MeshInfo* Mesh = &Mem->Meshes[PapayaMesh_CropOutline];
 
         ImDrawVert Verts[4];
         {
             glBindTexture(GL_TEXTURE_2D, 0);
-            Verts[0].pos = V1;              
-            Verts[1].pos = Vec2(V1.x, V2.y);
-            Verts[2].pos = V2;              
-            Verts[3].pos = Vec2(V2.x, V1.y);
+            Verts[0].pos = P[0];              
+            Verts[1].pos = P[1];
+            Verts[2].pos = P[2];              
+            Verts[3].pos = P[3];
 
             Verts[0].uv = Vec2(0.0f, 0.0f);
             Verts[1].uv = Vec2(0.0f, 1.0f);
             Verts[2].uv = Vec2(1.0f, 1.0f);
             Verts[3].uv = Vec2(1.0f, 0.0f);
 
-            int32 Col1 = 0xffcc7a00;
-            int32 Col2 = 0xff1189e6;
-            Verts[0].col = Col1;
-            Verts[1].col = Col1;
-            Verts[2].col = Col2;
-            Verts[3].col = Col1;
+            uint32 Col1 = 0xffcc7a00;
+            uint32 Col2 = 0xff1189e6;
+            uint8 Mode = Mem->CropRotate.CropMode;
+            Verts[0].col = (Mode & 0x803) ? Col2 : Col1;
+            Verts[1].col = (Mode & 0x00E) ? Col2 : Col1;
+            Verts[2].col = (Mode & 0x038) ? Col2 : Col1;
+            Verts[3].col = (Mode & 0x0E0) ? Col2 : Col1;
         }
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh->VboHandle) );
         GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
