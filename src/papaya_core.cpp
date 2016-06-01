@@ -1897,7 +1897,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             }
         }
 
-        if (MinDist < 10.f) { Mem->CropRotate.CropMode = 1 << (MinIndex * 2); }
+        if (MinDist < 10.f) { Mem->CropRotate.CropMode = 1 << MinIndex; }
         else                { Mem->CropRotate.CropMode = 0; }
 
         MeshInfo* Mesh = &Mem->Meshes[PapayaMesh_CropOutline];
@@ -1918,10 +1918,10 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             uint32 Col1 = 0xffcc7a00;
             uint32 Col2 = 0xff1189e6;
             uint8 Mode = Mem->CropRotate.CropMode;
-            Verts[0].col = (Mode & 0x803) ? Col2 : Col1;
-            Verts[1].col = (Mode & 0x00E) ? Col2 : Col1;
-            Verts[2].col = (Mode & 0x038) ? Col2 : Col1;
-            Verts[3].col = (Mode & 0x0E0) ? Col2 : Col1;
+            Verts[0].col = (Mode & 1) ? Col2 : Col1;
+            Verts[1].col = (Mode & 2) ? Col2 : Col1;
+            Verts[2].col = (Mode & 4) ? Col2 : Col1;
+            Verts[3].col = (Mode & 8) ? Col2 : Col1;
         }
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh->VboHandle) );
         GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
