@@ -259,6 +259,7 @@ void GL::DrawMesh(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor,
     // Attribs
     SetVertexAttribs(Shader);
 
+    GLCHK( glLineWidth(2.0f) );
     GLCHK( glDrawArrays(Mesh.IsLineLoop ? GL_LINE_LOOP : GL_TRIANGLES, 0, Mesh.IndexCount) );
 
     // Restore modified state

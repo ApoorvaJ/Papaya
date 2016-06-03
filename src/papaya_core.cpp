@@ -1884,24 +1884,65 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         P[1] = Vec2(P[0].x, P[2].y);
         P[3] = Vec2(P[2].x, P[0].y);
 
-        float MinDist = FLT_MAX;
-        int32 MinIndex = -1;
-        Vec2 Mouse = Vec2(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
-        for (int32 i = 0; i < 4; i++)
+        // Only change vertex selection if the left mouse button is not down
+        if (!Mem->Mouse.IsDown[0])
         {
-            float Dist = Math::Distance(P[i], Mouse);
-            if (MinDist > Dist)
+            Mem->CropRotate.CropMode = 0;
+
+            float MinDist = FLT_MAX;
+            int32 MinIndex = -1;
+            Vec2 Mouse = Vec2(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+
+            // Vertex selection
+            for (int32 i = 0; i < 4; i++)
             {
-                MinDist = Dist;
-                MinIndex = i;
+                float Dist = Math::Distance(P[i], Mouse);
+                if (MinDist > Dist)
+                {
+                    MinDist = Dist;
+                    MinIndex = i;
+                }
+            }
+
+            if (MinDist < 20.f)
+            {
+                Mem->CropRotate.CropMode = 1 << MinIndex;
+            }
+            else // Edge selecton
+            {
+                MinDist = FLT_MAX;
+
+                for (int32 i = 0; i < 4; i++)
+                {
+                    int32 j = (i + 1) % 4;
+                    vec2 V1 = { P[i].x       , P[i].y       };
+                    vec2 V2 = { P[j].x , P[j].y };
+                    vec2 M  = { Mouse.x, Mouse.y };
+                    vec2 A, B;
+                    vec2_sub(A, V2, V1);
+                    vec2_sub(B, M , V1);
+                    float Dot = vec2_mul_inner(A, B);
+                    // Continue if projection of mouse doesn't lie on the edge V1-V2
+                    if (Dot < 0 || Dot > vec2_mul_inner(A, A)) { continue; }
+                    float Dist = (i % 2 == 0) ?
+                                 Math::Abs(P[i].x - Mouse.x) : // Vertical edge
+                                 Math::Abs(P[i].y - Mouse.y);
+                    if (MinDist > Dist)
+                    {
+                        MinDist = Dist;
+                        MinIndex = i;
+                    }
+                }
+
+                if (MinDist < 10.f)
+                {
+                    Mem->CropRotate.CropMode = (1 << MinIndex) |
+                                               (1 << (MinIndex + 1) % 4);
+                }
             }
         }
 
-        if (MinDist < 10.f) { Mem->CropRotate.CropMode = 1 << MinIndex; }
-        else                { Mem->CropRotate.CropMode = 0; }
-
         MeshInfo* Mesh = &Mem->Meshes[PapayaMesh_CropOutline];
-
         ImDrawVert Verts[4];
         {
             glBindTexture(GL_TEXTURE_2D, 0);
