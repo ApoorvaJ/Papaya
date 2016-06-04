@@ -1881,7 +1881,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         Vec2 Mouse = Vec2(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
         Vec2 P[4];
         P[0] = Mem->Doc.CanvasPosition + Mem->CropRotate.TopLeft * Mem->Doc.CanvasZoom;
-        P[2] = P[0] + Mem->CropRotate.BotRight * Mem->Doc.CanvasZoom;
+        P[2] = Mem->Doc.CanvasPosition + Mem->CropRotate.BotRight * Mem->Doc.CanvasZoom;
         P[1] = Vec2(P[0].x, P[2].y);
         P[3] = Vec2(P[2].x, P[0].y);
 
@@ -1946,53 +1946,20 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         if (Mem->CropRotate.CropMode && Mem->Mouse.IsDown[0])
         {
             Vec2 V = (Mouse - Mem->Doc.CanvasPosition) / Mem->Doc.CanvasZoom;
-            // TODO: Find a way to generalize this huge switch case
-            // TODO: Simplify coordinates by switching to texel absolute space?
             // TODO: Clamp these values to stop inversion and exceeding image bounds
             // TODO: Implement smart-bounds toggle for partial image rotational cropping
             //       while maintaining aspect ratio
-            switch (Mem->CropRotate.CropMode)
+            // Edges
+            if      (Mem->CropRotate.CropMode == 3)  { Mem->CropRotate.TopLeft.x  = V.x; }
+            else if (Mem->CropRotate.CropMode == 9)  { Mem->CropRotate.TopLeft.y  = V.y; }
+            else if (Mem->CropRotate.CropMode == 12) { Mem->CropRotate.BotRight.x = V.x; }
+            else if (Mem->CropRotate.CropMode == 6)  { Mem->CropRotate.BotRight.y = V.y; }
+            else // Vertices
             {
-                case 1: // Top left vertex
-                {
-                    Mem->CropRotate.BotRight += Mem->CropRotate.TopLeft - V;
-                    Mem->CropRotate.TopLeft = V;
-                } break;
-                case 2: // Bottom left vertex
-                {
-                    Mem->CropRotate.BotRight.x += Mem->CropRotate.TopLeft.x - V.x;
-                    Mem->CropRotate.TopLeft.x = V.x;
-                    Mem->CropRotate.BotRight.y = V.y - Mem->CropRotate.TopLeft.y;
-                } break;
-                case 4: // Bottom right vertex
-                {
-                    Mem->CropRotate.BotRight = V - Mem->CropRotate.TopLeft;
-                } break;
-                case 8: // Top right vertex
-                {
-                    Mem->CropRotate.BotRight.x = V.x - Mem->CropRotate.TopLeft.x;
-                    Mem->CropRotate.BotRight.y += Mem->CropRotate.TopLeft.y - V.y;
-                    Mem->CropRotate.TopLeft.y = V.y;
-                } break;
-
-                case 3: // Left edge
-                {
-                    Mem->CropRotate.BotRight.x += Mem->CropRotate.TopLeft.x - V.x;
-                    Mem->CropRotate.TopLeft.x = V.x;
-                } break;
-                case 12: // Right edge
-                {
-                    Mem->CropRotate.BotRight.x = V.x - Mem->CropRotate.TopLeft.x;
-                } break;
-                case 6: // Bottom edge
-                {
-                    Mem->CropRotate.BotRight.y = V.y - Mem->CropRotate.TopLeft.y;
-                } break;
-                case 9: // Top edge
-                {
-                    Mem->CropRotate.BotRight.y += Mem->CropRotate.TopLeft.y - V.y;
-                    Mem->CropRotate.TopLeft.y = V.y;
-                } break;
+                if (Mem->CropRotate.CropMode & 3)  { Mem->CropRotate.TopLeft.x  = V.x; }
+                if (Mem->CropRotate.CropMode & 9)  { Mem->CropRotate.TopLeft.y  = V.y; }
+                if (Mem->CropRotate.CropMode & 12) { Mem->CropRotate.BotRight.x = V.x; }
+                if (Mem->CropRotate.CropMode & 6)  { Mem->CropRotate.BotRight.y = V.y; }
             }
         }
 
