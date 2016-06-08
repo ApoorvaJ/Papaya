@@ -1877,6 +1877,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     }
 
     // Update and draw crop outline
+    if (Mem->CurrentTool == PapayaTool_CropRotate)
     {
         Vec2 Mouse = Vec2(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
         Vec2 P[4];
@@ -1936,8 +1937,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 if (MinDist < 10.f)
                 {
-                    Mem->CropRotate.CropMode = (1 << MinIndex) |
-                                               (1 << (MinIndex + 1) % 4);
+                    Mem->CropRotate.CropMode = (1 << MinIndex) | (1 << (MinIndex + 1) % 4);
                 }
             }
         }
@@ -1946,7 +1946,6 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         if (Mem->CropRotate.CropMode && Mem->Mouse.IsDown[0])
         {
             Vec2 V = (Mouse - Mem->Doc.CanvasPosition) / Mem->Doc.CanvasZoom;
-            // TODO: Clamp these values to stop inversion and exceeding image bounds
             // TODO: Implement smart-bounds toggle for partial image rotational cropping
             //       while maintaining aspect ratio
             // Edges
@@ -1960,6 +1959,31 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 if (Mem->CropRotate.CropMode & 9)  { Mem->CropRotate.TopLeft.y  = V.y; }
                 if (Mem->CropRotate.CropMode & 12) { Mem->CropRotate.BotRight.x = V.x; }
                 if (Mem->CropRotate.CropMode & 6)  { Mem->CropRotate.BotRight.y = V.y; }
+            }
+
+            if (Mem->CropRotate.CropMode & 3)
+            {
+                Mem->CropRotate.TopLeft.x =
+                    Math::Clamp((float)round(Mem->CropRotate.TopLeft.x),
+                            0.f, Mem->CropRotate.BotRight.x - 1);
+            }
+            if (Mem->CropRotate.CropMode & 9)
+            {
+                Mem->CropRotate.TopLeft.y =
+                    Math::Clamp((float)round(Mem->CropRotate.TopLeft.y),
+                            0.f, Mem->CropRotate.BotRight.y - 1);
+            }
+            if (Mem->CropRotate.CropMode & 12)
+            {
+                Mem->CropRotate.BotRight.x =
+                    Math::Clamp((float)round(Mem->CropRotate.BotRight.x),
+                            Mem->CropRotate.TopLeft.x + 1, (float)Mem->Doc.Width);
+            }
+            if (Mem->CropRotate.CropMode & 6)
+            {
+                Mem->CropRotate.BotRight.y =
+                    Math::Clamp((float)round(Mem->CropRotate.BotRight.y),
+                            Mem->CropRotate.TopLeft.y + 1, (float)Mem->Doc.Height);
             }
         }
 
