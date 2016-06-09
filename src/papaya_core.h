@@ -181,6 +181,7 @@ struct CropRotateInfo
     uint8 CropMode;
     Vec2 TopLeft;
     Vec2 BotRight;
+    Vec2 RectDragPosition;
 };
 
 struct PapayaPref

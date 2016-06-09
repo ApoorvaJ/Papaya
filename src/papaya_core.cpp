@@ -1891,34 +1891,40 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         {
             Mem->CropRotate.CropMode = 0;
 
-            float MinDist = FLT_MAX;
-            int32 MinIndex = -1;
 
             // Vertex selection
-            for (int32 i = 0; i < 4; i++)
             {
-                float Dist = Math::Distance(P[i], Mouse);
-                if (MinDist > Dist)
+                float MinDist = FLT_MAX;
+                int32 MinIndex;
+
+                for (int32 i = 0; i < 4; i++)
                 {
-                    MinDist = Dist;
-                    MinIndex = i;
+                    float Dist = Math::Distance(P[i], Mouse);
+                    if (MinDist > Dist)
+                    {
+                        MinDist = Dist;
+                        MinIndex = i;
+                    }
+                }
+
+                if (MinDist < 20.f)
+                {
+                    Mem->CropRotate.CropMode = 1 << MinIndex;
+                    goto Dragging;
                 }
             }
 
-            if (MinDist < 20.f)
+            // Edge selecton
             {
-                Mem->CropRotate.CropMode = 1 << MinIndex;
-            }
-            else // Edge selecton
-            {
-                MinDist = FLT_MAX;
+                float MinDist = FLT_MAX;
+                int32 MinIndex;
 
                 for (int32 i = 0; i < 4; i++)
                 {
                     int32 j = (i + 1) % 4;
-                    vec2 V1 = { P[i].x       , P[i].y       };
-                    vec2 V2 = { P[j].x , P[j].y };
-                    vec2 M  = { Mouse.x, Mouse.y };
+                    vec2 V1 = { P[i].x  , P[i].y  };
+                    vec2 V2 = { P[j].x  , P[j].y  };
+                    vec2 M  = { Mouse.x , Mouse.y };
                     vec2 A, B;
                     vec2_sub(A, V2, V1);
                     vec2_sub(B, M , V1);
@@ -1938,16 +1944,44 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 if (MinDist < 10.f)
                 {
                     Mem->CropRotate.CropMode = (1 << MinIndex) | (1 << (MinIndex + 1) % 4);
+                    goto Dragging;
+                }
+            }
+
+            // Entire rect selection
+            {
+                Vec2 V = (Mouse - Mem->Doc.CanvasPosition) / Mem->Doc.CanvasZoom;
+                if (V.x >= Mem->CropRotate.TopLeft.x  &&
+                    V.x <= Mem->CropRotate.BotRight.x &&
+                    V.y >= Mem->CropRotate.TopLeft.y  &&
+                    V.y <= Mem->CropRotate.BotRight.y)
+                {
+                    Mem->CropRotate.CropMode = 15;
+                    Mem->CropRotate.RectDragPosition = V - Mem->CropRotate.TopLeft;
                 }
             }
         }
 
-        // Outline dragging
+Dragging:
         if (Mem->CropRotate.CropMode && Mem->Mouse.IsDown[0])
         {
             Vec2 V = (Mouse - Mem->Doc.CanvasPosition) / Mem->Doc.CanvasZoom;
             // TODO: Implement smart-bounds toggle for partial image rotational cropping
             //       while maintaining aspect ratio
+            // Whole rect
+            if (Mem->CropRotate.CropMode == 15)
+            {
+                Vec2 V = ((Mouse - Mem->Doc.CanvasPosition) / Mem->Doc.CanvasZoom)
+                         - Mem->CropRotate.TopLeft;
+                Vec2 Delta = V - Mem->CropRotate.RectDragPosition;
+                Delta.x = Math::Clamp((float)round(Delta.x), -1.f * Mem->CropRotate.TopLeft.x,
+                                      Mem->Doc.Width - Mem->CropRotate.BotRight.x);
+                Delta.y = Math::Clamp((float)round(Delta.y), -1.f * Mem->CropRotate.TopLeft.y,
+                                      Mem->Doc.Height - Mem->CropRotate.BotRight.y);
+                Mem->CropRotate.TopLeft  += Delta;
+                Mem->CropRotate.BotRight += Delta;
+                goto Drawing;
+            }
             // Edges
             if      (Mem->CropRotate.CropMode == 3)  { Mem->CropRotate.TopLeft.x  = V.x; }
             else if (Mem->CropRotate.CropMode == 9)  { Mem->CropRotate.TopLeft.y  = V.y; }
@@ -1987,7 +2021,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             }
         }
 
-        MeshInfo* Mesh = &Mem->Meshes[PapayaMesh_CropOutline];
+Drawing:
         ImDrawVert Verts[4];
         {
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -2003,13 +2037,21 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
             uint32 Col1 = 0xffcc7a00;
             uint32 Col2 = 0xff1189e6;
+            uint32 Col3 = 0xff36bb0a;
             uint8 Mode = Mem->CropRotate.CropMode;
-            Verts[0].col = (Mode & 1) ? Col2 : Col1;
-            Verts[1].col = (Mode & 2) ? Col2 : Col1;
-            Verts[2].col = (Mode & 4) ? Col2 : Col1;
-            Verts[3].col = (Mode & 8) ? Col2 : Col1;
+            if (Mode == 15)
+            {
+                Verts[0].col = Verts[1].col = Verts[2].col = Verts[3].col = Col3;
+            }
+            else
+            {
+                Verts[0].col = (Mode & 1) ? Col2 : Col1;
+                Verts[1].col = (Mode & 2) ? Col2 : Col1;
+                Verts[2].col = (Mode & 4) ? Col2 : Col1;
+                Verts[3].col = (Mode & 8) ? Col2 : Col1;
+            }
         }
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mesh->VboHandle) );
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->Meshes[PapayaMesh_CropOutline].VboHandle) );
         GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
 
         GL::DrawMesh(Mem->Meshes[PapayaMesh_CropOutline],
