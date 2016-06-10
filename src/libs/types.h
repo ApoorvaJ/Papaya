@@ -18,19 +18,19 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
-struct Vec2i
-{
-    int32 x, y;
-    Vec2i() { x = y = 0; }
-    Vec2i(int32 _x, int32 _y) { x = _x; y = _y; }
-};
-
 struct Vec2
 {
     float x, y;
     Vec2() { x = y = 0.0f; }
     Vec2(float _x, float _y) { x = _x; y = _y; }
-    Vec2(Vec2i v) { x = (float)v.x; y = float(v.y); }
+};
+
+struct Vec2i
+{
+    int32 x, y;
+    Vec2i() { x = y = 0; }
+    Vec2i(int32 _x, int32 _y) { x = _x; y = _y; }
+    operator Vec2() const { return Vec2((float)x, (float)y); }
 };
 
 struct Color

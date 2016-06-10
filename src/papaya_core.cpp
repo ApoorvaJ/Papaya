@@ -191,7 +191,7 @@ internal void ResizeBuffers(PapayaMemory* Mem, int32 Width, int32 Height)
 
     // Set up meshes for rendering to texture
     {
-        Vec2 Size = Vec2(Width, Height);
+        Vec2 Size = Vec2((float)Width, (float)Height);
         GL::InitQuad(Mem->Meshes[PapayaMesh_RTTBrush], Vec2(0,0), Size, GL_STATIC_DRAW);
         GL::InitQuad(Mem->Meshes[PapayaMesh_RTTAdd]  , Vec2(0,0), Size, GL_STATIC_DRAW);
     }
@@ -257,7 +257,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
     }
 
     // Projection matrix
-    mat4x4_ortho(Mem->Doc.ProjMtx, 0.f, Mem->Doc.Width, 0.f, Mem->Doc.Height, -1.f, 1.f);
+    mat4x4_ortho(Mem->Doc.ProjMtx, 0.f, (float)Mem->Doc.Width, 0.f, (float)Mem->Doc.Height, -1.f, 1.f);
 
     // Init undo buffer
     {
@@ -305,7 +305,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
 
     //TODO: Move this to adjust after cropping and rotation
     Mem->CropRotate.TopLeft = Vec2(0,0);
-    Mem->CropRotate.BotRight = Vec2(Mem->Doc.Width, Mem->Doc.Height);
+    Mem->CropRotate.BotRight = Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height);
 
     return true;
 }
@@ -1288,7 +1288,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 if (ImGui::Button("Apply"))
                 {
-                    bool SizeChanged = (Mem->CropRotate.BaseRotation % 2);
+                    bool SizeChanged = (Mem->CropRotate.BaseRotation % 2 != 0);
 
                     // Swap render texture and document texture handles
                     if (SizeChanged)
@@ -1297,7 +1297,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                         Mem->Doc.Width = Mem->Doc.Height;
                         Mem->Doc.Height = Temp;
 
-                        mat4x4_ortho(Mem->Doc.ProjMtx, 0.f, Mem->Doc.Width, 0.f, Mem->Doc.Height, -1.f, 1.f);
+                        mat4x4_ortho(Mem->Doc.ProjMtx, 0.f, (float)Mem->Doc.Width, 0.f, (float)Mem->Doc.Height, -1.f, 1.f);
                         Mem->Doc.InverseAspect = (float)Mem->Doc.Height / 
                                                  (float)Mem->Doc.Width;
                         GLCHK( glDeleteTextures(1, &Mem->Misc.FboSampleTexture) );
@@ -1395,8 +1395,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     {
         int32 TopMargin = 53; // TODO: Put common layout constants in struct
         GL::TransformQuad(Mem->Meshes[PapayaMesh_ImageSizePreview],
-            Vec2((Mem->Window.Width - Mem->Doc.Width) / 2, TopMargin + (Mem->Window.Height - TopMargin - Mem->Doc.Height) / 2),
-            Vec2(Mem->Doc.Width, Mem->Doc.Height));
+            Vec2((float)(Mem->Window.Width - Mem->Doc.Width) / 2, TopMargin + (float)(Mem->Window.Height - TopMargin - Mem->Doc.Height) / 2),
+            Vec2((float)Mem->Doc.Width, (float)Mem->Doc.Height));
 
         GL::DrawMesh(Mem->Meshes[PapayaMesh_ImageSizePreview], Mem->Shaders[PapayaShader_ImageSizePreview], true,
             5,
@@ -1809,7 +1809,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
         mat4x4 M;
-        mat4x4_ortho(M, 0.f, Mem->Window.Width, Mem->Window.Height, 0.f, -1.f, 1.f);
+        mat4x4_ortho(M, 0.f, (float)Mem->Window.Width, (float)Mem->Window.Height, 0.f, -1.f, 1.f);
 
         if (Mem->CurrentTool == PapayaTool_CropRotate) // Rotate around center
         {
@@ -1842,7 +1842,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             Vec2(Mem->Doc.Width * Mem->Doc.CanvasZoom, Mem->Doc.Height * Mem->Doc.CanvasZoom));
 
         mat4x4 M;
-        mat4x4_ortho(M, 0.f, Mem->Window.Width, Mem->Window.Height, 0.f, -1.f, 1.f);
+        mat4x4_ortho(M, 0.f, (float)Mem->Window.Width, (float)Mem->Window.Height, 0.f, -1.f, 1.f);
 
         if (Mem->CurrentTool == PapayaTool_CropRotate) // Rotate around center
         {
@@ -1879,7 +1879,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     // Update and draw crop outline
     if (Mem->CurrentTool == PapayaTool_CropRotate)
     {
-        Vec2 Mouse = Vec2(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+        Vec2 Mouse = Vec2((float)Mem->Mouse.Pos.x, (float)Mem->Mouse.Pos.y);
         Vec2 P[4];
         P[0] = Mem->Doc.CanvasPosition + Mem->CropRotate.TopLeft * Mem->Doc.CanvasZoom;
         P[2] = Mem->Doc.CanvasPosition + Mem->CropRotate.BotRight * Mem->Doc.CanvasZoom;
@@ -1907,7 +1907,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     }
                 }
 
-                if (MinDist < 20.f)
+                if (MinDist < 10.f)
                 {
                     Mem->CropRotate.CropMode = 1 << MinIndex;
                     goto Dragging;

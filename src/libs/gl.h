@@ -26,7 +26,7 @@ struct ShaderInfo
 struct MeshInfo
 {
     bool IsLineLoop; // 0 -> Triangle, !0 -> Line
-    size_t VboSize, IndexCount;
+    uint32 VboSize, IndexCount;
     uint32 VboHandle, ElementsHandle;
 };
 
