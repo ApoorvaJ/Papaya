@@ -162,6 +162,7 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     <Image Include="..\..\img\papaya.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\core\crop_rotate.cpp" />
     <ClCompile Include="..\..\src\core\picker.cpp" />
     <ClCompile Include="..\..\src\core\prefs.cpp" />
     <ClCompile Include="..\..\src\libs\glew\glew.cpp" />
@@ -172,6 +173,7 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\core\crop_rotate.h" />
     <ClInclude Include="..\..\src\core\picker.h" />
     <ClInclude Include="..\..\src\core\prefs.h" />
     <ClInclude Include="..\..\src\libs\easytab.h" />

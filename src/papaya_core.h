@@ -4,6 +4,7 @@
 #include "libs/gl.h"
 #include "libs/timer.h"
 
+#include "core/crop_rotate.h"
 #include "core/picker.h"
 #include "core/prefs.h"
 
@@ -169,21 +170,6 @@ struct EyeDropperInfo
     Color CurrentColor;
 };
 
-struct CropRotateInfo
-{
-    int32 BaseRotation; // Multiply this by 90 to get the rotation in degrees
-    float SliderAngle;
-
-    // This is a bitfield that uses the 4 least significant bits to represent
-    // whether each of the 4 vertices are active. When dragging a vertex of the
-    // outline, only one vertex will be active, and when dragging an edge, 2
-    // vertices will be active.
-    uint8 CropMode;
-    Vec2 TopLeft;
-    Vec2 BotRight;
-    Vec2 RectDragPosition;
-};
-
 struct PapayaPref
 {
     char Name[256];
@@ -242,4 +228,5 @@ namespace Core
     void RenderImGui(ImDrawData* DrawData, void* MemPtr);
     bool OpenDocument(char* Path, PapayaMemory* Mem);
     void CloseDocument(PapayaMemory* Mem);
+    void ResizeBuffers(PapayaMemory* Mem, int32 Width, int32 Height);
 }
