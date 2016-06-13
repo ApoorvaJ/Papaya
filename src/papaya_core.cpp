@@ -906,7 +906,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         {
             Mem->Mouse.Pos = Math::RoundToVec2i(ImGui::GetMousePos());
             Vec2 MousePixelPos = Vec2(Math::Floor((Mem->Mouse.Pos.x - Mem->Doc.CanvasPosition.x) / Mem->Doc.CanvasZoom),
-                Math::Floor((Mem->Mouse.Pos.y - Mem->Doc.CanvasPosition.y) / Mem->Doc.CanvasZoom));
+                                      Math::Floor((Mem->Mouse.Pos.y - Mem->Doc.CanvasPosition.y) / Mem->Doc.CanvasZoom));
             Mem->Mouse.UV = Vec2(MousePixelPos.x / (float) Mem->Doc.Width, MousePixelPos.y / (float) Mem->Doc.Height);
 
             for (int32 i = 0; i < 3; i++)
@@ -1879,7 +1879,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
     // Update and draw crop outline
     if (Mem->CurrentTool == PapayaTool_CropRotate)
     {
-        Vec2 Mouse = Vec2((float)Mem->Mouse.Pos.x, (float)Mem->Mouse.Pos.y);
+        Vec2 Mouse = Mem->Mouse.Pos;
         Vec2 P[4];
         P[0] = Mem->Doc.CanvasPosition + Mem->CropRotate.TopLeft * Mem->Doc.CanvasZoom;
         P[2] = Mem->Doc.CanvasPosition + Mem->CropRotate.BotRight * Mem->Doc.CanvasZoom;
