@@ -370,11 +370,12 @@ void Core::Initialize(PapayaMemory* Mem)
 
         Mem->CurrentTool = PapayaTool_CropRotate;
 
-        Mem->Brush.Diameter    = 100;
-        Mem->Brush.MaxDiameter = 9999;
-        Mem->Brush.Hardness    = 1.0f;
-        Mem->Brush.Opacity     = 1.0f;
-        Mem->Brush.AntiAlias   = true;
+        Mem->Brush.Diameter           = 100;
+        Mem->Brush.MaxDiameter        = 9999;
+        Mem->Brush.Hardness           = 1.0f;
+        Mem->Brush.Opacity            = 1.0f;
+        Mem->Brush.AntiAlias          = true;
+        Mem->Brush.LineSegmentStartUV = Vec2(-1.0f, -1.0f);
 
         Picker::Init(&Mem->Picker);
         CropRotate::Init(Mem);
@@ -1334,6 +1335,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         if (Mem->Mouse.Pressed[0] && Mem->Mouse.InWorkspace)
         {
             Mem->Brush.BeingDragged = true;
+            Mem->Brush.DrawLineSegment = ImGui::GetIO().KeyShift && Mem->Brush.LineSegmentStartUV.x >= 0.0f;
             if (Mem->Picker.Open) { Mem->Picker.CurrentColor = Mem->Picker.NewColor; }
             Mem->Brush.PaintArea1 = Vec2i(Mem->Doc.Width + 1, Mem->Doc.Height + 1);
             Mem->Brush.PaintArea2 = Vec2i(0,0);
@@ -1419,6 +1421,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
             Mem->Misc.DrawOverlay   = false;
             Mem->Brush.BeingDragged = false;
+            Mem->Brush.LineSegmentStartUV = Mem->Mouse.UV;
         }
 
         if (Mem->Brush.BeingDragged)
@@ -1444,8 +1447,12 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             float height = (float)Mem->Doc.Height;
             GLCHK( glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle) );
 
-            Vec2 CorrectedPos     = Mem->Mouse.UV     + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-            Vec2 CorrectedLastPos = Mem->Mouse.LastUV + (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Vec2 Correction = (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+
+            Vec2 CorrectedPos = Mem->Mouse.UV + Correction;
+            Vec2 CorrectedLastPos = (Mem->Brush.DrawLineSegment ? Mem->Brush.LineSegmentStartUV : Mem->Mouse.LastUV) + Correction;
+
+            Mem->Brush.DrawLineSegment = false;
 
 #if 0
             // Brush testing routine

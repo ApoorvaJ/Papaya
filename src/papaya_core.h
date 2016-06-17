@@ -162,6 +162,8 @@ struct BrushInfo
     bool RtDragWithShift;
     int32 RtDragStartDiameter;
     float RtDragStartHardness, RtDragStartOpacity;
+    bool DrawLineSegment;
+    Vec2 LineSegmentStartUV;
     bool BeingDragged;
 };
 
