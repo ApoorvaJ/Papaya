@@ -28,6 +28,8 @@ inline Vec2& operator/=(Vec2& lhs, const float rhs)     { lhs.x /= rhs; lhs.y /=
 
 namespace Math
 {
+    const double Pi = 3.14159265358979323846;
+
     template<class T> T Min(T a, T b) { return (a < b ? a : b); }
     template<class T> T Max(T a, T b) { return (a > b ? a : b); }
     template<class T> T Clamp(T a, T min, T max) { return Math::Min(Math::Max(a, min), max); }
@@ -50,7 +52,6 @@ namespace Math
 
 #ifdef MATHLIB_IMPLEMENTATION
 
-const double Pi = 3.14159265358979323846;
 
 float Math::Abs(float a)
 {
