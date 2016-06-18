@@ -1419,8 +1419,10 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 GLCHK( glDisable(GL_BLEND) );
             }
 
-            Mem->Misc.DrawOverlay   = false;
-            Mem->Brush.BeingDragged = false;
+            Mem->Misc.DrawOverlay         = false;
+            Mem->Brush.BeingDragged       = false;
+            Mem->Brush.IsStraightDrag     = false;
+            Mem->Brush.WasStraightDrag    = false;
             Mem->Brush.LineSegmentStartUV = Mem->Mouse.UV;
         }
 
@@ -1447,8 +1449,41 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             float height = (float)Mem->Doc.Height;
             GLCHK( glUseProgram(Mem->Shaders[PapayaShader_Brush].Handle) );
 
-            Vec2 Correction = (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Mem->Brush.WasStraightDrag = Mem->Brush.IsStraightDrag;
+            Mem->Brush.IsStraightDrag = ImGui::GetIO().KeyShift;
 
+            if (!Mem->Brush.WasStraightDrag && Mem->Brush.IsStraightDrag)
+            {
+                Mem->Brush.StraightDragStartUV = Mem->Mouse.UV;
+                Mem->Brush.StraightDragSnapX = false;
+                Mem->Brush.StraightDragSnapY = false;
+            }
+
+            if (Mem->Brush.IsStraightDrag && !Mem->Brush.StraightDragSnapX && !Mem->Brush.StraightDragSnapY)
+            {
+                float dx = Math::Abs(Mem->Brush.StraightDragStartUV.x - Mem->Mouse.UV.x);
+                float dy = Math::Abs(Mem->Brush.StraightDragStartUV.y - Mem->Mouse.UV.y);
+                Mem->Brush.StraightDragSnapX = (dx < dy);
+                Mem->Brush.StraightDragSnapY = (dy < dx);
+            }
+
+            if (Mem->Brush.IsStraightDrag && Mem->Brush.StraightDragSnapX)
+            {
+                Mem->Mouse.UV.x = Mem->Brush.StraightDragStartUV.x;
+                float pixelPos = Mem->Mouse.UV.x * Mem->Doc.Width + 0.5f;
+                Mem->Mouse.Pos.x = Math::RoundToInt(pixelPos * Mem->Doc.CanvasZoom + Mem->Doc.CanvasPosition.x);
+                Platform::SetMousePosition(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+            }
+
+            if (Mem->Brush.IsStraightDrag && Mem->Brush.StraightDragSnapY)
+            {
+                Mem->Mouse.UV.y = Mem->Brush.StraightDragStartUV.y;
+                float pixelPos = Mem->Mouse.UV.y * Mem->Doc.Height + 0.5f;
+                Mem->Mouse.Pos.y = Math::RoundToInt(pixelPos * Mem->Doc.CanvasZoom + Mem->Doc.CanvasPosition.y);
+                Platform::SetMousePosition(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+            }
+
+            Vec2 Correction = (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
             Vec2 CorrectedPos = Mem->Mouse.UV + Correction;
             Vec2 CorrectedLastPos = (Mem->Brush.DrawLineSegment ? Mem->Brush.LineSegmentStartUV : Mem->Mouse.LastUV) + Correction;
 
@@ -1535,8 +1570,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
             uint32 Temp = Mem->Misc.FboRenderTexture;
             Mem->Misc.FboRenderTexture = Mem->Misc.FboSampleTexture;
-            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
             Mem->Misc.FboSampleTexture = Temp;
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->Misc.FboRenderTexture, 0) );
 
             GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
             GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
@@ -1906,7 +1941,7 @@ EndOfDoc:
 
     // Last mouse info
     {
-        Mem->Mouse.LastPos    = Math::RoundToVec2i(ImGui::GetMousePos());
+        Mem->Mouse.LastPos    = Mem->Mouse.Pos;
         Mem->Mouse.LastUV     = Mem->Mouse.UV;
         Mem->Mouse.WasDown[0] = ImGui::IsMouseDown(0);
         Mem->Mouse.WasDown[1] = ImGui::IsMouseDown(1);

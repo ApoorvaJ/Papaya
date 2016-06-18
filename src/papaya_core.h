@@ -165,6 +165,11 @@ struct BrushInfo
     bool DrawLineSegment;
     Vec2 LineSegmentStartUV;
     bool BeingDragged;
+    bool IsStraightDrag;
+    bool WasStraightDrag;
+    bool StraightDragSnapX;
+    bool StraightDragSnapY;
+    Vec2 StraightDragStartUV;
 };
 
 struct EyeDropperInfo
