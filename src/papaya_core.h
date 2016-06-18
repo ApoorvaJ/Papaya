@@ -162,7 +162,14 @@ struct BrushInfo
     bool RtDragWithShift;
     int32 RtDragStartDiameter;
     float RtDragStartHardness, RtDragStartOpacity;
+    bool DrawLineSegment;
+    Vec2 LineSegmentStartUV;
     bool BeingDragged;
+    bool IsStraightDrag;
+    bool WasStraightDrag;
+    bool StraightDragSnapX;
+    bool StraightDragSnapY;
+    Vec2 StraightDragStartUV;
 };
 
 struct EyeDropperInfo
