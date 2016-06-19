@@ -91,15 +91,15 @@ struct WindowInfo
     float ProjMtx[4][4];
 };
 
-
-#pragma region Undo structs
-
+// =======================================================================================
+// Undo structs
 struct UndoData // TODO: Convert into a union of structs once multiple types of undo ops are required
 {
     uint8 OpCode; // Stores enum of type PapayaUndoOp_
     UndoData* Prev, *Next;
     Vec2i Pos, Size; // Position and size of the suffixed data block
     bool IsSubRect; // If true, then the suffixed image data contains two subrects - before and after the brush
+    Vec2 LineSegmentStartUV;
     // Image data goes after this
 };
 
@@ -114,7 +114,8 @@ struct UndoBufferInfo
     size_t Count;  // Number of undo ops in buffer
     size_t CurrentIndex; // Index of the current undo data block from the beginning
 };
-#pragma endregion
+
+// =======================================================================================
 
 struct DocumentInfo
 {

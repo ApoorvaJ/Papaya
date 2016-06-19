@@ -31,7 +31,8 @@ internal uint32 LoadAndBindImage(char* Path)
 
 // This function reads from the frame buffer and hence needs the appropriate frame buffer to be
 // bound before it is called.
-internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushImage)
+internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushImage,
+        Vec2 LineSegmentStartUV)
 {
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
     {
@@ -55,14 +56,15 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushI
         Mem->Doc.Undo.Count = Mem->Doc.Undo.CurrentIndex + 1;
     }
 
-    UndoData Data  = {};
-    Data.OpCode    = PapayaUndoOp_Brush;
-    Data.Prev      = Mem->Doc.Undo.Last;
-    Data.Pos       = Pos;
-    Data.Size      = Size;
-    Data.IsSubRect = (PreBrushImage != 0);
-    uint64 BufSize = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
-    void* Buf      = malloc((size_t)BufSize);
+    UndoData Data           = {};
+    Data.OpCode             = PapayaUndoOp_Brush;
+    Data.Prev               = Mem->Doc.Undo.Last;
+    Data.Pos                = Pos;
+    Data.Size               = Size;
+    Data.IsSubRect          = (PreBrushImage !                                               = 0);
+    Data.LineSegmentStartUV = LineSegmentStartUV;
+    uint64 BufSize          = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
+    void* Buf               = malloc((size_t)BufSize);
 
     Timer::StartTime(&Mem->Debug.Timers[Timer_GetUndoImage]);
     memcpy(Buf, &Data, sizeof(UndoData));
@@ -261,10 +263,9 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
 
     // Init undo buffer
     {
-        size_t MaxSize        = 512 * 1024 * 1024; // Maximum number of bytes to allocate as an undo buffer
-        size_t UndoRecordSize = sizeof(UndoData) + 4 * Mem->Doc.Width * Mem->Doc.Height;
-        Mem->Doc.Undo.Size    = Math::Min(100 * UndoRecordSize, MaxSize);
-        if (Mem->Doc.Undo.Size < 2 * UndoRecordSize) { Mem->Doc.Undo.Size = 2 * UndoRecordSize; }
+        size_t Size        = 512 * 1024 * 1024;
+        size_t MinSize     = 3 * (sizeof(UndoData) + 8 * Mem->Doc.Width * Mem->Doc.Height);
+        Mem->Doc.Undo.Size = Math::Max(Size, MinSize);
 
         Mem->Doc.Undo.Start = malloc((size_t)Mem->Doc.Undo.Size);
         Mem->Doc.Undo.CurrentIndex = -1;
@@ -287,7 +288,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
             GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-            PushUndo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height), 0);
+            PushUndo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height), 0, Vec2());
 
             uint32 Temp = Mem->Misc.FboRenderTexture;
             Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
@@ -1342,6 +1343,12 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
         }
         else if (Mem->Mouse.Released[0] && Mem->Brush.BeingDragged)
         {
+            Mem->Misc.DrawOverlay         = false;
+            Mem->Brush.BeingDragged       = false;
+            Mem->Brush.IsStraightDrag     = false;
+            Mem->Brush.WasStraightDrag    = false;
+            Mem->Brush.LineSegmentStartUV = Mem->Mouse.UV;
+
             // TODO: Make a vararg-based RTT function
             // Additive render-to-texture
             {
@@ -1409,7 +1416,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
-                PushUndo(Mem, Pos, Size, PreBrushImage);
+                PushUndo(Mem, Pos, Size, PreBrushImage, Mem->Brush.LineSegmentStartUV);
 
                 if (PreBrushImage) { free(PreBrushImage); }
 
@@ -1418,12 +1425,6 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 GLCHK( glDisable(GL_BLEND) );
             }
-
-            Mem->Misc.DrawOverlay         = false;
-            Mem->Brush.BeingDragged       = false;
-            Mem->Brush.IsStraightDrag     = false;
-            Mem->Brush.WasStraightDrag    = false;
-            Mem->Brush.LineSegmentStartUV = Mem->Mouse.UV;
         }
 
         if (Mem->Brush.BeingDragged)
@@ -1616,6 +1617,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             {
                 Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Next;
                 Mem->Doc.Undo.CurrentIndex++;
+                Mem->Brush.LineSegmentStartUV = Mem->Doc.Undo.Current->LineSegmentStartUV;
                 Refresh = true;
             }
             else if (!ImGui::GetIO().KeyShift &&
@@ -1633,6 +1635,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 Mem->Doc.Undo.Current = Mem->Doc.Undo.Current->Prev;
                 Mem->Doc.Undo.CurrentIndex--;
+                Mem->Brush.LineSegmentStartUV = Mem->Doc.Undo.Current->LineSegmentStartUV;
             }
 
             if (Refresh)
