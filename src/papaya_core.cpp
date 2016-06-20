@@ -61,7 +61,7 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushI
     Data.Prev               = Mem->Doc.Undo.Last;
     Data.Pos                = Pos;
     Data.Size               = Size;
-    Data.IsSubRect          = (PreBrushImage !                                               = 0);
+    Data.IsSubRect          = (PreBrushImage != 0);
     Data.LineSegmentStartUV = LineSegmentStartUV;
     uint64 BufSize          = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
     void* Buf               = malloc((size_t)BufSize);
