@@ -1,15 +1,16 @@
-VPATH=../../src 				\
-	  ../../src/core 			\
-	  ../../src/libs 			\
-	  ../../src/libs/imgui 		\
+VPATH=../../src                 \
+	  ../../src/core            \
+	  ../../src/libs            \
+	  ../../src/libs/imgui      \
 	  ../../src/libs/glew
 
-SRCS=papaya_platform_linux.cpp 	\
-	 papaya_core.cpp 			\
-	 glew.cpp 					\
-	 imgui.cpp 					\
-	 single_header_libs.cpp 	\
-	 picker.cpp 				\
+SRCS=papaya_platform_linux.cpp  \
+	 papaya_core.cpp            \
+	 glew.cpp                   \
+	 imgui.cpp                  \
+	 single_header_libs.cpp     \
+	 crop_rotate.cpp            \
+	 picker.cpp                 \
 	 prefs.cpp 
 
 OBJS=$(subst .cpp,.o,$(SRCS))
