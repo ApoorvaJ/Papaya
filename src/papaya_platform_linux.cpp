@@ -270,7 +270,25 @@ int main(int argc, char **argv)
 
         // Keyboard mappings
         {
-            io.KeyMap[ImGuiKey_Z] = XK_z;
+            io.KeyMap[ImGuiKey_Tab]        = 0;
+            io.KeyMap[ImGuiKey_LeftArrow]  = 1;
+            io.KeyMap[ImGuiKey_RightArrow] = 2;
+            io.KeyMap[ImGuiKey_UpArrow]    = 3;
+            io.KeyMap[ImGuiKey_DownArrow]  = 4;
+            io.KeyMap[ImGuiKey_PageUp]     = 5;
+            io.KeyMap[ImGuiKey_PageDown]   = 6;
+            io.KeyMap[ImGuiKey_Home]       = 7;
+            io.KeyMap[ImGuiKey_End]        = 8;
+            io.KeyMap[ImGuiKey_Delete]     = 9;
+            io.KeyMap[ImGuiKey_Backspace]  = 10;
+            io.KeyMap[ImGuiKey_Enter]      = 11;
+            io.KeyMap[ImGuiKey_Escape]     = 12;
+            io.KeyMap[ImGuiKey_A]          = XK_a;
+            io.KeyMap[ImGuiKey_C]          = XK_c;
+            io.KeyMap[ImGuiKey_V]          = XK_v;
+            io.KeyMap[ImGuiKey_X]          = XK_x;
+            io.KeyMap[ImGuiKey_Y]          = XK_y;
+            io.KeyMap[ImGuiKey_Z]          = XK_z;
         }
     }
 
@@ -344,18 +362,40 @@ int main(int argc, char **argv)
                         }
                     }
 
-                    int32 keysym = XLookupKeysym(&Event.xkey, 0);
-                    switch (keysym) // List of keysym's can be found in keysymdef.h or here [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
+                    // List of keysym's can be found in keysymdef.h or here
+                    // [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
+
+                    ImGuiIO& io = ImGui::GetIO();
+                    bool down   = (Event.type == KeyPress);
+
+                    KeySym keysym;
+                    XComposeStatus status;
+                    char input; // TODO: Do we need an array here?
+                    XLookupString(&Event.xkey, &input, 1, &keysym, &status);
+                    if (down) { io.AddInputCharacter(input); }
+
+                    switch (keysym)
                     {
                         case XK_Control_L:
-                        case XK_Control_R: { ImGui::GetIO().KeyCtrl  = (Event.type == KeyPress); } break;
+                        case XK_Control_R: { io.KeyCtrl = down; } break;
                         case XK_Shift_L:
-                        case XK_Shift_R:   { ImGui::GetIO().KeyShift = (Event.type == KeyPress); } break;
+                        case XK_Shift_R:   { io.KeyShift = down; } break;
                         case XK_Alt_L:
-                        case XK_Alt_R:     { ImGui::GetIO().KeyAlt   = (Event.type == KeyPress); } break;
+                        case XK_Alt_R:     { io.KeyAlt = down; } break;
 
-                        case XK_z:
-                        { ImGui::GetIO().KeysDown[keysym] = (Event.type == KeyPress); } break;
+                        case XK_Tab:        { io.KeysDown[0]  = down; } break;
+                        case XK_Left:       { io.KeysDown[1]  = down; } break;
+                        case XK_Right:      { io.KeysDown[2]  = down; } break;
+                        case XK_Up:         { io.KeysDown[3]  = down; } break;
+                        case XK_Down:       { io.KeysDown[4]  = down; } break;
+                        case XK_Page_Up:    { io.KeysDown[5]  = down; } break;
+                        case XK_Page_Down:  { io.KeysDown[6]  = down; } break;
+                        case XK_Home:       { io.KeysDown[7]  = down; } break;
+                        case XK_End:        { io.KeysDown[8]  = down; } break;
+                        case XK_Delete:     { io.KeysDown[9]  = down; } break;
+                        case XK_BackSpace:  { io.KeysDown[10] = down; } break;
+                        case XK_Return:     { io.KeysDown[11] = down; } break;
+                        case XK_Escape:     { io.KeysDown[12] = down; } break;
                     }
                 } break;
             }
