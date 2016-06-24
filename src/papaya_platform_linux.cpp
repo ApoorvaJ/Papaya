@@ -19,7 +19,7 @@
 #define GLEW_NO_GLU
 
 #ifndef PAPAYARELEASE
-#define PAPAYA_DEFAULT_IMAGE "/home/apoorva/Downloads/transparent4k.png"
+#define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/Linux.png"
 #endif
 
 
@@ -396,6 +396,15 @@ int main(int argc, char **argv)
                         case XK_BackSpace:  { io.KeysDown[10] = down; } break;
                         case XK_Return:     { io.KeysDown[11] = down; } break;
                         case XK_Escape:     { io.KeysDown[12] = down; } break;
+
+                        case XK_a:     
+                        case XK_c:     
+                        case XK_v:     
+                        case XK_x:     
+                        case XK_y:     
+                        case XK_z:     
+                            io.KeysDown[keysym] = down;
+                            break;
                     }
                 } break;
             }
