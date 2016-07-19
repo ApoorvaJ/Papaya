@@ -3,6 +3,7 @@
 #include "papaya_platform.h"
 #include "libs/gl.h"
 #include "libs/timer.h"
+#include "libs/easytab.h"
 
 #include "core/crop_rotate.h"
 #include "core/picker.h"
@@ -146,6 +147,7 @@ struct TabletInfo
 {
     int32 PosX, PosY;
     float Pressure;
+    int32 Buttons;
 };
 
 struct BrushInfo

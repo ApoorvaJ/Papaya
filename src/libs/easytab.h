@@ -148,6 +148,8 @@
 
 // TODO: Null checks and warnings for EasyTab
 // TODO: Differentiate between stylus and eraser in the API
+// TODO: Linux support for relative mode
+// TODO: Documentation for relative mode
 
 // =============================================================================
 // EasyTab header section
@@ -181,6 +183,12 @@ typedef enum
 
     EASYTAB_EVENT_NOT_HANDLED = -16,
 } EasyTabResult;
+
+typedef enum
+{
+    EASYTAB_TRACKING_MODE_SYSTEM   = 0,
+    EASYTAB_TRACKING_MODE_RELATIVE = 1,
+} EasyTabTrackingMode;
 
 #ifdef WIN32
 // -----------------------------------------------------------------------------
@@ -375,7 +383,7 @@ typedef enum
 // -----------------------------------------------------------------------------
 
 #define PACKETDATA PK_X | PK_Y | PK_BUTTONS | PK_NORMAL_PRESSURE
-#define PACKETMODE PK_BUTTONS
+#define PACKETMODE 0
 
 // -----------------------------------------------------------------------------
 // pktdef.h
@@ -543,12 +551,34 @@ typedef HCTX (WINAPI * WTMGRDEFCONTEXTEX) (HMGR, UINT, BOOL);
 #endif // WIN32
 
 // -----------------------------------------------------------------------------
+// Enums
+// -----------------------------------------------------------------------------
+
+/*
+    Use this enum in conjunction with EasyTab->Buttons to check for tablet button
+    presses.
+    e.g. To check for lower pen button press, use:
+
+    if (EasyTab->Buttons & EasyTab_Buttons_Pen_Lower)
+    {
+        // Lower button is pressed
+    }
+*/
+enum EasyTab_Buttons_
+{
+    EasyTab_Buttons_Pen_Touch = 1 << 0, // Pen is touching tablet
+    EasyTab_Buttons_Pen_Lower = 1 << 1, // Lower pen button is pressed
+    EasyTab_Buttons_Pen_Upper = 1 << 2, // Upper pen button is pressed
+};
+
+// -----------------------------------------------------------------------------
 // Structs
 // -----------------------------------------------------------------------------
 typedef struct
 {
     int32_t PosX, PosY;
     float   Pressure; // Range: 0.0f to 1.0f
+    int32_t Buttons; // Bit field. Use with the EasyTab_Buttons_ enum.
 
     int32_t RangeX, RangeY;
     int32_t MaxPressure;
@@ -601,7 +631,14 @@ extern EasyTabInfo* EasyTab;
 #elif defined(_WIN32)
 
     EasyTabResult EasyTab_Load(HWND Window);
-    EasyTabResult EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPARAM WParam);
+    EasyTabResult EasyTab_Load_Ex(HWND Window,
+                                  EasyTabTrackingMode Mode,
+                                  uint32_t RelativeModeSensitivity,
+                                  int32_t MoveCursor);
+    EasyTabResult EasyTab_HandleEvent(HWND Window,
+                                      UINT Message,
+                                      LPARAM LParam,
+                                      WPARAM WParam);
     void EasyTab_Unload();
 
 #else
@@ -736,7 +773,16 @@ void EasyTab_Unload()
         return EASYTAB_INVALID_FUNCTION_ERROR;                                                           \
     }
 
+
 EasyTabResult EasyTab_Load(HWND Window)
+{
+    return EasyTab_Load_Ex(Window, EASYTAB_TRACKING_MODE_SYSTEM, 0, 1);
+}
+
+EasyTabResult EasyTab_Load_Ex(HWND Window,
+                              EasyTabTrackingMode TrackingMode,
+                              uint32_t RelativeModeSensitivity,
+                              int32_t MoveCursor)
 {
     EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
     if (!EasyTab) { return EASYTAB_MEMORY_ERROR; }
@@ -791,16 +837,11 @@ EasyTabResult EasyTab_Load(HWND Window)
         EasyTab->WTInfoA(WTI_DEVICES, DVC_NPRESSURE, &Pressure);
 
         LogContext.lcPktData = PACKETDATA; // ??
-        LogContext.lcOptions |= CXO_SYSTEM;
         LogContext.lcOptions |= CXO_MESSAGES;
+        if (MoveCursor) { LogContext.lcOptions |= CXO_SYSTEM; }
         LogContext.lcPktMode = PACKETMODE;
         LogContext.lcMoveMask = PACKETDATA;
         LogContext.lcBtnUpMask = LogContext.lcBtnDnMask;
-
-        LogContext.lcInOrgX = 0;
-        LogContext.lcInOrgY = 0;
-        LogContext.lcInExtX = RangeX.axMax;
-        LogContext.lcInExtY = RangeY.axMax;
 
         LogContext.lcOutOrgX = 0;
         LogContext.lcOutOrgY = 0;
@@ -811,6 +852,21 @@ EasyTabResult EasyTab_Load(HWND Window)
         LogContext.lcSysOrgY = 0;
         LogContext.lcSysExtX = GetSystemMetrics(SM_CXSCREEN);
         LogContext.lcSysExtY = GetSystemMetrics(SM_CYSCREEN);
+
+        if (TrackingMode == EASYTAB_TRACKING_MODE_RELATIVE)
+        {
+            LogContext.lcPktMode |= PK_X | PK_Y; // TODO: Should this be included in the
+                                                 //       PACKETMODE macro define up top?
+            LogContext.lcSysMode = 1;
+            if (MoveCursor)
+            {
+                LogContext.lcSysSensX = LogContext.lcSysSensY = RelativeModeSensitivity;
+            }
+            else
+            {
+                LogContext.lcSensX = LogContext.lcSensY = RelativeModeSensitivity;
+            }
+        }
 
         EasyTab->Context = EasyTab->WTOpenA(Window, &LogContext, TRUE);
 
@@ -849,6 +905,7 @@ EasyTabResult EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPAR
         EasyTab->PosY = Point.y;
 
         EasyTab->Pressure = (float)Packet.pkNormalPressure / (float)EasyTab->MaxPressure;
+        EasyTab->Buttons = Packet.pkButtons;
         return EASYTAB_OK;
     }
 
