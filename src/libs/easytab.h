@@ -633,7 +633,7 @@ extern EasyTabInfo* EasyTab;
     EasyTabResult EasyTab_Load(HWND Window);
     EasyTabResult EasyTab_Load_Ex(HWND Window,
                                   EasyTabTrackingMode Mode,
-                                  uint32_t RelativeModeSensitivity,
+                                  float RelativeModeSensitivity,
                                   int32_t MoveCursor);
     EasyTabResult EasyTab_HandleEvent(HWND Window,
                                       UINT Message,
@@ -781,7 +781,7 @@ EasyTabResult EasyTab_Load(HWND Window)
 
 EasyTabResult EasyTab_Load_Ex(HWND Window,
                               EasyTabTrackingMode TrackingMode,
-                              uint32_t RelativeModeSensitivity,
+                              float RelativeModeSensitivity,
                               int32_t MoveCursor)
 {
     EasyTab = (EasyTabInfo*)calloc(1, sizeof(EasyTabInfo)); // We want init to zero, hence calloc.
@@ -858,13 +858,34 @@ EasyTabResult EasyTab_Load_Ex(HWND Window,
             LogContext.lcPktMode |= PK_X | PK_Y; // TODO: Should this be included in the
                                                  //       PACKETMODE macro define up top?
             LogContext.lcSysMode = 1;
+
+            if (RelativeModeSensitivity > 1.0f)
+            {
+                RelativeModeSensitivity = 1.0f;
+            }
+            else if (RelativeModeSensitivity < 0.0f)
+            {
+                RelativeModeSensitivity = 0.0f;
+            }
+
+            // Wintab expects sensitivity to be a 32-bit fixed point number
+            // with the radix point between the two words. Thus, the type
+            // contains 16 bits to the left of the radix point and 16 bits to
+            // the right of it.
+            // 
+            // 0x10000 Hex
+            // = 65,536 Decimal
+            // = 0000 0000 0000 0001 . 0000 0000 0000 0000 Binary
+            // = 1.0 Fixed Point
+            uint32_t Sensitivity = (uint32_t)(0x10000 * RelativeModeSensitivity);
+
             if (MoveCursor)
             {
-                LogContext.lcSysSensX = LogContext.lcSysSensY = RelativeModeSensitivity;
+                LogContext.lcSysSensX = LogContext.lcSysSensY = Sensitivity;
             }
             else
             {
-                LogContext.lcSensX = LogContext.lcSensY = RelativeModeSensitivity;
+                LogContext.lcSensX = LogContext.lcSensY = Sensitivity;
             }
         }
 
