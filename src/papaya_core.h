@@ -185,15 +185,14 @@ struct PapayaPref
     char Tags[256][5];
 };
 
-struct DebugInfo
-{
-    int64 Time;          // Used on Windows.
-    float LastFrameTime; // Used on Linux. TODO: Combine this var and the one above.
-    TimerInfo Timers[Timer_COUNT];
+struct Profile {
+    int64 time; // Used on Windows.
+    float last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
+    Timer timers[Timer_COUNT];
 };
 
-struct Misc // TODO: This entire struct is for stuff to be refactored at some point
-{
+struct Misc {
+    // TODO: This entire struct is for stuff to be refactored at some point
     uint32 fbo;
     uint32 fbo_render_tex, fbo_sample_tex;
     bool draw_overlay;
@@ -211,7 +210,7 @@ struct PapayaMemory {
     DocumentInfo doc;
     MouseInfo mouse;
     TabletInfo tablet;
-    DebugInfo debug;
+    Profile profile;
 
     uint32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];

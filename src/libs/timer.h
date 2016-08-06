@@ -25,12 +25,12 @@
     #endif
 #endif // __APPLE__
 
-// TODO: No need to expose the TimerInfo struct to the caller. Improve API.
+// TODO: No need to expose the Timer struct to the caller. Improve API.
 
-struct TimerInfo
+struct Timer
 {
-    uint64 StartCycles, StopCycles, ElapsedCycles;
-    double StartMs, StopMs, ElapsedMs;
+    uint64 start_cycles, stop_cycles, elapsed_cycles;
+    double start_ms, stop_ms, elapsed_ms;
 };
 
 #define FOREACH_TIMER(TIMER)    \
@@ -56,12 +56,12 @@ static const char* TimerNames[] = {
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-namespace Timer
+namespace timer
 {
-    void Init(double TickFrequency);
-    double GetFrequency();
-    void StartTime(TimerInfo* Timer);
-    void StopTime(TimerInfo* Timer);
+    void init(double freq);
+    double get_freq();
+    void start(Timer* timer);
+    void stop(Timer* timer);
 }
 
 #endif // TIMER_H
@@ -74,41 +74,29 @@ namespace Timer
 
 double TickFrequency;
 
-void Timer::Init(double _TickFrequency)
+void timer::init(double _TickFrequency)
 {
     TickFrequency = _TickFrequency;
 }
 
-double Timer::GetFrequency()
+double timer::get_freq()
 {
     return TickFrequency;
 }
 
-void Timer::StartTime(TimerInfo* Timer)
+void timer::start(Timer* Timer)
 {
-    Timer->StartMs = platform::get_milliseconds();
-    Timer->StartCycles = __rdtsc();
+    Timer->start_ms = platform::get_milliseconds();
+    Timer->start_cycles = __rdtsc();
 }
 
-void Timer::StopTime(TimerInfo* Timer)
+void timer::stop(Timer* Timer)
 {
-    Timer->StopCycles = __rdtsc();
-    Timer->StopMs = platform::get_milliseconds();
-    Timer->ElapsedCycles = Timer->StopCycles - Timer->StartCycles;
-    Timer->ElapsedMs     = (Timer->StopMs - Timer->StartMs) * TickFrequency;
+    Timer->stop_cycles = __rdtsc();
+    Timer->stop_ms = platform::get_milliseconds();
+    Timer->elapsed_cycles = Timer->stop_cycles - Timer->start_cycles;
+    Timer->elapsed_ms = (Timer->stop_ms - Timer->start_ms) * TickFrequency;
 }
-
-// void Timer::DisplayTimes(TimerInfo* Timers, int32 Count)
-// {
-//     ImGui::SetNextWindowPos(Vec2(0, ImGui::GetIO().DisplaySize.y - 75));
-//     ImGui::SetNextWindowSize(Vec2(300, 75));
-//     ImGui::Begin("Profiler");
-//     for (int32 i = 0; i < Timer_COUNT; i++)
-//     {
-//         ImGui::Text("%d: Cycles: %lu, MS: %f", i, Mem->Debug.Timers[i].CyclesElapsed, Mem->Debug.Timers[i].ElapsedMs);
-//     }
-//     ImGui::End();
-// }
 
 #endif // TIMER_IMPLEMENTATION
 

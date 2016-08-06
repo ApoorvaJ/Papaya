@@ -152,8 +152,8 @@ int main(int argc, char **argv)
 {
     PapayaMemory Mem = {0};
 
-    Timer::Init(1000.0); // TODO: Check linux timer manual. Is this correct?
-    Timer::StartTime(&Mem.debug.Timers[Timer_Startup]);
+    timer::init(1000.0); // TODO: Check linux timer manual. Is this correct?
+    timer::start(&Mem.profile.timers[Timer_Startup]);
 
     XVisualInfo* VisualInfo;
     Atom WmDeleteMessage;
@@ -301,7 +301,7 @@ int main(int argc, char **argv)
         }
     }
 
-    Timer::StopTime(&Mem.debug.Timers[Timer_Startup]);
+    timer::stop(&Mem.profile.timers[Timer_Startup]);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     core::open_doc(PAPAYA_DEFAULT_IMAGE, &Mem);
@@ -311,7 +311,7 @@ int main(int argc, char **argv)
 
     while (Mem.is_running)
     {
-        Timer::StartTime(&Mem.debug.Timers[Timer_Frame]);
+        timer::start(&Mem.profile.timers[Timer_Frame]);
 
         // Event handling
         while (XPending(XlibDisplay))
@@ -431,8 +431,8 @@ int main(int argc, char **argv)
             timespec Time;
             clock_gettime(CLOCK_MONOTONIC, &Time);
             float CurTime = Time.tv_sec + (float)Time.tv_nsec / 1000000000.0f;
-            ImGui::GetIO().DeltaTime = (float)(CurTime - Mem.debug.LastFrameTime);
-            Mem.debug.LastFrameTime = CurTime;
+            ImGui::GetIO().DeltaTime = (float)(CurTime - Mem.profile.last_frame_time);
+            Mem.profile.last_frame_time = CurTime;
 
             ImGui::NewFrame();
         }
@@ -449,12 +449,12 @@ int main(int argc, char **argv)
 #endif
 
         // End Of Frame
-        Timer::StopTime(&Mem.debug.Timers[Timer_Frame]);
+        timer::stop(&Mem.profile.timers[Timer_Frame]);
         double FrameRate = (Mem.current_tool == PapayaTool_Brush && Mem.mouse.IsDown[0]) ?
                            500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - Mem.debug.Timers[Timer_Frame].ElapsedMs;
-        Mem.debug.Timers[Timer_Sleep].ElapsedMs = SleepTime;
+        double SleepTime = FrameTime - Mem.profile.timers[Timer_Frame].elapsed_ms;
+        Mem.profile.timers[Timer_Sleep].elapsed_ms = SleepTime;
         if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 

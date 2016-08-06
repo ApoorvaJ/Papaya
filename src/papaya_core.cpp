@@ -46,10 +46,10 @@ internal void push_undo(PapayaMemory* mem, Vec2i Pos, Vec2i Size,
     uint64 BufSize          = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
     void* Buf               = malloc((size_t)BufSize);
 
-    Timer::StartTime(&mem->debug.Timers[Timer_GetUndoImage]);
+    timer::start(&mem->profile.timers[Timer_GetUndoImage]);
     memcpy(Buf, &Data, sizeof(UndoData));
     GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
-    Timer::StopTime(&mem->debug.Timers[Timer_GetUndoImage]);
+    timer::stop(&mem->profile.timers[Timer_GetUndoImage]);
 
     if (Data.IsSubRect)
     {
@@ -181,7 +181,7 @@ void core::resize_doc(PapayaMemory* Mem, int32 Width, int32 Height)
 
 bool core::open_doc(char* Path, PapayaMemory* Mem)
 {
-    Timer::StartTime(&Mem->debug.Timers[Timer_ImageOpen]);
+    timer::start(&Mem->profile.timers[Timer_ImageOpen]);
 
     // Load/create image
     {
@@ -282,7 +282,7 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
         }
     }
 
-    Timer::StopTime(&Mem->debug.Timers[Timer_ImageOpen]);
+    timer::stop(&Mem->profile.timers[Timer_ImageOpen]);
 
     //TODO: Move this to adjust after cropping and rotation
     Mem->crop_rotate.TopLeft = Vec2(0,0);
@@ -1877,8 +1877,8 @@ EndOfDoc:
                 for (int32 i = 0; i < Timer_COUNT; i++)
                 {
                     ImGui::Text(TimerNames[i]);                                 ImGui::NextColumn();
-                    ImGui::Text("%llu", Mem->debug.Timers[i].ElapsedCycles);    ImGui::NextColumn();
-                    ImGui::Text("%f" , Mem->debug.Timers[i].ElapsedMs);         ImGui::NextColumn();
+                    ImGui::Text("%llu", Mem->profile.timers[i].elapsed_cycles);    ImGui::NextColumn();
+                    ImGui::Text("%f" , Mem->profile.timers[i].elapsed_ms);         ImGui::NextColumn();
                 }
 
                 ImGui::Columns(1);
