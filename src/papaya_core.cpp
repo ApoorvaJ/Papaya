@@ -1176,7 +1176,7 @@ void core::update(PapayaMemory* Mem)
     }
 
     if (Mem->misc.prefs_open) {
-        Prefs::ShowPanel(&Mem->picker, Mem->colors, Mem->window);
+        prefs::show_panel(&Mem->picker, Mem->colors, Mem->window);
     }
 
     // Color Picker

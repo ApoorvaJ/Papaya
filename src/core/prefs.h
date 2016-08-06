@@ -6,7 +6,6 @@
 struct Picker;
 struct Layout;
 
-namespace Prefs
-{
-    void ShowPanel(Picker* Picker, Color* Colors, Layout& layout);
+namespace prefs {
+    void show_panel(Picker* picker, Color* colors, Layout& layout);
 }
