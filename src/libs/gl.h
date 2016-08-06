@@ -23,10 +23,9 @@ struct ShaderInfo
     int32 Uniforms[8];
 };
 
-struct MeshInfo
-{
-    bool IsLineLoop; // 0 -> Triangle, !0 -> Line
-    uint32 VboSize, IndexCount;
+struct Mesh {
+    bool is_line_loop; // 0 -> Triangle, !0 -> Line
+    uint32 vbo_size, index_count;
     uint32 VboHandle, ElementsHandle;
 };
 
@@ -36,9 +35,9 @@ namespace GL
     void CheckError(const char* Expr, const char* File, int Line);
     void CompileShader(ShaderInfo& Shader, const char* File, int Line, const char* Vert, const char* Frag, int32 AttribCount, int32 UniformCount, ...);
     void SetVertexAttribs(const ShaderInfo& Shader);
-    void InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage);
-    void TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size);
-    void DrawMesh(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...);
+    void InitQuad(Mesh& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage);
+    void TransformQuad(const Mesh& Mesh, Vec2 Pos, Vec2 Size);
+    void DrawMesh(const Mesh& Mesh, const ShaderInfo& Shader, bool Scissor, int32 UniformCount, ...);
     uint32 AllocateTexture(int32 Width, int32 Height, uint8* Data = 0);
 }
 
@@ -177,16 +176,16 @@ void GL::SetVertexAttribs(const ShaderInfo& Shader)
     #undef OFFSETOF
 }
 
-void GL::InitQuad(MeshInfo& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage)
+void GL::InitQuad(Mesh& Mesh, Vec2 Pos, Vec2 Size, uint32 Usage)
 {
     GLCHK( glGenBuffers  (1, &Mesh.VboHandle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, Mesh.VboHandle) );
     GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * 6, 0, (GLenum)Usage) );
-    Mesh.IndexCount = 6;
+    Mesh.index_count = 6;
     TransformQuad(Mesh, Pos, Size);
 }
 
-void GL::TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)
+void GL::TransformQuad(const Mesh& Mesh, Vec2 Pos, Vec2 Size)
 {
     float X1 = Pos.x;
     float X2 = Pos.x + Size.x;
@@ -205,7 +204,7 @@ void GL::TransformQuad(const MeshInfo& Mesh, Vec2 Pos, Vec2 Size)
     GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Verts), Verts) );
 }
 
-void GL::DrawMesh(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor,
+void GL::DrawMesh(const Mesh& Mesh, const ShaderInfo& Shader, bool Scissor,
         int32 UniformCount, ...)
 {
     GLint last_program, last_texture;
@@ -260,7 +259,7 @@ void GL::DrawMesh(const MeshInfo& Mesh, const ShaderInfo& Shader, bool Scissor,
     SetVertexAttribs(Shader);
 
     GLCHK( glLineWidth(2.0f) );
-    GLCHK( glDrawArrays(Mesh.IsLineLoop ? GL_LINE_LOOP : GL_TRIANGLES, 0, Mesh.IndexCount) );
+    GLCHK( glDrawArrays(Mesh.is_line_loop ? GL_LINE_LOOP : GL_TRIANGLES, 0, Mesh.index_count) );
 
     // Restore modified state
     GLCHK( glBindBuffer (GL_ARRAY_BUFFER, 0) );

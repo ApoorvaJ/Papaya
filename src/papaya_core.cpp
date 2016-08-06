@@ -285,8 +285,8 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
     timer::stop(&Mem->profile.timers[Timer_ImageOpen]);
 
     //TODO: Move this to adjust after cropping and rotation
-    Mem->crop_rotate.TopLeft = Vec2(0,0);
-    Mem->crop_rotate.BotRight = Vec2((float)Mem->doc.width, (float)Mem->doc.height);
+    Mem->crop_rotate.top_left = Vec2(0,0);
+    Mem->crop_rotate.bot_right = Vec2((float)Mem->doc.width, (float)Mem->doc.height);
 
     return true;
 }
@@ -359,7 +359,7 @@ void core::init(PapayaMemory* Mem)
         Mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
 
         Picker::Init(&Mem->picker);
-        CropRotate::Init(Mem);
+        crop_rotate::init(Mem);
 
         Mem->misc.draw_overlay      = false;
         Mem->misc.show_metrics      = false;
@@ -1261,7 +1261,7 @@ void core::update(PapayaMemory* Mem)
             }
             else if (Mem->current_tool == PapayaTool_CropRotate)
             {
-                CropRotate::Toolbar(Mem);
+                crop_rotate::toolbar(Mem);
             }
         }
 
@@ -1744,7 +1744,7 @@ void core::update(PapayaMemory* Mem)
                                Mem->doc.canvas_zoom * 0.5f);
 
             mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-            mat4x4_rotate_Z(R, M, Math::ToRadians(90.0f * Mem->crop_rotate.BaseRotation));
+            mat4x4_rotate_Z(R, M, Math::ToRadians(90.0f * Mem->crop_rotate.base_rotation));
             mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
             mat4x4_dup(M, R);
         }
@@ -1777,8 +1777,8 @@ void core::update(PapayaMemory* Mem)
                     Mem->doc.canvas_zoom * 0.5f);
 
             mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-            mat4x4_rotate_Z(R, M, Mem->crop_rotate.SliderAngle + 
-                    Math::ToRadians(90.0f * Mem->crop_rotate.BaseRotation));
+            mat4x4_rotate_Z(R, M, Mem->crop_rotate.slider_angle + 
+                    Math::ToRadians(90.0f * Mem->crop_rotate.base_rotation));
             mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
             mat4x4_dup(M, R);
         }
@@ -1803,7 +1803,7 @@ void core::update(PapayaMemory* Mem)
     // Update and draw crop outline
     if (Mem->current_tool == PapayaTool_CropRotate)
     {
-        CropRotate::CropOutline(Mem);
+        crop_rotate::crop_outline(Mem);
     }
 
     // Draw brush cursor

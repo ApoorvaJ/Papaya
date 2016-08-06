@@ -193,14 +193,14 @@ struct PapayaMemory {
 
     uint32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
-    MeshInfo meshes[PapayaMesh_COUNT];
+    Mesh meshes[PapayaMesh_COUNT];
     ShaderInfo shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;
     Brush brush;
     EyeDropper eye_dropper;
     PickerInfo picker;
-    CropRotateInfo crop_rotate;
+    CropRotate crop_rotate;
     Misc misc;
 };
 
