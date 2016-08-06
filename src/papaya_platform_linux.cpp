@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     PapayaMemory Mem = {0};
 
     Timer::Init(1000.0); // TODO: Check linux timer manual. Is this correct?
-    Timer::StartTime(&Mem.Debug.Timers[Timer_Startup]);
+    Timer::StartTime(&Mem.debug.Timers[Timer_Startup]);
 
     XVisualInfo* VisualInfo;
     Atom WmDeleteMessage;
@@ -197,8 +197,8 @@ int main(int argc, char **argv)
         SetWindowAttributes.event_mask = ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
 
         XlibWindow = XCreateWindow(XlibDisplay, DefaultRootWindow(XlibDisplay), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
-        Mem.Window.Width = 600;
-        Mem.Window.Height = 600;
+        Mem.window.Width = 600;
+        Mem.window.Height = 600;
 
         XMapWindow(XlibDisplay, XlibWindow);
         XStoreName(XlibDisplay, XlibWindow, "Papaya");
@@ -256,8 +256,8 @@ int main(int argc, char **argv)
 
         if (!GL::InitAndValidate()) { exit(1); }
 
-        glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
-        glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
+        glGetIntegerv(GL_MAJOR_VERSION, &Mem.system.OpenGLVersion[0]);
+        glGetIntegerv(GL_MINOR_VERSION, &Mem.system.OpenGLVersion[1]);
 
         // Disable vsync
         if (glxewIsSupported("GLX_EXT_swap_control"))
@@ -301,17 +301,17 @@ int main(int argc, char **argv)
         }
     }
 
-    Timer::StopTime(&Mem.Debug.Timers[Timer_Startup]);
+    Timer::StopTime(&Mem.debug.Timers[Timer_Startup]);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     core::open_doc(PAPAYA_DEFAULT_IMAGE, &Mem);
 #endif
 
-    Mem.IsRunning = true;
+    Mem.is_running = true;
 
-    while (Mem.IsRunning)
+    while (Mem.is_running)
     {
-        Timer::StartTime(&Mem.Debug.Timers[Timer_Frame]);
+        Timer::StartTime(&Mem.debug.Timers[Timer_Frame]);
 
         // Event handling
         while (XPending(XlibDisplay))
@@ -332,7 +332,7 @@ int main(int argc, char **argv)
 
                 case ClientMessage:
                 {
-                    if (Event.xclient.data.l[0] == WmDeleteMessage) { Mem.IsRunning = false; }
+                    if (Event.xclient.data.l[0] == WmDeleteMessage) { Mem.is_running = false; }
                 } break;
 
                 case MotionNotify:
@@ -421,9 +421,9 @@ int main(int argc, char **argv)
 
         // Tablet input // TODO: Put this in papaya.cpp
         {
-            Mem.Tablet.Pressure = EasyTab->Pressure;
-            Mem.Tablet.PosX = EasyTab->PosX;
-            Mem.Tablet.PosY = EasyTab->PosY;
+            Mem.tablet.Pressure = EasyTab->Pressure;
+            Mem.tablet.PosX = EasyTab->PosX;
+            Mem.tablet.PosY = EasyTab->PosY;
         }
 
         // Start new ImGui Frame
@@ -431,8 +431,8 @@ int main(int argc, char **argv)
             timespec Time;
             clock_gettime(CLOCK_MONOTONIC, &Time);
             float CurTime = Time.tv_sec + (float)Time.tv_nsec / 1000000000.0f;
-            ImGui::GetIO().DeltaTime = (float)(CurTime - Mem.Debug.LastFrameTime);
-            Mem.Debug.LastFrameTime = CurTime;
+            ImGui::GetIO().DeltaTime = (float)(CurTime - Mem.debug.LastFrameTime);
+            Mem.debug.LastFrameTime = CurTime;
 
             ImGui::NewFrame();
         }
@@ -449,12 +449,12 @@ int main(int argc, char **argv)
 #endif
 
         // End Of Frame
-        Timer::StopTime(&Mem.Debug.Timers[Timer_Frame]);
-        double FrameRate = (Mem.CurrentTool == PapayaTool_Brush && Mem.Mouse.IsDown[0]) ?
+        Timer::StopTime(&Mem.debug.Timers[Timer_Frame]);
+        double FrameRate = (Mem.current_tool == PapayaTool_Brush && Mem.mouse.IsDown[0]) ?
                            500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].ElapsedMs;
-        Mem.Debug.Timers[Timer_Sleep].ElapsedMs = SleepTime;
+        double SleepTime = FrameTime - Mem.debug.Timers[Timer_Frame].ElapsedMs;
+        Mem.debug.Timers[Timer_Sleep].ElapsedMs = SleepTime;
         if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 

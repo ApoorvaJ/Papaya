@@ -204,27 +204,26 @@ struct MiscInfo // TODO: This entire struct is for stuff to be refactored at som
     bool PreviewImageSize;
 };
 
-struct PapayaMemory
-{
-    bool IsRunning;
-    SystemInfo System;
-    WindowInfo Window;
-    DocumentInfo Doc;
-    MouseInfo Mouse;
-    TabletInfo Tablet;
-    DebugInfo Debug;
+struct PapayaMemory {
+    bool is_running;
+    SystemInfo system;
+    WindowInfo window;
+    DocumentInfo doc;
+    MouseInfo mouse;
+    TabletInfo tablet;
+    DebugInfo debug;
 
-    uint32 Textures[PapayaTex_COUNT];
-    Color Colors[PapayaCol_COUNT];
-    MeshInfo Meshes[PapayaMesh_COUNT];
-    ShaderInfo Shaders[PapayaShader_COUNT];
+    uint32 textures[PapayaTex_COUNT];
+    Color colors[PapayaCol_COUNT];
+    MeshInfo meshes[PapayaMesh_COUNT];
+    ShaderInfo shaders[PapayaShader_COUNT];
 
-    PapayaTool_ CurrentTool;
-    BrushInfo Brush;
-    EyeDropperInfo EyeDropper;
-    PickerInfo Picker;
-    CropRotateInfo CropRotate;
-    MiscInfo Misc;
+    PapayaTool_ current_tool;
+    BrushInfo brush;
+    EyeDropperInfo eye_dropper;
+    PickerInfo picker;
+    CropRotateInfo crop_rotate;
+    MiscInfo misc;
 };
 
 namespace core
