@@ -2,7 +2,7 @@
 
 #include "libs/types.h"
 
-struct MouseInfo;
+struct Mouse;
 struct PapayaMemory; // TODO: Remove. Manage struct knowledge on a need-to-know-basis.
 
 struct CropRotateInfo

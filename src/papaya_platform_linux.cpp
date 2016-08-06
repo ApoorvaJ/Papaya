@@ -421,9 +421,9 @@ int main(int argc, char **argv)
 
         // Tablet input // TODO: Put this in papaya.cpp
         {
-            Mem.tablet.Pressure = EasyTab->Pressure;
-            Mem.tablet.PosX = EasyTab->PosX;
-            Mem.tablet.PosY = EasyTab->PosY;
+            Mem.tablet.pressure = EasyTab->Pressure;
+            Mem.tablet.pos.x = EasyTab->PosX;
+            Mem.tablet.pos.y = EasyTab->PosY;
         }
 
         // Start new ImGui Frame
@@ -450,8 +450,9 @@ int main(int argc, char **argv)
 
         // End Of Frame
         timer::stop(&Mem.profile.timers[Timer_Frame]);
-        double FrameRate = (Mem.current_tool == PapayaTool_Brush && Mem.mouse.IsDown[0]) ?
-                           500.0 : 60.0;
+        double FrameRate =
+            (Mem.current_tool == PapayaTool_Brush && Mem.mouse.is_down[0]) ?
+            500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
         double SleepTime = FrameTime - Mem.profile.timers[Timer_Frame].elapsed_ms;
         Mem.profile.timers[Timer_Sleep].elapsed_ms = SleepTime;

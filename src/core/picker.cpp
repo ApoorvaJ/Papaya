@@ -28,7 +28,7 @@ void Picker::SetColor(Color Col, PickerInfo* Picker, bool SetNewColorOnly)
 }
 
 // TODO: Remove the last param
-void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse,
+void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, Mouse& mouse,
         uint32 BlankTexture)
 {
     // Picker panel
@@ -132,22 +132,22 @@ void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse
     {
         Vec2 Pos = Picker->Pos + Picker->HueStripPos;
 
-        if (Mouse.Pressed[0] &&
-                Mouse.Pos.x > Pos.x &&
-                Mouse.Pos.x < Pos.x + Picker->HueStripSize.x &&
-                Mouse.Pos.y > Pos.y &&
-                Mouse.Pos.y < Pos.y + Picker->HueStripSize.y)
+        if (mouse.pressed[0] &&
+                mouse.pos.x > Pos.x &&
+                mouse.pos.x < Pos.x + Picker->HueStripSize.x &&
+                mouse.pos.y > Pos.y &&
+                mouse.pos.y < Pos.y + Picker->HueStripSize.y)
         {
             Picker->DraggingHue = true;
         }
-        else if (Mouse.Released[0] && Picker->DraggingHue)
+        else if (mouse.released[0] && Picker->DraggingHue)
         {
             Picker->DraggingHue = false;
         }
 
         if (Picker->DraggingHue)
         {
-            Picker->CursorH = (Mouse.Pos.y - Pos.y) / 256.0f;
+            Picker->CursorH = (mouse.pos.y - Pos.y) / 256.0f;
             Picker->CursorH = 1.f - Math::Clamp(Picker->CursorH, 0.0f, 1.0f);
         }
 
@@ -157,23 +157,23 @@ void Picker::UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse
     {
         Vec2 Pos = Picker->Pos + Picker->SVBoxPos;
 
-        if (Mouse.Pressed[0] &&
-                Mouse.Pos.x > Pos.x &&
-                Mouse.Pos.x < Pos.x + Picker->SVBoxSize.x &&
-                Mouse.Pos.y > Pos.y &&
-                Mouse.Pos.y < Pos.y + Picker->SVBoxSize.y)
+        if (mouse.pressed[0] &&
+                mouse.pos.x > Pos.x &&
+                mouse.pos.x < Pos.x + Picker->SVBoxSize.x &&
+                mouse.pos.y > Pos.y &&
+                mouse.pos.y < Pos.y + Picker->SVBoxSize.y)
         {
             Picker->DraggingSV = true;
         }
-        else if (Mouse.Released[0] && Picker->DraggingSV)
+        else if (mouse.released[0] && Picker->DraggingSV)
         {
             Picker->DraggingSV = false;
         }
 
         if (Picker->DraggingSV)
         {
-            Picker->CursorSV.x = (Mouse.Pos.x - Pos.x) / 256.f;
-            Picker->CursorSV.y = 1.f - (Mouse.Pos.y - Pos.y) / 256.f;
+            Picker->CursorSV.x = (mouse.pos.x - Pos.x) / 256.f;
+            Picker->CursorSV.y = 1.f - (mouse.pos.y - Pos.y) / 256.f;
             Picker->CursorSV.x = Math::Clamp(Picker->CursorSV.x, 0.f, 1.f);
             Picker->CursorSV.y = Math::Clamp(Picker->CursorSV.y, 0.f, 1.f);
 

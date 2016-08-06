@@ -2,7 +2,7 @@
 
 #include "libs/types.h"
 
-struct MouseInfo;
+struct Mouse;
 
 struct PickerInfo
 {
@@ -20,6 +20,6 @@ namespace Picker
 {
     void Init(PickerInfo* Picker);
     void SetColor(Color Col, PickerInfo* Picker, bool SetNewColorOnly = false);
-    void UpdateAndRender(PickerInfo* Picker, Color* Colors, MouseInfo& Mouse, uint32 BlankTexture);
+    void UpdateAndRender(PickerInfo* Picker, Color* Colors, Mouse& mouse, uint32 BlankTexture);
 }
 

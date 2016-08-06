@@ -13,7 +13,7 @@
 // This function reads from the frame buffer and hence needs the appropriate frame buffer to be
 // bound before it is called.
 internal void push_undo(PapayaMemory* mem, Vec2i Pos, Vec2i Size,
-                        int8* PreBrushImage, Vec2 LineSegmentStartUV) {
+                        int8* PreBrushImage, Vec2 line_segment_start_uv) {
     if (mem->doc.Undo.Top == 0) {
         // Buffer is empty
         mem->doc.Undo.Base = (UndoData*)mem->doc.Undo.Start;
@@ -42,7 +42,7 @@ internal void push_undo(PapayaMemory* mem, Vec2i Pos, Vec2i Size,
     Data.Pos                = Pos;
     Data.Size               = Size;
     Data.IsSubRect          = (PreBrushImage != 0);
-    Data.LineSegmentStartUV = LineSegmentStartUV;
+    Data.line_segment_start_uv = line_segment_start_uv;
     uint64 BufSize          = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
     void* Buf               = malloc((size_t)BufSize);
 
@@ -351,12 +351,12 @@ void core::init(PapayaMemory* Mem)
 
         Mem->current_tool = PapayaTool_CropRotate;
 
-        Mem->brush.Diameter           = 100;
-        Mem->brush.MaxDiameter        = 9999;
-        Mem->brush.Hardness           = 1.0f;
-        Mem->brush.Opacity            = 1.0f;
-        Mem->brush.AntiAlias          = true;
-        Mem->brush.LineSegmentStartUV = Vec2(-1.0f, -1.0f);
+        Mem->brush.diameter           = 100;
+        Mem->brush.max_diameter        = 9999;
+        Mem->brush.hardness           = 1.0f;
+        Mem->brush.opacity            = 1.0f;
+        Mem->brush.anti_alias          = true;
+        Mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
 
         Picker::Init(&Mem->picker);
         CropRotate::Init(Mem);
@@ -893,36 +893,36 @@ void core::update(PapayaMemory* Mem)
     {
         // Current mouse info
         {
-            Mem->mouse.Pos = Math::RoundToVec2i(ImGui::GetMousePos());
-            Vec2 MousePixelPos = Vec2(Math::Floor((Mem->mouse.Pos.x - Mem->doc.CanvasPosition.x) / Mem->doc.CanvasZoom),
-                                      Math::Floor((Mem->mouse.Pos.y - Mem->doc.CanvasPosition.y) / Mem->doc.CanvasZoom));
-            Mem->mouse.UV = Vec2(MousePixelPos.x / (float) Mem->doc.Width, MousePixelPos.y / (float) Mem->doc.Height);
+            Mem->mouse.pos = Math::RoundToVec2i(ImGui::GetMousePos());
+            Vec2 MousePixelPos = Vec2(Math::Floor((Mem->mouse.pos.x - Mem->doc.CanvasPosition.x) / Mem->doc.CanvasZoom),
+                                      Math::Floor((Mem->mouse.pos.y - Mem->doc.CanvasPosition.y) / Mem->doc.CanvasZoom));
+            Mem->mouse.uv = Vec2(MousePixelPos.x / (float) Mem->doc.Width, MousePixelPos.y / (float) Mem->doc.Height);
 
             for (int32 i = 0; i < 3; i++)
             {
-                Mem->mouse.IsDown[i]   = ImGui::IsMouseDown(i);
-                Mem->mouse.Pressed[i]  = (Mem->mouse.IsDown[i] && !Mem->mouse.WasDown[i]);
-                Mem->mouse.Released[i] = (!Mem->mouse.IsDown[i] && Mem->mouse.WasDown[i]);
+                Mem->mouse.is_down[i]   = ImGui::IsMouseDown(i);
+                Mem->mouse.pressed[i]  = (Mem->mouse.is_down[i] && !Mem->mouse.was_down[i]);
+                Mem->mouse.released[i] = (!Mem->mouse.is_down[i] && Mem->mouse.was_down[i]);
             }
 
             // OnCanvas test
             {
-                Mem->mouse.InWorkspace = true;
+                Mem->mouse.in_workspace = true;
 
-                if (Mem->mouse.Pos.x <= 34 ||                      // Document workspace test
-                    Mem->mouse.Pos.x >= Mem->window.Width - 3 ||   // TODO: Formalize the window layout and
-                    Mem->mouse.Pos.y <= 55 ||                      //       remove magic numbers throughout
-                    Mem->mouse.Pos.y >= Mem->window.Height - 3)    //       the code.
+                if (Mem->mouse.pos.x <= 34 ||                      // Document workspace test
+                    Mem->mouse.pos.x >= Mem->window.Width - 3 ||   // TODO: Formalize the window layout and
+                    Mem->mouse.pos.y <= 55 ||                      //       remove magic numbers throughout
+                    Mem->mouse.pos.y >= Mem->window.Height - 3)    //       the code.
                 {
-                    Mem->mouse.InWorkspace = false;
+                    Mem->mouse.in_workspace = false;
                 }
                 else if (Mem->picker.Open &&
-                    Mem->mouse.Pos.x > Mem->picker.Pos.x &&                       // Color picker test
-                    Mem->mouse.Pos.x < Mem->picker.Pos.x + Mem->picker.Size.x &&  //
-                    Mem->mouse.Pos.y > Mem->picker.Pos.y &&                       //
-                    Mem->mouse.Pos.y < Mem->picker.Pos.y + Mem->picker.Size.y)    //
+                    Mem->mouse.pos.x > Mem->picker.Pos.x &&                       // Color picker test
+                    Mem->mouse.pos.x < Mem->picker.Pos.x + Mem->picker.Size.x &&  //
+                    Mem->mouse.pos.y > Mem->picker.Pos.y &&                       //
+                    Mem->mouse.pos.y < Mem->picker.Pos.y + Mem->picker.Size.y)    //
                 {
-                    Mem->mouse.InWorkspace = false;
+                    Mem->mouse.in_workspace = false;
                 }
             }
         }
@@ -1238,24 +1238,24 @@ void core::update(PapayaMemory* Mem)
             if (Mem->current_tool == PapayaTool_Brush)
             {
                 ImGui::PushItemWidth(85);
-                ImGui::InputInt("Diameter", &Mem->brush.Diameter);
-                Mem->brush.Diameter = Math::Clamp(Mem->brush.Diameter, 1, Mem->brush.MaxDiameter);
+                ImGui::InputInt("Diameter", &Mem->brush.diameter);
+                Mem->brush.diameter = Math::Clamp(Mem->brush.diameter, 1, Mem->brush.max_diameter);
 
                 ImGui::PopItemWidth();
                 ImGui::PushItemWidth(80);
                 ImGui::SameLine();
 
-                float ScaledHardness = Mem->brush.Hardness * 100.0f;
+                float ScaledHardness = Mem->brush.hardness * 100.0f;
                 ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
-                Mem->brush.Hardness = ScaledHardness / 100.0f;
+                Mem->brush.hardness = ScaledHardness / 100.0f;
                 ImGui::SameLine();
 
-                float ScaledOpacity = Mem->brush.Opacity * 100.0f;
+                float ScaledOpacity = Mem->brush.opacity * 100.0f;
                 ImGui::SliderFloat("Opacity", &ScaledOpacity, 0.0f, 100.0f, "%.0f");
-                Mem->brush.Opacity = ScaledOpacity / 100.0f;
+                Mem->brush.opacity = ScaledOpacity / 100.0f;
                 ImGui::SameLine();
 
-                ImGui::Checkbox("Anti-alias", &Mem->brush.AntiAlias); // TODO: Replace this with a toggleable icon button
+                ImGui::Checkbox("Anti-alias", &Mem->brush.anti_alias); // TODO: Replace this with a toggleable icon button
 
                 ImGui::PopItemWidth();
             }
@@ -1293,59 +1293,59 @@ void core::update(PapayaMemory* Mem)
     // Brush tool
     if (Mem->current_tool == PapayaTool_Brush &&
             !Mem->misc.menu_open &&
-            (!ImGui::GetIO().KeyAlt || Mem->mouse.IsDown[1] || Mem->mouse.Released[1]))
+            (!ImGui::GetIO().KeyAlt || Mem->mouse.is_down[1] || Mem->mouse.released[1]))
     {
         // Right mouse dragging
         {
-            if (Mem->mouse.Pressed[1])
+            if (Mem->mouse.pressed[1])
             {
-                Mem->brush.RtDragStartPos      = Mem->mouse.Pos;
-                Mem->brush.RtDragStartDiameter = Mem->brush.Diameter;
-                Mem->brush.RtDragStartHardness = Mem->brush.Hardness;
-                Mem->brush.RtDragStartOpacity  = Mem->brush.Opacity;
-                Mem->brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
+                Mem->brush.rt_drag_start_pos      = Mem->mouse.pos;
+                Mem->brush.rt_drag_start_diameter = Mem->brush.diameter;
+                Mem->brush.rt_drag_start_hardness = Mem->brush.hardness;
+                Mem->brush.rt_drag_start_opacity  = Mem->brush.opacity;
+                Mem->brush.rt_drag_with_shift     = ImGui::GetIO().KeyShift;
                 platform::start_mouse_capture();
                 platform::set_cursor_visibility(false);
             }
-            else if (Mem->mouse.IsDown[1])
+            else if (Mem->mouse.is_down[1])
             {
-                if (Mem->brush.RtDragWithShift)
+                if (Mem->brush.rt_drag_with_shift)
                 {
-                    float Opacity = Mem->brush.RtDragStartOpacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
-                    Mem->brush.Opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
+                    float Opacity = Mem->brush.rt_drag_start_opacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
+                    Mem->brush.opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
                 }
                 else
                 {
-                    float Diameter = Mem->brush.RtDragStartDiameter + (ImGui::GetMouseDragDelta(1).x / Mem->doc.CanvasZoom * 2.0f);
-                    Mem->brush.Diameter = Math::Clamp((int32)Diameter, 1, Mem->brush.MaxDiameter);
+                    float Diameter = Mem->brush.rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / Mem->doc.CanvasZoom * 2.0f);
+                    Mem->brush.diameter = Math::Clamp((int32)Diameter, 1, Mem->brush.max_diameter);
 
-                    float Hardness = Mem->brush.RtDragStartHardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
-                    Mem->brush.Hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
+                    float Hardness = Mem->brush.rt_drag_start_hardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
+                    Mem->brush.hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
                 }
             }
-            else if (Mem->mouse.Released[1])
+            else if (Mem->mouse.released[1])
             {
                 platform::stop_mouse_capture();
-                platform::set_mouse_position(Mem->brush.RtDragStartPos.x, Mem->brush.RtDragStartPos.y);
+                platform::set_mouse_position(Mem->brush.rt_drag_start_pos.x, Mem->brush.rt_drag_start_pos.y);
                 platform::set_cursor_visibility(true);
             }
         }
 
-        if (Mem->mouse.Pressed[0] && Mem->mouse.InWorkspace)
+        if (Mem->mouse.pressed[0] && Mem->mouse.in_workspace)
         {
-            Mem->brush.BeingDragged = true;
-            Mem->brush.DrawLineSegment = ImGui::GetIO().KeyShift && Mem->brush.LineSegmentStartUV.x >= 0.0f;
+            Mem->brush.being_dragged = true;
+            Mem->brush.draw_line_segment = ImGui::GetIO().KeyShift && Mem->brush.line_segment_start_uv.x >= 0.0f;
             if (Mem->picker.Open) { Mem->picker.CurrentColor = Mem->picker.NewColor; }
-            Mem->brush.PaintArea1 = Vec2i(Mem->doc.Width + 1, Mem->doc.Height + 1);
-            Mem->brush.PaintArea2 = Vec2i(0,0);
+            Mem->brush.paint_area_1 = Vec2i(Mem->doc.Width + 1, Mem->doc.Height + 1);
+            Mem->brush.paint_area_2 = Vec2i(0,0);
         }
-        else if (Mem->mouse.Released[0] && Mem->brush.BeingDragged)
+        else if (Mem->mouse.released[0] && Mem->brush.being_dragged)
         {
             Mem->misc.draw_overlay         = false;
-            Mem->brush.BeingDragged       = false;
-            Mem->brush.IsStraightDrag     = false;
-            Mem->brush.WasStraightDrag    = false;
-            Mem->brush.LineSegmentStartUV = Mem->mouse.UV;
+            Mem->brush.being_dragged       = false;
+            Mem->brush.is_straight_drag     = false;
+            Mem->brush.was_straight_drag    = false;
+            Mem->brush.line_segment_start_uv = Mem->mouse.uv;
 
             // TODO: Make a vararg-based RTT function
             // Additive render-to-texture
@@ -1356,8 +1356,8 @@ void core::update(PapayaMemory* Mem)
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
                 GLCHK( glViewport(0, 0, Mem->doc.Width, Mem->doc.Height) );
 
-                Vec2i Pos  = Mem->brush.PaintArea1;
-                Vec2i Size = Mem->brush.PaintArea2 - Mem->brush.PaintArea1;
+                Vec2i Pos  = Mem->brush.paint_area_1;
+                Vec2i Size = Mem->brush.paint_area_2 - Mem->brush.paint_area_1;
                 int8* PreBrushImage = 0;
 
                 // TODO: OPTIMIZE: The following block seems optimizable
@@ -1414,7 +1414,7 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
-                push_undo(Mem, Pos, Size, PreBrushImage, Mem->brush.LineSegmentStartUV);
+                push_undo(Mem, Pos, Size, PreBrushImage, Mem->brush.line_segment_start_uv);
 
                 if (PreBrushImage) { free(PreBrushImage); }
 
@@ -1425,13 +1425,13 @@ void core::update(PapayaMemory* Mem)
             }
         }
 
-        if (Mem->brush.BeingDragged)
+        if (Mem->brush.being_dragged)
         {
             Mem->misc.draw_overlay = true;
 
             GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.fbo) );
 
-            if (Mem->mouse.Pressed[0])
+            if (Mem->mouse.pressed[0])
             {
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_sample_tex, 0) );
                 GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
@@ -1448,45 +1448,45 @@ void core::update(PapayaMemory* Mem)
             float height = (float)Mem->doc.Height;
             GLCHK( glUseProgram(Mem->shaders[PapayaShader_Brush].Handle) );
 
-            Mem->brush.WasStraightDrag = Mem->brush.IsStraightDrag;
-            Mem->brush.IsStraightDrag = ImGui::GetIO().KeyShift;
+            Mem->brush.was_straight_drag = Mem->brush.is_straight_drag;
+            Mem->brush.is_straight_drag = ImGui::GetIO().KeyShift;
 
-            if (!Mem->brush.WasStraightDrag && Mem->brush.IsStraightDrag)
+            if (!Mem->brush.was_straight_drag && Mem->brush.is_straight_drag)
             {
-                Mem->brush.StraightDragStartUV = Mem->mouse.UV;
-                Mem->brush.StraightDragSnapX = false;
-                Mem->brush.StraightDragSnapY = false;
+                Mem->brush.straight_drag_start_uv = Mem->mouse.uv;
+                Mem->brush.straight_drag_snap_x = false;
+                Mem->brush.straight_drag_snap_y = false;
             }
 
-            if (Mem->brush.IsStraightDrag && !Mem->brush.StraightDragSnapX && !Mem->brush.StraightDragSnapY)
+            if (Mem->brush.is_straight_drag && !Mem->brush.straight_drag_snap_x && !Mem->brush.straight_drag_snap_y)
             {
-                float dx = Math::Abs(Mem->brush.StraightDragStartUV.x - Mem->mouse.UV.x);
-                float dy = Math::Abs(Mem->brush.StraightDragStartUV.y - Mem->mouse.UV.y);
-                Mem->brush.StraightDragSnapX = (dx < dy);
-                Mem->brush.StraightDragSnapY = (dy < dx);
+                float dx = Math::Abs(Mem->brush.straight_drag_start_uv.x - Mem->mouse.uv.x);
+                float dy = Math::Abs(Mem->brush.straight_drag_start_uv.y - Mem->mouse.uv.y);
+                Mem->brush.straight_drag_snap_x = (dx < dy);
+                Mem->brush.straight_drag_snap_y = (dy < dx);
             }
 
-            if (Mem->brush.IsStraightDrag && Mem->brush.StraightDragSnapX)
+            if (Mem->brush.is_straight_drag && Mem->brush.straight_drag_snap_x)
             {
-                Mem->mouse.UV.x = Mem->brush.StraightDragStartUV.x;
-                float pixelPos = Mem->mouse.UV.x * Mem->doc.Width + 0.5f;
-                Mem->mouse.Pos.x = Math::RoundToInt(pixelPos * Mem->doc.CanvasZoom + Mem->doc.CanvasPosition.x);
-                platform::set_mouse_position(Mem->mouse.Pos.x, Mem->mouse.Pos.y);
+                Mem->mouse.uv.x = Mem->brush.straight_drag_start_uv.x;
+                float pixelPos = Mem->mouse.uv.x * Mem->doc.Width + 0.5f;
+                Mem->mouse.pos.x = Math::RoundToInt(pixelPos * Mem->doc.CanvasZoom + Mem->doc.CanvasPosition.x);
+                platform::set_mouse_position(Mem->mouse.pos.x, Mem->mouse.pos.y);
             }
 
-            if (Mem->brush.IsStraightDrag && Mem->brush.StraightDragSnapY)
+            if (Mem->brush.is_straight_drag && Mem->brush.straight_drag_snap_y)
             {
-                Mem->mouse.UV.y = Mem->brush.StraightDragStartUV.y;
-                float pixelPos = Mem->mouse.UV.y * Mem->doc.Height + 0.5f;
-                Mem->mouse.Pos.y = Math::RoundToInt(pixelPos * Mem->doc.CanvasZoom + Mem->doc.CanvasPosition.y);
-                platform::set_mouse_position(Mem->mouse.Pos.x, Mem->mouse.Pos.y);
+                Mem->mouse.uv.y = Mem->brush.straight_drag_start_uv.y;
+                float pixelPos = Mem->mouse.uv.y * Mem->doc.Height + 0.5f;
+                Mem->mouse.pos.y = Math::RoundToInt(pixelPos * Mem->doc.CanvasZoom + Mem->doc.CanvasPosition.y);
+                platform::set_mouse_position(Mem->mouse.pos.x, Mem->mouse.pos.y);
             }
 
-            Vec2 Correction = (Mem->brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-            Vec2 CorrectedPos = Mem->mouse.UV + Correction;
-            Vec2 CorrectedLastPos = (Mem->brush.DrawLineSegment ? Mem->brush.LineSegmentStartUV : Mem->mouse.LastUV) + Correction;
+            Vec2 Correction = (Mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Vec2 CorrectedPos = Mem->mouse.uv + Correction;
+            Vec2 CorrectedLastPos = (Mem->brush.draw_line_segment ? Mem->brush.line_segment_start_uv : Mem->mouse.last_uv) + Correction;
 
-            Mem->brush.DrawLineSegment = false;
+            Mem->brush.draw_line_segment = false;
 
 #if 0
             // Brush testing routine
@@ -1495,15 +1495,15 @@ void core::update(PapayaMemory* Mem)
             if (i%2)
             {
                 local_persist int32 j = 0;
-                CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Mem->brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Mem->brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (Mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (Mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 j++;
             }
             else
             {
                 local_persist int32 k = 0;
-                CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Mem->brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Mem->brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (Mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (Mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 k++;
             }
             i++;
@@ -1516,27 +1516,27 @@ void core::update(PapayaMemory* Mem)
                 float UVMaxX = Math::Max(CorrectedPos.x, CorrectedLastPos.x);
                 float UVMaxY = Math::Max(CorrectedPos.y, CorrectedLastPos.y);
 
-                int32 PixelMinX = Math::RoundToInt(UVMinX * Mem->doc.Width  - 0.5f * Mem->brush.Diameter);
-                int32 PixelMinY = Math::RoundToInt(UVMinY * Mem->doc.Height - 0.5f * Mem->brush.Diameter);
-                int32 PixelMaxX = Math::RoundToInt(UVMaxX * Mem->doc.Width  + 0.5f * Mem->brush.Diameter);
-                int32 PixelMaxY = Math::RoundToInt(UVMaxY * Mem->doc.Height + 0.5f * Mem->brush.Diameter);
+                int32 PixelMinX = Math::RoundToInt(UVMinX * Mem->doc.Width  - 0.5f * Mem->brush.diameter);
+                int32 PixelMinY = Math::RoundToInt(UVMinY * Mem->doc.Height - 0.5f * Mem->brush.diameter);
+                int32 PixelMaxX = Math::RoundToInt(UVMaxX * Mem->doc.Width  + 0.5f * Mem->brush.diameter);
+                int32 PixelMaxY = Math::RoundToInt(UVMaxY * Mem->doc.Height + 0.5f * Mem->brush.diameter);
 
-                Mem->brush.PaintArea1.x = Math::Min(Mem->brush.PaintArea1.x, PixelMinX);
-                Mem->brush.PaintArea1.y = Math::Min(Mem->brush.PaintArea1.y, PixelMinY);
-                Mem->brush.PaintArea2.x = Math::Max(Mem->brush.PaintArea2.x, PixelMaxX);
-                Mem->brush.PaintArea2.y = Math::Max(Mem->brush.PaintArea2.y, PixelMaxY);
+                Mem->brush.paint_area_1.x = Math::Min(Mem->brush.paint_area_1.x, PixelMinX);
+                Mem->brush.paint_area_1.y = Math::Min(Mem->brush.paint_area_1.y, PixelMinY);
+                Mem->brush.paint_area_2.x = Math::Max(Mem->brush.paint_area_2.x, PixelMaxX);
+                Mem->brush.paint_area_2.y = Math::Max(Mem->brush.paint_area_2.y, PixelMaxY);
 
-                Mem->brush.PaintArea1.x = Math::Clamp(Mem->brush.PaintArea1.x, 0, Mem->doc.Width);
-                Mem->brush.PaintArea1.y = Math::Clamp(Mem->brush.PaintArea1.y, 0, Mem->doc.Height);
-                Mem->brush.PaintArea2.x = Math::Clamp(Mem->brush.PaintArea2.x, 0, Mem->doc.Width);
-                Mem->brush.PaintArea2.y = Math::Clamp(Mem->brush.PaintArea2.y, 0, Mem->doc.Height);
+                Mem->brush.paint_area_1.x = Math::Clamp(Mem->brush.paint_area_1.x, 0, Mem->doc.Width);
+                Mem->brush.paint_area_1.y = Math::Clamp(Mem->brush.paint_area_1.y, 0, Mem->doc.Height);
+                Mem->brush.paint_area_2.x = Math::Clamp(Mem->brush.paint_area_2.x, 0, Mem->doc.Width);
+                Mem->brush.paint_area_2.y = Math::Clamp(Mem->brush.paint_area_2.y, 0, Mem->doc.Height);
             }
 
             GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->doc.ProjMtx[0][0]) );
             GLCHK( glUniform2f(Mem->shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->doc.InverseAspect) ); // Pos uniform
             GLCHK( glUniform2f(Mem->shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->doc.InverseAspect) ); // Lastpos uniform
-            GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->brush.Diameter / ((float)Mem->doc.Width * 2.0f)) );
-            float Opacity = Mem->brush.Opacity;
+            GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->brush.diameter / ((float)Mem->doc.Width * 2.0f)) );
+            float Opacity = Mem->brush.opacity;
             //if (Mem->tablet.Pressure > 0.0f) { Opacity *= Mem->tablet.Pressure; }
             GLCHK( glUniform4f(Mem->shaders[PapayaShader_Brush].Uniforms[5], Mem->picker.CurrentColor.r,
                         Mem->picker.CurrentColor.g,
@@ -1545,15 +1545,15 @@ void core::update(PapayaMemory* Mem)
             // Brush hardness
             {
                 float Hardness;
-                if (Mem->brush.AntiAlias && Mem->brush.Diameter > 2)
+                if (Mem->brush.anti_alias && Mem->brush.diameter > 2)
                 {
                     float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
-                    float Radius  = Mem->brush.Diameter / 2.0f;
-                    Hardness      = Math::Min(Mem->brush.Hardness, 1.0f - (AAWidth / Radius));
+                    float Radius  = Mem->brush.diameter / 2.0f;
+                    Hardness      = Math::Min(Mem->brush.hardness, 1.0f - (AAWidth / Radius));
                 }
                 else
                 {
-                    Hardness      = Mem->brush.Hardness;
+                    Hardness      = Mem->brush.hardness;
                 }
 
                 GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[6], Hardness) );
@@ -1585,7 +1585,7 @@ void core::update(PapayaMemory* Mem)
         local_persist float Opacities[ArraySize] = { 0 };
 
         float MaxScale = 90.0f;
-        float Scale    = 1.0f / (1.0f - Mem->brush.Hardness);
+        float Scale    = 1.0f / (1.0f - Mem->brush.hardness);
         float Phase    = (1.0f - Scale) * (float)Math::Pi;
         float Period   = (float)Math::Pi * Scale / (float)ArraySize;
 
@@ -1615,7 +1615,7 @@ void core::update(PapayaMemory* Mem)
             {
                 Mem->doc.Undo.Current = Mem->doc.Undo.Current->Next;
                 Mem->doc.Undo.CurrentIndex++;
-                Mem->brush.LineSegmentStartUV = Mem->doc.Undo.Current->LineSegmentStartUV;
+                Mem->brush.line_segment_start_uv = Mem->doc.Undo.Current->line_segment_start_uv;
                 Refresh = true;
             }
             else if (!ImGui::GetIO().KeyShift &&
@@ -1633,7 +1633,7 @@ void core::update(PapayaMemory* Mem)
 
                 Mem->doc.Undo.Current = Mem->doc.Undo.Current->Prev;
                 Mem->doc.Undo.CurrentIndex--;
-                Mem->brush.LineSegmentStartUV = Mem->doc.Undo.Current->LineSegmentStartUV;
+                Mem->brush.line_segment_start_uv = Mem->doc.Undo.Current->line_segment_start_uv;
             }
 
             if (Refresh)
@@ -1708,7 +1708,7 @@ void core::update(PapayaMemory* Mem)
 
             if ((NewCanvasSize.x > Mem->window.Width || NewCanvasSize.y > Mem->window.Height))
             {
-                Vec2 PreScaleMousePos = Vec2(Mem->mouse.Pos - Mem->doc.CanvasPosition) / OldCanvasZoom;
+                Vec2 PreScaleMousePos = Vec2(Mem->mouse.pos - Mem->doc.CanvasPosition) / OldCanvasZoom;
                 Vec2 NewPos = Vec2(Mem->doc.CanvasPosition) -
                     Vec2(PreScaleMousePos.x * ScaleDelta * (float)Mem->doc.Width,
                         PreScaleMousePos.y * ScaleDelta * (float)Mem->doc.Height);
@@ -1809,19 +1809,19 @@ void core::update(PapayaMemory* Mem)
     // Draw brush cursor
     {
         if (Mem->current_tool == PapayaTool_Brush &&
-            (!ImGui::GetIO().KeyAlt || Mem->mouse.IsDown[1]))
+            (!ImGui::GetIO().KeyAlt || Mem->mouse.is_down[1]))
         {
-            float ScaledDiameter = Mem->brush.Diameter * Mem->doc.CanvasZoom;
+            float ScaledDiameter = Mem->brush.diameter * Mem->doc.CanvasZoom;
 
             GL::TransformQuad(Mem->meshes[PapayaMesh_BrushCursor],
-                (Mem->mouse.IsDown[1] || Mem->mouse.WasDown[1] ? Mem->brush.RtDragStartPos : Mem->mouse.Pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
+                (Mem->mouse.is_down[1] || Mem->mouse.was_down[1] ? Mem->brush.rt_drag_start_pos : Mem->mouse.pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
                 Vec2(ScaledDiameter,ScaledDiameter));
 
             GL::DrawMesh(Mem->meshes[PapayaMesh_BrushCursor], Mem->shaders[PapayaShader_BrushCursor], true,
                 4,
                 UniformType_Matrix4, &Mem->window.ProjMtx[0][0],
-                UniformType_Color, Color(1.0f, 0.0f, 0.0f, Mem->mouse.IsDown[1] ? Mem->brush.Opacity : 0.0f),
-                UniformType_Float, Mem->brush.Hardness,
+                UniformType_Color, Color(1.0f, 0.0f, 0.0f, Mem->mouse.is_down[1] ? Mem->brush.opacity : 0.0f),
+                UniformType_Float, Mem->brush.hardness,
                 UniformType_Float, ScaledDiameter);
         }
     }
@@ -1829,31 +1829,31 @@ void core::update(PapayaMemory* Mem)
     // Eye dropper
     {
         if ((Mem->current_tool == PapayaTool_EyeDropper || (Mem->current_tool == PapayaTool_Brush && ImGui::GetIO().KeyAlt))
-            && Mem->mouse.InWorkspace)
+            && Mem->mouse.in_workspace)
         {
-            if (Mem->mouse.IsDown[0])
+            if (Mem->mouse.is_down[0])
             {
                 // Get pixel color
                 {
                     float Pixel[3] = { 0 };
-                    GLCHK( glReadPixels((int32)Mem->mouse.Pos.x, Mem->window.Height - (int32)Mem->mouse.Pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel) );
-                    Mem->eye_dropper.CurrentColor = Color(Pixel[0], Pixel[1], Pixel[2]);
+                    GLCHK( glReadPixels((int32)Mem->mouse.pos.x, Mem->window.Height - (int32)Mem->mouse.pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel) );
+                    Mem->eye_dropper.color = Color(Pixel[0], Pixel[1], Pixel[2]);
                 }
 
                 Vec2 Size = Vec2(230,230);
                 GL::TransformQuad(Mem->meshes[PapayaMesh_EyeDropperCursor],
-                    Mem->mouse.Pos - (Size * 0.5f),
+                    Mem->mouse.pos - (Size * 0.5f),
                     Size);
 
                 GL::DrawMesh(Mem->meshes[PapayaMesh_EyeDropperCursor], Mem->shaders[PapayaShader_EyeDropperCursor], true,
                     3,
                     UniformType_Matrix4, &Mem->window.ProjMtx[0][0],
-                    UniformType_Color, Mem->eye_dropper.CurrentColor,
+                    UniformType_Color, Mem->eye_dropper.color,
                     UniformType_Color, Mem->picker.NewColor);
             }
-            else if (Mem->mouse.Released[0])
+            else if (Mem->mouse.released[0])
             {
-                Picker::SetColor(Mem->eye_dropper.CurrentColor, &Mem->picker, Mem->picker.Open);
+                Picker::SetColor(Mem->eye_dropper.color, &Mem->picker, Mem->picker.Open);
             }
         }
     }
@@ -1891,11 +1891,11 @@ EndOfDoc:
                 ImGui::Columns(2, "inputcolumns");
                 ImGui::Separator();
                 ImGui::Text("PosX");                        ImGui::NextColumn();
-                ImGui::Text("%d", Mem->tablet.PosX);        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->tablet.pos.x);        ImGui::NextColumn();
                 ImGui::Text("PosY");                        ImGui::NextColumn();
-                ImGui::Text("%d", Mem->tablet.PosY);        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->tablet.pos.y);        ImGui::NextColumn();
                 ImGui::Text("Pressure");                    ImGui::NextColumn();
-                ImGui::Text("%f", Mem->tablet.Pressure);    ImGui::NextColumn();
+                ImGui::Text("%f", Mem->tablet.pressure);    ImGui::NextColumn();
 
                 ImGui::Columns(1);
                 ImGui::Separator();
@@ -1903,14 +1903,14 @@ EndOfDoc:
                 ImGui::Columns(2, "inputcolumns");
                 ImGui::Separator();
                 ImGui::Text("PosX");                        ImGui::NextColumn();
-                ImGui::Text("%d", Mem->mouse.Pos.x);        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->mouse.pos.x);        ImGui::NextColumn();
                 ImGui::Text("PosY");                        ImGui::NextColumn();
-                ImGui::Text("%d", Mem->mouse.Pos.y);        ImGui::NextColumn();
+                ImGui::Text("%d", Mem->mouse.pos.y);        ImGui::NextColumn();
                 ImGui::Text("Buttons");                     ImGui::NextColumn();
                 ImGui::Text("%d %d %d",
-                    Mem->mouse.IsDown[0],
-                    Mem->mouse.IsDown[1],
-                    Mem->mouse.IsDown[2]);                  ImGui::NextColumn();
+                    Mem->mouse.is_down[0],
+                    Mem->mouse.is_down[1],
+                    Mem->mouse.is_down[2]);                  ImGui::NextColumn();
                 ImGui::Columns(1);
                 ImGui::Separator();
             }
@@ -1942,11 +1942,11 @@ EndOfDoc:
 
     // Last mouse info
     {
-        Mem->mouse.LastPos    = Mem->mouse.Pos;
-        Mem->mouse.LastUV     = Mem->mouse.UV;
-        Mem->mouse.WasDown[0] = ImGui::IsMouseDown(0);
-        Mem->mouse.WasDown[1] = ImGui::IsMouseDown(1);
-        Mem->mouse.WasDown[2] = ImGui::IsMouseDown(2);
+        Mem->mouse.last_pos    = Mem->mouse.pos;
+        Mem->mouse.last_uv     = Mem->mouse.uv;
+        Mem->mouse.was_down[0] = ImGui::IsMouseDown(0);
+        Mem->mouse.was_down[1] = ImGui::IsMouseDown(1);
+        Mem->mouse.was_down[2] = ImGui::IsMouseDown(2);
     }
 }
 

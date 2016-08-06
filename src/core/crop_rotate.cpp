@@ -127,7 +127,7 @@ void CropRotate::Toolbar(PapayaMemory* Mem)
 void CropRotate::CropOutline(PapayaMemory* Mem)
 {
     // TODO: Function lacks grace
-    Vec2 Mouse = Mem->mouse.Pos;
+    Vec2 mouse = Mem->mouse.pos;
     Vec2 P[4];
     P[0] = Mem->doc.CanvasPosition + Mem->crop_rotate.TopLeft * Mem->doc.CanvasZoom;
     P[2] = Mem->doc.CanvasPosition + Mem->crop_rotate.BotRight * Mem->doc.CanvasZoom;
@@ -135,7 +135,7 @@ void CropRotate::CropOutline(PapayaMemory* Mem)
     P[3] = Vec2(P[2].x, P[0].y);
 
     // Only change vertex selection if the left mouse button is not down
-    if (!Mem->mouse.IsDown[0])
+    if (!Mem->mouse.is_down[0])
     {
         Mem->crop_rotate.CropMode = 0;
 
@@ -146,7 +146,7 @@ void CropRotate::CropOutline(PapayaMemory* Mem)
 
             for (int32 i = 0; i < 4; i++)
             {
-                float Dist = Math::Distance(P[i], Mouse);
+                float Dist = Math::Distance(P[i], mouse);
                 if (MinDist > Dist)
                 {
                     MinDist = Dist;
@@ -171,7 +171,7 @@ void CropRotate::CropOutline(PapayaMemory* Mem)
                 int32 j = (i + 1) % 4;
                 vec2 V1 = { P[i].x  , P[i].y  };
                 vec2 V2 = { P[j].x  , P[j].y  };
-                vec2 M  = { Mouse.x , Mouse.y };
+                vec2 M  = { mouse.x , mouse.y };
                 vec2 A, B;
                 vec2_sub(A, V2, V1);
                 vec2_sub(B, M , V1);
@@ -179,8 +179,8 @@ void CropRotate::CropOutline(PapayaMemory* Mem)
                 // Continue if projection of mouse doesn't lie on the edge V1-V2
                 if (Dot < 0 || Dot > vec2_mul_inner(A, A)) { continue; }
                 float Dist = (i % 2 == 0) ?
-                             Math::Abs(P[i].x - Mouse.x) : // Vertical edge
-                             Math::Abs(P[i].y - Mouse.y);
+                             Math::Abs(P[i].x - mouse.x) : // Vertical edge
+                             Math::Abs(P[i].y - mouse.y);
                 if (MinDist > Dist)
                 {
                     MinDist = Dist;
@@ -197,7 +197,7 @@ void CropRotate::CropOutline(PapayaMemory* Mem)
 
         // Entire rect selection
         {
-            Vec2 V = (Mouse - Mem->doc.CanvasPosition) / Mem->doc.CanvasZoom;
+            Vec2 V = (mouse - Mem->doc.CanvasPosition) / Mem->doc.CanvasZoom;
             if (V.x >= Mem->crop_rotate.TopLeft.x  &&
                 V.x <= Mem->crop_rotate.BotRight.x &&
                 V.y >= Mem->crop_rotate.TopLeft.y  &&
@@ -210,15 +210,15 @@ void CropRotate::CropOutline(PapayaMemory* Mem)
     }
 
 Dragging:
-    if (Mem->crop_rotate.CropMode && Mem->mouse.IsDown[0])
+    if (Mem->crop_rotate.CropMode && Mem->mouse.is_down[0])
     {
-        Vec2 V = (Mouse - Mem->doc.CanvasPosition) / Mem->doc.CanvasZoom;
+        Vec2 V = (mouse - Mem->doc.CanvasPosition) / Mem->doc.CanvasZoom;
         // TODO: Implement smart-bounds toggle for partial image rotational cropping
         //       while maintaining aspect ratio
         // Whole rect
         if (Mem->crop_rotate.CropMode == 15)
         {
-            Vec2 V = ((Mouse - Mem->doc.CanvasPosition) / Mem->doc.CanvasZoom)
+            Vec2 V = ((mouse - Mem->doc.CanvasPosition) / Mem->doc.CanvasZoom)
                      - Mem->crop_rotate.TopLeft;
             Vec2 Delta = V - Mem->crop_rotate.RectDragPosition;
             Delta.x = Math::Clamp((float)round(Delta.x), -1.f * Mem->crop_rotate.TopLeft.x,

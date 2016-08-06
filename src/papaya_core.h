@@ -99,7 +99,7 @@ struct UndoData // TODO: Convert into a union of structs once multiple types of 
     UndoData* Prev, *Next;
     Vec2i Pos, Size; // Position and size of the suffixed data block
     bool IsSubRect; // If true, then the suffixed image data contains two subrects - before and after the brush
-    Vec2 LineSegmentStartUV;
+    Vec2 line_segment_start_uv;
     // Image data goes after this
 };
 
@@ -129,64 +129,54 @@ struct DocumentInfo
     UndoBufferInfo Undo;
 };
 
-struct MouseInfo
+struct Mouse
 {
-    Vec2i Pos;
-    Vec2i LastPos;
-    Vec2 UV;
-    Vec2 LastUV;
-    bool IsDown[3];
-    bool WasDown[3];
-    bool Pressed[3];
-    bool Released[3];
-    bool InWorkspace;
+    Vec2i pos;
+    Vec2i last_pos;
+    Vec2 uv;
+    Vec2 last_uv;
+    bool is_down[3];
+    bool was_down[3];
+    bool pressed[3];
+    bool released[3];
+    bool in_workspace;
 };
 
-struct TabletInfo
-{
-    int32 PosX, PosY;
-    float Pressure;
+struct Tablet {
+    Vec2i pos;
+    float pressure;
 };
 
-struct BrushInfo
-{
-    int32 Diameter;
-    int32 MaxDiameter;
-    float Opacity;  // Range: [0.0, 1.0]
-    float Hardness; // Range: [0.0, 1.0]
-    bool AntiAlias;
+struct Brush {
+    int32 diameter;
+    int32 max_diameter;
+    float opacity; // Range: [0.0, 1.0]
+    float hardness; // Range: [0.0, 1.0]
+    bool anti_alias;
 
-    Vec2i PaintArea1, PaintArea2;
+    Vec2i paint_area_1, paint_area_2;
 
-    // TODO: Move some of this stuff to the MouseInfo struct?
-    Vec2i RtDragStartPos;
-    bool RtDragWithShift;
-    int32 RtDragStartDiameter;
-    float RtDragStartHardness, RtDragStartOpacity;
-    bool DrawLineSegment;
-    Vec2 LineSegmentStartUV;
-    bool BeingDragged;
-    bool IsStraightDrag;
-    bool WasStraightDrag;
-    bool StraightDragSnapX;
-    bool StraightDragSnapY;
-    Vec2 StraightDragStartUV;
+    // TODO: Move some of this stuff to the Mouse struct?
+    Vec2i rt_drag_start_pos;
+    bool rt_drag_with_shift;
+    int32 rt_drag_start_diameter;
+    float rt_drag_start_hardness, rt_drag_start_opacity;
+    bool draw_line_segment;
+    Vec2 line_segment_start_uv;
+    bool being_dragged;
+    bool is_straight_drag;
+    bool was_straight_drag;
+    bool straight_drag_snap_x;
+    bool straight_drag_snap_y;
+    Vec2 straight_drag_start_uv;
 };
 
-struct EyeDropperInfo
-{
-    Color CurrentColor;
-};
-
-struct PapayaPref
-{
-    char Name[256];
-    char Description[1024];
-    char Tags[256][5];
+struct EyeDropper {
+    Color color;
 };
 
 struct Profile {
-    int64 time; // Used on Windows.
+    int64 current_time; // Used on Windows.
     float last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
     Timer timers[Timer_COUNT];
 };
@@ -208,8 +198,8 @@ struct PapayaMemory {
     SystemInfo system;
     WindowInfo window;
     DocumentInfo doc;
-    MouseInfo mouse;
-    TabletInfo tablet;
+    Mouse mouse;
+    Tablet tablet;
     Profile profile;
 
     uint32 textures[PapayaTex_COUNT];
@@ -218,15 +208,14 @@ struct PapayaMemory {
     ShaderInfo shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;
-    BrushInfo brush;
-    EyeDropperInfo eye_dropper;
+    Brush brush;
+    EyeDropper eye_dropper;
     PickerInfo picker;
     CropRotateInfo crop_rotate;
     Misc misc;
 };
 
-namespace core
-{
+namespace core {
     void init(PapayaMemory* Mem);
     void destroy(PapayaMemory* Mem);
     void resize(PapayaMemory* Mem, int32 Width, int32 Height);
