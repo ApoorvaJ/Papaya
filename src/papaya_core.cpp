@@ -158,18 +158,18 @@ internal void load_from_undo_buffer(PapayaMemory* Mem, bool LoadPreBrushImage)
 void core::resize_doc(PapayaMemory* Mem, int32 Width, int32 Height)
 {
     // Free existing texture memory
-    if (Mem->misc.FboSampleTexture)
+    if (Mem->misc.fbo_sample_tex)
     {
-        GLCHK( glDeleteTextures(1, &Mem->misc.FboSampleTexture) );
+        GLCHK( glDeleteTextures(1, &Mem->misc.fbo_sample_tex) );
     }
-    if (Mem->misc.FboRenderTexture)
+    if (Mem->misc.fbo_render_tex)
     {
-        GLCHK( glDeleteTextures(1, &Mem->misc.FboRenderTexture) );
+        GLCHK( glDeleteTextures(1, &Mem->misc.fbo_render_tex) );
     }
 
     // Allocate new memory
-    Mem->misc.FboSampleTexture = GL::AllocateTexture(Width, Height);
-    Mem->misc.FboRenderTexture = GL::AllocateTexture(Width, Height);
+    Mem->misc.fbo_sample_tex = GL::AllocateTexture(Width, Height);
+    Mem->misc.fbo_render_tex = GL::AllocateTexture(Width, Height);
 
     // Set up meshes for rendering to texture
     {
@@ -219,11 +219,11 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
     {
         // Create a framebuffer object and bind it
         GLCHK( glDisable(GL_BLEND) );
-        GLCHK( glGenFramebuffers(1, &Mem->misc.FrameBufferObject) );
-        GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.FrameBufferObject) );
+        GLCHK( glGenFramebuffers(1, &Mem->misc.fbo) );
+        GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.fbo) );
 
         // Attach the color texture to the FBO
-        GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboRenderTexture, 0) );
+        GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
 
         static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
         GLCHK( glDrawBuffers(1, draw_buffers) );
@@ -254,8 +254,8 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
         // Additive render-to-texture
         {
             GLCHK( glDisable(GL_SCISSOR_TEST) );
-            GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->misc.FrameBufferObject) );
-            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboRenderTexture, 0) );
+            GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->misc.fbo) );
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
 
             GLCHK( glViewport(0, 0, Mem->doc.Width, Mem->doc.Height) );
             GLCHK( glUseProgram(Mem->shaders[PapayaShader_ImGui].Handle) );
@@ -270,9 +270,9 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
 
             push_undo(Mem, Vec2i(0,0), Vec2i(Mem->doc.Width, Mem->doc.Height), 0, Vec2());
 
-            uint32 Temp = Mem->misc.FboRenderTexture;
-            Mem->misc.FboRenderTexture = Mem->doc.TextureID;
-            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboRenderTexture, 0) );
+            uint32 Temp = Mem->misc.fbo_render_tex;
+            Mem->misc.fbo_render_tex = Mem->doc.TextureID;
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
             Mem->doc.TextureID = Temp;
 
             GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
@@ -310,22 +310,22 @@ void core::close_doc(PapayaMemory* Mem)
     }
 
     // Frame buffer
-    if (Mem->misc.FrameBufferObject)
+    if (Mem->misc.fbo)
     {
-        GLCHK( glDeleteFramebuffers(1, &Mem->misc.FrameBufferObject) );
-        Mem->misc.FrameBufferObject = 0;
+        GLCHK( glDeleteFramebuffers(1, &Mem->misc.fbo) );
+        Mem->misc.fbo = 0;
     }
 
-    if (Mem->misc.FboRenderTexture)
+    if (Mem->misc.fbo_render_tex)
     {
-        GLCHK( glDeleteTextures(1, &Mem->misc.FboRenderTexture) );
-        Mem->misc.FboRenderTexture = 0;
+        GLCHK( glDeleteTextures(1, &Mem->misc.fbo_render_tex) );
+        Mem->misc.fbo_render_tex = 0;
     }
 
-    if (Mem->misc.FboSampleTexture)
+    if (Mem->misc.fbo_sample_tex)
     {
-        GLCHK( glDeleteTextures(1, &Mem->misc.FboSampleTexture) );
-        Mem->misc.FboSampleTexture = 0;
+        GLCHK( glDeleteTextures(1, &Mem->misc.fbo_sample_tex) );
+        Mem->misc.fbo_sample_tex = 0;
     }
 
     // Vertex Buffer: RTTBrush
@@ -361,12 +361,12 @@ void core::init(PapayaMemory* Mem)
         Picker::Init(&Mem->picker);
         CropRotate::Init(Mem);
 
-        Mem->misc.DrawOverlay      = false;
-        Mem->misc.ShowMetrics      = false;
-        Mem->misc.ShowUndoBuffer   = false;
-        Mem->misc.MenuOpen         = false;
-        Mem->misc.PrefsOpen        = false;
-        Mem->misc.PreviewImageSize = false;
+        Mem->misc.draw_overlay      = false;
+        Mem->misc.show_metrics      = false;
+        Mem->misc.show_undo_buffer   = false;
+        Mem->misc.menu_open         = false;
+        Mem->misc.prefs_open        = false;
+        Mem->misc.preview_image_size = false;
 
         float OrthoMtx[4][4] =
         {
@@ -980,7 +980,7 @@ void core::update(PapayaMemory* Mem)
         ImGui::PushStyleVar  (ImGuiStyleVar_WindowPadding , ImVec2(8, 4));
         ImGui::PushStyleColor(ImGuiCol_Header             , Mem->colors[PapayaCol_Transparent]);
 
-        Mem->misc.MenuOpen = false;
+        Mem->misc.menu_open = false;
 
         ImGui::Begin("Title Bar Menu", 0, WindowFlags);
         if (ImGui::BeginMenuBar())
@@ -988,7 +988,7 @@ void core::update(PapayaMemory* Mem)
             ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem->colors[PapayaCol_Clear]);
             if (ImGui::BeginMenu("FILE"))
             {
-                Mem->misc.MenuOpen = true;
+                Mem->misc.menu_open = true;
 
                 if (Mem->doc.TextureID) // A document is already open
                 {
@@ -1033,16 +1033,16 @@ void core::update(PapayaMemory* Mem)
 
             if (ImGui::BeginMenu("EDIT"))
             {
-                Mem->misc.MenuOpen = true;
-                if (ImGui::MenuItem("Preferences...", 0)) { Mem->misc.PrefsOpen = true; }
+                Mem->misc.menu_open = true;
+                if (ImGui::MenuItem("Preferences...", 0)) { Mem->misc.prefs_open = true; }
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("VIEW"))
             {
-                Mem->misc.MenuOpen = true;
-                ImGui::MenuItem("Metrics Window", NULL, &Mem->misc.ShowMetrics);
-                ImGui::MenuItem("Undo Buffer Window", NULL, &Mem->misc.ShowUndoBuffer);
+                Mem->misc.menu_open = true;
+                ImGui::MenuItem("Metrics Window", NULL, &Mem->misc.show_metrics);
+                ImGui::MenuItem("Undo Buffer Window", NULL, &Mem->misc.show_undo_buffer);
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
@@ -1154,11 +1154,11 @@ void core::update(PapayaMemory* Mem)
 #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
         {
             ImGui::PushID(0);
-            ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->misc.PrefsOpen) ? Mem->colors[PapayaCol_Button] :  Mem->colors[PapayaCol_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->misc.PrefsOpen) ? Mem->colors[PapayaCol_Button] :  Mem->colors[PapayaCol_ButtonHover]);
+            ImGui::PushStyleColor(ImGuiCol_Button       , (Mem->misc.prefs_open) ? Mem->colors[PapayaCol_Button] :  Mem->colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (Mem->misc.prefs_open) ? Mem->colors[PapayaCol_Button] :  Mem->colors[PapayaCol_ButtonHover]);
             if (ImGui::ImageButton((void*)(intptr_t)Mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
             {
-                Mem->misc.PrefsOpen = !Mem->misc.PrefsOpen;
+                Mem->misc.prefs_open = !Mem->misc.prefs_open;
             }
             ImGui::PopStyleColor(2);
             ImGui::PopID();
@@ -1171,7 +1171,7 @@ void core::update(PapayaMemory* Mem)
         ImGui::PopStyleColor(2);
     }
 
-    if (Mem->misc.PrefsOpen) { Prefs::ShowPanel(&Mem->picker, Mem->colors, Mem->window); }
+    if (Mem->misc.prefs_open) { Prefs::ShowPanel(&Mem->picker, Mem->colors, Mem->window); }
 
     // Color Picker
     if (Mem->picker.Open)
@@ -1220,7 +1220,7 @@ void core::update(PapayaMemory* Mem)
                 Mem->doc.Width  = Math::Clamp(size[0], 1, 9000);
                 Mem->doc.Height = Math::Clamp(size[1], 1, 9000);
                 ImGui::SameLine();
-                ImGui::Checkbox("Preview", &Mem->misc.PreviewImageSize);
+                ImGui::Checkbox("Preview", &Mem->misc.preview_image_size);
             }
 
             // "New" button
@@ -1272,7 +1272,7 @@ void core::update(PapayaMemory* Mem)
     }
 
     // Image size preview
-    if (!Mem->doc.TextureID && Mem->misc.PreviewImageSize)
+    if (!Mem->doc.TextureID && Mem->misc.preview_image_size)
     {
         int32 TopMargin = 53; // TODO: Put common layout constants in struct
         GL::TransformQuad(Mem->meshes[PapayaMesh_ImageSizePreview],
@@ -1292,7 +1292,7 @@ void core::update(PapayaMemory* Mem)
 
     // Brush tool
     if (Mem->current_tool == PapayaTool_Brush &&
-            !Mem->misc.MenuOpen &&
+            !Mem->misc.menu_open &&
             (!ImGui::GetIO().KeyAlt || Mem->mouse.IsDown[1] || Mem->mouse.Released[1]))
     {
         // Right mouse dragging
@@ -1341,7 +1341,7 @@ void core::update(PapayaMemory* Mem)
         }
         else if (Mem->mouse.Released[0] && Mem->brush.BeingDragged)
         {
-            Mem->misc.DrawOverlay         = false;
+            Mem->misc.draw_overlay         = false;
             Mem->brush.BeingDragged       = false;
             Mem->brush.IsStraightDrag     = false;
             Mem->brush.WasStraightDrag    = false;
@@ -1352,8 +1352,8 @@ void core::update(PapayaMemory* Mem)
             {
                 GLCHK( glDisable(GL_SCISSOR_TEST) );
                 GLCHK( glDisable(GL_DEPTH_TEST) );
-                GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->misc.FrameBufferObject) );
-                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboRenderTexture, 0) );
+                GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, Mem->misc.fbo) );
+                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
                 GLCHK( glViewport(0, 0, Mem->doc.Width, Mem->doc.Height) );
 
                 Vec2i Pos  = Mem->brush.PaintArea1;
@@ -1397,7 +1397,7 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->doc.ProjMtx[0][0]) );
                     GL::SetVertexAttribs(Mem->shaders[PapayaShader_PreMultiplyAlpha]);
 
-                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.FboSampleTexture) );
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_sample_tex) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
@@ -1410,7 +1410,7 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_DeMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->doc.ProjMtx[0][0]) );
                     GL::SetVertexAttribs(Mem->shaders[PapayaShader_DeMultiplyAlpha]);
 
-                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.FboRenderTexture) );
+                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_render_tex) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
@@ -1427,16 +1427,16 @@ void core::update(PapayaMemory* Mem)
 
         if (Mem->brush.BeingDragged)
         {
-            Mem->misc.DrawOverlay = true;
+            Mem->misc.draw_overlay = true;
 
-            GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.FrameBufferObject) );
+            GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.fbo) );
 
             if (Mem->mouse.Pressed[0])
             {
-                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboSampleTexture, 0) );
+                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_sample_tex, 0) );
                 GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
                 GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
-                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboRenderTexture, 0) );
+                GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
             }
             GLCHK( glViewport(0, 0, Mem->doc.Width, Mem->doc.Height) );
 
@@ -1564,13 +1564,13 @@ void core::update(PapayaMemory* Mem)
             GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTBrush].VboHandle) );
             GL::SetVertexAttribs(Mem->shaders[PapayaShader_Brush]);
 
-            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.FboSampleTexture) );
+            GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_sample_tex) );
             GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
-            uint32 Temp = Mem->misc.FboRenderTexture;
-            Mem->misc.FboRenderTexture = Mem->misc.FboSampleTexture;
-            Mem->misc.FboSampleTexture = Temp;
-            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.FboRenderTexture, 0) );
+            uint32 Temp = Mem->misc.fbo_render_tex;
+            Mem->misc.fbo_render_tex = Mem->misc.fbo_sample_tex;
+            Mem->misc.fbo_sample_tex = Temp;
+            GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
 
             GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
             GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
@@ -1643,7 +1643,7 @@ void core::update(PapayaMemory* Mem)
         }
 
         // Visualization: Undo buffer
-        if (Mem->misc.ShowUndoBuffer)
+        if (Mem->misc.show_undo_buffer)
         {
             ImGui::Begin("Undo buffer");
 
@@ -1790,9 +1790,9 @@ void core::update(PapayaMemory* Mem)
             true, 1,
             UniformType_Matrix4, M);
 
-        if (Mem->misc.DrawOverlay)
+        if (Mem->misc.draw_overlay)
         {
-            GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.FboSampleTexture) );
+            GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_sample_tex) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
             GL::DrawMesh(Mem->meshes[PapayaMesh_Canvas], Mem->shaders[PapayaShader_ImGui], 1, true,
@@ -1862,7 +1862,7 @@ EndOfDoc:
 
     // Metrics window
     {
-        if (Mem->misc.ShowMetrics)
+        if (Mem->misc.show_metrics)
         {
             ImGui::Begin("Metrics");
             if (ImGui::CollapsingHeader("Profiler", 0, true, true))

@@ -50,8 +50,8 @@ void CropRotate::Toolbar(PapayaMemory* Mem)
                                            0.f, (float)Mem->doc.Height,
                                           -1.f, 1.f);
             Mem->doc.InverseAspect = (float)Mem->doc.Height / (float)Mem->doc.Width;
-            GLCHK( glDeleteTextures(1, &Mem->misc.FboSampleTexture) );
-            Mem->misc.FboSampleTexture = GL::AllocateTexture(Mem->doc.Width,
+            GLCHK( glDeleteTextures(1, &Mem->misc.fbo_sample_tex) );
+            Mem->misc.fbo_sample_tex = GL::AllocateTexture(Mem->doc.Width,
                 Mem->doc.Height);
         }
 
@@ -59,10 +59,10 @@ void CropRotate::Toolbar(PapayaMemory* Mem)
         GLCHK( glViewport(0, 0, Mem->doc.Width, Mem->doc.Height) );
 
         // Bind and clear the frame buffer
-        GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.FrameBufferObject) );
+        GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, Mem->misc.fbo) );
 
         GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                    GL_TEXTURE_2D, Mem->misc.FboSampleTexture, 0) );
+                    GL_TEXTURE_2D, Mem->misc.fbo_sample_tex, 0) );
 
         GLCHK( glClearColor(0.0f, 0.0f, 0.0f, 0.0f) );
         GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
@@ -92,8 +92,8 @@ void CropRotate::Toolbar(PapayaMemory* Mem)
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-        uint32 Temp                = Mem->misc.FboSampleTexture;
-        Mem->misc.FboSampleTexture = Mem->doc.TextureID;
+        uint32 Temp                = Mem->misc.fbo_sample_tex;
+        Mem->misc.fbo_sample_tex = Mem->doc.TextureID;
         Mem->doc.TextureID         = Temp;
 
         if (SizeChanged)

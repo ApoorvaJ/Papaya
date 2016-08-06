@@ -192,16 +192,16 @@ struct DebugInfo
     TimerInfo Timers[Timer_COUNT];
 };
 
-struct MiscInfo // TODO: This entire struct is for stuff to be refactored at some point
+struct Misc // TODO: This entire struct is for stuff to be refactored at some point
 {
-    uint32 FrameBufferObject;
-    uint32 FboRenderTexture, FboSampleTexture;
-    bool DrawOverlay;
-    bool ShowMetrics;
-    bool ShowUndoBuffer;
-    bool MenuOpen;
-    bool PrefsOpen;
-    bool PreviewImageSize;
+    uint32 fbo;
+    uint32 fbo_render_tex, fbo_sample_tex;
+    bool draw_overlay;
+    bool show_metrics;
+    bool show_undo_buffer;
+    bool menu_open;
+    bool prefs_open;
+    bool preview_image_size;
 };
 
 struct PapayaMemory {
@@ -223,7 +223,7 @@ struct PapayaMemory {
     EyeDropperInfo eye_dropper;
     PickerInfo picker;
     CropRotateInfo crop_rotate;
-    MiscInfo misc;
+    Misc misc;
 };
 
 namespace core
