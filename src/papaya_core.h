@@ -199,7 +199,7 @@ struct PapayaMemory {
     PapayaTool_ current_tool;
     Brush brush;
     EyeDropper eye_dropper;
-    PickerInfo picker;
+    Picker picker;
     CropRotate crop_rotate;
     Misc misc;
 };

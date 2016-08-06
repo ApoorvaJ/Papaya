@@ -4,7 +4,7 @@
 #include "libs/imgui/imgui.h"
 #include "papaya_core.h"
 
-void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, Layout& layout)
+void Prefs::ShowPanel(Picker* Picker, Color* Colors, Layout& layout)
 {
     float Width = 400.0f;
     ImGui::SetNextWindowPos(ImVec2((float)layout.width - 36 - Width, 58));
@@ -76,16 +76,16 @@ void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, Layout& layout)
                 ImGui::PushID(i);
                 if (ImGui::Button(str))
                 {
-                    if (Picker->BoundColor == &Colors[i]) // This color is bound
+                    if (Picker->bound_color == &Colors[i]) // This color is bound
                     {
-                        Picker->BoundColor = 0;
-                        Picker->Open = false;
+                        Picker->bound_color = 0;
+                        Picker->is_open = false;
                     }
                     else // Some other color is bound or picker is unbound
                     {
-                        Picker->BoundColor = &Colors[i];
-                        Picker::SetColor(Colors[i], Picker);
-                        Picker->Open = true;
+                        Picker->bound_color = &Colors[i];
+                        picker::set_color(Colors[i], Picker);
+                        Picker->is_open = true;
                     }
                 }
                 ImGui::PopID();

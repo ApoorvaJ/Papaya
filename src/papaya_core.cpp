@@ -358,7 +358,7 @@ void core::init(PapayaMemory* Mem)
         Mem->brush.anti_alias          = true;
         Mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
 
-        Picker::Init(&Mem->picker);
+        picker::init(&Mem->picker);
         crop_rotate::init(Mem);
 
         Mem->misc.draw_overlay      = false;
@@ -639,7 +639,9 @@ void core::init(PapayaMemory* Mem)
             "ProjMtx", "Hue", "Cursor");
 
         GL::InitQuad(Mem->meshes[PapayaMesh_PickerSVBox],
-            Mem->picker.Pos + Mem->picker.SVBoxPos, Mem->picker.SVBoxSize, GL_STATIC_DRAW);
+                     Mem->picker.pos + Mem->picker.sv_box_pos,
+                     Mem->picker.sv_box_size,
+                     GL_STATIC_DRAW);
     }
 
     // Picker hue shader
@@ -677,7 +679,9 @@ void core::init(PapayaMemory* Mem)
             "ProjMtx", "Cursor");
 
         GL::InitQuad(Mem->meshes[PapayaMesh_PickerHStrip],
-            Mem->picker.Pos + Mem->picker.HueStripPos, Mem->picker.HueStripSize, GL_STATIC_DRAW);
+                     Mem->picker.pos + Mem->picker.hue_strip_pos,
+                     Mem->picker.hue_strip_size,
+                     GL_STATIC_DRAW);
     }
 
     // Imaze size preview shader
@@ -916,11 +920,11 @@ void core::update(PapayaMemory* Mem)
                 {
                     Mem->mouse.in_workspace = false;
                 }
-                else if (Mem->picker.Open &&
-                    Mem->mouse.pos.x > Mem->picker.Pos.x &&                       // Color picker test
-                    Mem->mouse.pos.x < Mem->picker.Pos.x + Mem->picker.Size.x &&  //
-                    Mem->mouse.pos.y > Mem->picker.Pos.y &&                       //
-                    Mem->mouse.pos.y < Mem->picker.Pos.y + Mem->picker.Size.y)    //
+                else if (Mem->picker.is_open &&
+                    Mem->mouse.pos.x > Mem->picker.pos.x &&                       // Color picker test
+                    Mem->mouse.pos.x < Mem->picker.pos.x + Mem->picker.size.x &&  //
+                    Mem->mouse.pos.y > Mem->picker.pos.y &&                       //
+                    Mem->mouse.pos.y < Mem->picker.pos.y + Mem->picker.size.y)    //
                 {
                     Mem->mouse.in_workspace = false;
                 }
@@ -1112,10 +1116,10 @@ void core::update(PapayaMemory* Mem)
             ImGui::PopID();
 
             ImGui::PushID(3);
-            if (ImGui::ImageButton((void*)(intptr_t)Mem->textures[PapayaTex_UI], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Mem->picker.CurrentColor))
+            if (ImGui::ImageButton((void*)(intptr_t)Mem->textures[PapayaTex_UI], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, Mem->picker.current_color))
             {
-                Mem->picker.Open = !Mem->picker.Open;
-                Picker::SetColor(Mem->picker.CurrentColor, &Mem->picker);
+                Mem->picker.is_open = !Mem->picker.is_open;
+                picker::set_color(Mem->picker.current_color, &Mem->picker);
             }
             ImGui::PopID();
         }
@@ -1171,12 +1175,13 @@ void core::update(PapayaMemory* Mem)
         ImGui::PopStyleColor(2);
     }
 
-    if (Mem->misc.prefs_open) { Prefs::ShowPanel(&Mem->picker, Mem->colors, Mem->window); }
+    if (Mem->misc.prefs_open) {
+        Prefs::ShowPanel(&Mem->picker, Mem->colors, Mem->window);
+    }
 
     // Color Picker
-    if (Mem->picker.Open)
-    {
-        Picker::UpdateAndRender(&Mem->picker, Mem->colors,
+    if (Mem->picker.is_open) {
+        picker::update(&Mem->picker, Mem->colors,
                 Mem->mouse, Mem->textures[PapayaTex_UI]);
     }
 
@@ -1335,7 +1340,9 @@ void core::update(PapayaMemory* Mem)
         {
             Mem->brush.being_dragged = true;
             Mem->brush.draw_line_segment = ImGui::GetIO().KeyShift && Mem->brush.line_segment_start_uv.x >= 0.0f;
-            if (Mem->picker.Open) { Mem->picker.CurrentColor = Mem->picker.NewColor; }
+            if (Mem->picker.is_open) {
+                Mem->picker.current_color = Mem->picker.new_color;
+            }
             Mem->brush.paint_area_1 = Vec2i(Mem->doc.width + 1, Mem->doc.height + 1);
             Mem->brush.paint_area_2 = Vec2i(0,0);
         }
@@ -1538,9 +1545,9 @@ void core::update(PapayaMemory* Mem)
             GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->brush.diameter / ((float)Mem->doc.width * 2.0f)) );
             float Opacity = Mem->brush.opacity;
             //if (Mem->tablet.Pressure > 0.0f) { Opacity *= Mem->tablet.Pressure; }
-            GLCHK( glUniform4f(Mem->shaders[PapayaShader_Brush].Uniforms[5], Mem->picker.CurrentColor.r,
-                        Mem->picker.CurrentColor.g,
-                        Mem->picker.CurrentColor.b,
+            GLCHK( glUniform4f(Mem->shaders[PapayaShader_Brush].Uniforms[5], Mem->picker.current_color.r,
+                        Mem->picker.current_color.g,
+                        Mem->picker.current_color.b,
                         Opacity) );
             // Brush hardness
             {
@@ -1849,11 +1856,12 @@ void core::update(PapayaMemory* Mem)
                     3,
                     UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
                     UniformType_Color, Mem->eye_dropper.color,
-                    UniformType_Color, Mem->picker.NewColor);
+                    UniformType_Color, Mem->picker.new_color);
             }
             else if (Mem->mouse.released[0])
             {
-                Picker::SetColor(Mem->eye_dropper.color, &Mem->picker, Mem->picker.Open);
+                picker::set_color(Mem->eye_dropper.color, &Mem->picker,
+                                  Mem->picker.is_open);
             }
         }
     }
@@ -1921,8 +1929,7 @@ EndOfDoc:
     ImGui::Render(Mem);
 
     // Color Picker Panel
-    if (Mem->picker.Open)
-    {
+    if (Mem->picker.is_open) {
         // TODO: Investigate how to move this custom shaded quad drawing into
         //       ImGui to get correct draw order.
 
@@ -1930,14 +1937,14 @@ EndOfDoc:
         GL::DrawMesh(Mem->meshes[PapayaMesh_PickerHStrip], Mem->shaders[PapayaShader_PickerHStrip], false,
                 2,
                 UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
-                UniformType_Float, Mem->picker.CursorH);
+                UniformType_Float, Mem->picker.cursor_h);
 
         // Draw saturation-value picker
         GL::DrawMesh(Mem->meshes[PapayaMesh_PickerSVBox], Mem->shaders[PapayaShader_PickerSVBox], false,
                 3,
                 UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
-                UniformType_Float, Mem->picker.CursorH,
-                UniformType_Vec2, Mem->picker.CursorSV);
+                UniformType_Float, Mem->picker.cursor_h,
+                UniformType_Vec2, Mem->picker.cursor_sv);
     }
 
     // Last mouse info

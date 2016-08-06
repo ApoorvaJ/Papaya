@@ -3,10 +3,10 @@
 
 #include "libs/types.h"
 
-struct PickerInfo;
+struct Picker;
 struct Layout;
 
 namespace Prefs
 {
-    void ShowPanel(PickerInfo* Picker, Color* Colors, Layout& layout);
+    void ShowPanel(Picker* Picker, Color* Colors, Layout& layout);
 }
