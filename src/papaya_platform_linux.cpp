@@ -4,7 +4,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
+#ifdef USE_GTK
 #include <gtk/gtk.h>
+#endif
 
 #include "papaya_platform.h"
 #include "papaya_core.h"
@@ -70,6 +72,7 @@ void Platform::SetCursorVisibility(bool Visible)
 
 char* Platform::OpenFileDialog()
 {
+#ifdef USE_GTK
     GtkWidget *Dialog = gtk_file_chooser_dialog_new(
         "Open File",
         NULL,
@@ -98,10 +101,14 @@ char* Platform::OpenFileDialog()
     gtk_widget_destroy(Dialog);
 
     return OutFilename;
+#else
+    return 0;
+#endif
 }
 
 char* Platform::SaveFileDialog()
 {
+#if USE_GTK
     GtkWidget *Dialog = gtk_file_chooser_dialog_new(
         "Save File",
         NULL,
@@ -130,6 +137,9 @@ char* Platform::SaveFileDialog()
     gtk_widget_destroy(Dialog);
 
     return OutFilename;
+#else
+    return 0;
+#endif
 }
 
 double Platform::GetMilliseconds()
@@ -152,7 +162,9 @@ int main(int argc, char **argv)
     Atom WmDeleteMessage;
 
     // Initialize GTK for Open/Save file dialogs
+#ifdef USE_GTK
     gtk_init(&argc, &argv);
+#endif
 
     // Set path to executable path
     {
@@ -434,8 +446,10 @@ int main(int argc, char **argv)
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
 
+#ifdef USE_GTK
         // Run a GTK+ loop, and *don't* block if there are no events pending
         gtk_main_iteration_do(FALSE);
+#endif
 
         // End Of Frame
         Timer::StopTime(&Mem.Debug.Timers[Timer_Frame]);
