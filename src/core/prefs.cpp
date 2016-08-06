@@ -4,11 +4,11 @@
 #include "libs/imgui/imgui.h"
 #include "papaya_core.h"
 
-void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window)
+void Prefs::ShowPanel(PickerInfo* Picker, Color* Colors, Layout& layout)
 {
     float Width = 400.0f;
-    ImGui::SetNextWindowPos(ImVec2((float)Window.Width - 36 - Width, 58));
-    ImGui::SetNextWindowSize(ImVec2(Width, (float)Window.Height - 64));
+    ImGui::SetNextWindowPos(ImVec2((float)layout.width - 36 - Width, 58));
+    ImGui::SetNextWindowSize(ImVec2(Width, (float)layout.height - 64));
 
     // TODO: Once the overall look has been established, make commonly used templates
     ImGuiWindowFlags WindowFlags = 0;

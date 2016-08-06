@@ -4,9 +4,9 @@
 #include "libs/types.h"
 
 struct PickerInfo;
-struct WindowInfo;
+struct Layout;
 
 namespace Prefs
 {
-    void ShowPanel(PickerInfo* Picker, Color* Colors, WindowInfo& Window);
+    void ShowPanel(PickerInfo* Picker, Color* Colors, Layout& layout);
 }

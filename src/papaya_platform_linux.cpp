@@ -9,7 +9,6 @@
 #endif
 
 #include "papaya_platform.h"
-#include "papaya_core.h"
 
 #include "libs/glew/glew.h"
 #include "libs/glew/glxew.h"
@@ -17,6 +16,7 @@
 #include <GL/glx.h>
 #include "libs/imgui/imgui.h"
 #include "libs/easytab.h"
+#include "papaya_core.h"
 
 #define GLEW_NO_GLU
 
@@ -197,8 +197,8 @@ int main(int argc, char **argv)
         SetWindowAttributes.event_mask = ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
 
         XlibWindow = XCreateWindow(XlibDisplay, DefaultRootWindow(XlibDisplay), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
-        Mem.window.Width = 600;
-        Mem.window.Height = 600;
+        Mem.window.width = 600;
+        Mem.window.height = 600;
 
         XMapWindow(XlibDisplay, XlibWindow);
         XStoreName(XlibDisplay, XlibWindow, "Papaya");
@@ -256,8 +256,8 @@ int main(int argc, char **argv)
 
         if (!GL::InitAndValidate()) { exit(1); }
 
-        glGetIntegerv(GL_MAJOR_VERSION, &Mem.system.OpenGLVersion[0]);
-        glGetIntegerv(GL_MINOR_VERSION, &Mem.system.OpenGLVersion[1]);
+        glGetIntegerv(GL_MAJOR_VERSION, &Mem.system.gl_version[0]);
+        glGetIntegerv(GL_MINOR_VERSION, &Mem.system.gl_version[1]);
 
         // Disable vsync
         if (glxewIsSupported("GLX_EXT_swap_control"))

@@ -10,15 +10,13 @@
 
 struct ImDrawData;
 
-enum PapayaTex_
-{
+enum PapayaTex_ {
     PapayaTex_Font,
     PapayaTex_UI,
     PapayaTex_COUNT
 };
 
-enum PapayaCol_
-{
+enum PapayaCol_ {
     PapayaCol_Clear,
     PapayaCol_Workspace,
     PapayaCol_Button,
@@ -32,8 +30,7 @@ enum PapayaCol_
     PapayaCol_COUNT
 };
 
-enum PapayaMesh_
-{
+enum PapayaMesh_ {
     PapayaMesh_ImGui,
     PapayaMesh_Canvas,
     PapayaMesh_ImageSizePreview,
@@ -48,8 +45,7 @@ enum PapayaMesh_
     PapayaMesh_COUNT
 };
 
-enum PapayaShader_
-{
+enum PapayaShader_ {
     PapayaShader_ImGui,
     PapayaShader_VertexColor,
     PapayaShader_ImageSizePreview,
@@ -64,14 +60,12 @@ enum PapayaShader_
     PapayaShader_COUNT
 };
 
-enum PapayaUndoOp_
-{
+enum PapayaUndoOp_ {
     PapayaUndoOp_Brush,
     PapayaUndoOp_COUNT
 };
 
-enum PapayaTool_
-{
+enum PapayaTool_ {
     PapayaTool_None,
     PapayaTool_Brush,
     PapayaTool_EyeDropper,
@@ -79,58 +73,53 @@ enum PapayaTool_
     PapayaTool_COUNT
 };
 
-struct SystemInfo
-{
-    int32 OpenGLVersion[2];
+struct SystemInfo{
+    int32 gl_version[2];
 };
 
-struct WindowInfo
-{
-    int32 Width, Height;
-    uint32 MenuHorizontalOffset, TitleBarButtonsWidth, TitleBarHeight;
-    float ProjMtx[4][4];
+struct Layout {
+    int32 width, height;
+    uint32 menu_horizontal_offset, title_bar_buttons_width, title_bar_height;
+    float proj_mtx[4][4];
 };
 
 // =======================================================================================
 // Undo structs
-struct UndoData // TODO: Convert into a union of structs once multiple types of undo ops are required
-{
-    uint8 OpCode; // Stores enum of type PapayaUndoOp_
-    UndoData* Prev, *Next;
-    Vec2i Pos, Size; // Position and size of the suffixed data block
+struct UndoData {
+    // TODO: Convert into a union of structs once multiple types of undo ops are required
+    uint8 op_code; // Stores enum of type PapayaUndoOp_
+    UndoData* prev, *next;
+    Vec2i pos, size; // Position and size of the suffixed data block
     bool IsSubRect; // If true, then the suffixed image data contains two subrects - before and after the brush
     Vec2 line_segment_start_uv;
     // Image data goes after this
 };
 
-struct UndoBufferInfo
-{
-    void* Start;   // Pointer to beginning of undo buffer memory block // TODO: Change pointer types to int8*?
-    void* Top;     // Pointer to the top of the undo stack
-    UndoData* Base;    // Pointer to the base of the undo stack
-    UndoData* Current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
-    UndoData* Last;    // Last undo data block in the buffer. Should be located just before Top.
-    size_t Size;  // Size of the undo buffer in bytes
-    size_t Count;  // Number of undo ops in buffer
-    size_t CurrentIndex; // Index of the current undo data block from the beginning
+struct UndoBuffer {
+    void* start;   // Pointer to beginning of undo buffer memory block // TODO: Change pointer types to int8*?
+    void* top;     // Pointer to the top of the undo stack
+    UndoData* base;    // Pointer to the base of the undo stack
+    UndoData* current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
+    UndoData* last;    // Last undo data block in the buffer. Should be located just before Top.
+    size_t size;  // Size of the undo buffer in bytes
+    size_t count;  // Number of undo ops in buffer
+    size_t current_index; // Index of the current undo data block from the beginning
 };
 
 // =======================================================================================
 
-struct DocumentInfo
-{
-    int32 Width, Height;
-    int32 ComponentsPerPixel;
-    uint32 TextureID;
-    Vec2i CanvasPosition;
-    float CanvasZoom;
-    float InverseAspect;
-    float ProjMtx[4][4];
-    UndoBufferInfo Undo;
+struct Document {
+    int32 width, height;
+    int32 components_per_pixel;
+    uint32 texture_id;
+    Vec2i canvas_pos;
+    float canvas_zoom;
+    float inverse_aspect;
+    float proj_mtx[4][4];
+    UndoBuffer undo;
 };
 
-struct Mouse
-{
+struct Mouse {
     Vec2i pos;
     Vec2i last_pos;
     Vec2 uv;
@@ -196,8 +185,8 @@ struct Misc {
 struct PapayaMemory {
     bool is_running;
     SystemInfo system;
-    WindowInfo window;
-    DocumentInfo doc;
+    Layout window;
+    Document doc;
     Mouse mouse;
     Tablet tablet;
     Profile profile;

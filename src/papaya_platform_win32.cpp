@@ -354,9 +354,9 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
                 }
             }
 
-            if (Y - WindowRect.top <= (float)Mem.Window.TitleBarHeight &&
+            if (Y - WindowRect.top <= (float)Mem.Window.title_bar_height &&
                 X > WindowRect.left + 200.0f &&
-                X < WindowRect.right - (float)(Mem.Window.TitleBarButtonsWidth + 10))
+                X < WindowRect.right - (float)(Mem.Window.title_bar_buttons_width + 10))
             {
                 return HTCAPTION;
             }
@@ -500,8 +500,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
             if (!GL::InitAndValidate()) { exit(1); }
 
-            glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.OpenGLVersion[0]);
-            glGetIntegerv(GL_MINOR_VERSION, &Mem.System.OpenGLVersion[1]);
+            glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.gl_version[0]);
+            glGetIntegerv(GL_MINOR_VERSION, &Mem.System.gl_version[1]);
         }
 
         // Disable vsync
@@ -539,9 +539,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
 
 
-    Mem.Window.MenuHorizontalOffset = 32;
-    Mem.Window.TitleBarButtonsWidth = 109;
-    Mem.Window.TitleBarHeight = 30;
+    Mem.Window.menu_horizontal_offset = 32;
+    Mem.Window.title_bar_buttons_width = 109;
+    Mem.Window.title_bar_height = 30;
 
     Timer::StopTime(&Mem.Debug.Timers[Timer_Startup]);
 
@@ -625,7 +625,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         // Title Bar Icon
         {
-            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.MenuHorizontalOffset,(float)Mem.Window.TitleBarHeight));
+            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.menu_horizontal_offset,(float)Mem.Window.title_bar_height));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
             ImGuiWindowFlags WindowFlags = 0; // TODO: Create a commonly-used set of Window flags, and use them across ImGui windows
@@ -659,8 +659,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         // Title Bar Buttons
         {
-            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.TitleBarButtonsWidth,24.0f));
-            ImGui::SetNextWindowPos(ImVec2((float)Mem.Window.Width - Mem.Window.TitleBarButtonsWidth, 0.0f));
+            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.title_bar_buttons_width,24.0f));
+            ImGui::SetNextWindowPos(ImVec2((float)Mem.Window.Width - Mem.Window.title_bar_buttons_width, 0.0f));
 
             ImGuiWindowFlags WindowFlags = 0;
             WindowFlags |= ImGuiWindowFlags_NoTitleBar;
