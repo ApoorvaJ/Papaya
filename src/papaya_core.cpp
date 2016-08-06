@@ -168,14 +168,14 @@ void core::resize_doc(PapayaMemory* Mem, int32 Width, int32 Height)
     }
 
     // Allocate new memory
-    Mem->misc.fbo_sample_tex = GL::AllocateTexture(Width, Height);
-    Mem->misc.fbo_render_tex = GL::AllocateTexture(Width, Height);
+    Mem->misc.fbo_sample_tex = gl::allocate_tex(Width, Height);
+    Mem->misc.fbo_render_tex = gl::allocate_tex(Width, Height);
 
     // Set up meshes for rendering to texture
     {
         Vec2 Size = Vec2((float)Width, (float)Height);
-        GL::InitQuad(Mem->meshes[PapayaMesh_RTTBrush], Vec2(0,0), Size, GL_STATIC_DRAW);
-        GL::InitQuad(Mem->meshes[PapayaMesh_RTTAdd]  , Vec2(0,0), Size, GL_STATIC_DRAW);
+        gl::init_quad(Mem->meshes[PapayaMesh_RTTBrush], Vec2(0,0), Size, GL_STATIC_DRAW);
+        gl::init_quad(Mem->meshes[PapayaMesh_RTTAdd]  , Vec2(0,0), Size, GL_STATIC_DRAW);
     }
 }
 
@@ -198,7 +198,7 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
 
         if (!Texture) { return false; }
 
-        Mem->doc.texture_id = GL::AllocateTexture(Mem->doc.width, Mem->doc.height, Texture);
+        Mem->doc.texture_id = gl::allocate_tex(Mem->doc.width, Mem->doc.height, Texture);
 
         Mem->doc.inverse_aspect = (float)Mem->doc.height / (float)Mem->doc.width;
         Mem->doc.canvas_zoom = 0.8f * Math::Min((float)Mem->window.width/(float)Mem->doc.width, (float)Mem->window.height/(float)Mem->doc.height);
@@ -258,12 +258,12 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
             GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->misc.fbo_render_tex, 0) );
 
             GLCHK( glViewport(0, 0, Mem->doc.width, Mem->doc.height) );
-            GLCHK( glUseProgram(Mem->shaders[PapayaShader_ImGui].Handle) );
+            GLCHK( glUseProgram(Mem->shaders[PapayaShader_ImGui].handle) );
 
-            GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
+            GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
 
-            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTAdd].VboHandle) );
-            GL::SetVertexAttribs(Mem->shaders[PapayaShader_ImGui]);
+            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
+            gl::set_vertex_attribs(Mem->shaders[PapayaShader_ImGui]);
 
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->doc.texture_id) );
             GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
@@ -329,17 +329,17 @@ void core::close_doc(PapayaMemory* Mem)
     }
 
     // Vertex Buffer: RTTBrush
-    if (Mem->meshes[PapayaMesh_RTTBrush].VboHandle)
+    if (Mem->meshes[PapayaMesh_RTTBrush].vbo_handle)
     {
-        GLCHK( glDeleteBuffers(1, &Mem->meshes[PapayaMesh_RTTBrush].VboHandle) );
-        Mem->meshes[PapayaMesh_RTTBrush].VboHandle = 0;
+        GLCHK( glDeleteBuffers(1, &Mem->meshes[PapayaMesh_RTTBrush].vbo_handle) );
+        Mem->meshes[PapayaMesh_RTTBrush].vbo_handle = 0;
     }
 
     // Vertex Buffer: RTTAdd
-    if (Mem->meshes[PapayaMesh_RTTAdd].VboHandle)
+    if (Mem->meshes[PapayaMesh_RTTAdd].vbo_handle)
     {
-        GLCHK( glDeleteBuffers(1, &Mem->meshes[PapayaMesh_RTTAdd].VboHandle) );
-        Mem->meshes[PapayaMesh_RTTAdd].VboHandle = 0;
+        GLCHK( glDeleteBuffers(1, &Mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
+        Mem->meshes[PapayaMesh_RTTAdd].vbo_handle = 0;
     }
 }
 
@@ -524,7 +524,7 @@ void core::init(PapayaMemory* Mem)
             "                           clamp(FinalAlpha,0.0,1.0));             \n" // TODO: Needs improvement. Self-intersection corners look weird.
             "   }                                                               \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_Brush], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_Brush], __FILE__, __LINE__,
             Vert, Frag, 2, 8,
             "Position", "UV",
             "ProjMtx", "Texture", "Pos", "LastPos", "Radius", "BrushColor", "Hardness", "InvAspect");
@@ -560,12 +560,12 @@ void core::init(PapayaMemory* Mem)
             "       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
             "   }                                                                           \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_BrushCursor], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_BrushCursor], __FILE__, __LINE__,
             Vert, Frag, 2, 4,
             "Position", "UV",
             "ProjMtx", "BrushColor", "Hardness", "PixelDiameter");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_BrushCursor],
+        gl::init_quad(Mem->meshes[PapayaMesh_BrushCursor],
             Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
 
@@ -588,12 +588,12 @@ void core::init(PapayaMemory* Mem)
             "       gl_FragColor.a = t;                                                     \n"
             "   }                                                                           \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_EyeDropperCursor], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_EyeDropperCursor], __FILE__, __LINE__,
             Vert, Frag, 2, 3,
             "Position", "UV",
             "ProjMtx", "Color1", "Color2");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_EyeDropperCursor],
+        gl::init_quad(Mem->meshes[PapayaMesh_EyeDropperCursor],
             Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     }
 
@@ -633,12 +633,12 @@ void core::init(PapayaMemory* Mem)
             "       }                                                                   \n"
             "   }                                                                       \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_PickerSVBox], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_PickerSVBox], __FILE__, __LINE__,
             Vert, Frag, 2, 3,
             "Position", "UV",
             "ProjMtx", "Hue", "Cursor");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_PickerSVBox],
+        gl::init_quad(Mem->meshes[PapayaMesh_PickerSVBox],
                      Mem->picker.pos + Mem->picker.sv_box_pos,
                      Mem->picker.sv_box_size,
                      GL_STATIC_DRAW);
@@ -673,12 +673,12 @@ void core::init(PapayaMemory* Mem)
             "           gl_FragColor = Hue;                                     \n"
             "   }                                                               \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_PickerHStrip], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_PickerHStrip], __FILE__, __LINE__,
             Vert, Frag, 2, 2,
             "Position", "UV",
             "ProjMtx", "Cursor");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_PickerHStrip],
+        gl::init_quad(Mem->meshes[PapayaMesh_PickerHStrip],
                      Mem->picker.pos + Mem->picker.hue_strip_pos,
                      Mem->picker.hue_strip_size,
                      GL_STATIC_DRAW);
@@ -705,12 +705,12 @@ void core::init(PapayaMemory* Mem)
             "           gl_FragColor = Color2;                                  \n"
             "   }                                                               \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_ImageSizePreview], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_ImageSizePreview], __FILE__, __LINE__,
             Vert, Frag, 2, 5,
             "Position", "UV",
             "ProjMtx", "Color1", "Color2", "Width", "Height");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_ImageSizePreview],
+        gl::init_quad(Mem->meshes[PapayaMesh_ImageSizePreview],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
@@ -739,12 +739,12 @@ void core::init(PapayaMemory* Mem)
             "       gl_FragColor = mix(Color1, Color2, a);                      \n"
             "   }                                                               \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_AlphaGrid], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_AlphaGrid], __FILE__, __LINE__,
             Vert, Frag, 2, 6,
             "Position", "UV",
             "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect", "MaxDim");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_AlphaGrid],
+        gl::init_quad(Mem->meshes[PapayaMesh_AlphaGrid],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
@@ -763,7 +763,7 @@ void core::init(PapayaMemory* Mem)
             "       gl_FragColor = vec4(col.r, col.g, col.b, 1.0) * col.a;          \n"
             "   }                                                                   \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_PreMultiplyAlpha], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_PreMultiplyAlpha], __FILE__, __LINE__,
             Vert, Frag, 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
@@ -784,7 +784,7 @@ void core::init(PapayaMemory* Mem)
             "       gl_FragColor = vec4(col.rgb/col.a, col.a);                      \n"
             "   }                                                                   \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_DeMultiplyAlpha], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_DeMultiplyAlpha], __FILE__, __LINE__,
             Vert, Frag, 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
@@ -804,12 +804,12 @@ void core::init(PapayaMemory* Mem)
             "       gl_FragColor = Frag_Color * texture2D( Texture, Frag_UV.st);    \n"
             "   }                                                                   \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_ImGui], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_ImGui], __FILE__, __LINE__,
             Vert, Frag, 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_Canvas],
+        gl::init_quad(Mem->meshes[PapayaMesh_Canvas],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
@@ -827,19 +827,19 @@ void core::init(PapayaMemory* Mem)
             "       gl_FragColor = Frag_Color;    \n"
             "   }                                                                   \n";
 
-        GL::CompileShader(Mem->shaders[PapayaShader_VertexColor], __FILE__, __LINE__,
+        gl::compile_shader(Mem->shaders[PapayaShader_VertexColor], __FILE__, __LINE__,
             Vert, Frag, 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
 
-        GL::InitQuad(Mem->meshes[PapayaMesh_Canvas],
+        gl::init_quad(Mem->meshes[PapayaMesh_Canvas],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     }
 
     // Setup for ImGui
     {
-        GLCHK( glGenBuffers(1, &Mem->meshes[PapayaMesh_ImGui].VboHandle) );
-        GLCHK( glGenBuffers(1, &Mem->meshes[PapayaMesh_ImGui].ElementsHandle) );
+        GLCHK( glGenBuffers(1, &Mem->meshes[PapayaMesh_ImGui].vbo_handle) );
+        GLCHK( glGenBuffers(1, &Mem->meshes[PapayaMesh_ImGui].elements_handle) );
 
         // Create fonts texture
         ImGuiIO& io = ImGui::GetIO();
@@ -1280,11 +1280,11 @@ void core::update(PapayaMemory* Mem)
     if (!Mem->doc.texture_id && Mem->misc.preview_image_size)
     {
         int32 TopMargin = 53; // TODO: Put common layout constants in struct
-        GL::TransformQuad(Mem->meshes[PapayaMesh_ImageSizePreview],
+        gl::transform_quad(Mem->meshes[PapayaMesh_ImageSizePreview],
             Vec2((float)(Mem->window.width - Mem->doc.width) / 2, TopMargin + (float)(Mem->window.height - TopMargin - Mem->doc.height) / 2),
             Vec2((float)Mem->doc.width, (float)Mem->doc.height));
 
-        GL::DrawMesh(Mem->meshes[PapayaMesh_ImageSizePreview], Mem->shaders[PapayaShader_ImageSizePreview], true,
+        gl::draw_mesh(Mem->meshes[PapayaMesh_ImageSizePreview], Mem->shaders[PapayaShader_ImageSizePreview], true,
             5,
             UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
             UniformType_Color, Mem->colors[PapayaCol_ImageSizePreview1],
@@ -1372,10 +1372,10 @@ void core::update(PapayaMemory* Mem)
                 {
                     GLCHK( glDisable(GL_BLEND) );
 
-                    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTAdd].VboHandle) );
-                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_ImGui].Handle) );
-                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
-                    GL::SetVertexAttribs(Mem->shaders[PapayaShader_ImGui]);
+                    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
+                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_ImGui].handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
+                    gl::set_vertex_attribs(Mem->shaders[PapayaShader_ImGui]);
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->doc.texture_id) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
@@ -1386,9 +1386,9 @@ void core::update(PapayaMemory* Mem)
 
                 // Render base image with premultiplied alpha
                 {
-                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_PreMultiplyAlpha].Handle) );
-                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
-                    GL::SetVertexAttribs(Mem->shaders[PapayaShader_PreMultiplyAlpha]);
+                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_PreMultiplyAlpha].handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_PreMultiplyAlpha].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
+                    gl::set_vertex_attribs(Mem->shaders[PapayaShader_PreMultiplyAlpha]);
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->doc.texture_id) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
@@ -1400,9 +1400,9 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glBlendEquation(GL_FUNC_ADD) );
                     GLCHK( glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
 
-                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_PreMultiplyAlpha].Handle) );
-                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_PreMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
-                    GL::SetVertexAttribs(Mem->shaders[PapayaShader_PreMultiplyAlpha]);
+                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_PreMultiplyAlpha].handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_PreMultiplyAlpha].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
+                    gl::set_vertex_attribs(Mem->shaders[PapayaShader_PreMultiplyAlpha]);
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_sample_tex) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
@@ -1413,9 +1413,9 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glDisable(GL_BLEND) );
 
                     GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Mem->doc.texture_id, 0) );
-                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_DeMultiplyAlpha].Handle) );
-                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_DeMultiplyAlpha].Uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
-                    GL::SetVertexAttribs(Mem->shaders[PapayaShader_DeMultiplyAlpha]);
+                    GLCHK( glUseProgram(Mem->shaders[PapayaShader_DeMultiplyAlpha].handle) );
+                    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_DeMultiplyAlpha].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
+                    gl::set_vertex_attribs(Mem->shaders[PapayaShader_DeMultiplyAlpha]);
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_render_tex) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
@@ -1453,7 +1453,7 @@ void core::update(PapayaMemory* Mem)
             // Setup orthographic projection matrix
             float width  = (float)Mem->doc.width;
             float height = (float)Mem->doc.height;
-            GLCHK( glUseProgram(Mem->shaders[PapayaShader_Brush].Handle) );
+            GLCHK( glUseProgram(Mem->shaders[PapayaShader_Brush].handle) );
 
             Mem->brush.was_straight_drag = Mem->brush.is_straight_drag;
             Mem->brush.is_straight_drag = ImGui::GetIO().KeyShift;
@@ -1539,13 +1539,13 @@ void core::update(PapayaMemory* Mem)
                 Mem->brush.paint_area_2.y = Math::Clamp(Mem->brush.paint_area_2.y, 0, Mem->doc.height);
             }
 
-            GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_Brush].Uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
-            GLCHK( glUniform2f(Mem->shaders[PapayaShader_Brush].Uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->doc.inverse_aspect) ); // Pos uniform
-            GLCHK( glUniform2f(Mem->shaders[PapayaShader_Brush].Uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->doc.inverse_aspect) ); // Lastpos uniform
-            GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[4], (float)Mem->brush.diameter / ((float)Mem->doc.width * 2.0f)) );
+            GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_Brush].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
+            GLCHK( glUniform2f(Mem->shaders[PapayaShader_Brush].uniforms[2], CorrectedPos.x, CorrectedPos.y * Mem->doc.inverse_aspect) ); // Pos uniform
+            GLCHK( glUniform2f(Mem->shaders[PapayaShader_Brush].uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * Mem->doc.inverse_aspect) ); // Lastpos uniform
+            GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].uniforms[4], (float)Mem->brush.diameter / ((float)Mem->doc.width * 2.0f)) );
             float Opacity = Mem->brush.opacity;
             //if (Mem->tablet.Pressure > 0.0f) { Opacity *= Mem->tablet.Pressure; }
-            GLCHK( glUniform4f(Mem->shaders[PapayaShader_Brush].Uniforms[5], Mem->picker.current_color.r,
+            GLCHK( glUniform4f(Mem->shaders[PapayaShader_Brush].uniforms[5], Mem->picker.current_color.r,
                         Mem->picker.current_color.g,
                         Mem->picker.current_color.b,
                         Opacity) );
@@ -1563,13 +1563,13 @@ void core::update(PapayaMemory* Mem)
                     Hardness      = Mem->brush.hardness;
                 }
 
-                GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[6], Hardness) );
+                GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].uniforms[6], Hardness) );
             }
 
-            GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].Uniforms[7], Mem->doc.inverse_aspect) ); // Inverse Aspect uniform
+            GLCHK( glUniform1f(Mem->shaders[PapayaShader_Brush].uniforms[7], Mem->doc.inverse_aspect) ); // Inverse Aspect uniform
 
-            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTBrush].VboHandle) );
-            GL::SetVertexAttribs(Mem->shaders[PapayaShader_Brush]);
+            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_RTTBrush].vbo_handle) );
+            gl::set_vertex_attribs(Mem->shaders[PapayaShader_Brush]);
 
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_sample_tex) );
             GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
@@ -1735,7 +1735,7 @@ void core::update(PapayaMemory* Mem)
     // Draw alpha grid
     {
         // TODO: Conflate PapayaMesh_AlphaGrid and PapayaMesh_Canvas?
-        GL::TransformQuad(Mem->meshes[PapayaMesh_AlphaGrid],
+        gl::transform_quad(Mem->meshes[PapayaMesh_AlphaGrid],
             Mem->doc.canvas_pos,
             Vec2(Mem->doc.width * Mem->doc.canvas_zoom, Mem->doc.height * Mem->doc.canvas_zoom));
 
@@ -1756,7 +1756,7 @@ void core::update(PapayaMemory* Mem)
             mat4x4_dup(M, R);
         }
 
-        GL::DrawMesh(Mem->meshes[PapayaMesh_AlphaGrid], Mem->shaders[PapayaShader_AlphaGrid], true,
+        gl::draw_mesh(Mem->meshes[PapayaMesh_AlphaGrid], Mem->shaders[PapayaShader_AlphaGrid], true,
             6,
             UniformType_Matrix4, M,
             UniformType_Color, Mem->colors[PapayaCol_AlphaGrid1],
@@ -1768,7 +1768,7 @@ void core::update(PapayaMemory* Mem)
 
     // Draw canvas
     {
-        GL::TransformQuad(Mem->meshes[PapayaMesh_Canvas],
+        gl::transform_quad(Mem->meshes[PapayaMesh_Canvas],
             Mem->doc.canvas_pos,
             Vec2(Mem->doc.width * Mem->doc.canvas_zoom, Mem->doc.height * Mem->doc.canvas_zoom));
 
@@ -1793,7 +1793,7 @@ void core::update(PapayaMemory* Mem)
         GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->doc.texture_id) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-        GL::DrawMesh(Mem->meshes[PapayaMesh_Canvas], Mem->shaders[PapayaShader_ImGui],
+        gl::draw_mesh(Mem->meshes[PapayaMesh_Canvas], Mem->shaders[PapayaShader_ImGui],
             true, 1,
             UniformType_Matrix4, M);
 
@@ -1802,7 +1802,7 @@ void core::update(PapayaMemory* Mem)
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->misc.fbo_sample_tex) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            GL::DrawMesh(Mem->meshes[PapayaMesh_Canvas], Mem->shaders[PapayaShader_ImGui], 1, true,
+            gl::draw_mesh(Mem->meshes[PapayaMesh_Canvas], Mem->shaders[PapayaShader_ImGui], 1, true,
                 UniformType_Matrix4, &Mem->window.proj_mtx[0][0]);
         }
     }
@@ -1820,11 +1820,11 @@ void core::update(PapayaMemory* Mem)
         {
             float ScaledDiameter = Mem->brush.diameter * Mem->doc.canvas_zoom;
 
-            GL::TransformQuad(Mem->meshes[PapayaMesh_BrushCursor],
+            gl::transform_quad(Mem->meshes[PapayaMesh_BrushCursor],
                 (Mem->mouse.is_down[1] || Mem->mouse.was_down[1] ? Mem->brush.rt_drag_start_pos : Mem->mouse.pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
                 Vec2(ScaledDiameter,ScaledDiameter));
 
-            GL::DrawMesh(Mem->meshes[PapayaMesh_BrushCursor], Mem->shaders[PapayaShader_BrushCursor], true,
+            gl::draw_mesh(Mem->meshes[PapayaMesh_BrushCursor], Mem->shaders[PapayaShader_BrushCursor], true,
                 4,
                 UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
                 UniformType_Color, Color(1.0f, 0.0f, 0.0f, Mem->mouse.is_down[1] ? Mem->brush.opacity : 0.0f),
@@ -1848,11 +1848,11 @@ void core::update(PapayaMemory* Mem)
                 }
 
                 Vec2 Size = Vec2(230,230);
-                GL::TransformQuad(Mem->meshes[PapayaMesh_EyeDropperCursor],
+                gl::transform_quad(Mem->meshes[PapayaMesh_EyeDropperCursor],
                     Mem->mouse.pos - (Size * 0.5f),
                     Size);
 
-                GL::DrawMesh(Mem->meshes[PapayaMesh_EyeDropperCursor], Mem->shaders[PapayaShader_EyeDropperCursor], true,
+                gl::draw_mesh(Mem->meshes[PapayaMesh_EyeDropperCursor], Mem->shaders[PapayaShader_EyeDropperCursor], true,
                     3,
                     UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
                     UniformType_Color, Mem->eye_dropper.color,
@@ -1934,13 +1934,13 @@ EndOfDoc:
         //       ImGui to get correct draw order.
 
         // Draw hue picker
-        GL::DrawMesh(Mem->meshes[PapayaMesh_PickerHStrip], Mem->shaders[PapayaShader_PickerHStrip], false,
+        gl::draw_mesh(Mem->meshes[PapayaMesh_PickerHStrip], Mem->shaders[PapayaShader_PickerHStrip], false,
                 2,
                 UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
                 UniformType_Float, Mem->picker.cursor_h);
 
         // Draw saturation-value picker
-        GL::DrawMesh(Mem->meshes[PapayaMesh_PickerSVBox], Mem->shaders[PapayaShader_PickerSVBox], false,
+        gl::draw_mesh(Mem->meshes[PapayaMesh_PickerSVBox], Mem->shaders[PapayaShader_PickerSVBox], false,
                 3,
                 UniformType_Matrix4, &Mem->window.proj_mtx[0][0],
                 UniformType_Float, Mem->picker.cursor_h,
@@ -1982,22 +1982,22 @@ void core::render_imgui(ImDrawData* DrawData, void* MemPtr)
     float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
     DrawData->ScaleClipRects(io.DisplayFramebufferScale);
 
-    GLCHK( glUseProgram      (Mem->shaders[PapayaShader_ImGui].Handle) );
-    GLCHK( glUniform1i       (Mem->shaders[PapayaShader_ImGui].Uniforms[1], 0) );
-    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_ImGui].Uniforms[0], 1, GL_FALSE, &Mem->window.proj_mtx[0][0]) );
+    GLCHK( glUseProgram      (Mem->shaders[PapayaShader_ImGui].handle) );
+    GLCHK( glUniform1i       (Mem->shaders[PapayaShader_ImGui].uniforms[1], 0) );
+    GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &Mem->window.proj_mtx[0][0]) );
 
     for (int32 n = 0; n < DrawData->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = DrawData->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
 
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_ImGui].VboHandle) );
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, Mem->meshes[PapayaMesh_ImGui].vbo_handle) );
         GLCHK( glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)cmd_list->VtxBuffer.size() * sizeof(ImDrawVert), (GLvoid*)&cmd_list->VtxBuffer.front(), GL_STREAM_DRAW) );
 
-        GLCHK( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mem->meshes[PapayaMesh_ImGui].ElementsHandle) );
+        GLCHK( glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Mem->meshes[PapayaMesh_ImGui].elements_handle) );
         GLCHK( glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)cmd_list->IdxBuffer.size() * sizeof(ImDrawIdx), (GLvoid*)&cmd_list->IdxBuffer.front(), GL_STREAM_DRAW) );
 
-        GL::SetVertexAttribs(Mem->shaders[PapayaShader_ImGui]);
+        gl::set_vertex_attribs(Mem->shaders[PapayaShader_ImGui]);
 
         for (const ImDrawCmd* pcmd = cmd_list->CmdBuffer.begin(); pcmd != cmd_list->CmdBuffer.end(); pcmd++)
         {

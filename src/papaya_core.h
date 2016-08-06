@@ -194,7 +194,7 @@ struct PapayaMemory {
     uint32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
     Mesh meshes[PapayaMesh_COUNT];
-    ShaderInfo shaders[PapayaShader_COUNT];
+    Shader shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;
     Brush brush;

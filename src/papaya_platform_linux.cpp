@@ -254,7 +254,7 @@ int main(int argc, char **argv)
         GLXContext GraphicsContext = glXCreateContext(XlibDisplay, VisualInfo, 0, GL_TRUE);
         glXMakeCurrent(XlibDisplay, XlibWindow, GraphicsContext);
 
-        if (!GL::InitAndValidate()) { exit(1); }
+        if (!gl::init()) { exit(1); }
 
         glGetIntegerv(GL_MAJOR_VERSION, &Mem.system.gl_version[0]);
         glGetIntegerv(GL_MINOR_VERSION, &Mem.system.gl_version[1]);

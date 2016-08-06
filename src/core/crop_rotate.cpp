@@ -12,8 +12,8 @@ void crop_rotate::init(PapayaMemory* mem) {
     Mesh* mesh = &mem->meshes[PapayaMesh_CropOutline];
     mesh->is_line_loop = true;
     mesh->index_count = 4;
-    GLCHK( glGenBuffers(1, &mesh->VboHandle) );
-    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mesh->VboHandle) );
+    GLCHK( glGenBuffers(1, &mesh->vbo_handle) );
+    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo_handle) );
     GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * mesh->index_count,
                         0, GL_DYNAMIC_DRAW) );
 }
@@ -49,7 +49,7 @@ void crop_rotate::toolbar(PapayaMemory* mem) {
             mem->doc.inverse_aspect = (float)mem->doc.height /
                                       (float)mem->doc.width;
             GLCHK( glDeleteTextures(1, &mem->misc.fbo_sample_tex) );
-            mem->misc.fbo_sample_tex = GL::AllocateTexture(mem->doc.width,
+            mem->misc.fbo_sample_tex = gl::allocate_tex(mem->doc.width,
                                                            mem->doc.height);
         }
 
@@ -82,11 +82,11 @@ void crop_rotate::toolbar(PapayaMemory* mem) {
         }
 
         // Draw the image onto the frame buffer
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTAdd].VboHandle) );
-        GLCHK( glUseProgram(mem->shaders[PapayaShader_DeMultiplyAlpha].Handle) );
-        GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].Uniforms[0],
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
+        GLCHK( glUseProgram(mem->shaders[PapayaShader_DeMultiplyAlpha].handle) );
+        GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0],
                                   1, GL_FALSE, (GLfloat*)r) );
-        GL::SetVertexAttribs(mem->shaders[PapayaShader_DeMultiplyAlpha]);
+        gl::set_vertex_attribs(mem->shaders[PapayaShader_DeMultiplyAlpha]);
         GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->doc.texture_id) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
@@ -287,10 +287,10 @@ drawing:
             verts[3].col = (Mode & 8) ? col2 : col1;
         }
     }
-    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_CropOutline].VboHandle) );
+    GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_CropOutline].vbo_handle) );
     GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts) );
 
-    GL::DrawMesh(mem->meshes[PapayaMesh_CropOutline],
+    gl::draw_mesh(mem->meshes[PapayaMesh_CropOutline],
                  mem->shaders[PapayaShader_VertexColor], true,
                  1, UniformType_Matrix4, &mem->window.proj_mtx[0][0]);
 }

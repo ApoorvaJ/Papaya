@@ -498,7 +498,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             HGLRC RenderingContext = wglCreateContext(DeviceContext);
             wglMakeCurrent(DeviceContext, RenderingContext);
 
-            if (!GL::InitAndValidate()) { exit(1); }
+            if (!gl::InitAndValidate()) { exit(1); }
 
             glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.gl_version[0]);
             glGetIntegerv(GL_MINOR_VERSION, &Mem.System.gl_version[1]);
