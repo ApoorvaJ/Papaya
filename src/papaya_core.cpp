@@ -9,29 +9,10 @@
 #include "libs/linmath.h"
 
 
-internal uint32 LoadAndBindImage(char* Path)
-{
-    uint8* Image;
-    int32 ImageWidth, ImageHeight, ComponentsPerPixel;
-    Image = stbi_load(Path, &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
-
-    // Create texture
-    GLuint Id_GLuint;
-    GLCHK( glGenTextures  (1, &Id_GLuint) );
-    GLCHK( glBindTexture  (GL_TEXTURE_2D, Id_GLuint) );
-    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
-    GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-    GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, Image) );
-
-    // Store our identifier
-    free(Image);
-    return (uint32)Id_GLuint;
-}
 
 // This function reads from the frame buffer and hence needs the appropriate frame buffer to be
 // bound before it is called.
-internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushImage,
+internal void push_undo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushImage,
         Vec2 LineSegmentStartUV)
 {
     if (Mem->Doc.Undo.Top == 0) // Buffer is empty
@@ -146,7 +127,7 @@ internal void PushUndo(PapayaMemory* Mem, Vec2i Pos, Vec2i Size, int8* PreBrushI
     Mem->Doc.Undo.CurrentIndex++;
 }
 
-internal void LoadFromUndoBuffer(PapayaMemory* Mem, bool LoadPreBrushImage)
+internal void load_from_undo_buffer(PapayaMemory* Mem, bool LoadPreBrushImage)
 {
     UndoData Data  = {};
     int8* Image    = 0;
@@ -175,7 +156,7 @@ internal void LoadFromUndoBuffer(PapayaMemory* Mem, bool LoadPreBrushImage)
     if (AllocUsed) { free(Image); }
 }
 
-void Core::ResizeBuffers(PapayaMemory* Mem, int32 Width, int32 Height)
+void core::resize_doc(PapayaMemory* Mem, int32 Width, int32 Height)
 {
     // Free existing texture memory
     if (Mem->Misc.FboSampleTexture)
@@ -199,7 +180,7 @@ void Core::ResizeBuffers(PapayaMemory* Mem, int32 Width, int32 Height)
     }
 }
 
-bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
+bool core::open_doc(char* Path, PapayaMemory* Mem)
 {
     Timer::StartTime(&Mem->Debug.Timers[Timer_ImageOpen]);
 
@@ -233,7 +214,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
         free(Texture);
     }
 
-    ResizeBuffers(Mem, Mem->Doc.Width, Mem->Doc.Height);
+    resize_doc(Mem, Mem->Doc.Width, Mem->Doc.Height);
 
     // Set up the frame buffer
     {
@@ -288,7 +269,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->Doc.TextureID) );
             GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-            PushUndo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height), 0, Vec2());
+            push_undo(Mem, Vec2i(0,0), Vec2i(Mem->Doc.Width, Mem->Doc.Height), 0, Vec2());
 
             uint32 Temp = Mem->Misc.FboRenderTexture;
             Mem->Misc.FboRenderTexture = Mem->Doc.TextureID;
@@ -311,7 +292,7 @@ bool Core::OpenDocument(char* Path, PapayaMemory* Mem)
     return true;
 }
 
-void Core::CloseDocument(PapayaMemory* Mem)
+void core::close_doc(PapayaMemory* Mem)
 {
     // Document
     if (Mem->Doc.TextureID)
@@ -363,7 +344,7 @@ void Core::CloseDocument(PapayaMemory* Mem)
     }
 }
 
-void Core::Initialize(PapayaMemory* Mem)
+void core::init(PapayaMemory* Mem)
 {
     // Init values and load textures
     {
@@ -408,7 +389,25 @@ void Core::Initialize(PapayaMemory* Mem)
         Mem->Colors[PapayaCol_ImageSizePreview2] = Color(45, 45, 45);
         Mem->Colors[PapayaCol_Transparent]       = Color(0, 0, 0, 0);
 
-        Mem->Textures[PapayaTex_UI] = LoadAndBindImage("ui.png");
+        // Load and bind image
+        {
+            uint8* Image;
+            int32 ImageWidth, ImageHeight, ComponentsPerPixel;
+            Image = stbi_load("ui.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
+
+            // Create texture
+            GLuint Id_GLuint;
+            GLCHK( glGenTextures  (1, &Id_GLuint) );
+            GLCHK( glBindTexture  (GL_TEXTURE_2D, Id_GLuint) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+            GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0,
+                GL_RGBA, GL_UNSIGNED_BYTE, Image) );
+
+            // Store our identifier
+            free(Image);
+            Mem->Textures[PapayaTex_UI] = (uint32)Id_GLuint;
+        }
     }
 
     const char* Vert;
@@ -869,12 +868,12 @@ void Core::Initialize(PapayaMemory* Mem)
     }
 }
 
-void Core::Shutdown(PapayaMemory* Mem)
+void core::destroy(PapayaMemory* Mem)
 {
     //TODO: Free stuff
 }
 
-void Core::OnWindowResize(PapayaMemory* Mem, int32 Width, int32 Height)
+void core::resize(PapayaMemory* Mem, int32 Width, int32 Height)
 {
     Mem->Window.Width = Width;
     Mem->Window.Height = Height;
@@ -889,7 +888,7 @@ void Core::OnWindowResize(PapayaMemory* Mem, int32 Width, int32 Height)
     Mem->Doc.CanvasPosition = Vec2i(PosX, PosY);
 }
 
-void Core::UpdateAndRender(PapayaMemory* Mem)
+void core::update(PapayaMemory* Mem)
 {
     // Initialize frame
     {
@@ -994,10 +993,10 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
                 if (Mem->Doc.TextureID) // A document is already open
                 {
-                    if (ImGui::MenuItem("Close")) { CloseDocument(Mem); }
+                    if (ImGui::MenuItem("Close")) { close_doc(Mem); }
                     if (ImGui::MenuItem("Save"))
                     {
-                        char* Path = Platform::SaveFileDialog();
+                        char* Path = platform::save_file_dialog();
                         uint8* Texture = (uint8*)malloc(4 * Mem->Doc.Width * Mem->Doc.Height);
                         if (Path) // TODO: Do this on a separate thread. Massively blocks UI for large images.
                         {
@@ -1008,7 +1007,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                             if (!Result)
                             {
                                 // TODO: Log: Save failed
-                                Platform::Print("Save failed\n");
+                                platform::print("Save failed\n");
                             }
 
                             free(Texture);
@@ -1020,10 +1019,10 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 {
                     if (ImGui::MenuItem("Open"))
                     {
-                        char* Path = Platform::OpenFileDialog();
+                        char* Path = platform::open_file_dialog();
                         if (Path)
                         {
-                            OpenDocument(Path, Mem);
+                            open_doc(Path, Mem);
                             free(Path);
                         }
                     }
@@ -1231,7 +1230,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 if (ImGui::Button("New Image"))
                 {
                     Mem->Doc.ComponentsPerPixel = 4;
-                    OpenDocument(0, Mem);
+                    open_doc(0, Mem);
                 }
             }
         }
@@ -1306,8 +1305,8 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 Mem->Brush.RtDragStartHardness = Mem->Brush.Hardness;
                 Mem->Brush.RtDragStartOpacity  = Mem->Brush.Opacity;
                 Mem->Brush.RtDragWithShift     = ImGui::GetIO().KeyShift;
-                Platform::StartMouseCapture();
-                Platform::SetCursorVisibility(false);
+                platform::start_mouse_capture();
+                platform::set_cursor_visibility(false);
             }
             else if (Mem->Mouse.IsDown[1])
             {
@@ -1327,9 +1326,9 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             }
             else if (Mem->Mouse.Released[1])
             {
-                Platform::ReleaseMouseCapture();
-                Platform::SetMousePosition(Mem->Brush.RtDragStartPos.x, Mem->Brush.RtDragStartPos.y);
-                Platform::SetCursorVisibility(true);
+                platform::stop_mouse_capture();
+                platform::set_mouse_position(Mem->Brush.RtDragStartPos.x, Mem->Brush.RtDragStartPos.y);
+                platform::set_cursor_visibility(true);
             }
         }
 
@@ -1416,7 +1415,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
-                PushUndo(Mem, Pos, Size, PreBrushImage, Mem->Brush.LineSegmentStartUV);
+                push_undo(Mem, Pos, Size, PreBrushImage, Mem->Brush.LineSegmentStartUV);
 
                 if (PreBrushImage) { free(PreBrushImage); }
 
@@ -1473,7 +1472,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 Mem->Mouse.UV.x = Mem->Brush.StraightDragStartUV.x;
                 float pixelPos = Mem->Mouse.UV.x * Mem->Doc.Width + 0.5f;
                 Mem->Mouse.Pos.x = Math::RoundToInt(pixelPos * Mem->Doc.CanvasZoom + Mem->Doc.CanvasPosition.x);
-                Platform::SetMousePosition(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+                platform::set_mouse_position(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
             }
 
             if (Mem->Brush.IsStraightDrag && Mem->Brush.StraightDragSnapY)
@@ -1481,7 +1480,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
                 Mem->Mouse.UV.y = Mem->Brush.StraightDragStartUV.y;
                 float pixelPos = Mem->Mouse.UV.y * Mem->Doc.Height + 0.5f;
                 Mem->Mouse.Pos.y = Math::RoundToInt(pixelPos * Mem->Doc.CanvasZoom + Mem->Doc.CanvasPosition.y);
-                Platform::SetMousePosition(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
+                platform::set_mouse_position(Mem->Mouse.Pos.x, Mem->Mouse.Pos.y);
             }
 
             Vec2 Correction = (Mem->Brush.Diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
@@ -1626,7 +1625,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
             {
                 if (Mem->Doc.Undo.Current->IsSubRect)
                 {
-                    LoadFromUndoBuffer(Mem, true);
+                    load_from_undo_buffer(Mem, true);
                 }
                 else
                 {
@@ -1640,7 +1639,7 @@ void Core::UpdateAndRender(PapayaMemory* Mem)
 
             if (Refresh)
             {
-                LoadFromUndoBuffer(Mem, false);
+                load_from_undo_buffer(Mem, false);
             }
         }
 
@@ -1952,7 +1951,7 @@ EndOfDoc:
     }
 }
 
-void Core::RenderImGui(ImDrawData* DrawData, void* MemPtr)
+void core::render_imgui(ImDrawData* DrawData, void* MemPtr)
 {
     PapayaMemory* Mem = (PapayaMemory*)MemPtr;
 

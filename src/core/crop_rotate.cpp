@@ -98,7 +98,7 @@ void CropRotate::Toolbar(PapayaMemory* Mem)
 
         if (SizeChanged)
         {
-            Core::ResizeBuffers(Mem, Mem->Doc.Width, Mem->Doc.Height);
+            core::resize_doc(Mem, Mem->Doc.Width, Mem->Doc.Height);
 
             // Reposition canvas to maintain apparent position
             int32 Delta = Math::RoundToInt((Mem->Doc.Height - Mem->Doc.Width)

@@ -227,14 +227,14 @@ struct PapayaMemory
     MiscInfo Misc;
 };
 
-namespace Core
+namespace core
 {
-    void Initialize(PapayaMemory* Mem);
-    void Shutdown(PapayaMemory* Mem);
-    void OnWindowResize(PapayaMemory* Mem, int32 Width, int32 Height);
-    void UpdateAndRender(PapayaMemory* Mem);
-    void RenderImGui(ImDrawData* DrawData, void* MemPtr);
-    bool OpenDocument(char* Path, PapayaMemory* Mem);
-    void CloseDocument(PapayaMemory* Mem);
-    void ResizeBuffers(PapayaMemory* Mem, int32 Width, int32 Height);
+    void init(PapayaMemory* Mem);
+    void destroy(PapayaMemory* Mem);
+    void resize(PapayaMemory* Mem, int32 Width, int32 Height);
+    void update(PapayaMemory* Mem);
+    void render_imgui(ImDrawData* DrawData, void* MemPtr);
+    bool open_doc(char* Path, PapayaMemory* Mem);
+    void close_doc(PapayaMemory* Mem);
+    void resize_doc(PapayaMemory* Mem, int32 Width, int32 Height);
 }

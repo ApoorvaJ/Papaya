@@ -7,14 +7,14 @@
 #endif // !_DEBUG
 
 
-namespace Platform
+namespace platform
 {
-    void Print(char* Message);
-    void StartMouseCapture();
-    void ReleaseMouseCapture();
-    void SetMousePosition(int32 x, int32 y);
-    void SetCursorVisibility(bool Visible);
-    char* OpenFileDialog();
-    char* SaveFileDialog();
-    double GetMilliseconds();
+    void print(char* Message);
+    void start_mouse_capture();
+    void stop_mouse_capture();
+    void set_mouse_position(int32 x, int32 y);
+    void set_cursor_visibility(bool Visible);
+    char* open_file_dialog();
+    char* save_file_dialog();
+    double get_milliseconds();
 }

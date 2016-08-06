@@ -20,38 +20,35 @@
 
 #define GLEW_NO_GLU
 
-#ifndef PAPAYARELEASE
 #define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/Linux.png"
-#endif
-
 
 
 global_variable Display* XlibDisplay;
 global_variable Window XlibWindow;
 // =================================================================================================
 
-void Platform::Print(char* Message)
+void platform::print(char* Message)
 {
     printf("%s", Message);
 }
 
-void Platform::StartMouseCapture()
+void platform::start_mouse_capture()
 {
     //
 }
 
-void Platform::ReleaseMouseCapture()
+void platform::stop_mouse_capture()
 {
     //
 }
 
-void Platform::SetMousePosition(int32 x, int32 y)
+void platform::set_mouse_position(int32 x, int32 y)
 {
     XWarpPointer(XlibDisplay, None, XlibWindow, 0, 0, 0, 0, x, y);
     XFlush(XlibDisplay);
 }
 
-void Platform::SetCursorVisibility(bool Visible)
+void platform::set_cursor_visibility(bool Visible)
 {
     if (!Visible)
     {
@@ -70,7 +67,7 @@ void Platform::SetCursorVisibility(bool Visible)
     }
 }
 
-char* Platform::OpenFileDialog()
+char* platform::open_file_dialog()
 {
 #ifdef USE_GTK
     GtkWidget *Dialog = gtk_file_chooser_dialog_new(
@@ -106,7 +103,7 @@ char* Platform::OpenFileDialog()
 #endif
 }
 
-char* Platform::SaveFileDialog()
+char* platform::save_file_dialog()
 {
 #if USE_GTK
     GtkWidget *Dialog = gtk_file_chooser_dialog_new(
@@ -142,7 +139,7 @@ char* Platform::SaveFileDialog()
 #endif
 }
 
-double Platform::GetMilliseconds()
+double platform::get_milliseconds()
 {
     timespec Time;
     clock_gettime(CLOCK_MONOTONIC, &Time);
@@ -271,14 +268,14 @@ int main(int argc, char **argv)
 
     EasyTab_Load(XlibDisplay, XlibWindow);
 
-    Core::Initialize(&Mem);
+    core::init(&Mem);
 
     // Initialize ImGui
     {
         // TODO: Profiler timer setup
 
         ImGuiIO& io = ImGui::GetIO();
-        io.RenderDrawListsFn = Core::RenderImGui;
+        io.RenderDrawListsFn = core::render_imgui;
 
         // Keyboard mappings
         {
@@ -307,7 +304,7 @@ int main(int argc, char **argv)
     Timer::StopTime(&Mem.Debug.Timers[Timer_Startup]);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
-    Core::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
+    core::open_doc(PAPAYA_DEFAULT_IMAGE, &Mem);
 #endif
 
     Mem.IsRunning = true;
@@ -330,7 +327,7 @@ int main(int argc, char **argv)
                 {
                     XWindowAttributes WindowAttributes;
                     XGetWindowAttributes(XlibDisplay, XlibWindow, &WindowAttributes);
-                    Core::OnWindowResize(&Mem, WindowAttributes.width,WindowAttributes.height);
+                    core::resize(&Mem, WindowAttributes.width,WindowAttributes.height);
                 } break;
 
                 case ClientMessage:
@@ -442,7 +439,7 @@ int main(int argc, char **argv)
 
         // Update and render
         {
-            Core::UpdateAndRender(&Mem);
+            core::update(&Mem);
             glXSwapBuffers(XlibDisplay, XlibWindow);
         }
 
@@ -461,7 +458,7 @@ int main(int argc, char **argv)
         if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 
-    //Core::Shutdown(&Mem);
+    //core::destroy(&Mem);
     EasyTab_Unload();
 
     return 0;

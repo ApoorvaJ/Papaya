@@ -86,14 +86,14 @@ double Timer::GetFrequency()
 
 void Timer::StartTime(TimerInfo* Timer)
 {
-    Timer->StartMs     = Platform::GetMilliseconds();
+    Timer->StartMs = platform::get_milliseconds();
     Timer->StartCycles = __rdtsc();
 }
 
 void Timer::StopTime(TimerInfo* Timer)
 {
-    Timer->StopCycles    = __rdtsc();
-    Timer->StopMs        = Platform::GetMilliseconds();
+    Timer->StopCycles = __rdtsc();
+    Timer->StopMs = platform::get_milliseconds();
     Timer->ElapsedCycles = Timer->StopCycles - Timer->StartCycles;
     Timer->ElapsedMs     = (Timer->StopMs - Timer->StartMs) * TickFrequency;
 }
