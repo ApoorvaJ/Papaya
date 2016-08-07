@@ -52,39 +52,47 @@ namespace math {
 #ifdef MATHLIB_IMPLEMENTATION
 
 
-float math::abs(float a) {
+float math::abs(float a)
+{
     return (a < 0.0f ? a * -1.0f : a);
 }
 
-int32 math::abs(int32 a) {
+int32 math::abs(int32 a)
+{
     return (a < 0 ? a * -1 : a);
 }
 
-float math::floor(float a) {
+float math::floor(float a)
+{
     int32 i = (int32)a;
     return (float)(i - (i > a));
 }
 
-int32 math::round_to_int(float a) {
+int32 math::round_to_int(float a)
+{
     return (int32)floor(a + 0.5f);
 }
 
-Vec2i math::round_to_vec2i(Vec2 a) {
+Vec2i math::round_to_vec2i(Vec2 a)
+{
     return Vec2i(round_to_int(a.x), round_to_int(a.y));
 }
 
-float math::distance(Vec2 a, Vec2 b) {
+float math::distance(Vec2 a, Vec2 b)
+{
     return sqrtf( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
 }
 
-float math::distance_squared(Vec2 a, Vec2 b) {
+float math::distance_squared(Vec2 a, Vec2 b)
+{
     return ( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
 }
 
 // Color math
 // TODO: Move to an array-based color type
 void math::hsv_to_rgb(float h, float s, float v,
-                      float& out_r, float& out_g, float& out_b) {
+                      float& out_r, float& out_g, float& out_b)
+{
     if (s == 0.0f) {
         // gray
         out_r = out_g = out_b = v;
@@ -109,7 +117,8 @@ void math::hsv_to_rgb(float h, float s, float v,
 }
 
 void math::rgb_to_hsv(float r, float g, float b,
-                      float& out_h, float& out_s, float& out_v) {
+                      float& out_h, float& out_s, float& out_v)
+{
     float K = 0.f;
     if (g < b) {
         const float tmp = g; g = b; b = tmp;
@@ -126,7 +135,8 @@ void math::rgb_to_hsv(float r, float g, float b,
     out_v = r;
 }
 
-float math::to_radians(float degrees) {
+float math::to_radians(float degrees)
+{
     return (float)(degrees * PI / 180.f);
 }
 

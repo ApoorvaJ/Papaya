@@ -4,7 +4,8 @@
 #include "libs/mathlib.h"
 #include "papaya_core.h"
 
-void picker::init(Picker* picker) {
+void picker::init(Picker* picker)
+{
     picker->current_color = Color(220, 163, 89);
     picker->is_open = false;
     picker->pos = Vec2(34, 152);
@@ -17,7 +18,8 @@ void picker::init(Picker* picker) {
     picker->bound_color = 0;
 }
 
-void picker::set_color(Color col, Picker* picker, bool set_new_color_only) {
+void picker::set_color(Color col, Picker* picker, bool set_new_color_only)
+{
     if (!set_new_color_only) { picker->current_color = col; }
     picker->new_color = col;
     math::rgb_to_hsv(picker->new_color.r, picker->new_color.g, picker->new_color.b,
@@ -26,8 +28,8 @@ void picker::set_color(Color col, Picker* picker, bool set_new_color_only) {
 }
 
 // TODO: Remove the last param
-void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
-                    uint32 BlankTexture) {
+void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
+{
     // Picker panel
     {
         // TODO: Clean styling code
@@ -46,16 +48,16 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(0, 0));
 
-        ImGui::PushStyleColor(ImGuiCol_Button        , Colors[PapayaCol_Button]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered , Colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , Colors[PapayaCol_ButtonActive]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg      , Colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_Button        , colors[PapayaCol_Button]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered , colors[PapayaCol_ButtonHover]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , colors[PapayaCol_ButtonActive]);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg      , colors[PapayaCol_Transparent]);
 
         ImGui::Begin("Color preview", 0, WindowFlags);
         {
             float width1 = (picker->size.x + 33.0f) / 2.0f;
             float width2 = width1 - 33.0f;
-            if (ImGui::ImageButton((void*)(intptr_t)BlankTexture,
+            if (ImGui::ImageButton((void*)(intptr_t)blank,
                                    ImVec2(width2, 34), ImVec2(0, 0),
                                    ImVec2(0, 0), 0, picker->current_color)) {
                 picker->is_open = false;
@@ -66,7 +68,7 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
             }
             ImGui::SameLine();
             ImGui::PushID(1);
-            if (ImGui::ImageButton((void*)(intptr_t)BlankTexture,
+            if (ImGui::ImageButton((void*)(intptr_t)blank,
                                    ImVec2(width1, 34), ImVec2(0, 0),
                                    ImVec2(0, 0), 0, picker->new_color)) {
                 picker->is_open = false;
@@ -80,7 +82,7 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
         ImGui::PopStyleVar(3);
 
         ImGui::PushStyleVar  (ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, Colors[PapayaCol_Clear]);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, colors[PapayaCol_Clear]);
 
         ImGui::SetNextWindowSize(picker->size - Vec2(0.0f, 34.0f));
         ImGui::SetNextWindowPos (picker->pos  + Vec2(0.0f, 34.0f));

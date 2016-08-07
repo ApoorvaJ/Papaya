@@ -50,7 +50,8 @@ namespace gl {
 // Initializes GLEW and performs capability check
 // Returns true if current context is capable of OpenGL profile required by Papaya.
 // If incapable, returns false and reports which profile/extension is unsupported.
-bool gl::init() {
+bool gl::init()
+{
     // TODO: Reporting via message box or logging before returning false
     if (glewInit() != GLEW_OK) { 
         printf("GLEW initialization failed.\n");
@@ -72,7 +73,8 @@ bool gl::init() {
     return true;
 }
 
-void gl::check_error(char* expr, char* file, int line) {
+void gl::check_error(char* expr, char* file, int line)
+{
     GLenum error = glGetError();
     const char* str = "";
 
@@ -91,7 +93,8 @@ void gl::check_error(char* expr, char* file, int line) {
 }
 
 internal void print_compilation_errors(uint32 handle, const char* type, const char* file,
-                                       int32 line) {
+                                       int32 line)
+{
     int32 compilation_status;
     GLCHK( glGetShaderiv(handle, GL_COMPILE_STATUS, &compilation_status) );
     if (compilation_status != GL_TRUE) {
@@ -107,7 +110,8 @@ internal void print_compilation_errors(uint32 handle, const char* type, const ch
 
 void gl::compile_shader(Shader& shader, const char* file, int line,
                         const char* vert, const char* frag,
-                        int32 attrib_count, int32 uniform_count, ...) {
+                        int32 attrib_count, int32 uniform_count, ...)
+{
     shader.handle = GLCHK( glCreateProgram() );
     uint32 vert_handle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
     uint32 frag_handle = GLCHK( glCreateShader(GL_FRAGMENT_SHADER) );
@@ -148,7 +152,8 @@ void gl::compile_shader(Shader& shader, const char* file, int line,
     va_end(args);
 }
 
-void gl::set_vertex_attribs(Shader& shader) {
+void gl::set_vertex_attribs(Shader& shader)
+{
     for (int32 i = 0; i < shader.attrib_count; i++) {
         GLCHK( glEnableVertexAttribArray(shader.attribs[i]) );
     }
@@ -171,7 +176,8 @@ void gl::set_vertex_attribs(Shader& shader) {
     #undef OFFSETOF
 }
 
-void gl::init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage) {
+void gl::init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage)
+{
     GLCHK( glGenBuffers  (1, &mesh.vbo_handle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, mesh.vbo_handle) );
     GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * 6, 0, (GLenum)usage) );
@@ -179,7 +185,8 @@ void gl::init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage) {
     transform_quad(mesh, pos, size);
 }
 
-void gl::transform_quad(Mesh& mesh, Vec2 pos, Vec2 size) {
+void gl::transform_quad(Mesh& mesh, Vec2 pos, Vec2 size)
+{
     float x1 = pos.x;
     float x2 = pos.x + size.x;
     float y1 = pos.y;
@@ -198,7 +205,8 @@ void gl::transform_quad(Mesh& mesh, Vec2 pos, Vec2 size) {
 }
 
 void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
-        int32 uniform_count, ...) {
+        int32 uniform_count, ...)
+{
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
     GLCHK( glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture) );
@@ -259,7 +267,8 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
     GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
 }
 
-uint32 gl::allocate_tex(int32 width, int32 height, uint8* data) {
+uint32 gl::allocate_tex(int32 width, int32 height, uint8* data)
+{
     uint32 tex;
     GLCHK( glGenTextures(1, &tex) );
     GLCHK( glBindTexture(GL_TEXTURE_2D, tex) );

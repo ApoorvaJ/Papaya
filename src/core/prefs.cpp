@@ -4,7 +4,8 @@
 #include "libs/imgui/imgui.h"
 #include "papaya_core.h"
 
-void prefs::show_panel(Picker* picker, Color* colors, Layout& layout) {
+void prefs::show_panel(Picker* picker, Color* colors, Layout& layout)
+{
     float width = 400.0f;
     ImGui::SetNextWindowPos(ImVec2((float)layout.width - 36 - width, 58));
     ImGui::SetNextWindowSize(ImVec2(width, (float)layout.height - 64));

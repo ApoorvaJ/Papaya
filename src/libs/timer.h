@@ -72,20 +72,24 @@ namespace timer {
 
 double tick_freq;
 
-void timer::init(double _tick_freq) {
+void timer::init(double _tick_freq)
+{
     tick_freq = _tick_freq;
 }
 
-double timer::get_freq() {
+double timer::get_freq()
+{
     return tick_freq;
 }
 
-void timer::start(Timer* timer) {
+void timer::start(Timer* timer)
+{
     timer->start_ms = platform::get_milliseconds();
     timer->start_cycles = __rdtsc();
 }
 
-void timer::stop(Timer* timer) {
+void timer::stop(Timer* timer)
+{
     timer->stop_cycles = __rdtsc();
     timer->stop_ms = platform::get_milliseconds();
     timer->elapsed_cycles = timer->stop_cycles - timer->start_cycles;

@@ -7,7 +7,8 @@
 #include "libs/linmath.h"
 #include "papaya_core.h"
 
-void crop_rotate::init(PapayaMemory* mem) {
+void crop_rotate::init(PapayaMemory* mem)
+{
     // Initialize crop line mesh
     Mesh* mesh = &mem->meshes[PapayaMesh_CropOutline];
     mesh->is_line_loop = true;
@@ -18,7 +19,8 @@ void crop_rotate::init(PapayaMemory* mem) {
                         0, GL_DYNAMIC_DRAW) );
 }
 
-void crop_rotate::toolbar(PapayaMemory* mem) {
+void crop_rotate::toolbar(PapayaMemory* mem)
+{
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
     if (ImGui::Button("-90")) { mem->crop_rotate.base_rotation--; }
     ImGui::SameLine();
@@ -123,7 +125,8 @@ void crop_rotate::toolbar(PapayaMemory* mem) {
     ImGui::PopStyleVar();
 }
 
-void crop_rotate::crop_outline(PapayaMemory* mem) {
+void crop_rotate::crop_outline(PapayaMemory* mem)
+{
     // TODO: Function lacks grace
     Vec2 mouse = mem->mouse.pos;
     Vec2 p[4];
