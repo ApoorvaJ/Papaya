@@ -27,8 +27,7 @@
 
 // TODO: No need to expose the Timer struct to the caller. Improve API.
 
-struct Timer
-{
+struct Timer {
     uint64 start_cycles, stop_cycles, elapsed_cycles;
     double start_ms, stop_ms, elapsed_ms;
 };
@@ -56,8 +55,7 @@ static const char* TimerNames[] = {
 #undef GENERATE_ENUM
 #undef GENERATE_STRING
 
-namespace timer
-{
+namespace timer {
     void init(double freq);
     double get_freq();
     void start(Timer* timer);
@@ -72,30 +70,26 @@ namespace timer
 
 #include "papaya_platform.h" // TODO: Remove this dependency
 
-double TickFrequency;
+double tick_freq;
 
-void timer::init(double _TickFrequency)
-{
-    TickFrequency = _TickFrequency;
+void timer::init(double _tick_freq) {
+    tick_freq = _tick_freq;
 }
 
-double timer::get_freq()
-{
-    return TickFrequency;
+double timer::get_freq() {
+    return tick_freq;
 }
 
-void timer::start(Timer* Timer)
-{
-    Timer->start_ms = platform::get_milliseconds();
-    Timer->start_cycles = __rdtsc();
+void timer::start(Timer* timer) {
+    timer->start_ms = platform::get_milliseconds();
+    timer->start_cycles = __rdtsc();
 }
 
-void timer::stop(Timer* Timer)
-{
-    Timer->stop_cycles = __rdtsc();
-    Timer->stop_ms = platform::get_milliseconds();
-    Timer->elapsed_cycles = Timer->stop_cycles - Timer->start_cycles;
-    Timer->elapsed_ms = (Timer->stop_ms - Timer->start_ms) * TickFrequency;
+void timer::stop(Timer* timer) {
+    timer->stop_cycles = __rdtsc();
+    timer->stop_ms = platform::get_milliseconds();
+    timer->elapsed_cycles = timer->stop_cycles - timer->start_cycles;
+    timer->elapsed_ms = (timer->stop_ms - timer->start_ms) * tick_freq;
 }
 
 #endif // TIMER_IMPLEMENTATION
