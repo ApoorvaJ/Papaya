@@ -9,134 +9,135 @@
 #include "libs/linmath.h"
 
 
-
 // This function reads from the frame buffer and hence needs the appropriate frame buffer to be
 // bound before it is called.
-internal void push_undo(PapayaMemory* mem, Vec2i Pos, Vec2i Size,
-                        int8* PreBrushImage, Vec2 line_segment_start_uv) {
-    if (mem->doc.undo.top == 0) {
+internal void push_undo(UndoBuffer* undo, Profile* profile,
+                        Vec2i pos, Vec2i size,
+                        int8* pre_brush_img, Vec2 line_segment_start_uv)
+{
+    if (undo->top == 0) {
         // Buffer is empty
-        mem->doc.undo.base = (UndoData*)mem->doc.undo.start;
-        mem->doc.undo.top  = mem->doc.undo.start;
+        undo->base = (UndoData*)undo->start;
+        undo->top  = undo->start;
     }
-    else if (mem->doc.undo.current->next != 0) {
+    else if (undo->current->next != 0) {
         // Not empty and not at end. Reposition for overwrite.
-        uint64 BytesToRight = (int8*)mem->doc.undo.start + mem->doc.undo.size - (int8*)mem->doc.undo.current;
-        uint64 ImageSize = (mem->doc.undo.current->IsSubRect ? 8 : 4) * mem->doc.undo.current->size.x * mem->doc.undo.current->size.y;
-        uint64 BlockSize = sizeof(UndoData) + ImageSize;
-        if (BytesToRight >= BlockSize)
-        {
-            mem->doc.undo.top = (int8*)mem->doc.undo.current + BlockSize;
+        uint64 bytes_to_right =
+            (int8*)undo->start + undo->size - (int8*)undo->current;
+        uint64 img_size = (undo->current->IsSubRect ? 8 : 4) *
+            undo->current->size.x * undo->current->size.y;
+        uint64 block_size = sizeof(UndoData) + img_size;
+        if (bytes_to_right >= block_size) {
+            undo->top = (int8*)undo->current + block_size;
+        } else {
+            undo->top = (int8*)undo->start + block_size - bytes_to_right;
         }
-        else
-        {
-            mem->doc.undo.top = (int8*)mem->doc.undo.start + BlockSize - BytesToRight;
-        }
-        mem->doc.undo.last = mem->doc.undo.current;
-        mem->doc.undo.count = mem->doc.undo.current_index + 1;
+        undo->last = undo->current;
+        undo->count = undo->current_index + 1;
     }
 
-    UndoData Data           = {};
-    Data.op_code             = PapayaUndoOp_Brush;
-    Data.prev               = mem->doc.undo.last;
-    Data.pos                = Pos;
-    Data.size               = Size;
-    Data.IsSubRect          = (PreBrushImage != 0);
-    Data.line_segment_start_uv = line_segment_start_uv;
-    uint64 BufSize          = sizeof(UndoData) + Size.x * Size.y * (Data.IsSubRect ? 8 : 4);
-    void* Buf               = malloc((size_t)BufSize);
+    UndoData data = {};
+    data.op_code = PapayaUndoOp_Brush;
+    data.prev = undo->last;
+    data.pos = pos;
+    data.size = size;
+    data.IsSubRect = (pre_brush_img != 0);
+    data.line_segment_start_uv = line_segment_start_uv;
 
-    timer::start(&mem->profile.timers[Timer_GetUndoImage]);
-    memcpy(Buf, &Data, sizeof(UndoData));
-    GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)Buf + sizeof(UndoData)) );
-    timer::stop(&mem->profile.timers[Timer_GetUndoImage]);
+    uint64 buf_size = sizeof(UndoData) +
+        size.x * size.y * (data.IsSubRect ? 8 : 4);
+    void* buf = malloc((size_t)buf_size);
 
-    if (Data.IsSubRect)
-    {
-        memcpy((int8*)Buf + sizeof(UndoData) + 4 * Size.x * Size.y, PreBrushImage, 4 * Size.x * Size.y);
+    timer::start(&profile->timers[Timer_GetUndoImage]);
+    memcpy(buf, &data, sizeof(UndoData));
+    GLCHK( glReadPixels(pos.x, pos.y, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)buf + sizeof(UndoData)) );
+    timer::stop(&profile->timers[Timer_GetUndoImage]);
+
+    if (data.IsSubRect) {
+        memcpy((int8*)buf + sizeof(UndoData) + 4 * size.x * size.y, pre_brush_img, 4 * size.x * size.y);
     }
 
-    uint64 BytesToRight = (int8*)mem->doc.undo.start + mem->doc.undo.size - (int8*)mem->doc.undo.top;
-    if (BytesToRight < sizeof(UndoData)) // Not enough space for UndoData. Go to start.
-    {
-        // Reposition the base pointer
-        while (((int8*)mem->doc.undo.base >= (int8*)mem->doc.undo.top ||
-            (int8*)mem->doc.undo.base < (int8*)mem->doc.undo.start + BufSize) &&
-            mem->doc.undo.count > 0)
-        {
-            mem->doc.undo.base = mem->doc.undo.base->next;
-            mem->doc.undo.base->prev = 0;
-            mem->doc.undo.count--;
-            mem->doc.undo.current_index--;
-        }
-
-        mem->doc.undo.top = mem->doc.undo.start;
-        memcpy(mem->doc.undo.top, Buf, (size_t)BufSize);
-
-        if (mem->doc.undo.last) { mem->doc.undo.last->next = (UndoData*)mem->doc.undo.top; }
-        mem->doc.undo.last = (UndoData*)mem->doc.undo.top;
-        mem->doc.undo.top = (int8*)mem->doc.undo.top + BufSize;
-    }
-    else if (BytesToRight < BufSize) // Enough space for UndoData, but not for image. Split image data.
+    uint64 bytes_to_right = (int8*)undo->start + undo->size - (int8*)undo->top;
+    if (bytes_to_right < sizeof(UndoData)) // Not enough space for UndoData. Go to start.
     {
         // Reposition the base pointer
-        while (((int8*)mem->doc.undo.base >= (int8*)mem->doc.undo.top ||
-            (int8*)mem->doc.undo.base  <  (int8*)mem->doc.undo.start + BufSize - BytesToRight) &&
-            mem->doc.undo.count > 0)
+        while (((int8*)undo->base >= (int8*)undo->top ||
+            (int8*)undo->base < (int8*)undo->start + buf_size) &&
+            undo->count > 0)
         {
-            mem->doc.undo.base = mem->doc.undo.base->next;
-            mem->doc.undo.base->prev = 0;
-            mem->doc.undo.count--;
-            mem->doc.undo.current_index--;
+            undo->base = undo->base->next;
+            undo->base->prev = 0;
+            undo->count--;
+            undo->current_index--;
         }
 
-        memcpy(mem->doc.undo.top, Buf, (size_t)BytesToRight);
-        memcpy(mem->doc.undo.start, (int8*)Buf + BytesToRight, (size_t)(BufSize - BytesToRight));
+        undo->top = undo->start;
+        memcpy(undo->top, buf, (size_t)buf_size);
 
-        if (BytesToRight == 0) { mem->doc.undo.top = mem->doc.undo.start; }
+        if (undo->last) { undo->last->next = (UndoData*)undo->top; }
+        undo->last = (UndoData*)undo->top;
+        undo->top = (int8*)undo->top + buf_size;
+    }
+    else if (bytes_to_right < buf_size) // Enough space for UndoData, but not for image. Split image data.
+    {
+        // Reposition the base pointer
+        while (((int8*)undo->base >= (int8*)undo->top ||
+            (int8*)undo->base  <  (int8*)undo->start + buf_size - bytes_to_right) &&
+            undo->count > 0)
+        {
+            undo->base = undo->base->next;
+            undo->base->prev = 0;
+            undo->count--;
+            undo->current_index--;
+        }
 
-        if (mem->doc.undo.last) { mem->doc.undo.last->next = (UndoData*)mem->doc.undo.top; }
-        mem->doc.undo.last = (UndoData*)mem->doc.undo.top;
-        mem->doc.undo.top = (int8*)mem->doc.undo.start + BufSize - BytesToRight;
+        memcpy(undo->top, buf, (size_t)bytes_to_right);
+        memcpy(undo->start, (int8*)buf + bytes_to_right, (size_t)(buf_size - bytes_to_right));
+
+        if (bytes_to_right == 0) { undo->top = undo->start; }
+
+        if (undo->last) { undo->last->next = (UndoData*)undo->top; }
+        undo->last = (UndoData*)undo->top;
+        undo->top = (int8*)undo->start + buf_size - bytes_to_right;
     }
     else // Enough space for everything. Simply append.
     {
         // Reposition the base pointer
-        while ((int8*)mem->doc.undo.base >= (int8*)mem->doc.undo.top &&
-            (int8*)mem->doc.undo.base < (int8*)mem->doc.undo.top + BufSize &&
-            mem->doc.undo.count > 0)
+        while ((int8*)undo->base >= (int8*)undo->top &&
+            (int8*)undo->base < (int8*)undo->top + buf_size &&
+            undo->count > 0)
         {
-            mem->doc.undo.base = mem->doc.undo.base->next;
-            mem->doc.undo.base->prev = 0;
-            mem->doc.undo.count--;
-            mem->doc.undo.current_index--;
+            undo->base = undo->base->next;
+            undo->base->prev = 0;
+            undo->count--;
+            undo->current_index--;
         }
 
-        memcpy(mem->doc.undo.top, Buf, (size_t)BufSize);
+        memcpy(undo->top, buf, (size_t)buf_size);
 
-        if (mem->doc.undo.last) { mem->doc.undo.last->next = (UndoData*)mem->doc.undo.top; }
-        mem->doc.undo.last = (UndoData*)mem->doc.undo.top;
-        mem->doc.undo.top = (int8*)mem->doc.undo.top + BufSize;
+        if (undo->last) { undo->last->next = (UndoData*)undo->top; }
+        undo->last = (UndoData*)undo->top;
+        undo->top = (int8*)undo->top + buf_size;
     }
 
-    free(Buf);
+    free(buf);
 
-    mem->doc.undo.current = mem->doc.undo.last;
-    mem->doc.undo.count++;
-    mem->doc.undo.current_index++;
+    undo->current = undo->last;
+    undo->count++;
+    undo->current_index++;
 }
 
 internal void load_from_undo_buffer(PapayaMemory* Mem, bool LoadPreBrushImage)
 {
-    UndoData Data  = {};
+    UndoData data  = {};
     int8* Image    = 0;
     bool AllocUsed = false;
 
-    memcpy(&Data, Mem->doc.undo.current, sizeof(UndoData));
+    memcpy(&data, Mem->doc.undo.current, sizeof(UndoData));
 
-    size_t BytesToRight = (int8*)Mem->doc.undo.start + Mem->doc.undo.size - (int8*)Mem->doc.undo.current;
-    size_t ImageSize = (Mem->doc.undo.current->IsSubRect ? 8 : 4) * Data.size.x * Data.size.y;
-    if (BytesToRight - sizeof(UndoData) >= ImageSize) // Image is contiguously stored
+    size_t bytes_to_right = (int8*)Mem->doc.undo.start + Mem->doc.undo.size - (int8*)Mem->doc.undo.current;
+    size_t ImageSize = (Mem->doc.undo.current->IsSubRect ? 8 : 4) * data.size.x * data.size.y;
+    if (bytes_to_right - sizeof(UndoData) >= ImageSize) // Image is contiguously stored
     {
         Image = (int8*)Mem->doc.undo.current + sizeof(UndoData);
     }
@@ -144,13 +145,13 @@ internal void load_from_undo_buffer(PapayaMemory* Mem, bool LoadPreBrushImage)
     {
         AllocUsed = true;
         Image = (int8*)malloc(ImageSize);
-        memcpy(Image, (int8*)Mem->doc.undo.current + sizeof(UndoData), (size_t)BytesToRight - sizeof(UndoData));
-        memcpy((int8*)Image + BytesToRight - sizeof(UndoData), Mem->doc.undo.start, (size_t)(ImageSize - (BytesToRight - sizeof(UndoData))));
+        memcpy(Image, (int8*)Mem->doc.undo.current + sizeof(UndoData), (size_t)bytes_to_right - sizeof(UndoData));
+        memcpy((int8*)Image + bytes_to_right - sizeof(UndoData), Mem->doc.undo.start, (size_t)(ImageSize - (bytes_to_right - sizeof(UndoData))));
     }
 
     GLCHK( glBindTexture(GL_TEXTURE_2D, Mem->doc.texture_id) );
 
-    GLCHK( glTexSubImage2D(GL_TEXTURE_2D, 0, Data.pos.x, Data.pos.y, Data.size.x, Data.size.y, GL_RGBA, GL_UNSIGNED_BYTE, Image + (LoadPreBrushImage ? 4 * Data.size.x * Data.size.y : 0)) );
+    GLCHK( glTexSubImage2D(GL_TEXTURE_2D, 0, data.pos.x, data.pos.y, data.size.x, data.size.y, GL_RGBA, GL_UNSIGNED_BYTE, Image + (LoadPreBrushImage ? 4 * data.size.x * data.size.y : 0)) );
 
     if (AllocUsed) { free(Image); }
 }
@@ -268,7 +269,9 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->doc.texture_id) );
             GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-            push_undo(Mem, Vec2i(0,0), Vec2i(Mem->doc.width, Mem->doc.height), 0, Vec2());
+            push_undo(&Mem->doc.undo, &Mem->profile,
+                      Vec2i(0,0), Vec2i(Mem->doc.width, Mem->doc.height),
+                      0, Vec2());
 
             uint32 Temp = Mem->misc.fbo_render_tex;
             Mem->misc.fbo_render_tex = Mem->doc.texture_id;
@@ -1365,7 +1368,7 @@ void core::update(PapayaMemory* Mem)
 
                 Vec2i Pos  = Mem->brush.paint_area_1;
                 Vec2i Size = Mem->brush.paint_area_2 - Mem->brush.paint_area_1;
-                int8* PreBrushImage = 0;
+                int8* pre_brush_img = 0;
 
                 // TODO: OPTIMIZE: The following block seems optimizable
                 // Render base image for pre-brush undo
@@ -1380,8 +1383,8 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)Mem->doc.texture_id) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-                    PreBrushImage = (int8*)malloc(4 * Size.x * Size.y);
-                    GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, PreBrushImage) );
+                    pre_brush_img = (int8*)malloc(4 * Size.x * Size.y);
+                    GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, pre_brush_img) );
                 }
 
                 // Render base image with premultiplied alpha
@@ -1421,9 +1424,11 @@ void core::update(PapayaMemory* Mem)
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
-                push_undo(Mem, Pos, Size, PreBrushImage, Mem->brush.line_segment_start_uv);
+                push_undo(&Mem->doc.undo, &Mem->profile,
+                          Pos, Size, pre_brush_img,
+                          Mem->brush.line_segment_start_uv);
 
-                if (PreBrushImage) { free(PreBrushImage); }
+                if (pre_brush_img) { free(pre_brush_img); }
 
                 GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
                 GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );

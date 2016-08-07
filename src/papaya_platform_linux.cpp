@@ -23,13 +23,13 @@
 #define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/Linux.png"
 
 
-global_variable Display* XlibDisplay;
-global_variable Window XlibWindow;
+Display* xlib_display;
+Window xlib_window;
 // =================================================================================================
 
-void platform::print(char* Message)
+void platform::print(char* msg)
 {
-    printf("%s", Message);
+    printf("%s", msg);
 }
 
 void platform::start_mouse_capture()
@@ -44,60 +44,53 @@ void platform::stop_mouse_capture()
 
 void platform::set_mouse_position(int32 x, int32 y)
 {
-    XWarpPointer(XlibDisplay, None, XlibWindow, 0, 0, 0, 0, x, y);
-    XFlush(XlibDisplay);
+    XWarpPointer(xlib_display, None, xlib_window, 0, 0, 0, 0, x, y);
+    XFlush(xlib_display);
 }
 
-void platform::set_cursor_visibility(bool Visible)
+void platform::set_cursor_visibility(bool visible)
 {
-    if (!Visible)
-    {
+    if (!visible) {
         // Make a blank cursor
-        char Empty[1] = {0};
-        Pixmap Blank = XCreateBitmapFromData (XlibDisplay, XlibWindow, Empty, 1, 1);
-        if(Blank == None) fprintf(stderr, "error: out of memory.\n");
-        XColor Dummy;
-        Cursor InvisCursor = XCreatePixmapCursor(XlibDisplay, Blank, Blank, &Dummy, &Dummy, 0, 0);
-        XFreePixmap (XlibDisplay, Blank);
-        XDefineCursor(XlibDisplay, XlibWindow, InvisCursor);
-    }
-    else
-    {
-        XUndefineCursor(XlibDisplay, XlibWindow); // TODO: Test what happens if cursor is attempted to be shown when it is not hidden in the first place.
+        char empty[1] = {0};
+        Pixmap blank = XCreateBitmapFromData (xlib_display, xlib_window, empty, 1, 1);
+        if(blank == None) { fprintf(stderr, "error: out of memory.\n"); }
+        XColor dummy;
+        Cursor invis_cursor = XCreatePixmapCursor(xlib_display, blank, blank, &dummy, &dummy, 0, 0);
+        XFreePixmap (xlib_display, blank);
+        XDefineCursor(xlib_display, xlib_window, invis_cursor);
+    } else {
+        XUndefineCursor(xlib_display, xlib_window); // TODO: Test what happens if cursor is attempted to be shown when it is not hidden in the first place.
     }
 }
 
 char* platform::open_file_dialog()
 {
 #ifdef USE_GTK
-    GtkWidget *Dialog = gtk_file_chooser_dialog_new(
-        "Open File",
-        NULL,
-        GTK_FILE_CHOOSER_ACTION_OPEN,
-        "Cancel", GTK_RESPONSE_CANCEL,
-        "Open", GTK_RESPONSE_ACCEPT,
-        NULL
-    );
-    GtkFileChooser *Chooser = GTK_FILE_CHOOSER(Dialog);
-    GtkFileFilter *Filter = gtk_file_filter_new();
-    gtk_file_filter_add_pattern(Filter, "*.[pP][nN][gG]");
-    gtk_file_filter_add_pattern(Filter, "*.[jJ][pP][gG]");
-    gtk_file_filter_add_pattern(Filter, "*.[jJ][pP][eE][gG]");
-    gtk_file_chooser_add_filter(Chooser, Filter);
+    GtkWidget *dialog =
+        gtk_file_chooser_dialog_new("Open File", NULL,
+                                    GTK_FILE_CHOOSER_ACTION_OPEN, "Cancel",
+                                    GTK_RESPONSE_CANCEL, "Open",
+                                    GTK_RESPONSE_ACCEPT, NULL);
+    GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_add_pattern(filter, "*.[pP][nN][gG]");
+    gtk_file_filter_add_pattern(filter, "*.[jJ][pP][gG]");
+    gtk_file_filter_add_pattern(filter, "*.[jJ][pP][eE][gG]");
+    gtk_file_chooser_add_filter(chooser, filter);
 
-    char *OutFilename = 0;
-    if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
-    {
-        gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
-        int FilenameLen = strlen(GTKFilename) + 1; // +1 for terminator
-        OutFilename = (char*)malloc(FilenameLen);
-        strcpy(OutFilename, GTKFilename);
-        g_free(GTKFilename);
+    char *out_file_name = 0;
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        gchar *gtk_file_name = gtk_file_chooser_get_filename(chooser);
+        int file_name_len = strlen(gtk_file_name) + 1; // +1 for terminator
+        out_file_name = (char*)malloc(file_name_len);
+        strcpy(out_file_name, gtk_file_name);
+        g_free(gtk_file_name);
     }
 
-    gtk_widget_destroy(Dialog);
+    gtk_widget_destroy(dialog);
 
-    return OutFilename;
+    return out_file_name;
 #else
     return 0;
 #endif
@@ -106,34 +99,30 @@ char* platform::open_file_dialog()
 char* platform::save_file_dialog()
 {
 #if USE_GTK
-    GtkWidget *Dialog = gtk_file_chooser_dialog_new(
-        "Save File",
-        NULL,
-        GTK_FILE_CHOOSER_ACTION_SAVE,
-        "Cancel", GTK_RESPONSE_CANCEL,
-        "Save", GTK_RESPONSE_ACCEPT,
-        NULL
-    );
-    GtkFileChooser *Chooser = GTK_FILE_CHOOSER(Dialog);
-    GtkFileFilter *Filter = gtk_file_filter_new();
-    gtk_file_filter_add_pattern(Filter, "*.[pP][nN][gG]");
-    gtk_file_chooser_add_filter(Chooser, Filter);
-    gtk_file_chooser_set_do_overwrite_confirmation(Chooser, TRUE);
-    gtk_file_chooser_set_filename(Chooser, "untitled.png"); // what if the user saves a file that already has a name?
+    GtkWidget *dialog =
+        gtk_file_chooser_dialog_new("Save File", NULL,
+                                    GTK_FILE_CHOOSER_ACTION_SAVE, "Cancel",
+                                    GTK_RESPONSE_CANCEL, "Save",
+                                    GTK_RESPONSE_ACCEPT, NULL);
+    GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_add_pattern(filter, "*.[pP][nN][gG]");
+    gtk_file_chooser_add_filter(chooser, filter);
+    gtk_file_chooser_set_do_overwrite_confirmation(chooser, TRUE);
+    gtk_file_chooser_set_filename(chooser, "untitled.png"); // what if the user saves a file that already has a name?
 
-    char *OutFilename = 0;
-    if (gtk_dialog_run(GTK_DIALOG(Dialog)) == GTK_RESPONSE_ACCEPT)
-    {
-        gchar *GTKFilename = gtk_file_chooser_get_filename(Chooser);
-        int FilenameLen = strlen(GTKFilename) + 1; // +1 for terminator
-        OutFilename = (char*)malloc(FilenameLen);
-        strcpy(OutFilename, GTKFilename);
-        g_free(GTKFilename);
+    char *out_file_name = 0;
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        gchar *gtk_file_name = gtk_file_chooser_get_filename(chooser);
+        int file_name_len = strlen(gtk_file_name) + 1; // +1 for terminator
+        out_file_name = (char*)malloc(file_name_len);
+        strcpy(out_file_name, gtk_file_name);
+        g_free(gtk_file_name);
     }
 
-    gtk_widget_destroy(Dialog);
+    gtk_widget_destroy(dialog);
 
-    return OutFilename;
+    return out_file_name;
 #else
     return 0;
 #endif
@@ -141,22 +130,21 @@ char* platform::save_file_dialog()
 
 double platform::get_milliseconds()
 {
-    timespec Time;
-    clock_gettime(CLOCK_MONOTONIC, &Time);
-    return (double)(Time.tv_sec * 1000 + Time.tv_nsec / 1000000);
+    timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    return (double)(time.tv_sec * 1000 + time.tv_nsec / 1000000);
 }
 
 // =================================================================================================
 
 int main(int argc, char **argv)
 {
-    PapayaMemory Mem = {0};
+    PapayaMemory mem = {0};
+    XVisualInfo* xlib_visual_info;
+    Atom xlib_delete_window_atom;
 
     timer::init(1000.0); // TODO: Check linux timer manual. Is this correct?
-    timer::start(&Mem.profile.timers[Timer_Startup]);
-
-    XVisualInfo* VisualInfo;
-    Atom WmDeleteMessage;
+    timer::start(&mem.profile.timers[Timer_Startup]);
 
     // Initialize GTK for Open/Save file dialogs
 #ifdef USE_GTK
@@ -165,49 +153,57 @@ int main(int argc, char **argv)
 
     // Set path to executable path
     {
-        char PathBuffer[PATH_MAX];
-        size_t PathLength = readlink("/proc/self/exe", PathBuffer, sizeof(PathBuffer)-1);
-        if (PathLength != -1)
-        {
-            char *LastSlash = strrchr(PathBuffer, '/');
-            if (LastSlash != NULL) { *LastSlash = '\0'; }
-            chdir(PathBuffer);
+        char path_buf[PATH_MAX];
+        size_t path_len = readlink("/proc/self/exe", path_buf, sizeof(path_buf)-1);
+        if (path_len != -1) {
+            char *last_slash = strrchr(path_buf, '/');
+            if (last_slash != NULL) { *last_slash = '\0'; }
+            chdir(path_buf);
         }
     }
 
     // Create window
     {
-         XlibDisplay = XOpenDisplay(0);
-         if (!XlibDisplay)
-         {
+        // TODO: Break this scope into smaller, well-defined scopes
+        xlib_display = XOpenDisplay(0);
+        if (!xlib_display) {
             // TODO: Log: Error opening connection to the X server
             exit(1);
-         }
+        }
 
-        int32 Attributes[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-         VisualInfo = glXChooseVisual(XlibDisplay, 0, Attributes);
-        if(VisualInfo == NULL)
-        {
+        int32 attribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+        xlib_visual_info = glXChooseVisual(xlib_display, 0, attribs);
+        if(xlib_visual_info == NULL) {
             // TODO: Log: No appropriate visual found
             exit(1);
         }
 
-        XSetWindowAttributes SetWindowAttributes = {0};
-        SetWindowAttributes.colormap = XCreateColormap(XlibDisplay, DefaultRootWindow(XlibDisplay), VisualInfo->visual, AllocNone);
-        SetWindowAttributes.event_mask = ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
+        XSetWindowAttributes window_attribs = {0};
+        window_attribs.colormap =
+            XCreateColormap(xlib_display, DefaultRootWindow(xlib_display),
+                            xlib_visual_info->visual, AllocNone);
+        window_attribs.event_mask =
+            ExposureMask | PointerMotionMask | ButtonPressMask |
+            ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
 
-        XlibWindow = XCreateWindow(XlibDisplay, DefaultRootWindow(XlibDisplay), 0, 0, 600, 600, 0, VisualInfo->depth, InputOutput, VisualInfo->visual, CWColormap | CWEventMask, &SetWindowAttributes);
-        Mem.window.width = 600;
-        Mem.window.height = 600;
+        xlib_window = XCreateWindow(xlib_display, DefaultRootWindow(xlib_display),
+                                    0, 0, 600, 600, 0, xlib_visual_info->depth,
+                                    InputOutput, xlib_visual_info->visual,
+                                    CWColormap | CWEventMask, &window_attribs);
+        mem.window.width = 600;
+        mem.window.height = 600;
 
-        XMapWindow(XlibDisplay, XlibWindow);
-        XStoreName(XlibDisplay, XlibWindow, "Papaya");
+        XMapWindow(xlib_display, xlib_window);
+        XStoreName(xlib_display, xlib_window, "Papaya");
 
-        WmDeleteMessage = XInternAtom(XlibDisplay, "WM_DELETE_WINDOW", False);
-        XSetWMProtocols(XlibDisplay, XlibWindow, &WmDeleteMessage, 1);
+        xlib_delete_window_atom = XInternAtom(xlib_display, "WM_DELETE_WINDOW",
+                                              False);
+        XSetWMProtocols(xlib_display, xlib_window, &xlib_delete_window_atom, 1);
 
         // Window icon
         {
+            // TODO: Investigate the "proper" way to set an application icon in
+            //       Linux. This current method seems a too hacky.
             /*
                Utility to print out icon data
                ==============================
@@ -240,10 +236,10 @@ int main(int argc, char **argv)
 
             //printf("%d\n", sizeof(buffer));
             //uint64 buffer[] = {2,2,4294901760,4278255360,4292649817,4294967295};
-            Atom net_wm_icon = XInternAtom(XlibDisplay, "_NET_WM_ICON", False);
-            Atom cardinal = XInternAtom(XlibDisplay, "CARDINAL", False);
+            Atom net_wm_icon = XInternAtom(xlib_display, "_NET_WM_ICON", False);
+            Atom cardinal = XInternAtom(xlib_display, "CARDINAL", False);
             int32 length = sizeof(buffer)/8;
-            XChangeProperty(XlibDisplay, XlibWindow, net_wm_icon, cardinal, 32, PropModeReplace, (uint8*) buffer, length);
+            XChangeProperty(xlib_display, xlib_window, net_wm_icon, cardinal, 32, PropModeReplace, (uint8*) buffer, length);
 
 
         }
@@ -251,24 +247,24 @@ int main(int argc, char **argv)
 
     // Create OpenGL context
     {
-        GLXContext GraphicsContext = glXCreateContext(XlibDisplay, VisualInfo, 0, GL_TRUE);
-        glXMakeCurrent(XlibDisplay, XlibWindow, GraphicsContext);
+        GLXContext gl_context = glXCreateContext(xlib_display, xlib_visual_info,
+                                                 0, GL_TRUE);
+        glXMakeCurrent(xlib_display, xlib_window, gl_context);
 
         if (!gl::init()) { exit(1); }
 
-        glGetIntegerv(GL_MAJOR_VERSION, &Mem.system.gl_version[0]);
-        glGetIntegerv(GL_MINOR_VERSION, &Mem.system.gl_version[1]);
+        glGetIntegerv(GL_MAJOR_VERSION, &mem.system.gl_version[0]);
+        glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
 
         // Disable vsync
-        if (glxewIsSupported("GLX_EXT_swap_control"))
-        {
-            glXSwapIntervalEXT(XlibDisplay, XlibWindow, 0);
+        if (glxewIsSupported("GLX_EXT_swap_control")) {
+            glXSwapIntervalEXT(xlib_display, xlib_window, 0);
         }
     }
 
-    EasyTab_Load(XlibDisplay, XlibWindow);
+    EasyTab_Load(xlib_display, xlib_window);
 
-    core::init(&Mem);
+    core::init(&mem);
 
     // Initialize ImGui
     {
@@ -301,72 +297,68 @@ int main(int argc, char **argv)
         }
     }
 
-    timer::stop(&Mem.profile.timers[Timer_Startup]);
+    timer::stop(&mem.profile.timers[Timer_Startup]);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
-    core::open_doc(PAPAYA_DEFAULT_IMAGE, &Mem);
+    core::open_doc(PAPAYA_DEFAULT_IMAGE, &mem);
 #endif
 
-    Mem.is_running = true;
+    mem.is_running = true;
 
-    while (Mem.is_running)
-    {
-        timer::start(&Mem.profile.timers[Timer_Frame]);
+    while (mem.is_running) {
+        timer::start(&mem.profile.timers[Timer_Frame]);
 
         // Event handling
-        while (XPending(XlibDisplay))
+        while (XPending(xlib_display))
         {
-            XEvent Event;
-            XNextEvent(XlibDisplay, &Event);
+            XEvent event;
+            XNextEvent(xlib_display, &event);
 
-            if (EasyTab_HandleEvent(&Event) == EASYTAB_OK) { continue; }
+            if (EasyTab_HandleEvent(&event) == EASYTAB_OK) { continue; }
 
-            switch (Event.type)
-            {
-                case Expose:
-                {
+            switch (event.type) {
+                case Expose: {
                     XWindowAttributes WindowAttributes;
-                    XGetWindowAttributes(XlibDisplay, XlibWindow, &WindowAttributes);
-                    core::resize(&Mem, WindowAttributes.width,WindowAttributes.height);
+                    XGetWindowAttributes(xlib_display, xlib_window, &WindowAttributes);
+                    core::resize(&mem, WindowAttributes.width,WindowAttributes.height);
                 } break;
 
-                case ClientMessage:
-                {
-                    if (Event.xclient.data.l[0] == WmDeleteMessage) { Mem.is_running = false; }
+                case ClientMessage: {
+                    if (event.xclient.data.l[0] == xlib_delete_window_atom) { mem.is_running = false; }
                 } break;
 
-                case MotionNotify:
-                {
-                    ImGui::GetIO().MousePos.x = Event.xmotion.x;
-                    ImGui::GetIO().MousePos.y = Event.xmotion.y;
+                case MotionNotify: {
+                    ImGui::GetIO().MousePos.x = event.xmotion.x;
+                    ImGui::GetIO().MousePos.y = event.xmotion.y;
                 } break;
 
                 case ButtonPress:
-                case ButtonRelease:
-                {
-                    int32 Button = Event.xbutton.button;
+                case ButtonRelease: {
+                    int32 Button = event.xbutton.button;
                     if 		(Button == 1) { Button = 0; } // This section maps Xlib's button indices (Left = 1, Middle = 2, Right = 3)
                     else if (Button == 2) { Button = 2; } // to Papaya's button indices              (Left = 0, Right = 1, Middle = 2)
                     else if (Button == 3) { Button = 1; } //
 
-                    if 		(Button < 3)	{ ImGui::GetIO().MouseDown[Button] = (Event.type == ButtonPress); }
-                    else
-                    {
-                        if (Event.type == ButtonPress) { ImGui::GetIO().MouseWheel += (Button == 4) ? +1.0f : -1.0f; }
+                    if (Button < 3)	{
+                        ImGui::GetIO().MouseDown[Button] =
+                            (event.type == ButtonPress);
+                    } else {
+                        if (event.type == ButtonPress) {
+                            ImGui::GetIO().MouseWheel +=
+                                (Button == 4) ?  +1.0f : -1.0f;
+                        }
                     }
                 } break;
 
                 case KeyPress:
-                case KeyRelease:
-                {
-                    if (Event.type == KeyRelease && XEventsQueued(XlibDisplay, QueuedAfterReading))
-                    {
-                        XEvent NextEvent;
-                        XPeekEvent(XlibDisplay, &NextEvent);
-                        if (NextEvent.type == KeyPress &&
-                            NextEvent.xkey.time == Event.xkey.time &&
-                            NextEvent.xkey.keycode == Event.xkey.keycode)
-                        {
+                case KeyRelease: {
+                    if (event.type == KeyRelease &&
+                        XEventsQueued(xlib_display, QueuedAfterReading)) {
+                        XEvent next_event;
+                        XPeekEvent(xlib_display, &next_event);
+                        if (next_event.type == KeyPress &&
+                            next_event.xkey.time == event.xkey.time &&
+                            next_event.xkey.keycode == event.xkey.keycode) {
                             break; // Key wasn’t actually released
                         }
                     }
@@ -375,22 +367,21 @@ int main(int argc, char **argv)
                     // [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
 
                     ImGuiIO& io = ImGui::GetIO();
-                    bool down   = (Event.type == KeyPress);
+                    bool down = (event.type == KeyPress);
 
                     KeySym keysym;
                     XComposeStatus status;
                     char input; // TODO: Do we need an array here?
-                    XLookupString(&Event.xkey, &input, 1, &keysym, &status);
+                    XLookupString(&event.xkey, &input, 1, &keysym, &status);
                     if (down) { io.AddInputCharacter(input); }
 
-                    switch (keysym)
-                    {
+                    switch (keysym) {
                         case XK_Control_L:
                         case XK_Control_R: { io.KeyCtrl = down; } break;
                         case XK_Shift_L:
-                        case XK_Shift_R:   { io.KeyShift = down; } break;
+                        case XK_Shift_R: { io.KeyShift = down; } break;
                         case XK_Alt_L:
-                        case XK_Alt_R:     { io.KeyAlt = down; } break;
+                        case XK_Alt_R: { io.KeyAlt = down; } break;
 
                         case XK_Tab:        { io.KeysDown[0]  = down; } break;
                         case XK_Left:       { io.KeysDown[1]  = down; } break;
@@ -421,9 +412,9 @@ int main(int argc, char **argv)
 
         // Tablet input // TODO: Put this in papaya.cpp
         {
-            Mem.tablet.pressure = EasyTab->Pressure;
-            Mem.tablet.pos.x = EasyTab->PosX;
-            Mem.tablet.pos.y = EasyTab->PosY;
+            mem.tablet.pressure = EasyTab->Pressure;
+            mem.tablet.pos.x = EasyTab->PosX;
+            mem.tablet.pos.y = EasyTab->PosY;
         }
 
         // Start new ImGui Frame
@@ -431,16 +422,16 @@ int main(int argc, char **argv)
             timespec Time;
             clock_gettime(CLOCK_MONOTONIC, &Time);
             float CurTime = Time.tv_sec + (float)Time.tv_nsec / 1000000000.0f;
-            ImGui::GetIO().DeltaTime = (float)(CurTime - Mem.profile.last_frame_time);
-            Mem.profile.last_frame_time = CurTime;
+            ImGui::GetIO().DeltaTime = (float)(CurTime - mem.profile.last_frame_time);
+            mem.profile.last_frame_time = CurTime;
 
             ImGui::NewFrame();
         }
 
         // Update and render
         {
-            core::update(&Mem);
-            glXSwapBuffers(XlibDisplay, XlibWindow);
+            core::update(&mem);
+            glXSwapBuffers(xlib_display, xlib_window);
         }
 
 #ifdef USE_GTK
@@ -449,17 +440,17 @@ int main(int argc, char **argv)
 #endif
 
         // End Of Frame
-        timer::stop(&Mem.profile.timers[Timer_Frame]);
+        timer::stop(&mem.profile.timers[Timer_Frame]);
         double FrameRate =
-            (Mem.current_tool == PapayaTool_Brush && Mem.mouse.is_down[0]) ?
+            (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
             500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - Mem.profile.timers[Timer_Frame].elapsed_ms;
-        Mem.profile.timers[Timer_Sleep].elapsed_ms = SleepTime;
+        double SleepTime = FrameTime - mem.profile.timers[Timer_Frame].elapsed_ms;
+        mem.profile.timers[Timer_Sleep].elapsed_ms = SleepTime;
         if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 
-    //core::destroy(&Mem);
+    //core::destroy(&mem);
     EasyTab_Unload();
 
     return 0;
