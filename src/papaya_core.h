@@ -205,12 +205,12 @@ struct PapayaMemory {
 };
 
 namespace core {
-    void init(PapayaMemory* Mem);
-    void destroy(PapayaMemory* Mem);
-    void resize(PapayaMemory* Mem, int32 Width, int32 Height);
-    void update(PapayaMemory* Mem);
-    void render_imgui(ImDrawData* DrawData, void* MemPtr);
-    bool open_doc(char* Path, PapayaMemory* Mem);
-    void close_doc(PapayaMemory* Mem);
-    void resize_doc(PapayaMemory* Mem, int32 Width, int32 Height);
+    void init(PapayaMemory* mem);
+    void destroy(PapayaMemory* mem);
+    void resize(PapayaMemory* mem, int32 width, int32 height);
+    void update(PapayaMemory* mem);
+    void render_imgui(ImDrawData* draw_data, void* mem_ptr);
+    bool open_doc(char* path, PapayaMemory* mem);
+    void close_doc(PapayaMemory* mem);
+    void resize_doc(PapayaMemory* mem, int32 width, int32 height);
 }
