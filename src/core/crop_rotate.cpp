@@ -71,9 +71,9 @@ void crop_rotate::toolbar(PapayaMemory* mem) {
                                mem->doc.height * 0.5f);
             mat4x4_dup(m, mem->doc.proj_mtx);
             mat4x4_translate_in_place(m, offset.x, offset.y, 0.f);
-            // mat4x4_rotate_Z(r, m, Math::ToRadians(-90));
+            // mat4x4_rotate_Z(r, m, math::to_radians(-90));
             mat4x4_rotate_Z(r, m, mem->crop_rotate.slider_angle +
-                            Math::ToRadians(90.0f * mem->crop_rotate.base_rotation));
+                            math::to_radians(90.0f * mem->crop_rotate.base_rotation));
             if (size_changed) {
                 mat4x4_translate_in_place(r, -offset.y, -offset.x, 0.f);
             } else {
@@ -100,7 +100,7 @@ void crop_rotate::toolbar(PapayaMemory* mem) {
             core::resize_doc(mem, mem->doc.width, mem->doc.height);
 
             // Reposition canvas to maintain apparent position
-            int32 delta = Math::RoundToInt((mem->doc.height - mem->doc.width)
+            int32 delta = math::round_to_int((mem->doc.height - mem->doc.width)
                     * 0.5f * mem->doc.canvas_zoom);
             mem->doc.canvas_pos.x += delta;
             mem->doc.canvas_pos.y -= delta;
@@ -142,7 +142,7 @@ void crop_rotate::crop_outline(PapayaMemory* mem) {
             int32 min_index;
 
             for (int32 i = 0; i < 4; i++) {
-                float dist = Math::Distance(p[i], mouse);
+                float dist = math::distance(p[i], mouse);
                 if (min_dist > dist) {
                     min_dist = dist;
                     min_index = i;
@@ -171,8 +171,8 @@ void crop_rotate::crop_outline(PapayaMemory* mem) {
                 float dot = vec2_mul_inner(a, b);
                 // Continue if projection of mouse doesn't lie on the edge v1-v2
                 if (dot < 0 || dot > vec2_mul_inner(a, a)) { continue; }
-                float dist = (i % 2 == 0) ? Math::Abs(p[i].x - mouse.x) // Vertical edge
-                                          : Math::Abs(p[i].y - mouse.y);
+                float dist = (i % 2 == 0) ? math::abs(p[i].x - mouse.x) // Vertical edge
+                                          : math::abs(p[i].y - mouse.y);
                 if (min_dist > dist) {
                     min_dist = dist;
                     min_index = i;
@@ -209,10 +209,10 @@ dragging:
             Vec2 v = ((mouse - mem->doc.canvas_pos) / mem->doc.canvas_zoom)
                      - mem->crop_rotate.top_left;
             Vec2 delta = v - mem->crop_rotate.rect_drag_position;
-            delta.x = Math::Clamp((float)round(delta.x),
+            delta.x = math::clamp((float)round(delta.x),
                                   -1.f * mem->crop_rotate.top_left.x,
                                   mem->doc.width - mem->crop_rotate.bot_right.x);
-            delta.y = Math::Clamp((float)round(delta.y),
+            delta.y = math::clamp((float)round(delta.y),
                                   -1.f * mem->crop_rotate.top_left.y,
                                   mem->doc.height - mem->crop_rotate.bot_right.y);
             mem->crop_rotate.top_left  += delta;
@@ -235,25 +235,25 @@ dragging:
 
         if (mem->crop_rotate.crop_mode & 3) {
             mem->crop_rotate.top_left.x =
-                Math::Clamp((float)round(mem->crop_rotate.top_left.x),
+                math::clamp((float)round(mem->crop_rotate.top_left.x),
                             0.f,
                             mem->crop_rotate.bot_right.x - 1);
         }
         if (mem->crop_rotate.crop_mode & 9) {
             mem->crop_rotate.top_left.y =
-                Math::Clamp((float)round(mem->crop_rotate.top_left.y),
+                math::clamp((float)round(mem->crop_rotate.top_left.y),
                             0.f,
                             mem->crop_rotate.bot_right.y - 1);
         }
         if (mem->crop_rotate.crop_mode & 12) {
             mem->crop_rotate.bot_right.x =
-                Math::Clamp((float)round(mem->crop_rotate.bot_right.x),
+                math::clamp((float)round(mem->crop_rotate.bot_right.x),
                             mem->crop_rotate.top_left.x + 1,
                             (float)mem->doc.width);
         }
         if (mem->crop_rotate.crop_mode & 6) {
             mem->crop_rotate.bot_right.y =
-                Math::Clamp((float)round(mem->crop_rotate.bot_right.y),
+                math::clamp((float)round(mem->crop_rotate.bot_right.y),
                             mem->crop_rotate.top_left.y + 1,
                             (float)mem->doc.height);
         }

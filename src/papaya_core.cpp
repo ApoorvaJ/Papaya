@@ -201,13 +201,13 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
         Mem->doc.texture_id = gl::allocate_tex(Mem->doc.width, Mem->doc.height, Texture);
 
         Mem->doc.inverse_aspect = (float)Mem->doc.height / (float)Mem->doc.width;
-        Mem->doc.canvas_zoom = 0.8f * Math::Min((float)Mem->window.width/(float)Mem->doc.width, (float)Mem->window.height/(float)Mem->doc.height);
+        Mem->doc.canvas_zoom = 0.8f * math::min((float)Mem->window.width/(float)Mem->doc.width, (float)Mem->window.height/(float)Mem->doc.height);
         if (Mem->doc.canvas_zoom > 1.0f) { Mem->doc.canvas_zoom = 1.0f; }
         // Center canvas
         {
             int32 TopMargin = 53; // TODO: Put common layout constants in struct
-            int32 PosX = Math::RoundToInt((Mem->window.width - (float)Mem->doc.width * Mem->doc.canvas_zoom) / 2.0f);
-            int32 PosY = TopMargin + Math::RoundToInt((Mem->window.height - TopMargin - (float)Mem->doc.height * Mem->doc.canvas_zoom) / 2.0f);
+            int32 PosX = math::round_to_int((Mem->window.width - (float)Mem->doc.width * Mem->doc.canvas_zoom) / 2.0f);
+            int32 PosY = TopMargin + math::round_to_int((Mem->window.height - TopMargin - (float)Mem->doc.height * Mem->doc.canvas_zoom) / 2.0f);
             Mem->doc.canvas_pos = Vec2i(PosX, PosY);
         }
         free(Texture);
@@ -245,7 +245,7 @@ bool core::open_doc(char* Path, PapayaMemory* Mem)
     {
         size_t Size        = 512 * 1024 * 1024;
         size_t MinSize     = 3 * (sizeof(UndoData) + 8 * Mem->doc.width * Mem->doc.height);
-        Mem->doc.undo.size = Math::Max(Size, MinSize);
+        Mem->doc.undo.size = math::max(Size, MinSize);
 
         Mem->doc.undo.start = malloc((size_t)Mem->doc.undo.size);
         Mem->doc.undo.current_index = -1;
@@ -886,8 +886,8 @@ void core::resize(PapayaMemory* Mem, int32 Width, int32 Height)
     //       before window was resized.
     // Center canvas
     int32 TopMargin = 53; // TODO: Put common layout constants in struct
-    int32 PosX = Math::RoundToInt((Mem->window.width - (float)Mem->doc.width * Mem->doc.canvas_zoom) / 2.0f);
-    int32 PosY = TopMargin + Math::RoundToInt((Mem->window.height - TopMargin - (float)Mem->doc.height * Mem->doc.canvas_zoom) / 2.0f);
+    int32 PosX = math::round_to_int((Mem->window.width - (float)Mem->doc.width * Mem->doc.canvas_zoom) / 2.0f);
+    int32 PosY = TopMargin + math::round_to_int((Mem->window.height - TopMargin - (float)Mem->doc.height * Mem->doc.canvas_zoom) / 2.0f);
     Mem->doc.canvas_pos = Vec2i(PosX, PosY);
 }
 
@@ -897,9 +897,9 @@ void core::update(PapayaMemory* Mem)
     {
         // Current mouse info
         {
-            Mem->mouse.pos = Math::RoundToVec2i(ImGui::GetMousePos());
-            Vec2 MousePixelPos = Vec2(Math::Floor((Mem->mouse.pos.x - Mem->doc.canvas_pos.x) / Mem->doc.canvas_zoom),
-                                      Math::Floor((Mem->mouse.pos.y - Mem->doc.canvas_pos.y) / Mem->doc.canvas_zoom));
+            Mem->mouse.pos = math::round_to_vec2i(ImGui::GetMousePos());
+            Vec2 MousePixelPos = Vec2(math::floor((Mem->mouse.pos.x - Mem->doc.canvas_pos.x) / Mem->doc.canvas_zoom),
+                                      math::floor((Mem->mouse.pos.y - Mem->doc.canvas_pos.y) / Mem->doc.canvas_zoom));
             Mem->mouse.uv = Vec2(MousePixelPos.x / (float) Mem->doc.width, MousePixelPos.y / (float) Mem->doc.height);
 
             for (int32 i = 0; i < 3; i++)
@@ -1222,8 +1222,8 @@ void core::update(PapayaMemory* Mem)
                 ImGui::PushItemWidth(85);
                 ImGui::InputInt2("Size", size);
                 ImGui::PopItemWidth();
-                Mem->doc.width  = Math::Clamp(size[0], 1, 9000);
-                Mem->doc.height = Math::Clamp(size[1], 1, 9000);
+                Mem->doc.width  = math::clamp(size[0], 1, 9000);
+                Mem->doc.height = math::clamp(size[1], 1, 9000);
                 ImGui::SameLine();
                 ImGui::Checkbox("Preview", &Mem->misc.preview_image_size);
             }
@@ -1244,7 +1244,7 @@ void core::update(PapayaMemory* Mem)
             {
                 ImGui::PushItemWidth(85);
                 ImGui::InputInt("Diameter", &Mem->brush.diameter);
-                Mem->brush.diameter = Math::Clamp(Mem->brush.diameter, 1, Mem->brush.max_diameter);
+                Mem->brush.diameter = math::clamp(Mem->brush.diameter, 1, Mem->brush.max_diameter);
 
                 ImGui::PopItemWidth();
                 ImGui::PushItemWidth(80);
@@ -1317,15 +1317,15 @@ void core::update(PapayaMemory* Mem)
                 if (Mem->brush.rt_drag_with_shift)
                 {
                     float Opacity = Mem->brush.rt_drag_start_opacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
-                    Mem->brush.opacity = Math::Clamp(Opacity, 0.0f, 1.0f);
+                    Mem->brush.opacity = math::clamp(Opacity, 0.0f, 1.0f);
                 }
                 else
                 {
                     float Diameter = Mem->brush.rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / Mem->doc.canvas_zoom * 2.0f);
-                    Mem->brush.diameter = Math::Clamp((int32)Diameter, 1, Mem->brush.max_diameter);
+                    Mem->brush.diameter = math::clamp((int32)Diameter, 1, Mem->brush.max_diameter);
 
                     float Hardness = Mem->brush.rt_drag_start_hardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
-                    Mem->brush.hardness = Math::Clamp(Hardness, 0.0f, 1.0f);
+                    Mem->brush.hardness = math::clamp(Hardness, 0.0f, 1.0f);
                 }
             }
             else if (Mem->mouse.released[1])
@@ -1467,8 +1467,8 @@ void core::update(PapayaMemory* Mem)
 
             if (Mem->brush.is_straight_drag && !Mem->brush.straight_drag_snap_x && !Mem->brush.straight_drag_snap_y)
             {
-                float dx = Math::Abs(Mem->brush.straight_drag_start_uv.x - Mem->mouse.uv.x);
-                float dy = Math::Abs(Mem->brush.straight_drag_start_uv.y - Mem->mouse.uv.y);
+                float dx = math::abs(Mem->brush.straight_drag_start_uv.x - Mem->mouse.uv.x);
+                float dy = math::abs(Mem->brush.straight_drag_start_uv.y - Mem->mouse.uv.y);
                 Mem->brush.straight_drag_snap_x = (dx < dy);
                 Mem->brush.straight_drag_snap_y = (dy < dx);
             }
@@ -1477,7 +1477,7 @@ void core::update(PapayaMemory* Mem)
             {
                 Mem->mouse.uv.x = Mem->brush.straight_drag_start_uv.x;
                 float pixelPos = Mem->mouse.uv.x * Mem->doc.width + 0.5f;
-                Mem->mouse.pos.x = Math::RoundToInt(pixelPos * Mem->doc.canvas_zoom + Mem->doc.canvas_pos.x);
+                Mem->mouse.pos.x = math::round_to_int(pixelPos * Mem->doc.canvas_zoom + Mem->doc.canvas_pos.x);
                 platform::set_mouse_position(Mem->mouse.pos.x, Mem->mouse.pos.y);
             }
 
@@ -1485,7 +1485,7 @@ void core::update(PapayaMemory* Mem)
             {
                 Mem->mouse.uv.y = Mem->brush.straight_drag_start_uv.y;
                 float pixelPos = Mem->mouse.uv.y * Mem->doc.height + 0.5f;
-                Mem->mouse.pos.y = Math::RoundToInt(pixelPos * Mem->doc.canvas_zoom + Mem->doc.canvas_pos.y);
+                Mem->mouse.pos.y = math::round_to_int(pixelPos * Mem->doc.canvas_zoom + Mem->doc.canvas_pos.y);
                 platform::set_mouse_position(Mem->mouse.pos.x, Mem->mouse.pos.y);
             }
 
@@ -1518,25 +1518,25 @@ void core::update(PapayaMemory* Mem)
 
             // Paint area calculation
             {
-                float UVMinX = Math::Min(CorrectedPos.x, CorrectedLastPos.x);
-                float UVMinY = Math::Min(CorrectedPos.y, CorrectedLastPos.y);
-                float UVMaxX = Math::Max(CorrectedPos.x, CorrectedLastPos.x);
-                float UVMaxY = Math::Max(CorrectedPos.y, CorrectedLastPos.y);
+                float UVMinX = math::min(CorrectedPos.x, CorrectedLastPos.x);
+                float UVMinY = math::min(CorrectedPos.y, CorrectedLastPos.y);
+                float UVMaxX = math::max(CorrectedPos.x, CorrectedLastPos.x);
+                float UVMaxY = math::max(CorrectedPos.y, CorrectedLastPos.y);
 
-                int32 PixelMinX = Math::RoundToInt(UVMinX * Mem->doc.width  - 0.5f * Mem->brush.diameter);
-                int32 PixelMinY = Math::RoundToInt(UVMinY * Mem->doc.height - 0.5f * Mem->brush.diameter);
-                int32 PixelMaxX = Math::RoundToInt(UVMaxX * Mem->doc.width  + 0.5f * Mem->brush.diameter);
-                int32 PixelMaxY = Math::RoundToInt(UVMaxY * Mem->doc.height + 0.5f * Mem->brush.diameter);
+                int32 PixelMinX = math::round_to_int(UVMinX * Mem->doc.width  - 0.5f * Mem->brush.diameter);
+                int32 PixelMinY = math::round_to_int(UVMinY * Mem->doc.height - 0.5f * Mem->brush.diameter);
+                int32 PixelMaxX = math::round_to_int(UVMaxX * Mem->doc.width  + 0.5f * Mem->brush.diameter);
+                int32 PixelMaxY = math::round_to_int(UVMaxY * Mem->doc.height + 0.5f * Mem->brush.diameter);
 
-                Mem->brush.paint_area_1.x = Math::Min(Mem->brush.paint_area_1.x, PixelMinX);
-                Mem->brush.paint_area_1.y = Math::Min(Mem->brush.paint_area_1.y, PixelMinY);
-                Mem->brush.paint_area_2.x = Math::Max(Mem->brush.paint_area_2.x, PixelMaxX);
-                Mem->brush.paint_area_2.y = Math::Max(Mem->brush.paint_area_2.y, PixelMaxY);
+                Mem->brush.paint_area_1.x = math::min(Mem->brush.paint_area_1.x, PixelMinX);
+                Mem->brush.paint_area_1.y = math::min(Mem->brush.paint_area_1.y, PixelMinY);
+                Mem->brush.paint_area_2.x = math::max(Mem->brush.paint_area_2.x, PixelMaxX);
+                Mem->brush.paint_area_2.y = math::max(Mem->brush.paint_area_2.y, PixelMaxY);
 
-                Mem->brush.paint_area_1.x = Math::Clamp(Mem->brush.paint_area_1.x, 0, Mem->doc.width);
-                Mem->brush.paint_area_1.y = Math::Clamp(Mem->brush.paint_area_1.y, 0, Mem->doc.height);
-                Mem->brush.paint_area_2.x = Math::Clamp(Mem->brush.paint_area_2.x, 0, Mem->doc.width);
-                Mem->brush.paint_area_2.y = Math::Clamp(Mem->brush.paint_area_2.y, 0, Mem->doc.height);
+                Mem->brush.paint_area_1.x = math::clamp(Mem->brush.paint_area_1.x, 0, Mem->doc.width);
+                Mem->brush.paint_area_1.y = math::clamp(Mem->brush.paint_area_1.y, 0, Mem->doc.height);
+                Mem->brush.paint_area_2.x = math::clamp(Mem->brush.paint_area_2.x, 0, Mem->doc.width);
+                Mem->brush.paint_area_2.y = math::clamp(Mem->brush.paint_area_2.y, 0, Mem->doc.height);
             }
 
             GLCHK( glUniformMatrix4fv(Mem->shaders[PapayaShader_Brush].uniforms[0], 1, GL_FALSE, &Mem->doc.proj_mtx[0][0]) );
@@ -1556,7 +1556,7 @@ void core::update(PapayaMemory* Mem)
                 {
                     float AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
                     float Radius  = Mem->brush.diameter / 2.0f;
-                    Hardness      = Math::Min(Mem->brush.hardness, 1.0f - (AAWidth / Radius));
+                    Hardness      = math::min(Mem->brush.hardness, 1.0f - (AAWidth / Radius));
                 }
                 else
                 {
@@ -1698,7 +1698,7 @@ void core::update(PapayaMemory* Mem)
     // Canvas zooming and panning
     {
         // Panning
-        Mem->doc.canvas_pos += Math::RoundToVec2i(ImGui::GetMouseDragDelta(2));
+        Mem->doc.canvas_pos += math::round_to_vec2i(ImGui::GetMouseDragDelta(2));
         ImGui::ResetMouseDragDelta(2);
 
         // Zooming
@@ -1706,12 +1706,12 @@ void core::update(PapayaMemory* Mem)
         {
             float MinZoom      = 0.01f, MaxZoom = 32.0f;
             float ZoomSpeed    = 0.2f * Mem->doc.canvas_zoom;
-            float ScaleDelta   = Math::Min(MaxZoom - Mem->doc.canvas_zoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
+            float ScaleDelta   = math::min(MaxZoom - Mem->doc.canvas_zoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
             Vec2 OldCanvasZoom = Vec2((float)Mem->doc.width, (float)Mem->doc.height) * Mem->doc.canvas_zoom;
 
             Mem->doc.canvas_zoom += ScaleDelta;
             if (Mem->doc.canvas_zoom < MinZoom) { Mem->doc.canvas_zoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-            Vec2i NewCanvasSize = Math::RoundToVec2i(Vec2((float)Mem->doc.width, (float)Mem->doc.height) * Mem->doc.canvas_zoom);
+            Vec2i NewCanvasSize = math::round_to_vec2i(Vec2((float)Mem->doc.width, (float)Mem->doc.height) * Mem->doc.canvas_zoom);
 
             if ((NewCanvasSize.x > Mem->window.width || NewCanvasSize.y > Mem->window.height))
             {
@@ -1719,14 +1719,14 @@ void core::update(PapayaMemory* Mem)
                 Vec2 NewPos = Vec2(Mem->doc.canvas_pos) -
                     Vec2(PreScaleMousePos.x * ScaleDelta * (float)Mem->doc.width,
                         PreScaleMousePos.y * ScaleDelta * (float)Mem->doc.height);
-                Mem->doc.canvas_pos = Math::RoundToVec2i(NewPos);
+                Mem->doc.canvas_pos = math::round_to_vec2i(NewPos);
             }
             else // Center canvas
             {
                 // TODO: Maybe disable centering on zoom out. Needs more usability testing.
                 int32 TopMargin = 53; // TODO: Put common layout constants in struct
-                int32 PosX = Math::RoundToInt((Mem->window.width - (float)Mem->doc.width * Mem->doc.canvas_zoom) / 2.0f);
-                int32 PosY = TopMargin + Math::RoundToInt((Mem->window.height - TopMargin - (float)Mem->doc.height * Mem->doc.canvas_zoom) / 2.0f);
+                int32 PosX = math::round_to_int((Mem->window.width - (float)Mem->doc.width * Mem->doc.canvas_zoom) / 2.0f);
+                int32 PosY = TopMargin + math::round_to_int((Mem->window.height - TopMargin - (float)Mem->doc.height * Mem->doc.canvas_zoom) / 2.0f);
                 Mem->doc.canvas_pos = Vec2i(PosX, PosY);
             }
         }
@@ -1751,7 +1751,7 @@ void core::update(PapayaMemory* Mem)
                                Mem->doc.canvas_zoom * 0.5f);
 
             mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-            mat4x4_rotate_Z(R, M, Math::ToRadians(90.0f * Mem->crop_rotate.base_rotation));
+            mat4x4_rotate_Z(R, M, math::to_radians(90.0f * Mem->crop_rotate.base_rotation));
             mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
             mat4x4_dup(M, R);
         }
@@ -1763,7 +1763,7 @@ void core::update(PapayaMemory* Mem)
             UniformType_Color, Mem->colors[PapayaCol_AlphaGrid2],
             UniformType_Float, Mem->doc.canvas_zoom,
             UniformType_Float, Mem->doc.inverse_aspect,
-            UniformType_Float, Math::Max((float)Mem->doc.width, (float)Mem->doc.height));
+            UniformType_Float, math::max((float)Mem->doc.width, (float)Mem->doc.height));
     }
 
     // Draw canvas
@@ -1785,7 +1785,7 @@ void core::update(PapayaMemory* Mem)
 
             mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
             mat4x4_rotate_Z(R, M, Mem->crop_rotate.slider_angle + 
-                    Math::ToRadians(90.0f * Mem->crop_rotate.base_rotation));
+                    math::to_radians(90.0f * Mem->crop_rotate.base_rotation));
             mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
             mat4x4_dup(M, R);
         }

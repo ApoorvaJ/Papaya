@@ -20,7 +20,7 @@ void picker::init(Picker* picker) {
 void picker::set_color(Color col, Picker* picker, bool set_new_color_only) {
     if (!set_new_color_only) { picker->current_color = col; }
     picker->new_color = col;
-    Math::RGBtoHSV(picker->new_color.r, picker->new_color.g, picker->new_color.b,
+    math::rgb_to_hsv(picker->new_color.r, picker->new_color.g, picker->new_color.b,
                    picker->cursor_h, picker->cursor_sv.x, picker->cursor_sv.y);
     if (picker->bound_color) { *picker->bound_color = col; }
 }
@@ -94,11 +94,11 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
             rgbColor[1] = (int32)(picker->new_color.g * 255.0f);
             rgbColor[2] = (int32)(picker->new_color.b * 255.0f);
             if (ImGui::InputInt3("RGB", rgbColor)) {
-                int32 r = Math::Clamp(rgbColor[0], 0, 255);
-                int32 g = Math::Clamp(rgbColor[1], 0, 255);
-                int32 b = Math::Clamp(rgbColor[2], 0, 255);
+                int32 r = math::clamp(rgbColor[0], 0, 255);
+                int32 g = math::clamp(rgbColor[1], 0, 255);
+                int32 b = math::clamp(rgbColor[2], 0, 255);
                 picker->new_color = Color(r, g, b);
-                Math::RGBtoHSV(picker->new_color.r, picker->new_color.g, picker->new_color.b,
+                math::rgb_to_hsv(picker->new_color.r, picker->new_color.g, picker->new_color.b,
                                picker->cursor_h, picker->cursor_sv.x, picker->cursor_sv.y);
             }
             char hexColor[6 + 1]; // null-terminated
@@ -118,7 +118,7 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
                     case 6: sscanf(hexColor, "%2x%2x%2x", &r, &g, &b); break;
                 }
                 picker->new_color = Color(r, g, b);
-                Math::RGBtoHSV(picker->new_color.r, picker->new_color.g, picker->new_color.b,
+                math::rgb_to_hsv(picker->new_color.r, picker->new_color.g, picker->new_color.b,
                                picker->cursor_h, picker->cursor_sv.x, picker->cursor_sv.y);
             }
         }
@@ -144,7 +144,7 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
 
         if (picker->dragging_hue) {
             picker->cursor_h = (mouse.pos.y - pos.y) / 256.0f;
-            picker->cursor_h = 1.f - Math::Clamp(picker->cursor_h, 0.0f, 1.0f);
+            picker->cursor_h = 1.f - math::clamp(picker->cursor_h, 0.0f, 1.0f);
         }
 
     }
@@ -168,8 +168,8 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
         if (picker->dragging_sv) {
             picker->cursor_sv.x = (mouse.pos.x - pos.x) / 256.f;
             picker->cursor_sv.y = 1.f - (mouse.pos.y - pos.y) / 256.f;
-            picker->cursor_sv.x = Math::Clamp(picker->cursor_sv.x, 0.f, 1.f);
-            picker->cursor_sv.y = Math::Clamp(picker->cursor_sv.y, 0.f, 1.f);
+            picker->cursor_sv.x = math::clamp(picker->cursor_sv.x, 0.f, 1.f);
+            picker->cursor_sv.y = math::clamp(picker->cursor_sv.y, 0.f, 1.f);
 
         }
     }
@@ -177,13 +177,13 @@ void picker::update(Picker* picker, Color* Colors, Mouse& mouse,
     // Update new color
     {
         float r, g, b;
-        Math::HSVtoRGB(picker->cursor_h, picker->cursor_sv.x, picker->cursor_sv.y,
+        math::hsv_to_rgb(picker->cursor_h, picker->cursor_sv.x, picker->cursor_sv.y,
                        r, g, b);
         // Note: Rounding is essential. Without it, RGB->HSV->RGB is a lossy
         // operation.
-        picker->new_color = Color(Math::RoundToInt(r * 255.0f),
-                                  Math::RoundToInt(g * 255.0f),
-                                  Math::RoundToInt(b * 255.0f));
+        picker->new_color = Color(math::round_to_int(r * 255.0f),
+                                  math::round_to_int(g * 255.0f),
+                                  math::round_to_int(b * 255.0f));
     }
 
     if (picker->bound_color) { *picker->bound_color = picker->new_color; }

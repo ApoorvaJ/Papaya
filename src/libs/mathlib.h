@@ -26,24 +26,24 @@ inline Vec2& operator*=(Vec2& lhs, const float rhs)     { lhs.x *= rhs; lhs.y *=
 inline Vec2& operator/=(Vec2& lhs, const float rhs)     { lhs.x /= rhs; lhs.y /= rhs; return lhs; }
 
 
-namespace Math
+namespace math
 {
     const double Pi = 3.14159265358979323846;
 
-    template<class T> T Min(T a, T b) { return (a < b ? a : b); }
-    template<class T> T Max(T a, T b) { return (a > b ? a : b); }
-    template<class T> T Clamp(T a, T min, T max) { return Math::Min(Math::Max(a, min), max); }
+    template<class T> T min(T a, T b) { return (a < b ? a : b); }
+    template<class T> T max(T a, T b) { return (a > b ? a : b); }
+    template<class T> T clamp(T a, T min, T max) { return math::min(math::max(a, min), max); }
 
-    float Abs(float a);
-    int32 Abs(int32 a);
-    float Floor(float a);
-    int32 RoundToInt(float a);
-    Vec2i RoundToVec2i(Vec2 a);
-    float Distance(Vec2 a, Vec2 b);
-    float DistanceSquared(Vec2 a, Vec2 b);
-    void HSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float& out_b);
-    void RGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float& out_v);
-    float ToRadians(float degrees);
+    float abs(float a);
+    int32 abs(int32 a);
+    float floor(float a);
+    int32 round_to_int(float a);
+    Vec2i round_to_vec2i(Vec2 a);
+    float distance(Vec2 a, Vec2 b);
+    float distance_squared(Vec2 a, Vec2 b);
+    void hsv_to_rgb(float h, float s, float v, float& out_r, float& out_g, float& out_b);
+    void rgb_to_hsv(float r, float g, float b, float& out_h, float& out_s, float& out_v);
+    float to_radians(float degrees);
 }
 
 #endif // MATHLIB_H
@@ -53,44 +53,44 @@ namespace Math
 #ifdef MATHLIB_IMPLEMENTATION
 
 
-float Math::Abs(float a)
+float math::abs(float a)
 {
     return (a < 0.0f ? a * -1.0f : a);
 }
 
-int32 Math::Abs(int32 a)
+int32 math::abs(int32 a)
 {
     return (a < 0 ? a * -1 : a);
 }
 
-float Math::Floor(float a)
+float math::floor(float a)
 {
     int32 i = (int32)a;
     return (float)(i - (i > a));
 }
 
-int32 Math::RoundToInt(float a)
+int32 math::round_to_int(float a)
 {
-    return (int32)Floor(a + 0.5f);
+    return (int32)floor(a + 0.5f);
 }
 
-Vec2i Math::RoundToVec2i(Vec2 a)
+Vec2i math::round_to_vec2i(Vec2 a)
 {
-    return Vec2i(RoundToInt(a.x), RoundToInt(a.y));
+    return Vec2i(round_to_int(a.x), round_to_int(a.y));
 }
 
-float Math::Distance(Vec2 a, Vec2 b)
+float math::distance(Vec2 a, Vec2 b)
 {
     return sqrtf( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
 }
 
-float Math::DistanceSquared(Vec2 a, Vec2 b)
+float math::distance_squared(Vec2 a, Vec2 b)
 {
     return ( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
 }
 
 // Color math
-void Math::HSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float& out_b)
+void math::hsv_to_rgb(float h, float s, float v, float& out_r, float& out_g, float& out_b)
 {
     if (s == 0.0f)
     {
@@ -117,7 +117,7 @@ void Math::HSVtoRGB(float h, float s, float v, float& out_r, float& out_g, float
     }
 }
 
-void Math::RGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float& out_v)
+void math::rgb_to_hsv(float r, float g, float b, float& out_h, float& out_s, float& out_v)
 {
     float K = 0.f;
     if (g < b)
@@ -137,7 +137,7 @@ void Math::RGBtoHSV(float r, float g, float b, float& out_h, float& out_s, float
     out_v = r;
 }
 
-float Math::ToRadians(float degrees)
+float math::to_radians(float degrees)
 {
     return (float)(degrees * Pi / 180.f);
 }
