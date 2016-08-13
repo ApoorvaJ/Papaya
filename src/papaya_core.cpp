@@ -406,21 +406,21 @@ void core::init(PapayaMemory* mem)
 
         // Load and bind image
         {
-            uint8* Image;
+            uint8* img;
             int32 ImageWidth, ImageHeight, ComponentsPerPixel;
-            Image = stbi_load("ui.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
+            img = stbi_load("ui.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
 
             // Create texture
             GLuint Id_GLuint;
-            GLCHK( glGenTextures  (1, &Id_GLuint) );
-            GLCHK( glBindTexture  (GL_TEXTURE_2D, Id_GLuint) );
+            GLCHK( glGenTextures(1, &Id_GLuint) );
+            GLCHK( glBindTexture(GL_TEXTURE_2D, Id_GLuint) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-            GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0,
-                GL_RGBA, GL_UNSIGNED_BYTE, Image) );
+            GLCHK( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageWidth, ImageHeight, 0,
+                                GL_RGBA, GL_UNSIGNED_BYTE, img) );
 
             // Store our identifier
-            free(Image);
+            free(img);
             mem->textures[PapayaTex_UI] = (uint32)Id_GLuint;
         }
     }
@@ -865,11 +865,11 @@ void core::init(PapayaMemory* mem)
         //ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 15.0f);
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-        GLCHK( glGenTextures  (1, &mem->textures[PapayaTex_Font]) );
-        GLCHK( glBindTexture  (GL_TEXTURE_2D, mem->textures[PapayaTex_Font]) );
+        GLCHK( glGenTextures(1, &mem->textures[PapayaTex_Font]) );
+        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->textures[PapayaTex_Font]) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-        GLCHK( glTexImage2D   (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels) );
+        GLCHK( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels) );
 
         // Store our identifier
         io.Fonts->TexID = (void *)(intptr_t)mem->textures[PapayaTex_Font];
@@ -881,8 +881,8 @@ void core::init(PapayaMemory* mem)
 
     // ImGui Style Settings
     {
-        ImGuiStyle& Style = ImGui::GetStyle();
-        Style.WindowFillAlphaDefault = 1.0f;
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowFillAlphaDefault = 1.0f;
         // TODO: Move repeated stuff here by setting global style
     }
 }
@@ -946,17 +946,18 @@ void core::update(PapayaMemory* mem)
 
         // Clear screen buffer
         {
-            GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
+            GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x,
+                              (int32)ImGui::GetIO().DisplaySize.y) );
 
             GLCHK( glClearColor(mem->colors[PapayaCol_Clear].r,
-                mem->colors[PapayaCol_Clear].g,
-                mem->colors[PapayaCol_Clear].b, 1.0f) );
+                                mem->colors[PapayaCol_Clear].g,
+                                mem->colors[PapayaCol_Clear].b, 1.0f) );
             GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
 
             GLCHK( glEnable(GL_SCISSOR_TEST) );
             GLCHK( glScissor(34, 3,
-                (int32)mem->window.width  - 70,
-                (int32)mem->window.height - 58) ); // TODO: Remove magic numbers
+                             (int32)mem->window.width  - 70,
+                             (int32)mem->window.height - 58) ); // TODO: Remove magic numbers
 
             GLCHK( glClearColor(mem->colors[PapayaCol_Workspace].r,
                 mem->colors[PapayaCol_Workspace].g,
@@ -973,18 +974,21 @@ void core::update(PapayaMemory* mem)
 
     // Title Bar Menu
     {
-        ImGui::SetNextWindowSize(ImVec2(mem->window.width - mem->window.menu_horizontal_offset - mem->window.title_bar_buttons_width - 3.0f,
-            mem->window.title_bar_height - 10.0f));
-        ImGui::SetNextWindowPos(ImVec2(2.0f + mem->window.menu_horizontal_offset, 6.0f));
+        ImGui::SetNextWindowSize(
+                ImVec2(mem->window.width - mem->window.menu_horizontal_offset -
+                       mem->window.title_bar_buttons_width - 3.0f,
+                       mem->window.title_bar_height - 10.0f));
+        ImGui::SetNextWindowPos(ImVec2(2.0f + mem->window.menu_horizontal_offset,
+                                       6.0f));
 
-        ImGuiWindowFlags WindowFlags = 0;
-        WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-        WindowFlags |= ImGuiWindowFlags_NoResize;
-        WindowFlags |= ImGuiWindowFlags_NoMove;
-        WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-        WindowFlags |= ImGuiWindowFlags_NoCollapse;
-        WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-        WindowFlags |= ImGuiWindowFlags_MenuBar;
+        ImGuiWindowFlags flags = 0;
+        flags |= ImGuiWindowFlags_NoTitleBar;
+        flags |= ImGuiWindowFlags_NoResize;
+        flags |= ImGuiWindowFlags_NoMove;
+        flags |= ImGuiWindowFlags_NoScrollbar;
+        flags |= ImGuiWindowFlags_NoCollapse;
+        flags |= ImGuiWindowFlags_NoScrollWithMouse;
+        flags |= ImGuiWindowFlags_MenuBar;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 4));
@@ -999,7 +1003,7 @@ void core::update(PapayaMemory* mem)
 
         mem->misc.menu_open = false;
 
-        ImGui::Begin("Title Bar Menu", 0, WindowFlags);
+        ImGui::Begin("Title Bar Menu", 0, flags);
         if (ImGui::BeginMenuBar()) {
             ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
             if (ImGui::BeginMenu("FILE")) {
@@ -1069,13 +1073,13 @@ void core::update(PapayaMemory* mem)
         ImGui::SetNextWindowSize(ImVec2(36, 650));
         ImGui::SetNextWindowPos (ImVec2( 1, 57));
 
-        ImGuiWindowFlags WindowFlags = 0;
-        WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-        WindowFlags |= ImGuiWindowFlags_NoResize;
-        WindowFlags |= ImGuiWindowFlags_NoMove;
-        WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-        WindowFlags |= ImGuiWindowFlags_NoCollapse;
-        WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+        ImGuiWindowFlags flags = 0;
+        flags |= ImGuiWindowFlags_NoTitleBar;
+        flags |= ImGuiWindowFlags_NoResize;
+        flags |= ImGuiWindowFlags_NoMove;
+        flags |= ImGuiWindowFlags_NoScrollbar;
+        flags |= ImGuiWindowFlags_NoCollapse;
+        flags |= ImGuiWindowFlags_NoScrollWithMouse;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -1086,7 +1090,7 @@ void core::update(PapayaMemory* mem)
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, mem->colors[PapayaCol_Button]);
         ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Transparent]);
 
-        ImGui::Begin("Left toolbar", 0, WindowFlags);
+        ImGui::Begin("Left toolbar", 0, flags);
 
 #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
         {
@@ -1142,13 +1146,13 @@ void core::update(PapayaMemory* mem)
         ImGui::SetNextWindowSize(ImVec2(36, 650));
         ImGui::SetNextWindowPos (ImVec2((float)mem->window.width - 36, 57));
 
-        ImGuiWindowFlags WindowFlags = 0;
-        WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-        WindowFlags |= ImGuiWindowFlags_NoResize;
-        WindowFlags |= ImGuiWindowFlags_NoMove;
-        WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-        WindowFlags |= ImGuiWindowFlags_NoCollapse;
-        WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+        ImGuiWindowFlags flags = 0;
+        flags |= ImGuiWindowFlags_NoTitleBar;
+        flags |= ImGuiWindowFlags_NoResize;
+        flags |= ImGuiWindowFlags_NoMove;
+        flags |= ImGuiWindowFlags_NoScrollbar;
+        flags |= ImGuiWindowFlags_NoCollapse;
+        flags |= ImGuiWindowFlags_NoScrollWithMouse;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding   , 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding    , ImVec2(0, 0));
@@ -1159,7 +1163,7 @@ void core::update(PapayaMemory* mem)
         ImGui::PushStyleColor(ImGuiCol_ButtonActive  , mem->colors[PapayaCol_Button]);
         ImGui::PushStyleColor(ImGuiCol_WindowBg      , mem->colors[PapayaCol_Transparent]);
 
-        ImGui::Begin("Right toolbar", 0, WindowFlags);
+        ImGui::Begin("Right toolbar", 0, flags);
 
 #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
         {
@@ -1196,13 +1200,13 @@ void core::update(PapayaMemory* mem)
         ImGui::SetNextWindowSize(ImVec2((float)mem->window.width - 70, 30));
         ImGui::SetNextWindowPos(ImVec2(34, 30));
 
-        ImGuiWindowFlags WindowFlags = 0;
-        WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-        WindowFlags |= ImGuiWindowFlags_NoResize;
-        WindowFlags |= ImGuiWindowFlags_NoMove;
-        WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-        WindowFlags |= ImGuiWindowFlags_NoCollapse;
-        WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse; // TODO: Once the overall look has been established, make commonly used templates
+        ImGuiWindowFlags flags = 0;
+        flags |= ImGuiWindowFlags_NoTitleBar;
+        flags |= ImGuiWindowFlags_NoResize;
+        flags |= ImGuiWindowFlags_NoMove;
+        flags |= ImGuiWindowFlags_NoScrollbar;
+        flags |= ImGuiWindowFlags_NoCollapse;
+        flags |= ImGuiWindowFlags_NoScrollWithMouse; // TODO: Once the overall look has been established, make commonly used templates
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2( 0, 0));
@@ -1215,7 +1219,7 @@ void core::update(PapayaMemory* mem)
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive , mem->colors[PapayaCol_ButtonActive]);
 
         bool Show = true;
-        ImGui::Begin("Tool param bar", &Show, WindowFlags);
+        ImGui::Begin("Tool param bar", &Show, flags);
 
         // New document options. Might convert into modal window later.
         if (!mem->doc.texture_id) // No document is open
@@ -1256,14 +1260,14 @@ void core::update(PapayaMemory* mem)
                 ImGui::PushItemWidth(80);
                 ImGui::SameLine();
 
-                float ScaledHardness = mem->brush.hardness * 100.0f;
-                ImGui::SliderFloat("Hardness", &ScaledHardness, 0.0f, 100.0f, "%.0f");
-                mem->brush.hardness = ScaledHardness / 100.0f;
+                float scaled_hardness = mem->brush.hardness * 100.0f;
+                ImGui::SliderFloat("Hardness", &scaled_hardness, 0.0f, 100.0f, "%.0f");
+                mem->brush.hardness = scaled_hardness / 100.0f;
                 ImGui::SameLine();
 
-                float ScaledOpacity = mem->brush.opacity * 100.0f;
-                ImGui::SliderFloat("Opacity", &ScaledOpacity, 0.0f, 100.0f, "%.0f");
-                mem->brush.opacity = ScaledOpacity / 100.0f;
+                float scaled_opacity = mem->brush.opacity * 100.0f;
+                ImGui::SliderFloat("Opacity", &scaled_opacity, 0.0f, 100.0f, "%.0f");
+                mem->brush.opacity = scaled_opacity / 100.0f;
                 ImGui::SameLine();
 
                 ImGui::Checkbox("Anti-alias", &mem->brush.anti_alias); // TODO: Replace this with a toggleable icon button
@@ -1285,9 +1289,9 @@ void core::update(PapayaMemory* mem)
     // Image size preview
     if (!mem->doc.texture_id && mem->misc.preview_image_size)
     {
-        int32 TopMargin = 53; // TODO: Put common layout constants in struct
+        int32 top_margin = 53; // TODO: Put common layout constants in struct
         gl::transform_quad(mem->meshes[PapayaMesh_ImageSizePreview],
-            Vec2((float)(mem->window.width - mem->doc.width) / 2, TopMargin + (float)(mem->window.height - TopMargin - mem->doc.height) / 2),
+            Vec2((float)(mem->window.width - mem->doc.width) / 2, top_margin + (float)(mem->window.height - top_margin - mem->doc.height) / 2),
             Vec2((float)mem->doc.width, (float)mem->doc.height));
 
         gl::draw_mesh(mem->meshes[PapayaMesh_ImageSizePreview], mem->shaders[PapayaShader_ImageSizePreview], true,
@@ -1622,7 +1626,7 @@ void core::update(PapayaMemory* mem)
         if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Z))) // Pop undo op
         {
             // TODO: Clean up this workflow
-            bool Refresh = false;
+            bool refresh = false;
 
             if (ImGui::GetIO().KeyShift &&
                 mem->doc.undo.current_index < mem->doc.undo.count - 1 &&
@@ -1631,7 +1635,7 @@ void core::update(PapayaMemory* mem)
                 mem->doc.undo.current = mem->doc.undo.current->next;
                 mem->doc.undo.current_index++;
                 mem->brush.line_segment_start_uv = mem->doc.undo.current->line_segment_start_uv;
-                Refresh = true;
+                refresh = true;
             }
             else if (!ImGui::GetIO().KeyShift &&
                 mem->doc.undo.current_index > 0 &&
@@ -1643,7 +1647,7 @@ void core::update(PapayaMemory* mem)
                 }
                 else
                 {
-                    Refresh = true;
+                    refresh = true;
                 }
 
                 mem->doc.undo.current = mem->doc.undo.current->prev;
@@ -1651,7 +1655,7 @@ void core::update(PapayaMemory* mem)
                 mem->brush.line_segment_start_uv = mem->doc.undo.current->line_segment_start_uv;
             }
 
-            if (Refresh)
+            if (refresh)
             {
                 load_from_undo_buffer(mem, false);
             }
@@ -1662,34 +1666,34 @@ void core::update(PapayaMemory* mem)
         {
             ImGui::Begin("Undo buffer");
 
-            ImDrawList* DrawList = ImGui::GetWindowDrawList();
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
             // Buffer line
             float width = ImGui::GetWindowSize().x;
             Vec2 Pos    = ImGui::GetWindowPos();
             Vec2 P1     = Pos + Vec2(10, 40);
             Vec2 P2     = Pos + Vec2(width - 10, 40);
-            DrawList->AddLine(P1, P2, 0xFFFFFFFF);
+            draw_list->AddLine(P1, P2, 0xFFFFFFFF);
 
             // Base mark
             uint64 BaseOffset = (int8*)mem->doc.undo.base - (int8*)mem->doc.undo.start;
             float BaseX       = P1.x + (float)BaseOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
-            DrawList->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
+            draw_list->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
 
             // Current mark
             uint64 CurrOffset = (int8*)mem->doc.undo.current - (int8*)mem->doc.undo.start;
             float CurrX       = P1.x + (float)CurrOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
-            DrawList->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
+            draw_list->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
 
             // Last mark
             uint64 LastOffset = (int8*)mem->doc.undo.last - (int8*)mem->doc.undo.start;
             float LastX       = P1.x + (float)LastOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
-            //DrawList->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
+            //draw_list->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
 
             // Top mark
             uint64 TopOffset = (int8*)mem->doc.undo.top - (int8*)mem->doc.undo.start;
             float TopX       = P1.x + (float)TopOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
-            DrawList->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
+            draw_list->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
             ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
             ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %llu", BaseOffset);
@@ -1712,30 +1716,29 @@ void core::update(PapayaMemory* mem)
         // Zooming
         if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
         {
-            float MinZoom      = 0.01f, MaxZoom = 32.0f;
-            float ZoomSpeed    = 0.2f * mem->doc.canvas_zoom;
-            float ScaleDelta   = math::min(MaxZoom - mem->doc.canvas_zoom, ImGui::GetIO().MouseWheel * ZoomSpeed);
-            Vec2 OldCanvasZoom = Vec2((float)mem->doc.width, (float)mem->doc.height) * mem->doc.canvas_zoom;
+            float min_zoom = 0.01f, MaxZoom = 32.0f;
+            float zoom_speed = 0.2f * mem->doc.canvas_zoom;
+            float scale_delta = math::min(MaxZoom - mem->doc.canvas_zoom, ImGui::GetIO().MouseWheel * zoom_speed);
+            Vec2 old_zoom = Vec2((float)mem->doc.width, (float)mem->doc.height) * mem->doc.canvas_zoom;
 
-            mem->doc.canvas_zoom += ScaleDelta;
-            if (mem->doc.canvas_zoom < MinZoom) { mem->doc.canvas_zoom = MinZoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-            Vec2i NewCanvasSize = math::round_to_vec2i(Vec2((float)mem->doc.width, (float)mem->doc.height) * mem->doc.canvas_zoom);
+            mem->doc.canvas_zoom += scale_delta;
+            if (mem->doc.canvas_zoom < min_zoom) { mem->doc.canvas_zoom = min_zoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
+            Vec2i new_canvas_size = math::round_to_vec2i(Vec2((float)mem->doc.width, (float)mem->doc.height) * mem->doc.canvas_zoom);
 
-            if ((NewCanvasSize.x > mem->window.width || NewCanvasSize.y > mem->window.height))
+            if ((new_canvas_size.x > mem->window.width || new_canvas_size.y > mem->window.height))
             {
-                Vec2 PreScaleMousePos = Vec2(mem->mouse.pos - mem->doc.canvas_pos) / OldCanvasZoom;
-                Vec2 NewPos = Vec2(mem->doc.canvas_pos) -
-                    Vec2(PreScaleMousePos.x * ScaleDelta * (float)mem->doc.width,
-                        PreScaleMousePos.y * ScaleDelta * (float)mem->doc.height);
-                mem->doc.canvas_pos = math::round_to_vec2i(NewPos);
+                Vec2 pre_scale_mouse_pos = Vec2(mem->mouse.pos - mem->doc.canvas_pos) / old_zoom;
+                Vec2 new_pos = Vec2(mem->doc.canvas_pos) -
+                    Vec2(pre_scale_mouse_pos.x * scale_delta * (float)mem->doc.width,
+                        pre_scale_mouse_pos.y * scale_delta * (float)mem->doc.height);
+                mem->doc.canvas_pos = math::round_to_vec2i(new_pos);
             }
             else // Center canvas
             {
                 // TODO: Maybe disable centering on zoom out. Needs more usability testing.
-                int32 TopMargin = 53; // TODO: Put common layout constants in struct
-                int32 PosX = math::round_to_int((mem->window.width - (float)mem->doc.width * mem->doc.canvas_zoom) / 2.0f);
-                int32 PosY = TopMargin + math::round_to_int((mem->window.height - TopMargin - (float)mem->doc.height * mem->doc.canvas_zoom) / 2.0f);
-                mem->doc.canvas_pos = Vec2i(PosX, PosY);
+                int32 top_margin = 53; // TODO: Put common layout constants in struct
+                mem->doc.canvas_pos.x = math::round_to_int((mem->window.width - (float)mem->doc.width * mem->doc.canvas_zoom) / 2.0f);
+                mem->doc.canvas_pos.y = top_margin + math::round_to_int((mem->window.height - top_margin - (float)mem->doc.height * mem->doc.canvas_zoom) / 2.0f);
             }
         }
     }
@@ -1747,26 +1750,26 @@ void core::update(PapayaMemory* mem)
             mem->doc.canvas_pos,
             Vec2(mem->doc.width * mem->doc.canvas_zoom, mem->doc.height * mem->doc.canvas_zoom));
 
-        mat4x4 M;
-        mat4x4_ortho(M, 0.f, (float)mem->window.width, (float)mem->window.height, 0.f, -1.f, 1.f);
+        mat4x4 m;
+        mat4x4_ortho(m, 0.f, (float)mem->window.width, (float)mem->window.height, 0.f, -1.f, 1.f);
 
         if (mem->current_tool == PapayaTool_CropRotate) // Rotate around center
         {
-            mat4x4 R;
+            mat4x4 r;
             Vec2 Offset = Vec2(mem->doc.canvas_pos.x + mem->doc.width *
                                mem->doc.canvas_zoom * 0.5f,
                                mem->doc.canvas_pos.y + mem->doc.height *
                                mem->doc.canvas_zoom * 0.5f);
 
-            mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-            mat4x4_rotate_Z(R, M, math::to_radians(90.0f * mem->crop_rotate.base_rotation));
-            mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
-            mat4x4_dup(M, R);
+            mat4x4_translate_in_place(m, Offset.x, Offset.y, 0.f);
+            mat4x4_rotate_Z(r, m, math::to_radians(90.0f * mem->crop_rotate.base_rotation));
+            mat4x4_translate_in_place(r, -Offset.x, -Offset.y, 0.f);
+            mat4x4_dup(m, r);
         }
 
         gl::draw_mesh(mem->meshes[PapayaMesh_AlphaGrid], mem->shaders[PapayaShader_AlphaGrid], true,
             6,
-            UniformType_Matrix4, M,
+            UniformType_Matrix4, m,
             UniformType_Color, mem->colors[PapayaCol_AlphaGrid1],
             UniformType_Color, mem->colors[PapayaCol_AlphaGrid2],
             UniformType_Float, mem->doc.canvas_zoom,
@@ -1780,22 +1783,22 @@ void core::update(PapayaMemory* mem)
             mem->doc.canvas_pos,
             Vec2(mem->doc.width * mem->doc.canvas_zoom, mem->doc.height * mem->doc.canvas_zoom));
 
-        mat4x4 M;
-        mat4x4_ortho(M, 0.f, (float)mem->window.width, (float)mem->window.height, 0.f, -1.f, 1.f);
+        mat4x4 m;
+        mat4x4_ortho(m, 0.f, (float)mem->window.width, (float)mem->window.height, 0.f, -1.f, 1.f);
 
         if (mem->current_tool == PapayaTool_CropRotate) // Rotate around center
         {
-            mat4x4 R;
+            mat4x4 r;
             Vec2 Offset = Vec2(mem->doc.canvas_pos.x + mem->doc.width *
                     mem->doc.canvas_zoom * 0.5f,
                     mem->doc.canvas_pos.y + mem->doc.height *
                     mem->doc.canvas_zoom * 0.5f);
 
-            mat4x4_translate_in_place(M, Offset.x, Offset.y, 0.f);
-            mat4x4_rotate_Z(R, M, mem->crop_rotate.slider_angle + 
+            mat4x4_translate_in_place(m, Offset.x, Offset.y, 0.f);
+            mat4x4_rotate_Z(r, m, mem->crop_rotate.slider_angle + 
                     math::to_radians(90.0f * mem->crop_rotate.base_rotation));
-            mat4x4_translate_in_place(R, -Offset.x, -Offset.y, 0.f);
-            mat4x4_dup(M, R);
+            mat4x4_translate_in_place(r, -Offset.x, -Offset.y, 0.f);
+            mat4x4_dup(m, r);
         }
 
         GLCHK( glBindTexture(GL_TEXTURE_2D, mem->doc.texture_id) );
@@ -1803,7 +1806,7 @@ void core::update(PapayaMemory* mem)
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
         gl::draw_mesh(mem->meshes[PapayaMesh_Canvas], mem->shaders[PapayaShader_ImGui],
             true, 1,
-            UniformType_Matrix4, M);
+            UniformType_Matrix4, m);
 
         if (mem->misc.draw_overlay)
         {
@@ -1957,17 +1960,17 @@ EndOfDoc:
 
     // Last mouse info
     {
-        mem->mouse.last_pos    = mem->mouse.pos;
-        mem->mouse.last_uv     = mem->mouse.uv;
+        mem->mouse.last_pos = mem->mouse.pos;
+        mem->mouse.last_uv = mem->mouse.uv;
         mem->mouse.was_down[0] = ImGui::IsMouseDown(0);
         mem->mouse.was_down[1] = ImGui::IsMouseDown(1);
         mem->mouse.was_down[2] = ImGui::IsMouseDown(2);
     }
 }
 
-void core::render_imgui(ImDrawData* DrawData, void* MemPtr)
+void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
 {
-    PapayaMemory* mem = (PapayaMemory*)MemPtr;
+    PapayaMemory* mem = (PapayaMemory*)mem_ptr;
 
     // Backup GL state
     GLint last_program, last_texture, last_array_buffer, last_element_array_buffer;
@@ -1988,15 +1991,15 @@ void core::render_imgui(ImDrawData* DrawData, void* MemPtr)
     // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
     ImGuiIO& io     = ImGui::GetIO();
     float fb_height = io.DisplaySize.y * io.DisplayFramebufferScale.y;
-    DrawData->ScaleClipRects(io.DisplayFramebufferScale);
+    draw_data->ScaleClipRects(io.DisplayFramebufferScale);
 
     GLCHK( glUseProgram      (mem->shaders[PapayaShader_ImGui].handle) );
     GLCHK( glUniform1i       (mem->shaders[PapayaShader_ImGui].uniforms[1], 0) );
     GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &mem->window.proj_mtx[0][0]) );
 
-    for (int32 n = 0; n < DrawData->CmdListsCount; n++)
+    for (int32 n = 0; n < draw_data->CmdListsCount; n++)
     {
-        const ImDrawList* cmd_list = DrawData->CmdLists[n];
+        const ImDrawList* cmd_list = draw_data->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
 
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_ImGui].vbo_handle) );
