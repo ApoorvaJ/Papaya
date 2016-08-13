@@ -3,6 +3,7 @@
 #include "papaya_platform.h"
 #include "libs/gl.h"
 #include "libs/timer.h"
+#include "libs/easytab.h"
 
 #include "core/crop_rotate.h"
 #include "core/picker.h"
@@ -134,6 +135,7 @@ struct Mouse {
 struct Tablet {
     Vec2i pos;
     float pressure;
+    int32 buttons;
 };
 
 struct Brush {

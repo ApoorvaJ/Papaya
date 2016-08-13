@@ -1915,6 +1915,18 @@ EndOfDoc:
                 ImGui::Text("%d", mem->tablet.pos.y);        ImGui::NextColumn();
                 ImGui::Text("Pressure");                    ImGui::NextColumn();
                 ImGui::Text("%f", mem->tablet.pressure);    ImGui::NextColumn();
+                ImGui::Text("Pen touch");                   ImGui::NextColumn();
+                ImGui::Text((mem->tablet.buttons &
+                            EasyTab_Buttons_Pen_Touch) ?
+                            "1" : "0");                     ImGui::NextColumn();
+                ImGui::Text("Pen lower");                   ImGui::NextColumn();
+                ImGui::Text((mem->tablet.buttons &
+                            EasyTab_Buttons_Pen_Lower) ?
+                            "1" : "0");                     ImGui::NextColumn();
+                ImGui::Text("Pen upper");                   ImGui::NextColumn();
+                ImGui::Text((mem->tablet.buttons &
+                            EasyTab_Buttons_Pen_Upper) ?
+                            "1" : "0");                     ImGui::NextColumn();
 
                 ImGui::Columns(1);
                 ImGui::Separator();

@@ -590,6 +590,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             Mem.Tablet.Pressure = EasyTab->Pressure;
             Mem.Tablet.PosX = EasyTab->PosX;
             Mem.Tablet.PosY = EasyTab->PosY;
+            Mem.Tablet.Buttons = EasyTab->Buttons;
         }
 
         BOOL IsMaximized = IsMaximized(Window);
