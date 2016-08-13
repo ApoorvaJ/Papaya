@@ -20,114 +20,107 @@
 
 // =================================================================================================
 
-global_variable PapayaMemory Mem = {};
-global_variable HDC DeviceContext;
-global_variable HGLRC RenderingContext;
-global_variable RECT WindowsWorkArea; // Needed because WS_POPUP by default maximizes to cover task bar
+global_variable PapayaMemory mem = {};
+global_variable HDC device_context;
+global_variable HGLRC rendering_context;
+global_variable RECT windows_work_area; // Needed because WS_POPUP by default maximizes to cover task bar
 
 // =================================================================================================
 
-void Platform::Print(char* Message)
+void platform::print(char* msg)
 {
-    OutputDebugString((LPCSTR)Message);
+    OutputDebugString((LPCSTR)msg);
 }
 
-void Platform::StartMouseCapture()
+void platform::start_mouse_capture()
 {
     SetCapture(GetActiveWindow());
 }
 
-void Platform::ReleaseMouseCapture()
+void platform::stop_mouse_capture()
 {
     ReleaseCapture();
 }
 
-void Platform::SetMousePosition(int32 x, int32 y)
+void platform::set_mouse_position(int32 x, int32 y)
 {
-    RECT Rect;
-    GetWindowRect(GetActiveWindow(), &Rect);
-    SetCursorPos(Rect.left + x, Rect.top + y);
+    RECT rect;
+    GetWindowRect(GetActiveWindow(), &rect);
+    SetCursorPos(rect.left + x, rect.top + y);
 }
 
-void Platform::SetCursorVisibility(bool Visible)
+void platform::set_cursor_visibility(bool visible)
 {
-    ShowCursor(Visible);
+    ShowCursor(visible);
 }
 
-char* Platform::OpenFileDialog()
+char* platform::open_file_dialog()
 {
-    const int32 FileNameSize = MAX_PATH;
-    char* FileName = (char*)malloc(FileNameSize);
+    const int32 file_name_size = MAX_PATH;
+    char* file_name = (char*)malloc(file_name_size);
 
-    OPENFILENAME DialogParams   = {};
-    DialogParams.lStructSize    = sizeof(OPENFILENAME);
-    DialogParams.hwndOwner      = GetActiveWindow();
-    DialogParams.lpstrFilter    = "JPEG\0*.jpg;*.jpeg\0PNG\0*.png\0";
-    DialogParams.nFilterIndex   = 2;
-    DialogParams.lpstrFile      = FileName;
-    DialogParams.lpstrFile[0]   = '\0';
-    DialogParams.nMaxFile       = FileNameSize;
-    DialogParams.Flags          = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    OPENFILENAME dialog_params = {};
+    dialog_params.lStructSize = sizeof(OPENFILENAME);
+    dialog_params.hwndOwner = GetActiveWindow();
+    dialog_params.lpstrFilter = "JPEG\0*.jpg;*.jpeg\0PNG\0*.png\0";
+    dialog_params.nFilterIndex = 2;
+    dialog_params.lpstrFile = file_name;
+    dialog_params.lpstrFile[0] = '\0';
+    dialog_params.nMaxFile = file_name_size;
+    dialog_params.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-    BOOL Result = GetOpenFileNameA(&DialogParams); // TODO: Unicode support?
+    BOOL result = GetOpenFileNameA(&dialog_params); // TODO: Unicode support?
 
-    if (Result)
-    {
-        return FileName;
-    }
-    else
-    {
-        free(FileName);
+    if (result) {
+        return file_name;
+    } else {
+        free(file_name);
         return 0;
     }
 }
 
-char* Platform::SaveFileDialog()
+char* platform::save_file_dialog()
 {
-    const int32 FileNameSize = MAX_PATH;
-    char* FileName = (char*)malloc(FileNameSize);
+    const int32 file_nameSize = MAX_PATH;
+    char* file_name = (char*)malloc(file_nameSize);
 
-    OPENFILENAME DialogParams = {};
-    DialogParams.lStructSize = sizeof(OPENFILENAME);
-    DialogParams.hwndOwner = GetActiveWindow();
-    DialogParams.lpstrFilter = "PNG\0*.png\0";
-    DialogParams.nFilterIndex = 2;
-    DialogParams.lpstrFile = FileName;
-    DialogParams.lpstrFile[0] = '\0';
-    DialogParams.nMaxFile = FileNameSize;
-    DialogParams.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT;
+    OPENFILENAME dialog_params = {};
+    dialog_params.lStructSize = sizeof(OPENFILENAME);
+    dialog_params.hwndOwner = GetActiveWindow();
+    dialog_params.lpstrFilter = "PNG\0*.png\0";
+    dialog_params.nFilterIndex = 2;
+    dialog_params.lpstrFile = file_name;
+    dialog_params.lpstrFile[0] = '\0';
+    dialog_params.nMaxFile = file_nameSize;
+    dialog_params.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT;
 
-    BOOL Result = GetSaveFileNameA(&DialogParams); // TODO: Unicode support?
+    BOOL result = GetSaveFileNameA(&dialog_params); // TODO: Unicode support?
 
     // Suffix .png if required
     {
-        size_t L = strlen(FileName);
-        if (L <= FileNameSize - 4 &&                                //
-            !((FileName[L-4] == '.') &&                             // Ugh.
-              (FileName[L-3] == 'p' || FileName[L-3] == 'P') &&     // TODO: Write some string utility functions
-              (FileName[L-2] == 'n' || FileName[L-2] == 'N') &&     //       and clean this up.
-              (FileName[L-1] == 'g' || FileName[L-1] == 'G')))      //       Also, support for more than just PNGs.
-        {
-            strcat(FileName, ".png");
+        size_t len = strlen(file_name);
+        if (len <= file_nameSize - 4 &&                                   //
+            !((file_name[len-4] == '.') &&                                // Ugh.
+              (file_name[len-3] == 'p' || file_name[len-3] == 'P') &&     // TODO: Write some string utility functions
+              (file_name[len-2] == 'n' || file_name[len-2] == 'N') &&     //       and clean this up.
+              (file_name[len-1] == 'g' || file_name[len-1] == 'G'))) {    //       Also, support for more than just PNGs.
+            strcat(file_name, ".png");
         }
     }
 
-    char Buffer[256];
-    sprintf(Buffer, "%s\n", FileName);
-    OutputDebugStringA(Buffer);
+    char buffer[256];
+    sprintf(buffer, "%s\n", file_name);
+    OutputDebugStringA(buffer);
 
-    if (Result)
-    {
-        return FileName;
-    }
-    else
-    {
-        free(FileName);
+    if (result) {
+        return file_name;
+    } else {
+        free(file_name);
         return 0;
     }
 }
 
-double Platform::GetMilliseconds()
+double platform::get_milliseconds()
 {
     LARGE_INTEGER ms;
     QueryPerformanceCounter(&ms);
@@ -137,227 +130,194 @@ double Platform::GetMilliseconds()
 
 // =================================================================================================
 
-internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
+internal LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM w_param, LPARAM l_param)
 {
-    if (EasyTab_HandleEvent(Window, Message, LParam, WParam) == EASYTAB_OK)
-    {
+    if (EasyTab_HandleEvent(window, msg, l_param, w_param) == EASYTAB_OK) {
         return true;  // Tablet input
     }
 
-    LRESULT Result = 0;
+    LRESULT result = 0;
     ImGuiIO& io = ImGui::GetIO();
 
-    switch (Message)
-    {
+    switch (msg) {
         // Mouse
-
-        case WM_LBUTTONDOWN:
-        {
+        case WM_LBUTTONDOWN: {
             io.MouseDown[0] = true;
             return true;
         } break;
 
-        case WM_LBUTTONUP:
-        {
+        case WM_LBUTTONUP: {
             io.MouseDown[0] = false;
             return true;
         } break;
 
-        case WM_RBUTTONDOWN:
-        {
+        case WM_RBUTTONDOWN: {
             io.MouseDown[1] = true;
             return true;
         } break;
-        case WM_RBUTTONUP:
-        {
+
+        case WM_RBUTTONUP: {
             io.MouseDown[1] = false;
             return true;
         } break;
 
-        case WM_MBUTTONDOWN:
-        {
+        case WM_MBUTTONDOWN: {
             io.MouseDown[2] = true;
             return true;
         } break;
 
-        case WM_MBUTTONUP:
-        {
+        case WM_MBUTTONUP: {
             io.MouseDown[2] = false;
             return true;
         } break;
 
-        case WM_MOUSEWHEEL:
-        {
-            io.MouseWheel += GET_WHEEL_DELTA_WPARAM(WParam) > 0 ? +1.0f : -1.0f;
+        case WM_MOUSEWHEEL: {
+            io.MouseWheel += GET_WHEEL_DELTA_WPARAM(w_param) > 0 ? +1.0f : -1.0f;
             return true;
         } break;
 
-        case WM_MOUSEMOVE:
-        {
-            TRACKMOUSEEVENT TrackParam = {};
-            TrackParam.dwFlags |= TME_LEAVE;
-            TrackParam.hwndTrack = Window;
-            TrackParam.cbSize = sizeof(TrackParam);
-            TrackMouseEvent(&TrackParam);
-            io.MousePos.x = (signed short)(LParam);
-            io.MousePos.y = (signed short)(LParam >> 16);
+        case WM_MOUSEMOVE: {
+            TRACKMOUSEEVENT track_param = {};
+            track_param.dwFlags |= TME_LEAVE;
+            track_param.hwndTrack = window;
+            track_param.cbSize = sizeof(track_param);
+            TrackMouseEvent(&track_param);
+            io.MousePos.x = (signed short)(l_param);
+            io.MousePos.y = (signed short)(l_param >> 16);
             return true;
         } break;
 
-        case WM_MOUSELEAVE:
-        {
+        case WM_MOUSELEAVE: {
             ImGui::GetIO().MouseDown[0] = false;
             ImGui::GetIO().MouseDown[1] = false;
             ImGui::GetIO().MouseDown[2] = false;
             return true;
         } break;
 
-
         // Keyboard
-
-        case WM_KEYDOWN:
-        {
-            if (WParam < 256)
-                io.KeysDown[WParam] = 1;
+        case WM_KEYDOWN: {
+            if (w_param < 256)
+                io.KeysDown[w_param] = 1;
             return true;
         } break;
 
-        case WM_KEYUP:
-        {
-            if (WParam < 256)
-                io.KeysDown[WParam] = 0;
+        case WM_KEYUP: {
+            if (w_param < 256)
+                io.KeysDown[w_param] = 0;
             return true;
         } break;
 
-        case WM_CHAR:
-        {
+        case WM_CHAR: {
             // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-            if (WParam > 0 && WParam < 0x10000)
-                io.AddInputCharacter((unsigned short)WParam);
+            if (w_param > 0 && w_param < 0x10000)
+                io.AddInputCharacter((unsigned short)w_param);
             return true;
         } break;
 
 
-        // Window handling
-
-        case WM_DESTROY:
-        {
-            Mem.IsRunning = false;
-            if (RenderingContext)
+        // window handling
+        case WM_DESTROY: {
+            mem.is_running = false;
+            if (rendering_context)
             {
                 wglMakeCurrent(NULL, NULL);
-                wglDeleteContext(RenderingContext);
+                wglDeleteContext(rendering_context);
             }
-            ReleaseDC(Window, DeviceContext);
+            ReleaseDC(window, device_context);
             PostQuitMessage(0);
         } break;
 
-        case WM_PAINT:
-        {
-            PAINTSTRUCT Paint;
-            BeginPaint(Window, &Paint);
+        case WM_PAINT: {
+            PAINTSTRUCT paint;
+            BeginPaint(window, &paint);
             // TODO: Redraw here
-            EndPaint(Window, &Paint);
+            EndPaint(window, &paint);
         } break;
 
-        case WM_CLOSE:
-        {
+        case WM_CLOSE: {
             // TODO: Handle this with a message to the user?
-            Mem.IsRunning = false;
+            mem.is_running = false;
         } break;
 
-        case WM_SIZE:
-        {
-            int32 Width, Height;
+        case WM_SIZE: {
+            int32 width, height;
 
-            if (WParam == SIZE_MAXIMIZED)
-            {
-                int32 WorkAreaWidth = WindowsWorkArea.right - WindowsWorkArea.left;
-                int32 WorkAreaHeight = WindowsWorkArea.bottom - WindowsWorkArea.top;
-                SetWindowPos(Window, HWND_TOP, WindowsWorkArea.left, WindowsWorkArea.top, WorkAreaWidth, WorkAreaHeight, NULL);
-                Width = WorkAreaWidth;
-                Height = WorkAreaHeight;
+            if (w_param == SIZE_MAXIMIZED) {
+                int32 work_area_width = windows_work_area.right - windows_work_area.left;
+                int32 work_area_height = windows_work_area.bottom - windows_work_area.top;
+                SetWindowPos(window, HWND_TOP, windows_work_area.left, windows_work_area.top, work_area_width, work_area_height, NULL);
+                width = work_area_width;
+                height = work_area_height;
             }
             else
             {
-                Width = (int32) LOWORD(LParam);
-                Height = (int32) HIWORD(LParam);
+                width = (int32) LOWORD(l_param);
+                height = (int32) HIWORD(l_param);
             }
 
-            Core::OnWindowResize(&Mem, Width, Height);
+            core::resize(&mem, width, height);
 
             // Clear and swap buffers
             {
-                if (Mem.Colors[PapayaCol_Clear])
-                {
-                    glClearBufferfv(GL_COLOR, 0, (GLfloat*)&Mem.Colors[PapayaCol_Clear]);
+                if (mem.colors[PapayaCol_Clear]) {
+                    glClearBufferfv(GL_COLOR, 0, (GLfloat*)&mem.colors[PapayaCol_Clear]);
                 }
-                SwapBuffers(DeviceContext);
+                SwapBuffers(device_context);
             }
         } break;
 
         // WM_NCHITTEST
 
-        case WM_NCHITTEST:
-        {
-            const LONG BorderWidth = 8; //in pixels
-            RECT WindowRect;
-            GetWindowRect(Window, &WindowRect);
-            long X = GET_X_LPARAM(LParam);
-            long Y = GET_Y_LPARAM(LParam);
+        case WM_NCHITTEST: {
+            const LONG border_width = 8; //in pixels
+            RECT window_rect;
+            GetWindowRect(window, &window_rect);
+            long X = GET_X_LPARAM(l_param);
+            long Y = GET_Y_LPARAM(l_param);
 
-            if (!IsMaximized(Window))
+            if (!IsMaximized(window))
             {
                 //bottom left corner
-                if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
-                    Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
-                {
+                if (X >= window_rect.left && X < window_rect.left + border_width &&
+                    Y < window_rect.bottom && Y >= window_rect.bottom - border_width) {
                     return HTBOTTOMLEFT;
                 }
                 //bottom right corner
-                if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
-                    Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
-                {
+                if (X < window_rect.right && X >= window_rect.right - border_width &&
+                    Y < window_rect.bottom && Y >= window_rect.bottom - border_width) {
                     return HTBOTTOMRIGHT;
                 }
                 //top left corner
-                if (X >= WindowRect.left && X < WindowRect.left + BorderWidth &&
-                    Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
-                {
+                if (X >= window_rect.left && X < window_rect.left + border_width &&
+                    Y >= window_rect.top && Y < window_rect.top + border_width) {
                     return HTTOPLEFT;
                 }
                 //top right corner
-                if (X < WindowRect.right && X >= WindowRect.right - BorderWidth &&
-                    Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
-                {
+                if (X < window_rect.right && X >= window_rect.right - border_width &&
+                    Y >= window_rect.top && Y < window_rect.top + border_width) {
                     return HTTOPRIGHT;
                 }
                 //left border
-                if (X >= WindowRect.left && X < WindowRect.left + BorderWidth)
-                {
+                if (X >= window_rect.left && X < window_rect.left + border_width) {
                     return HTLEFT;
                 }
                 //right border
-                if (X < WindowRect.right && X >= WindowRect.right - BorderWidth)
-                {
+                if (X < window_rect.right && X >= window_rect.right - border_width) {
                     return HTRIGHT;
                 }
                 //bottom border
-                if (Y < WindowRect.bottom && Y >= WindowRect.bottom - BorderWidth)
-                {
+                if (Y < window_rect.bottom && Y >= window_rect.bottom - border_width) {
                     return HTBOTTOM;
                 }
                 //top border
-                if (Y >= WindowRect.top && Y < WindowRect.top + BorderWidth)
-                {
+                if (Y >= window_rect.top && Y < window_rect.top + border_width) {
                     return HTTOP;
                 }
             }
 
-            if (Y - WindowRect.top <= (float)Mem.Window.title_bar_height &&
-                X > WindowRect.left + 200.0f &&
-                X < WindowRect.right - (float)(Mem.Window.title_bar_buttons_width + 10))
-            {
+            if (Y - window_rect.top <= (float)mem.window.title_bar_height &&
+                X > window_rect.left + 200.0f &&
+                X < window_rect.right - (float)(mem.window.title_bar_buttons_width + 10)) {
                 return HTCAPTION;
             }
 
@@ -365,129 +325,125 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
             return HTCLIENT;
         } break;
 
-        default:
-        {
-            Result = DefWindowProcA(Window, Message, WParam, LParam);
+        default: {
+            result = DefWindowProcA(window, msg, w_param, l_param);
         } break;
     }
 
-    return(Result);
+    return(result);
 }
 
-int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
+int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line, int show_code)
 {
     // Tick frequency
     {
-        int64 TicksPerSecond;
-        QueryPerformanceFrequency((LARGE_INTEGER *)&TicksPerSecond);
-        Timer::Init(1000.0 / TicksPerSecond);
+        int64 ticks_per_second;
+        QueryPerformanceFrequency((LARGE_INTEGER *)&ticks_per_second);
+        timer::init(1000.0 / ticks_per_second);
     }
 
-    QueryPerformanceCounter((LARGE_INTEGER *)&Mem.Debug.Time);
-    Timer::StartTime(&Mem.Debug.Timers[Timer_Startup]);
+    QueryPerformanceCounter((LARGE_INTEGER *)&mem.profile);
+    timer::start(&mem.profile.timers[Timer_Startup]);
 
-    Mem.IsRunning = true;
+    mem.is_running = true;
 
     // Set current path to this executable's path
     {
-        HMODULE Module = GetModuleHandleA(NULL);
-        char PathString[MAX_PATH];
-        uint32 PathLength = GetModuleFileNameA(Module, PathString, MAX_PATH);
-        if (PathLength != -1)
-        {
-            char *LastSlash = strrchr(PathString, '\\');
-            if (LastSlash) { *LastSlash = '\0'; }
-            SetCurrentDirectoryA(PathString);
+        HMODULE module = GetModuleHandleA(NULL);
+        char path_string[MAX_PATH];
+        uint32 path_len = GetModuleFileNameA(module, path_string, MAX_PATH);
+        if (path_len != -1) {
+            char *last_slash = strrchr(path_string, '\\');
+            if (last_slash) { *last_slash = '\0'; }
+            SetCurrentDirectoryA(path_string);
         }
     }
 
-    HWND Window;
-    // Create Window
+    HWND window;
+    // Create window
     {
-        WNDCLASSA WindowClass = {};
-        WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-        WindowClass.lpfnWndProc = Win32MainWindowCallback;
-        WindowClass.hInstance = Instance;
-        const char* IcoPath = "papaya.ico";
-        WindowClass.hIcon = (HICON)LoadImage(0, IcoPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
-        WindowClass.lpszClassName = "PapayaWindowClass";
+        WNDCLASSA window_class = {};
+        window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+        window_class.lpfnWndProc = Win32MainWindowCallback;
+        window_class.hInstance = instance;
+        const char* ico_path = "papaya.ico";
+        window_class.hIcon = (HICON)LoadImage(0, ico_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
+        window_class.lpszClassName = "PapayaWindowClass";
 
-        if (!RegisterClassA(&WindowClass))
-        {
+        if (!RegisterClassA(&window_class)) {
             // TODO: Log: Register window class failed
             return 0;
         }
 
-        Window =
+        window =
             CreateWindowExA(
             0,                                                          // Extended window style
-            WindowClass.lpszClassName,                                  // Class name,
+            window_class.lpszClassName,                                  // Class name,
             "Papaya",                                                   // Name,
-            WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,    // Window style
+            WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE,    // window style
             CW_USEDEFAULT,                                              // X,
             CW_USEDEFAULT,                                              // Y,
-            CW_USEDEFAULT,                                              // Width,
-            CW_USEDEFAULT,                                              // Height,
-            0,                                                          // Window Parent,
+            CW_USEDEFAULT,                                              // width,
+            CW_USEDEFAULT,                                              // height,
+            0,                                                          // window Parent,
             0,                                                          // Menu,
-            Instance,                                                   // Handle to the instance,
+            instance,                                                   // Handle to the instance,
             0);                                                         // lpParam
 
-        if (!Window)
-        {
+        if (!window) {
             // TODO: Log: Create window failed
             return 0;
         }
 
-        SystemParametersInfo(SPI_GETWORKAREA, 0, &WindowsWorkArea, 0);
+        SystemParametersInfo(SPI_GETWORKAREA, 0, &windows_work_area, 0);
 
 #ifdef PAPAYARELEASE
 
-        SetWindowPos(Window, HWND_TOP, 0, 0, 600, 600, NULL);
-        ShowWindow(Window, SW_MAXIMIZE);
+        SetWindowPos(window, HWND_TOP, 0, 0, 600, 600, NULL);
+        ShowWindow(window, SW_MAXIMIZE);
 #else
-        uint32 ScreenWidth = GetSystemMetrics(SM_CXSCREEN);
-        uint32 ScreenHeight = GetSystemMetrics(SM_CYSCREEN);
+        uint32 screen_width = GetSystemMetrics(SM_CXSCREEN);
+        uint32 screen_height = GetSystemMetrics(SM_CYSCREEN);
 
-        Mem.Window.Width = (uint32)((float)ScreenWidth * 0.5);
-        Mem.Window.Height = (uint32)((float)ScreenHeight * 0.8);
+        mem.window.width = (uint32)((float)screen_width * 0.5);
+        mem.window.height = (uint32)((float)screen_height * 0.8);
 
-        uint32 WindowX = (ScreenWidth - Mem.Window.Width) / 2;
-        uint32 WindowY = (ScreenHeight - Mem.Window.Height) / 2;
+        uint32 window_x = (screen_width - mem.window.width) / 2;
+        uint32 window_y = (screen_height - mem.window.height) / 2;
 
-        SetWindowPos(Window, HWND_TOP, WindowX, WindowY, Mem.Window.Width, Mem.Window.Height, NULL);
+        SetWindowPos(window, HWND_TOP, window_x, window_y, mem.window.width, mem.window.height, NULL);
 #endif // PAPAYARELEASE
 
         // Get window size
         {
-            RECT WindowRect = { 0 };
-            BOOL foo = GetClientRect(Window, &WindowRect);
-            Mem.Window.Width  = WindowRect.right - WindowRect.left;
-            Mem.Window.Height = WindowRect.bottom - WindowRect.top;
+            RECT window_rect = { 0 };
+            BOOL foo = GetClientRect(window, &window_rect);
+            mem.window.width = window_rect.right - window_rect.left;
+            mem.window.height = window_rect.bottom - window_rect.top;
         }
     }
 
     // Initialize OpenGL
     {
-        DeviceContext = GetDC(Window);
+        device_context = GetDC(window);
 
         // Setup pixel format
         {
-            PIXELFORMATDESCRIPTOR PixelFormatDesc = { 0 };
+            PIXELFORMATDESCRIPTOR pixel_format_desc = { 0 };
             // TODO: Program seems to work perfectly fine without all other params except dwFlags.
             //       Can we skip other params for the sake of brevity?
-            PixelFormatDesc.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-            PixelFormatDesc.nVersion = 1;
-            PixelFormatDesc.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-            PixelFormatDesc.iPixelType = PFD_TYPE_RGBA;
-            PixelFormatDesc.cColorBits = 32;
-            PixelFormatDesc.cDepthBits = 32;
-            PixelFormatDesc.dwLayerMask = PFD_MAIN_PLANE;
+            pixel_format_desc.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+            pixel_format_desc.nVersion = 1;
+            pixel_format_desc.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+            pixel_format_desc.iPixelType = PFD_TYPE_RGBA;
+            pixel_format_desc.cColorBits = 32;
+            pixel_format_desc.cDepthBits = 32;
+            pixel_format_desc.dwLayerMask = PFD_MAIN_PLANE;
             //
 
-            int32 PixelFormat = ChoosePixelFormat(DeviceContext, &PixelFormatDesc);
-            if (!PixelFormat) { exit(1); } // TODO: Log: Choose pixel format failed
-            if (!SetPixelFormat(DeviceContext, PixelFormat, &PixelFormatDesc)) { exit(1); } // TODO: Log: Set pixel format failed
+            int32 pixel_format = ChoosePixelFormat(device_context, &pixel_format_desc);
+            if (!pixel_format) { exit(1); } // TODO: Log: Choose pixel format failed
+            if (!SetPixelFormat(device_context, pixel_format, &pixel_format_desc)) { exit(1); } // TODO: Log: Set pixel format failed
         }
 
         // Create rendering context
@@ -495,13 +451,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             // TODO: Create "proper" context?
             //       https://www.opengl.org/wiki/Creating_an_OpenGL_Context_(WGL)#Proper_Context_Creation
 
-            HGLRC RenderingContext = wglCreateContext(DeviceContext);
-            wglMakeCurrent(DeviceContext, RenderingContext);
+            HGLRC rendering_context = wglCreateContext(device_context);
+            wglMakeCurrent(device_context, rendering_context);
 
-            if (!gl::InitAndValidate()) { exit(1); }
+            if (!gl::init()) { exit(1); }
 
-            glGetIntegerv(GL_MAJOR_VERSION, &Mem.System.gl_version[0]);
-            glGetIntegerv(GL_MINOR_VERSION, &Mem.System.gl_version[1]);
+            glGetIntegerv(GL_MAJOR_VERSION, &mem.system.gl_version[0]);
+            glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
         }
 
         // Disable vsync
@@ -509,9 +465,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
     }
 
     // Initialize tablet
-    EasyTab_Load(Window);
+    EasyTab_Load(window);
 
-    Core::Initialize(&Mem);
+    core::init(&mem);
 
     // Initialize ImGui
     {
@@ -534,67 +490,61 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         io.KeyMap[ImGuiKey_Y] = 'Y';
         io.KeyMap[ImGuiKey_Z] = 'Z';
 
-        io.RenderDrawListsFn = Core::RenderImGui;
-        io.ImeWindowHandle = Window;
+        io.RenderDrawListsFn = core::render_imgui;
+        io.ImeWindowHandle = window;
     }
 
+    mem.window.menu_horizontal_offset = 32;
+    mem.window.title_bar_buttons_width = 109;
+    mem.window.title_bar_height = 30;
 
-    Mem.Window.menu_horizontal_offset = 32;
-    Mem.Window.title_bar_buttons_width = 109;
-    Mem.Window.title_bar_height = 30;
-
-    Timer::StopTime(&Mem.Debug.Timers[Timer_Startup]);
+    timer::stop(&mem.profile.timers[Timer_Startup]);
 
     // Handle command line arguments (if present)
-    if (strlen(CommandLine)) 
-    {
+    if (strlen(cmd_line)) {
         // Remove double quotes from string if present
+        char* ptr_read  = cmd_line;
+        char* ptr_write = cmd_line;
+        while (*ptr_read) 
         {
-            char* PtrRead  = CommandLine;
-            char* PtrWrite = CommandLine;
-            while (*PtrRead) 
-            {
-                *PtrWrite = *PtrRead++;
-                if (*PtrWrite != '\"') { PtrWrite++; }
-            }
-            *PtrWrite = '\0';
+            *ptr_write = *ptr_read++;
+            if (*ptr_write != '\"') { ptr_write++; }
         }
-        Core::OpenDocument(CommandLine, &Mem); 
+        *ptr_write = '\0';
+        core::open_doc(cmd_line, &mem); 
     }
 
 #ifdef PAPAYA_DEFAULT_IMAGE
-    Core::OpenDocument(PAPAYA_DEFAULT_IMAGE, &Mem);
+    core::open_doc(PAPAYA_DEFAULT_IMAGE, &mem);
 #endif // PAPAYA_DEFAULT_IMAGE
 
-    while (Mem.IsRunning)
-    {
-        Timer::StartTime(&Mem.Debug.Timers[Timer_Frame]);
+    while (mem.is_running) {
+        timer::start(&mem.profile.timers[Timer_Frame]);
 
         // Windows message handling
         {
-            MSG Message;
-            while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
+            MSG msg;
+            while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
             {
-                if (Message.message == WM_QUIT)
-                {
-                    Mem.IsRunning = false;
+                if (msg.message == WM_QUIT) {
+                    mem.is_running = false;
                 }
 
-                TranslateMessage(&Message);
-                DispatchMessageA(&Message);
+                TranslateMessage(&msg);
+                DispatchMessageA(&msg);
             }
         }
 
         // Tablet input // TODO: Put this in papaya.cpp
         {
-            Mem.Tablet.Pressure = EasyTab->Pressure;
-            Mem.Tablet.PosX = EasyTab->PosX;
-            Mem.Tablet.PosY = EasyTab->PosY;
-            Mem.Tablet.Buttons = EasyTab->Buttons;
+            mem.tablet.pressure = EasyTab->Pressure;
+            mem.tablet.pos.x = EasyTab->PosX;
+            mem.tablet.pos.y = EasyTab->PosY;
+            mem.tablet.buttons = EasyTab->Buttons;
         }
 
-        BOOL IsMaximized = IsMaximized(Window);
-        if (IsIconic(Window)) { goto EndOfFrame; }
+        BOOL is_maximized = IsMaximized(window);
+        if (IsIconic(window)) { goto EndOfFrame; }
 
         // Start new ImGui frame
         {
@@ -602,7 +552,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
             // Setup display size (every frame to accommodate for window resizing)
             RECT rect;
-            GetClientRect(Window, &rect);
+            GetClientRect(window, &rect);
             io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
 
             // Read keyboard modifiers inputs
@@ -613,9 +563,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             // Setup time step
             INT64 current_time;
             QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-            io.DeltaTime = (float)(current_time - Mem.Debug.Time) * 
-                           (float)Timer::GetFrequency() / 1000.0f;
-            Mem.Debug.Time = current_time; // TODO: Move Imgui timers from Debug to their own struct
+            io.DeltaTime = (float)(current_time - mem.profile.current_time) * 
+                           (float)timer::get_freq() / 1000.0f;
+            mem.profile.current_time = current_time; // TODO: Move Imgui timers from Debug to their own struct
 
             // Hide OS mouse cursor if ImGui is drawing it
             //SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
@@ -626,16 +576,16 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         // Title Bar Icon
         {
-            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.menu_horizontal_offset,(float)Mem.Window.title_bar_height));
+            ImGui::SetNextWindowSize(ImVec2((float)mem.window.menu_horizontal_offset,(float)mem.window.title_bar_height));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
-            ImGuiWindowFlags WindowFlags = 0; // TODO: Create a commonly-used set of Window flags, and use them across ImGui windows
-            WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-            WindowFlags |= ImGuiWindowFlags_NoResize;
-            WindowFlags |= ImGuiWindowFlags_NoMove;
-            WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-            WindowFlags |= ImGuiWindowFlags_NoCollapse;
-            WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+            ImGuiWindowFlags flags = 0; // TODO: Create a commonly-used set of window flags, and use them across ImGui windows
+            flags |= ImGuiWindowFlags_NoTitleBar;
+            flags |= ImGuiWindowFlags_NoResize;
+            flags |= ImGuiWindowFlags_NoMove;
+            flags |= ImGuiWindowFlags_NoScrollbar;
+            flags |= ImGuiWindowFlags_NoCollapse;
+            flags |= ImGuiWindowFlags_NoScrollWithMouse;
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
@@ -643,13 +593,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem.Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, mem.colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
-            ImGui::Begin("Title Bar Icon", &bTrue, WindowFlags);
+            ImGui::Begin("Title Bar Icon", &bTrue, flags);
 
             #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
-            ImGui::Image((void*)(intptr_t)Mem.Textures[PapayaTex_UI], ImVec2(28,28), CALCUV(0,200), CALCUV(28,228));
+            ImGui::Image((void*)(intptr_t)mem.textures[PapayaTex_UI], ImVec2(28,28), CALCUV(0,200), CALCUV(28,228));
             #undef CALCUV
 
             ImGui::End();
@@ -660,16 +610,16 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
         // Title Bar Buttons
         {
-            ImGui::SetNextWindowSize(ImVec2((float)Mem.Window.title_bar_buttons_width,24.0f));
-            ImGui::SetNextWindowPos(ImVec2((float)Mem.Window.Width - Mem.Window.title_bar_buttons_width, 0.0f));
+            ImGui::SetNextWindowSize(ImVec2((float)mem.window.title_bar_buttons_width,24.0f));
+            ImGui::SetNextWindowPos(ImVec2((float)mem.window.width - mem.window.title_bar_buttons_width, 0.0f));
 
-            ImGuiWindowFlags WindowFlags = 0;
-            WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-            WindowFlags |= ImGuiWindowFlags_NoResize;
-            WindowFlags |= ImGuiWindowFlags_NoMove;
-            WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-            WindowFlags |= ImGuiWindowFlags_NoCollapse;
-            WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
+            ImGuiWindowFlags flags = 0;
+            flags |= ImGuiWindowFlags_NoTitleBar;
+            flags |= ImGuiWindowFlags_NoResize;
+            flags |= ImGuiWindowFlags_NoMove;
+            flags |= ImGuiWindowFlags_NoScrollbar;
+            flags |= ImGuiWindowFlags_NoCollapse;
+            flags |= ImGuiWindowFlags_NoScrollWithMouse;
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
@@ -677,38 +627,37 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0,0));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
 
-            ImGui::PushStyleColor(ImGuiCol_Button, Mem.Colors[PapayaCol_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Mem.Colors[PapayaCol_ButtonHover]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, Mem.Colors[PapayaCol_ButtonActive]);
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, Mem.Colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_Button, mem.colors[PapayaCol_Transparent]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, mem.colors[PapayaCol_ButtonHover]);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, mem.colors[PapayaCol_ButtonActive]);
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, mem.colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
 
             #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
-            ImGui::Begin("Title Bar Buttons", &bTrue, WindowFlags);
+            ImGui::Begin("Title Bar Buttons", &bTrue, flags);
 
             ImGui::PushID(0);
-            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_UI], ImVec2(34,26), CALCUV(62,200),CALCUV(96,226), 1, ImVec4(0,0,0,0)))
-            {
-                ShowWindow(Window, SW_MINIMIZE);
+            if(ImGui::ImageButton((void*)(size_t)mem.textures[PapayaTex_UI], 
+                                  ImVec2(34,26), CALCUV(62,200), CALCUV(96,226),
+                                  1, ImVec4(0,0,0,0))) {
+                ShowWindow(window, SW_MINIMIZE);
             }
 
-            ImVec2 StartUV = IsMaximized ? CALCUV(28,226) : CALCUV(62,226);
-            ImVec2 EndUV   = IsMaximized ? CALCUV(62,252) : CALCUV(96,252);
+            ImVec2 start_uv = is_maximized ? CALCUV(28,226) : CALCUV(62,226);
+            ImVec2 end_uv = is_maximized ? CALCUV(62,252) : CALCUV(96,252);
 
             ImGui::PopID();
             ImGui::SameLine();
             ImGui::PushID(1);
 
-            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_UI], ImVec2(34,26), StartUV, EndUV, 1, ImVec4(0,0,0,0)))
-            {
-                if (IsMaximized)
-                {
-                    ShowWindow(Window, SW_RESTORE);
-                }
-                else
-                {
-                    ShowWindow(Window, SW_MAXIMIZE);
+            if(ImGui::ImageButton((void*)(size_t)mem.textures[PapayaTex_UI],
+                                  ImVec2(34,26), start_uv, end_uv,
+                                  1, ImVec4(0,0,0,0))) {
+                if (is_maximized) {
+                    ShowWindow(window, SW_RESTORE);
+                } else {
+                    ShowWindow(window, SW_MAXIMIZE);
                 }
             }
 
@@ -716,13 +665,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
             ImGui::SameLine();
             ImGui::PushID(2);
 
-            if(ImGui::ImageButton((void*)(size_t)Mem.Textures[PapayaTex_UI], ImVec2(34,26), CALCUV(28,200),CALCUV(62,226), 1, ImVec4(0,0,0,0)))
-            {
-                SendMessage(Window, WM_CLOSE, 0, 0);
+            if(ImGui::ImageButton((void*)(size_t)mem.textures[PapayaTex_UI],
+                                  ImVec2(34,26), CALCUV(28,200), CALCUV(62,226),
+                                  1, ImVec4(0,0,0,0))) {
+                SendMessage(window, WM_CLOSE, 0, 0);
             }
 
             ImGui::PopID();
-
             ImGui::End();
             #undef CALCUV
 
@@ -731,20 +680,20 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
         }
 
         // ImGui::ShowTestWindow();
-        Core::UpdateAndRender(&Mem);
-        SwapBuffers(DeviceContext);
+        core::update(&mem);
+        SwapBuffers(device_context);
 
     EndOfFrame:
-        Timer::StopTime(&Mem.Debug.Timers[Timer_Frame]);
-        double FrameRate = (Mem.CurrentTool == PapayaTool_Brush && Mem.Mouse.IsDown[0]) ?
+        timer::stop(&mem.profile.timers[Timer_Frame]);
+        double frame_rate = (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
                            500.0 : 60.0;
-        double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - Mem.Debug.Timers[Timer_Frame].ElapsedMs;
-        Mem.Debug.Timers[Timer_Sleep].ElapsedMs = SleepTime;
-        if (SleepTime > 0) { Sleep((int32)SleepTime); }
+        double frame_time = 1000.0 / frame_rate;
+        double sleep_time = frame_time - mem.profile.timers[Timer_Frame].elapsed_ms;
+        mem.profile.timers[Timer_Sleep].elapsed_ms = sleep_time;
+        if (sleep_time > 0) { Sleep((int32)sleep_time); }
     }
 
-    Core::Shutdown(&Mem);
+    core::destroy(&mem);
 
     EasyTab_Unload();
 
