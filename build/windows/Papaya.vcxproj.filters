@@ -64,6 +64,9 @@
     <ClCompile Include="..\..\src\core\crop_rotate.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\undo.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\papaya_core.h">
@@ -121,6 +124,9 @@
       <Filter>Header Files\libs</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\crop_rotate.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\undo.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
