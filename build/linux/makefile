@@ -11,7 +11,8 @@ SRCS=papaya_platform_linux.cpp  \
 	 single_header_libs.cpp     \
 	 crop_rotate.cpp            \
 	 picker.cpp                 \
-	 prefs.cpp 
+	 prefs.cpp                  \
+	 undo.cpp 
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK

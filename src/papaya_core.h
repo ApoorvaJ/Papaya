@@ -8,6 +8,7 @@
 #include "core/crop_rotate.h"
 #include "core/picker.h"
 #include "core/prefs.h"
+#include "core/undo.h"
 
 struct ImDrawData;
 
@@ -61,11 +62,6 @@ enum PapayaShader_ {
     PapayaShader_COUNT
 };
 
-enum PapayaUndoOp_ {
-    PapayaUndoOp_Brush,
-    PapayaUndoOp_COUNT
-};
-
 enum PapayaTool_ {
     PapayaTool_None,
     PapayaTool_Brush,
@@ -83,31 +79,6 @@ struct Layout {
     uint32 menu_horizontal_offset, title_bar_buttons_width, title_bar_height;
     float proj_mtx[4][4];
 };
-
-// =======================================================================================
-// Undo structs
-struct UndoData {
-    // TODO: Convert into a union of structs once multiple types of undo ops are required
-    uint8 op_code; // Stores enum of type PapayaUndoOp_
-    UndoData* prev, *next;
-    Vec2i pos, size; // Position and size of the suffixed data block
-    bool IsSubRect; // If true, then the suffixed image data contains two subrects - before and after the brush
-    Vec2 line_segment_start_uv;
-    // Image data goes after this
-};
-
-struct UndoBuffer {
-    void* start;   // Pointer to beginning of undo buffer memory block // TODO: Change pointer types to int8*?
-    void* top;     // Pointer to the top of the undo stack
-    UndoData* base;    // Pointer to the base of the undo stack
-    UndoData* current; // Pointer to the current location in the undo stack. Goes back and forth during undo-redo.
-    UndoData* last;    // Last undo data block in the buffer. Should be located just before Top.
-    size_t size;  // Size of the undo buffer in bytes
-    size_t count;  // Number of undo ops in buffer
-    size_t current_index; // Index of the current undo data block from the beginning
-};
-
-// =======================================================================================
 
 struct Document {
     int32 width, height;
