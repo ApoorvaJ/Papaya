@@ -16,7 +16,7 @@ SRCS=papaya_platform_linux.cpp  \
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
-CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security
+CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security -g
 
 
 papaya: $(OBJS) img
