@@ -10,8 +10,7 @@
 
 #include "papaya_platform.h"
 
-#include "libs/glew/glew.h"
-#include "libs/glew/glxew.h"
+#include "libs/gl.h"
 #include <X11/Xlib.h>
 #include <GL/glx.h>
 #include "libs/imgui/imgui.h"
@@ -257,9 +256,9 @@ int main(int argc, char **argv)
         glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
 
         // Disable vsync
-        if (glxewIsSupported("GLX_EXT_swap_control")) {
-            glXSwapIntervalEXT(xlib_display, xlib_window, 0);
-        }
+        // if (glxewIsSupported("GLX_EXT_swap_control")) {
+        //     glXSwapIntervalEXT(xlib_display, xlib_window, 0);
+        // }
     }
 
     EasyTab_Load(xlib_display, xlib_window);

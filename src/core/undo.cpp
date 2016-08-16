@@ -1,7 +1,6 @@
 
 #include "undo.h"
 #include "libs/mathlib.h"
-#include "libs/glew/glew.h"
 #include "libs/gl.h"
 #include "papaya_core.h"
 

@@ -1,6 +1,5 @@
 
 #include "crop_rotate.h"
-#include "libs/glew/glew.h"
 #include "libs/gl.h"
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"

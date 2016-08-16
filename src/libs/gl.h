@@ -3,6 +3,11 @@
 #define GL_H
 
 #include "types.h"
+#include <GL/gl.h>
+
+#if defined(__linux__)
+#include <dlfcn.h>
+#endif // __linux__
 
 #define GLCHK(stmt) stmt; gl::check_error(#stmt, __FILE__, __LINE__)
 
@@ -41,34 +46,80 @@ namespace gl {
     uint32 allocate_tex(int32 width, int32 height, uint8* data = 0);
 }
 
+#define PAPAYA_GL_LIST \
+    /* ret, name, params */ \
+	GLE(void,      AttachShader,            GLuint program, GLuint shader) \
+    GLE(void,      BindBuffer,              GLenum target, GLuint buffer) \
+    GLE(void,      BindFramebuffer,         GLenum target, GLuint framebuffer) \
+	GLE(void,      BufferData,              GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage) \
+	GLE(void,      BufferSubData,           GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid * data) \
+	GLE(GLenum,    CheckFramebufferStatus,  GLenum target) \
+	GLE(void,      CompileShader,           GLuint shader) \
+	GLE(GLuint,    CreateProgram,           void) \
+    GLE(GLuint,    CreateShader,            GLenum type) \
+	GLE(void,      DeleteBuffers,           GLsizei n, const GLuint *buffers) \
+	GLE(void,      DeleteFramebuffers,      GLsizei n, const GLuint *framebuffers) \
+	GLE(void,      EnableVertexAttribArray, GLuint index) \
+	GLE(void,      DrawBuffers,             GLsizei n, const GLenum *bufs) \
+	GLE(void,      FramebufferTexture2D,    GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) \
+	GLE(void,      GenBuffers,              GLsizei n, GLuint *buffers) \
+	GLE(void,      GenFramebuffers,         GLsizei n, GLuint * framebuffers) \
+	GLE(GLint,     GetAttribLocation,       GLuint program, const GLchar *name) \
+    GLE(void,      GetShaderInfoLog,        GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
+	GLE(void,      GetShaderiv,             GLuint shader, GLenum pname, GLint *params) \
+	GLE(GLint,     GetUniformLocation,      GLuint program, const GLchar *name) \
+    GLE(void,      LinkProgram,             GLuint program) \
+    GLE(void,      ShaderSource,            GLuint shader, GLsizei count, const GLchar* const *string, const GLint *length) \
+    GLE(void,      Uniform1i,               GLint location, GLint v0) \
+    GLE(void,      Uniform1f,               GLint location, GLfloat v0) \
+    GLE(void,      Uniform2f,               GLint location, GLfloat v0, GLfloat v1) \
+    GLE(void,      Uniform4f,               GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) \
+    GLE(void,      UniformMatrix4fv,        GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) \
+    GLE(void,      UseProgram,              GLuint program) \
+    GLE(void,      VertexAttribPointer,     GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer) \
+    /* end */
+
+#define GLDECL
+
+#define GLE(ret, name, ...) typedef ret GLDECL name##proc(__VA_ARGS__); extern name##proc * gl##name;
+PAPAYA_GL_LIST
+#undef GLE
+
 #endif //GL_H
 
-// =======================================================================================
+// =============================================================================
 
 #ifdef GL_IMPLEMENTATION
+
+#define GLE(ret, name, ...) name##proc * gl##name;
+PAPAYA_GL_LIST
+#undef GLE
 
 // Initializes GLEW and performs capability check
 // Returns true if current context is capable of OpenGL profile required by Papaya.
 // If incapable, returns false and reports which profile/extension is unsupported.
 bool gl::init()
 {
-    // TODO: Reporting via message box or logging before returning false
-    if (glewInit() != GLEW_OK) { 
-        printf("GLEW initialization failed.\n");
-        return false; 
-    }
+#if defined(__linux__)
 
-    // Core profile capability check
-    if (!glewIsSupported("GL_VERSION_2_1")) {
-        printf("This hardware doesn't support OpenGL 2.1.\n");
-        return false; 
-    }
+	void* libGL = dlopen("libGL.so", RTLD_LAZY);
+	if (!libGL) {
+		printf("ERROR: libGL.so couldn't be loaded\n");
+		return false;
+	}
 
-    // Extension capability checks
-    if (!glewIsSupported("GL_ARB_framebuffer_object")) { // OpenGL 1.1
-        printf("This hardware doesn't support OpenGL extension GL_ARB_framebuffer_object.\n");
-        return false;
-    }
+	#define GLE(ret, name, ...) \
+            gl##name = (name##proc *) dlsym(libGL, "gl" #name); \
+            if (!gl##name) { \
+                printf("Function gl" #name " couldn't be loaded\n"); \
+                return false; \
+            }
+	    PAPAYA_GL_LIST
+	#undef GLE
+
+#else // __linux__
+	#error "GL loading for this platform is not implemented yet."
+#endif
 
     return true;
 }

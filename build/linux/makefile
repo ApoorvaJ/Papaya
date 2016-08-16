@@ -1,12 +1,10 @@
 VPATH=../../src                 \
 	  ../../src/core            \
 	  ../../src/libs            \
-	  ../../src/libs/imgui      \
-	  ../../src/libs/glew
+	  ../../src/libs/imgui
 
 SRCS=papaya_platform_linux.cpp  \
 	 papaya_core.cpp            \
-	 glew.cpp                   \
 	 imgui.cpp                  \
 	 single_header_libs.cpp     \
 	 crop_rotate.cpp            \

@@ -13,7 +13,6 @@
 #include "easytab.h"
 #endif // PAPAYA_NO_EASYTAB_SUPPORT
 
-#include "glew/glew.h"
 #include "imgui/imgui.h"
 #define GL_IMPLEMENTATION
 #include "gl.h"
