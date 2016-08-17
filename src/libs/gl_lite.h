@@ -37,8 +37,8 @@ typedef ptrdiff_t GLsizeiptr;
 
 #define PAPAYA_GL_LIST_WIN32 \
     /* ret, name, params */ \
-	GLE(void,      BlendEquation,           GLenum mode) \
-	GLE(void,      ActiveTexture,           GLenum texture) \
+    GLE(void,      BlendEquation,           GLenum mode) \
+    GLE(void,      ActiveTexture,           GLenum texture) \
     /* end */
 
 #endif // _WIN32
@@ -48,27 +48,27 @@ typedef ptrdiff_t GLsizeiptr;
 
 #define PAPAYA_GL_LIST \
     /* ret, name, params */ \
-	GLE(void,      AttachShader,            GLuint program, GLuint shader) \
+    GLE(void,      AttachShader,            GLuint program, GLuint shader) \
     GLE(void,      BindBuffer,              GLenum target, GLuint buffer) \
     GLE(void,      BindFramebuffer,         GLenum target, GLuint framebuffer) \
-	GLE(void,      BufferData,              GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage) \
-	GLE(void,      BufferSubData,           GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid * data) \
-	GLE(GLenum,    CheckFramebufferStatus,  GLenum target) \
-	GLE(void,      ClearBufferfv,           GLenum buffer, GLint drawbuffer, const GLfloat * value) \
-	GLE(void,      CompileShader,           GLuint shader) \
-	GLE(GLuint,    CreateProgram,           void) \
+    GLE(void,      BufferData,              GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage) \
+    GLE(void,      BufferSubData,           GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid * data) \
+    GLE(GLenum,    CheckFramebufferStatus,  GLenum target) \
+    GLE(void,      ClearBufferfv,           GLenum buffer, GLint drawbuffer, const GLfloat * value) \
+    GLE(void,      CompileShader,           GLuint shader) \
+    GLE(GLuint,    CreateProgram,           void) \
     GLE(GLuint,    CreateShader,            GLenum type) \
-	GLE(void,      DeleteBuffers,           GLsizei n, const GLuint *buffers) \
-	GLE(void,      DeleteFramebuffers,      GLsizei n, const GLuint *framebuffers) \
-	GLE(void,      EnableVertexAttribArray, GLuint index) \
-	GLE(void,      DrawBuffers,             GLsizei n, const GLenum *bufs) \
-	GLE(void,      FramebufferTexture2D,    GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) \
-	GLE(void,      GenBuffers,              GLsizei n, GLuint *buffers) \
-	GLE(void,      GenFramebuffers,         GLsizei n, GLuint * framebuffers) \
-	GLE(GLint,     GetAttribLocation,       GLuint program, const GLchar *name) \
+    GLE(void,      DeleteBuffers,           GLsizei n, const GLuint *buffers) \
+    GLE(void,      DeleteFramebuffers,      GLsizei n, const GLuint *framebuffers) \
+    GLE(void,      EnableVertexAttribArray, GLuint index) \
+    GLE(void,      DrawBuffers,             GLsizei n, const GLenum *bufs) \
+    GLE(void,      FramebufferTexture2D,    GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) \
+    GLE(void,      GenBuffers,              GLsizei n, GLuint *buffers) \
+    GLE(void,      GenFramebuffers,         GLsizei n, GLuint * framebuffers) \
+    GLE(GLint,     GetAttribLocation,       GLuint program, const GLchar *name) \
     GLE(void,      GetShaderInfoLog,        GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
-	GLE(void,      GetShaderiv,             GLuint shader, GLenum pname, GLint *params) \
-	GLE(GLint,     GetUniformLocation,      GLuint program, const GLchar *name) \
+    GLE(void,      GetShaderiv,             GLuint shader, GLenum pname, GLint *params) \
+    GLE(GLint,     GetUniformLocation,      GLuint program, const GLchar *name) \
     GLE(void,      LinkProgram,             GLuint program) \
     GLE(void,      ShaderSource,            GLuint shader, GLsizei count, const GLchar* const *string, const GLint *length) \
     GLE(void,      Uniform1i,               GLint location, GLint v0) \
@@ -102,20 +102,20 @@ bool gl_lite_init()
 {
 #if defined(__linux__)
 
-	void* libGL = dlopen("libGL.so", RTLD_LAZY);
-	if (!libGL) {
-		printf("ERROR: libGL.so couldn't be loaded\n");
-		return false;
-	}
+    void* libGL = dlopen("libGL.so", RTLD_LAZY);
+    if (!libGL) {
+        printf("ERROR: libGL.so couldn't be loaded\n");
+        return false;
+    }
 
-	#define GLE(ret, name, ...)                                                    \
+    #define GLE(ret, name, ...)                                                    \
             gl##name = (name##proc *) dlsym(libGL, "gl" #name);                    \
             if (!gl##name) {                                                       \
                 printf("Function gl" #name " couldn't be loaded from libGL.so\n"); \
                 return false;                                                      \
             }
-	    PAPAYA_GL_LIST
-	#undef GLE
+        PAPAYA_GL_LIST
+    #undef GLE
 
 #elif defined(_WIN32)
     HINSTANCE dll = LoadLibraryA("opengl32.dll");
@@ -138,7 +138,7 @@ bool gl_lite_init()
         PAPAYA_GL_LIST_WIN32
     #undef GLE
 #else
-	#error "GL loading for this platform is not implemented yet."
+    #error "GL loading for this platform is not implemented yet."
 #endif
 
     return true;
