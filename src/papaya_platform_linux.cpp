@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <time.h>
+#include <dlfcn.h>
 #ifdef USE_GTK
 #include <gtk/gtk.h>
 #endif
@@ -255,10 +256,17 @@ int main(int argc, char **argv)
         glGetIntegerv(GL_MAJOR_VERSION, &mem.system.gl_version[0]);
         glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
 
-        // Disable vsync
-        // if (glxewIsSupported("GLX_EXT_swap_control")) {
-        //     glXSwapIntervalEXT(xlib_display, xlib_window, 0);
-        // }
+        // Display vsync if possible
+        typedef void SwapIntervalEXTproc(Display*, GLXDrawable, int32);
+        SwapIntervalEXTproc* glXSwapIntervalEXT = 0;
+        void* libGL = dlopen("libGL.so", RTLD_LAZY);
+        if (libGL) {
+            glXSwapIntervalEXT =
+                (SwapIntervalEXTproc*) dlsym(libGL, "glXSwapIntervalEXT");
+            if (glXSwapIntervalEXT) {
+                glXSwapIntervalEXT(xlib_display, xlib_window, 0);
+            }
+        }
     }
 
     EasyTab_Load(xlib_display, xlib_window);
