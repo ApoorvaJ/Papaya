@@ -52,9 +52,6 @@
     <ClCompile Include="..\..\src\libs\single_header_libs.cpp">
       <Filter>Source Files\libs</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libs\glew\glew.cpp">
-      <Filter>Source Files\libs</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libs\imgui\imgui.cpp">
       <Filter>Source Files\libs</Filter>
     </ClCompile>
@@ -84,9 +81,6 @@
     <ClInclude Include="..\..\src\libs\easytab.h">
       <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libs\gl.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\libs\mathlib.h">
       <Filter>Header Files\libs</Filter>
     </ClInclude>
@@ -111,12 +105,6 @@
     <ClInclude Include="..\..\src\libs\types.h">
       <Filter>Header Files\libs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libs\glew\glew.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\glew\wglew.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\libs\imgui\imconfig.h">
       <Filter>Header Files\libs</Filter>
     </ClInclude>
@@ -128,6 +116,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\undo.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\gl_util.h">
+      <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libs\gl_lite.h">
+      <Filter>Header Files\libs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

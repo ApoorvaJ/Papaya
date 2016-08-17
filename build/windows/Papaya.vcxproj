@@ -166,7 +166,6 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     <ClCompile Include="..\..\src\core\picker.cpp" />
     <ClCompile Include="..\..\src\core\prefs.cpp" />
     <ClCompile Include="..\..\src\core\undo.cpp" />
-    <ClCompile Include="..\..\src\libs\glew\glew.cpp" />
     <ClCompile Include="..\..\src\libs\imgui\imgui.cpp" />
     <ClCompile Include="..\..\src\libs\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\..\src\libs\single_header_libs.cpp" />
@@ -179,9 +178,8 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     <ClInclude Include="..\..\src\core\prefs.h" />
     <ClInclude Include="..\..\src\core\undo.h" />
     <ClInclude Include="..\..\src\libs\easytab.h" />
-    <ClInclude Include="..\..\src\libs\gl.h" />
-    <ClInclude Include="..\..\src\libs\glew\glew.h" />
-    <ClInclude Include="..\..\src\libs\glew\wglew.h" />
+    <ClInclude Include="..\..\src\libs\gl_lite.h" />
+    <ClInclude Include="..\..\src\libs\gl_util.h" />
     <ClInclude Include="..\..\src\libs\imgui\imconfig.h" />
     <ClInclude Include="..\..\src\libs\imgui\imgui.h" />
     <ClInclude Include="..\..\src\libs\mathlib.h" />

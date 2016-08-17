@@ -9,8 +9,7 @@
 #include "papaya_platform.h"
 #include "papaya_core.h"
 
-#include "libs/glew/glew.h"
-#include "libs/glew/wglew.h"
+#include "libs/gl_lite.h"
 #include "libs/imgui/imgui.h"
 #include "libs/easytab.h"
 
@@ -454,14 +453,14 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             HGLRC rendering_context = wglCreateContext(device_context);
             wglMakeCurrent(device_context, rendering_context);
 
-            if (!gl::init()) { exit(1); }
+            if (!gl_lite_init()) { exit(1); }
 
             glGetIntegerv(GL_MAJOR_VERSION, &mem.system.gl_version[0]);
             glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
         }
 
         // Disable vsync
-        if (wglewIsSupported("WGL_EXT_swap_control")) { wglSwapIntervalEXT(0); }
+        //if (wglewIsSupported("WGL_EXT_swap_control")) { wglSwapIntervalEXT(0); }
     }
 
     // Initialize tablet

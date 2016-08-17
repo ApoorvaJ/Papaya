@@ -1,7 +1,6 @@
 
 #include "papaya_core.h"
 
-#include "libs/gl.h"
 #include "libs/stb_image.h"
 #include "libs/stb_image_write.h"
 #include "libs/imgui/imgui.h"

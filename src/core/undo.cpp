@@ -1,7 +1,7 @@
 
 #include "undo.h"
 #include "libs/mathlib.h"
-#include "libs/gl.h"
+#include "libs/gl_util.h"
 #include "papaya_core.h"
 
 void undo::init(PapayaMemory* mem)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "papaya_platform.h"
-#include "libs/gl.h"
+#include "libs/gl_util.h"
 #include "libs/timer.h"
 #include "libs/easytab.h"
 

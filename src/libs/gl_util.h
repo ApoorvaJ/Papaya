@@ -1,13 +1,9 @@
 
-#ifndef GL_H
-#define GL_H
+#ifndef GL_UTIL_H
+#define GL_UTIL_H
 
+#include "gl_lite.h"
 #include "types.h"
-#include <GL/gl.h>
-
-#if defined(__linux__)
-#include <dlfcn.h>
-#endif // __linux__
 
 #define GLCHK(stmt) stmt; gl::check_error(#stmt, __FILE__, __LINE__)
 
@@ -33,96 +29,23 @@ struct Mesh {
 };
 
 namespace gl {
-    bool init();
     void check_error(char* expr, char* file, int line);
     void compile_shader(Shader& shader, const char* file, int line,
-                        const char* vert, const char* frag,
-                        int32 attrib_count, int32 uniform_count, ...);
+        const char* vert, const char* frag,
+        int32 attrib_count, int32 uniform_count, ...);
     void set_vertex_attribs(Shader& shader);
     void init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage);
     void transform_quad(Mesh& mesh, Vec2 pos, Vec2 size);
     void draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
-                   int32 uniform_count, ...);
+        int32 uniform_count, ...);
     uint32 allocate_tex(int32 width, int32 height, uint8* data = 0);
 }
 
-#define PAPAYA_GL_LIST \
-    /* ret, name, params */ \
-	GLE(void,      AttachShader,            GLuint program, GLuint shader) \
-    GLE(void,      BindBuffer,              GLenum target, GLuint buffer) \
-    GLE(void,      BindFramebuffer,         GLenum target, GLuint framebuffer) \
-	GLE(void,      BufferData,              GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage) \
-	GLE(void,      BufferSubData,           GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid * data) \
-	GLE(GLenum,    CheckFramebufferStatus,  GLenum target) \
-	GLE(void,      CompileShader,           GLuint shader) \
-	GLE(GLuint,    CreateProgram,           void) \
-    GLE(GLuint,    CreateShader,            GLenum type) \
-	GLE(void,      DeleteBuffers,           GLsizei n, const GLuint *buffers) \
-	GLE(void,      DeleteFramebuffers,      GLsizei n, const GLuint *framebuffers) \
-	GLE(void,      EnableVertexAttribArray, GLuint index) \
-	GLE(void,      DrawBuffers,             GLsizei n, const GLenum *bufs) \
-	GLE(void,      FramebufferTexture2D,    GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) \
-	GLE(void,      GenBuffers,              GLsizei n, GLuint *buffers) \
-	GLE(void,      GenFramebuffers,         GLsizei n, GLuint * framebuffers) \
-	GLE(GLint,     GetAttribLocation,       GLuint program, const GLchar *name) \
-    GLE(void,      GetShaderInfoLog,        GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) \
-	GLE(void,      GetShaderiv,             GLuint shader, GLenum pname, GLint *params) \
-	GLE(GLint,     GetUniformLocation,      GLuint program, const GLchar *name) \
-    GLE(void,      LinkProgram,             GLuint program) \
-    GLE(void,      ShaderSource,            GLuint shader, GLsizei count, const GLchar* const *string, const GLint *length) \
-    GLE(void,      Uniform1i,               GLint location, GLint v0) \
-    GLE(void,      Uniform1f,               GLint location, GLfloat v0) \
-    GLE(void,      Uniform2f,               GLint location, GLfloat v0, GLfloat v1) \
-    GLE(void,      Uniform4f,               GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) \
-    GLE(void,      UniformMatrix4fv,        GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) \
-    GLE(void,      UseProgram,              GLuint program) \
-    GLE(void,      VertexAttribPointer,     GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer) \
-    /* end */
-
-#define GLDECL
-
-#define GLE(ret, name, ...) typedef ret GLDECL name##proc(__VA_ARGS__); extern name##proc * gl##name;
-PAPAYA_GL_LIST
-#undef GLE
-
-#endif //GL_H
+#endif //GL_UTIL_H
 
 // =============================================================================
 
-#ifdef GL_IMPLEMENTATION
-
-#define GLE(ret, name, ...) name##proc * gl##name;
-PAPAYA_GL_LIST
-#undef GLE
-
-// Initializes GLEW and performs capability check
-// Returns true if current context is capable of OpenGL profile required by Papaya.
-// If incapable, returns false and reports which profile/extension is unsupported.
-bool gl::init()
-{
-#if defined(__linux__)
-
-	void* libGL = dlopen("libGL.so", RTLD_LAZY);
-	if (!libGL) {
-		printf("ERROR: libGL.so couldn't be loaded\n");
-		return false;
-	}
-
-	#define GLE(ret, name, ...) \
-            gl##name = (name##proc *) dlsym(libGL, "gl" #name); \
-            if (!gl##name) { \
-                printf("Function gl" #name " couldn't be loaded\n"); \
-                return false; \
-            }
-	    PAPAYA_GL_LIST
-	#undef GLE
-
-#else // __linux__
-	#error "GL loading for this platform is not implemented yet."
-#endif
-
-    return true;
-}
+#ifdef GL_UTIL_IMPLEMENTATION
 
 void gl::check_error(char* expr, char* file, int line)
 {
@@ -144,7 +67,7 @@ void gl::check_error(char* expr, char* file, int line)
 }
 
 internal void print_compilation_errors(uint32 handle, const char* type, const char* file,
-                                       int32 line)
+    int32 line)
 {
     int32 compilation_status;
     GLCHK( glGetShaderiv(handle, GL_COMPILE_STATUS, &compilation_status) );
@@ -160,8 +83,8 @@ internal void print_compilation_errors(uint32 handle, const char* type, const ch
 }
 
 void gl::compile_shader(Shader& shader, const char* file, int line,
-                        const char* vert, const char* frag,
-                        int32 attrib_count, int32 uniform_count, ...)
+    const char* vert, const char* frag,
+    int32 attrib_count, int32 uniform_count, ...)
 {
     shader.handle = GLCHK( glCreateProgram() );
     uint32 vert_handle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
@@ -209,22 +132,22 @@ void gl::set_vertex_attribs(Shader& shader)
         GLCHK( glEnableVertexAttribArray(shader.attribs[i]) );
     }
 
-    #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
+#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
     // Position attribute
     GLCHK( glVertexAttribPointer(shader.attribs[0], 2, GL_FLOAT, GL_FALSE,
-                                 sizeof(ImDrawVert),
-                                 (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
+        sizeof(ImDrawVert),
+        (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
     // UV attribute
     GLCHK( glVertexAttribPointer(shader.attribs[1], 2, GL_FLOAT, GL_FALSE,
-                                 sizeof(ImDrawVert),
-                                 (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
+        sizeof(ImDrawVert),
+        (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
     if (shader.attrib_count > 2) {
         // Color attribute 
         GLCHK( glVertexAttribPointer(shader.attribs[2], 4, GL_UNSIGNED_BYTE,
-                                     GL_TRUE, sizeof(ImDrawVert),
-                                     (GLvoid*)OFFSETOF(ImDrawVert, col)) );
+            GL_TRUE, sizeof(ImDrawVert),
+            (GLvoid*)OFFSETOF(ImDrawVert, col)) );
     }
-    #undef OFFSETOF
+#undef OFFSETOF
 }
 
 void gl::init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage)
@@ -256,7 +179,7 @@ void gl::transform_quad(Mesh& mesh, Vec2 pos, Vec2 size)
 }
 
 void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
-        int32 uniform_count, ...)
+    int32 uniform_count, ...)
 {
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
@@ -278,26 +201,26 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
         va_start(args, uniform_count);
         for (int32 i = 0; i < uniform_count; i++) {
             switch (va_arg(args, int)) {
-                case UniformType_Float: {
-                    GLCHK( glUniform1f(shader.uniforms[i],
-                                       (float)va_arg(args, double)) );
-                } break;
+            case UniformType_Float: {
+                GLCHK( glUniform1f(shader.uniforms[i],
+                    (float)va_arg(args, double)) );
+            } break;
 
-                case UniformType_Matrix4: {
-                    GLCHK( glUniformMatrix4fv(shader.uniforms[i], 1, GL_FALSE,
-                                              va_arg(args, float*)) );
-                } break;
+            case UniformType_Matrix4: {
+                GLCHK( glUniformMatrix4fv(shader.uniforms[i], 1, GL_FALSE,
+                    va_arg(args, float*)) );
+            } break;
 
-                case UniformType_Vec2: {
-                    Vec2 vec = va_arg(args, Vec2);
-                    GLCHK( glUniform2f(shader.uniforms[i], vec.x, vec.y) );
-                } break;
+            case UniformType_Vec2: {
+                Vec2 vec = va_arg(args, Vec2);
+                GLCHK( glUniform2f(shader.uniforms[i], vec.x, vec.y) );
+            } break;
 
-                case UniformType_Color: {
-                    Color col = va_arg(args, Color);
-                    GLCHK( glUniform4f(shader.uniforms[i], col.r, col.g, col.b,
-                                       col.a) );
-                } break;
+            case UniformType_Color: {
+                Color col = va_arg(args, Color);
+                GLCHK( glUniform4f(shader.uniforms[i], col.r, col.g, col.b,
+                    col.a) );
+            } break;
             }
         }
         va_end(args);
@@ -308,7 +231,7 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
 
     GLCHK( glLineWidth(2.0f) );
     GLCHK( glDrawArrays(mesh.is_line_loop ? GL_LINE_LOOP : GL_TRIANGLES, 0,
-                        mesh.index_count) );
+        mesh.index_count) );
 
     // Restore modified state
     GLCHK( glBindBuffer (GL_ARRAY_BUFFER, 0) );
@@ -326,8 +249,8 @@ uint32 gl::allocate_tex(int32 width, int32 height, uint8* data)
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
     GLCHK( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
-                        GL_UNSIGNED_BYTE, data) );
+        GL_UNSIGNED_BYTE, data) );
     return tex;
 }
 
-#endif //GL_IMPLEMENTATION
+#endif //GL_UTIL_IMPLEMENTATION

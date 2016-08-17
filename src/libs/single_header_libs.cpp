@@ -14,8 +14,13 @@
 #endif // PAPAYA_NO_EASYTAB_SUPPORT
 
 #include "imgui/imgui.h"
-#define GL_IMPLEMENTATION
-#include "gl.h"
+
+#define GL_UTIL_IMPLEMENTATION
+#include "gl_util.h"
+
+#define GL_LITE_IMPLEMENTATION
+#include "gl_lite.h"
+
 
 #define MATHLIB_IMPLEMENTATION
 #include "mathlib.h"
