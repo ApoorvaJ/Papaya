@@ -4,6 +4,7 @@
 
 #if defined(__linux__)
 #include <dlfcn.h>
+#define PAPAYA_GL_LIST_WIN32 // Empty define
 #endif // __linux__
 
 #if defined(_WIN32)
@@ -79,9 +80,7 @@ typedef ptrdiff_t GLsizeiptr;
     GLE(void,      VertexAttribPointer,     GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer) \
     /* end */
 
-#define GLDECL __declspec(dllimport)
-
-#define GLE(ret, name, ...) typedef ret GLDECL name##proc(__VA_ARGS__); extern name##proc * gl##name;
+#define GLE(ret, name, ...) typedef ret name##proc(__VA_ARGS__); extern name##proc * gl##name;
 PAPAYA_GL_LIST
 PAPAYA_GL_LIST_WIN32
 #undef GLE

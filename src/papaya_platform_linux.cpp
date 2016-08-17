@@ -11,7 +11,7 @@
 
 #include "papaya_platform.h"
 
-#include "libs/gl.h"
+#include "libs/gl_lite.h"
 #include <X11/Xlib.h>
 #include <GL/glx.h>
 #include "libs/imgui/imgui.h"
@@ -251,7 +251,7 @@ int main(int argc, char **argv)
                                                  0, GL_TRUE);
         glXMakeCurrent(xlib_display, xlib_window, gl_context);
 
-        if (!gl::init()) { exit(1); }
+        if (!gl_lite_init()) { exit(1); }
 
         glGetIntegerv(GL_MAJOR_VERSION, &mem.system.gl_version[0]);
         glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
