@@ -1,4 +1,30 @@
+/*
+    gl_lite.h - Single-header multi-platform OpenGL function loader
 
+    ----------------------------------------------------------------------------
+    USAGE
+    ----------------------------------------------------------------------------
+    1) Add the following lines in exactly one of your cpp files to compile the
+       implementation:
+
+           #define GL_LITE_IMPLEMENTATION
+           #include "gl_lite.h"
+
+    2) In all other files in which you want to use OpenGL functions, simply 
+       include this header file as follows:
+
+           #include "gl_lite.h"
+
+    3) Call gl_lite_init() before using any OpenGL function and after you have a
+       valid OpenGL context.
+
+    ----------------------------------------------------------------------------
+    LICENSE
+    ----------------------------------------------------------------------------
+    This software is in the public domain. Where that dedication is not
+    recognized, you are granted a perpetual, irrevocable license to copy,
+    distribute, and modify this file as you see fit.
+*/
 #ifndef GL_LITE_H
 #define GL_LITE_H
 
@@ -121,6 +147,7 @@ bool gl_lite_init()
     #undef GLE
 
 #elif defined(_WIN32)
+
     HINSTANCE dll = LoadLibraryA("opengl32.dll");
     typedef PROC WINAPI wglGetProcAddressproc(LPCSTR lpszProc);
     if (!dll) {
@@ -132,14 +159,14 @@ bool gl_lite_init()
 
     #define GLE(ret, name, ...)                                                                    \
             gl##name = (name##proc *)wglGetProcAddress("gl" #name);                                \
-            if (!gl##name)                                                                         \
-            {                                                                                      \
+            if (!gl##name) {                                                                       \
                 OutputDebugStringA("Function gl" #name " couldn't be loaded from opengl32.dll\n"); \
                 return false;                                                                      \
             }
         PAPAYA_GL_LIST
         PAPAYA_GL_LIST_WIN32
     #undef GLE
+
 #else
     #error "GL loading for this platform is not implemented yet."
 #endif
