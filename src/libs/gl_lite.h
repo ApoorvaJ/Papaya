@@ -4,6 +4,7 @@
 
 #if defined(__linux__)
 #include <dlfcn.h>
+#define GLDECL // Empty define
 #define PAPAYA_GL_LIST_WIN32 // Empty define
 #endif // __linux__
 
@@ -11,6 +12,8 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#define GLDECL WINAPI
+
 #define GL_ARRAY_BUFFER                   0x8892 // Acquired from:
 #define GL_ARRAY_BUFFER_BINDING           0x8894 // https://www.opengl.org/registry/api/GL/glext.h
 #define GL_COLOR_ATTACHMENT0              0x8CE0
@@ -80,7 +83,7 @@ typedef ptrdiff_t GLsizeiptr;
     GLE(void,      VertexAttribPointer,     GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer) \
     /* end */
 
-#define GLE(ret, name, ...) typedef ret name##proc(__VA_ARGS__); extern name##proc * gl##name;
+#define GLE(ret, name, ...) typedef ret GLDECL name##proc(__VA_ARGS__); extern name##proc * gl##name;
 PAPAYA_GL_LIST
 PAPAYA_GL_LIST_WIN32
 #undef GLE
@@ -119,7 +122,7 @@ bool gl_lite_init()
 
 #elif defined(_WIN32)
     HINSTANCE dll = LoadLibraryA("opengl32.dll");
-    typedef PROC wglGetProcAddressproc(LPCSTR lpszProc);
+    typedef PROC WINAPI wglGetProcAddressproc(LPCSTR lpszProc);
     if (!dll) {
         OutputDebugStringA("opengl32.dll not found.\n");
         return false;
