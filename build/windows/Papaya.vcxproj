@@ -86,7 +86,8 @@
     </Link>
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d</Command>
+echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
+echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -106,7 +107,8 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     </Link>
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d</Command>
+echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
+echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -129,7 +131,8 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     </Link>
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d</Command>
+echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
+echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,7 +155,8 @@ echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
     </Link>
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d</Command>
+echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
+echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
