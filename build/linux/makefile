@@ -17,14 +17,16 @@ LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
 CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security -g
 
 
-papaya: $(OBJS) img
+papaya: $(OBJS) misc_data
 	g++ $(OBJS) $(LIBS) $(CFLAGS) -o $@
 
 $(OBJS): %.o: %.cpp
 	g++ -MMD -MF $@.d $< $(LIBS) $(CFLAGS) -o $@ -c
 
-img: ../../img/ui.png
-	cp -u $^ .
+misc_data: ../../img/ui.png ../../src/shaders
+	cp -ru $^ .
 
 clean:
 	rm -f *.d *.o *.png papaya
+	rm -rf shaders
+

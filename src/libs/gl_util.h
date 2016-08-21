@@ -30,14 +30,13 @@ struct Mesh {
 
 namespace gl {
     void check_error(char* expr, char* file, int line);
-    void compile_shader(Shader& shader, const char* file, int line,
-        const char* vert, const char* frag,
+    char* read_file(char* file_name);
+    void compile_shader(Shader& shader, char* vert_file, char* frag_file,
         int32 attrib_count, int32 uniform_count, ...);
     void set_vertex_attribs(Shader& shader);
     void init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage);
     void transform_quad(Mesh& mesh, Vec2 pos, Vec2 size);
-    void draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
-        int32 uniform_count, ...);
+    void draw_mesh(Mesh& mesh, Shader& shader, bool scissor, int32 uniform_count, ...);
     uint32 allocate_tex(int32 width, int32 height, uint8* data = 0);
 }
 
@@ -46,6 +45,9 @@ namespace gl {
 // =============================================================================
 
 #ifdef GL_UTIL_IMPLEMENTATION
+
+#include <stdio.h>
+#include <stdlib.h>
 
 void gl::check_error(char* expr, char* file, int line)
 {
@@ -66,13 +68,30 @@ void gl::check_error(char* expr, char* file, int line)
     printf("    --- Expression: %s\n", expr);
 }
 
-internal void print_compilation_errors(uint32 handle, const char* type, const char* file,
-    int32 line)
+char* gl::read_file(char* file_name)
+{
+    char path[512];
+    snprintf(path, sizeof(path), "shaders/%s", file_name);
+    FILE* f = fopen(path, "rb");
+    fseek(f, 0, SEEK_END);
+    size_t f_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char* buf = (char*)malloc(f_size + 1);
+    fread(buf, f_size, 1, f);
+    fclose(f);
+
+    buf[f_size] = 0;
+    return buf;
+}
+
+
+internal void print_compilation_errors(uint32 handle, char* glsl_file)
 {
     int32 compilation_status;
     GLCHK( glGetShaderiv(handle, GL_COMPILE_STATUS, &compilation_status) );
     if (compilation_status != GL_TRUE) {
-        printf("Compilation error in %s shader in %s:%d\n", type, file, line);
+        printf("Compilation error in %s\n", glsl_file);
 
         char log[4096];
         int32 out_length;
@@ -82,23 +101,28 @@ internal void print_compilation_errors(uint32 handle, const char* type, const ch
     }
 }
 
-void gl::compile_shader(Shader& shader, const char* file, int line,
-    const char* vert, const char* frag,
+void gl::compile_shader(Shader& shader, char* vert_file, char* frag_file,
     int32 attrib_count, int32 uniform_count, ...)
 {
     shader.handle = GLCHK( glCreateProgram() );
     uint32 vert_handle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
     uint32 frag_handle = GLCHK( glCreateShader(GL_FRAGMENT_SHADER) );
 
-    GLCHK( glShaderSource (vert_handle, 1, &vert, 0) );
-    GLCHK( glShaderSource (frag_handle, 1, &frag, 0) );
+    {
+        char* vert = read_file(vert_file);
+        char* frag = read_file(frag_file);
+        GLCHK( glShaderSource (vert_handle, 1, &vert, 0) );
+        GLCHK( glShaderSource (frag_handle, 1, &frag, 0) );
+        free(vert);
+        free(frag);
+    }
     GLCHK( glCompileShader(vert_handle) );
     GLCHK( glCompileShader(frag_handle) );
     GLCHK( glAttachShader (shader.handle, vert_handle) );
     GLCHK( glAttachShader (shader.handle, frag_handle) );
 
-    print_compilation_errors(vert_handle, "vertex"  , file, line);
-    print_compilation_errors(frag_handle, "fragment", file, line);
+    print_compilation_errors(vert_handle, vert_file);
+    print_compilation_errors(frag_handle, frag_file);
 
     GLCHK( glLinkProgram(shader.handle) ); // TODO: Print linking errors
 
@@ -111,7 +135,7 @@ void gl::compile_shader(Shader& shader, const char* file, int line,
         shader.attribs[i] = GLCHK( glGetAttribLocation(shader.handle, name) );
 
         if (shader.attribs[i] == -1) {
-            printf("Attribute %s not found in shader at %s:%d\n", name, file, line);
+            printf("Attribute %s not found in %s\n", name, frag_file);
         }
     }
 
@@ -120,7 +144,7 @@ void gl::compile_shader(Shader& shader, const char* file, int line,
         shader.uniforms[i] = GLCHK( glGetUniformLocation(shader.handle, name) );
 
         if (shader.uniforms[i] == -1) {
-            printf("Uniform %s not found in shader at %s:%d\n", name, file, line);
+            printf("Uniform %s not found in shader at %s\n", name, frag_file);
         }
     }
     va_end(args);

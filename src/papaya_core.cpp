@@ -155,7 +155,7 @@ void core::init(PapayaMemory* mem)
     {
         mem->doc.width = mem->doc.height = 512;
 
-        mem->current_tool = PapayaTool_CropRotate;
+        mem->current_tool = PapayaTool_Brush;
 
         mem->brush.diameter = 100;
         mem->brush.max_diameter = 9999;
@@ -215,432 +215,101 @@ void core::init(PapayaMemory* mem)
         }
     }
 
-    const char* vert;
-    // Vertex shader
-    {
-        vert =
-            "   #version 120                                        \n"
-            "   uniform mat4 ProjMtx;                               \n" // Uniforms[0]
-            "                                                       \n"
-            "   attribute vec2 Position;                            \n" // Attributes[0]
-            "   attribute vec2 UV;                                  \n" // Attributes[1]
-            "   attribute vec4 Color;                               \n" // Attributes[2]
-            "                                                       \n"
-            "   varying vec2 Frag_UV;                               \n"
-            "   varying vec4 Frag_Color;                            \n"
-            "                                                       \n"
-            "   void main()                                         \n"
-            "   {                                                   \n"
-            "       Frag_UV = UV;                                   \n"
-            "       Frag_Color = Color;                             \n"
-            "       gl_Position = ProjMtx * vec4(Position.xy,0,1);  \n"
-            "   }                                                   \n";
-    }
-
     // Brush shader
-    {
-        const char* frag =
-            "   #version 120                                                    \n"
-            "                                                                   \n"
-            "   #define M_PI 3.1415926535897932384626433832795                  \n"
-            "                                                                   \n"
-            "   uniform sampler2D Texture;                                      \n" // Uniforms[1]
-            "   uniform vec2 Pos;                                               \n" // Uniforms[2]
-            "   uniform vec2 LastPos;                                           \n" // Uniforms[3]
-            "   uniform float Radius;                                           \n" // Uniforms[4]
-            "   uniform vec4 BrushColor;                                        \n" // Uniforms[5]
-            "   uniform float Hardness;                                         \n" // Uniforms[6]
-            "   uniform float InvAspect;                                        \n" // Uniforms[7]
-            "                                                                   \n"
-            "   varying vec2 Frag_UV;                                           \n"
-            "                                                                   \n"
-            "   bool isnan( float val )                                         \n"
-            "   {                                                               \n"
-            "       return ( val < 0.0 || 0.0 < val || val == 0.0 ) ?           \n"
-            "       false : true;                                               \n"
-            "   }                                                               \n"
-            "                                                                   \n"
-            "   void line(vec2 p1, vec2 p2, vec2 uv, float radius, 	            \n"
-            "             out float distLine, out float distp1)                 \n"
-            "   {                                                               \n"
-            "       if (distance(p1,p2) <= 0.0)                                 \n"
-            "       {                                                           \n"
-            "           distLine = distance(uv, p1);                            \n"
-            "           distp1 = 0.0;                                           \n"
-            "           return;                                                 \n"
-            "       }                                                           \n"
-            "                                                                   \n"
-            "       float a = abs(distance(p1, uv));                            \n"
-            "       float b = abs(distance(p2, uv));                            \n"
-            "       float c = abs(distance(p1, p2));                            \n"
-            "       float d = sqrt(c*c + radius*radius);                        \n"
-            "                                                                   \n"
-            "       vec2 a1 = normalize(uv - p1);                               \n"
-            "       vec2 b1 = normalize(uv - p2);                               \n"
-            "       vec2 c1 = normalize(p2 - p1);                               \n"
-            "       if (dot(a1,c1) < 0.0)                                       \n"
-            "       {                                                           \n"
-            "           distLine = a;                                           \n"
-            "           distp1 = 0.0;                                           \n"
-            "           return;                                                 \n"
-            "       }                                                           \n"
-            "                                                                   \n"
-            "       if (dot(b1,c1) > 0.0)                                       \n"
-            "       {                                                           \n"
-            "           distLine = b;                                           \n"
-            "           distp1 = 1.0;                                           \n"
-            "           return;                                                 \n"
-            "       }                                                           \n"
-            "                                                                   \n"
-            "       float p = (a + b + c) * 0.5;                                \n"
-            "       float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );      \n"
-            "                                                                   \n"
-            "       if (isnan(h))                                               \n"
-            "       {                                                           \n"
-            "           distLine = 0.0;                                         \n"
-            "           distp1 = a / c;                                         \n"
-            "       }                                                           \n"
-            "       else                                                        \n"
-            "       {                                                           \n"
-            "           distLine = h;                                           \n"
-            "           distp1 = sqrt(a*a - h*h) / c;                           \n"
-            "       }                                                           \n"
-            "   }                                                               \n"
-            "                                                                   \n"
-            "   void main()                                                     \n"
-            "   {                                                               \n"
-            "       vec4 t = texture2D(Texture, Frag_UV.st);                    \n"
-            "                                                                   \n"
-            "       float distLine, distp1;                                     \n"
-            "       vec2 aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);     \n"
-            "       line(LastPos, Pos, aspectUV, Radius, distLine, distp1);     \n"
-            "                                                                   \n"
-            "       float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));      \n"
-            "       float Period = M_PI * Scale;                                \n"
-            "       float Phase = (1.0 - Scale * 2.0 * Radius) * M_PI * 0.5;    \n"
-            "       float Alpha = cos((Period * distLine) + Phase);             \n"
-            "       if (distLine < Radius - (0.5/Scale)) Alpha = 1.0;           \n"
-            "       if (distLine > Radius) Alpha = 0.0;                         \n"
-            "                                                                   \n"
-            "       float FinalAlpha = max(t.a, Alpha * BrushColor.a);          \n"
-            "                                                                   \n"
-            "       gl_FragColor = vec4(BrushColor.r,                           \n"
-            "                           BrushColor.g,                           \n"
-            "                           BrushColor.b,                           \n"
-            "                           clamp(FinalAlpha,0.0,1.0));             \n" // TODO: Needs improvement. Self-intersection corners look weird.
-            "   }                                                               \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_Brush], __FILE__, __LINE__,
-            vert, frag, 2, 8,
+    gl::compile_shader(mem->shaders[PapayaShader_Brush],
+            "vertex_default.glsl", "brush_stroke.glsl", 2, 8,
             "Position", "UV",
-            "ProjMtx", "Texture", "Pos", "LastPos", "Radius", "BrushColor", "Hardness", "InvAspect");
+            "ProjMtx", "Texture", "Pos", "LastPos", "Radius", "BrushColor",
+            "Hardness", "InvAspect");
 
-    }
 
     // Brush cursor shader
-    {
-        const char* frag =
-            "   #version 120                                                                \n"
-            "                                                                               \n"
-            "   #define M_PI 3.1415926535897932384626433832795                              \n"
-            "                                                                               \n"
-            "   uniform vec4 BrushColor;                                                    \n" // Uniforms[1]
-            "   uniform float Hardness;                                                     \n" // Uniforms[2]
-            "   uniform float PixelDiameter;                                                \n" // Uniforms[3]
-            "                                                                               \n"
-            "   varying vec2 Frag_UV;                                                       \n"
-            "                                                                               \n"
-            "                                                                               \n"
-            "   void main()                                                                 \n"
-            "   {                                                                           \n"
-            "       float Scale = 1.0 / (1.0 - Hardness);                                   \n"
-            "       float Period = M_PI * Scale;                                            \n"
-            "       float Phase = (1.0 - Scale) * M_PI * 0.5;                               \n"
-            "       float Dist = distance(Frag_UV,vec2(0.5,0.5));                           \n"
-            "       float Alpha = cos((Period * Dist) + Phase);                             \n"
-            "       if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;                              \n"
-            "       else if (Dist > 0.5)          Alpha = 0.0;                              \n"
-            "       float BorderThickness = 1.0 / PixelDiameter;                            \n"
-            "       gl_FragColor = (Dist > 0.5 - BorderThickness && Dist < 0.5) ?           \n"
-            "       vec4(0.0,0.0,0.0,1.0) :                                                 \n"
-            "       vec4(BrushColor.r, BrushColor.g, BrushColor.b, 	Alpha * BrushColor.a);  \n"
-            "   }                                                                           \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_BrushCursor], __FILE__, __LINE__,
-            vert, frag, 2, 4,
+    gl::compile_shader(mem->shaders[PapayaShader_BrushCursor],
+            "vertex_default.glsl", "brush_cursor.glsl", 2, 4,
             "Position", "UV",
             "ProjMtx", "BrushColor", "Hardness", "PixelDiameter");
 
-        gl::init_quad(mem->meshes[PapayaMesh_BrushCursor],
+    gl::init_quad(mem->meshes[PapayaMesh_BrushCursor],
             Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
-    }
 
     // Eyedropper cursor shader
-    {
-        const char* frag =
-            "   #version 120                                                                \n"
-            "                                                                               \n"
-            "   uniform vec4 Color1;                                                        \n" // Uniforms[1]
-            "   uniform vec4 Color2;                                                        \n" // Uniforms[2]
-            "                                                                               \n"
-            "   varying vec2 Frag_UV;                                                       \n"
-            "                                                                               \n"
-            "   void main()                                                                 \n"
-            "   {                                                                           \n"
-            "       float d = length(vec2(0.5,0.5) - Frag_UV);                              \n"
-            "       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);                    \n"
-            "       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);                       \n"
-            "       gl_FragColor = (Frag_UV.y < 0.5) ? Color1 : Color2;                     \n"
-            "       gl_FragColor.a = t;                                                     \n"
-            "   }                                                                           \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_EyeDropperCursor], __FILE__, __LINE__,
-            vert, frag, 2, 3,
+    gl::compile_shader(mem->shaders[PapayaShader_EyeDropperCursor],
+            "vertex_default.glsl", "eyedropper_cursor.glsl", 2, 3,
             "Position", "UV",
             "ProjMtx", "Color1", "Color2");
 
-        gl::init_quad(mem->meshes[PapayaMesh_EyeDropperCursor],
+    gl::init_quad(mem->meshes[PapayaMesh_EyeDropperCursor],
             Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
-    }
 
     // Picker saturation-value shader
-    {
-        const char* frag =
-            "   #version 120                                                            \n"
-            "                                                                           \n"
-            "   uniform float Hue;                                                      \n" // Uniforms[1]
-            "   uniform vec2 Cursor;                                                    \n" // Uniforms[2]
-            "   uniform float Thickness = 1.0 / 256.0;                                  \n"
-            "   uniform float Radius = 0.0075;                                          \n"
-            "                                                                           \n"
-            "   varying  vec2 Frag_UV;                                                  \n"
-            "                                                                           \n"
-            "   vec3 hsv2rgb(vec3 c)                                                    \n" // Source: Fast branchless RGB to HSV conversion in GLSL
-            "   {                                                                       \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
-            "       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
-            "       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);                   \n"
-            "       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);           \n"
-            "   }                                                                       \n"
-            "                                                                           \n"
-            "   void main()                                                             \n"
-            "   {                                                                       \n"
-            "       vec3 RGB = hsv2rgb(vec3(Hue, Frag_UV.x, 1.0 - Frag_UV.y));          \n"
-            "       vec2 CursorInv = vec2(Cursor.x, 1.0 - Cursor.y);                    \n"
-            "       float Dist = distance(Frag_UV, CursorInv);                          \n"
-            "                                                                           \n"
-            "       if (Dist > Radius && Dist < Radius + Thickness)                     \n"
-            "       {                                                                   \n"
-            "           float a = (CursorInv.x < 0.4 && CursorInv.y > 0.6) ? 0.0 : 1.0; \n"
-            "           gl_FragColor = vec4(a, a, a, 1.0);                              \n"
-            "       }                                                                   \n"
-            "       else                                                                \n"
-            "       {                                                                   \n"
-            "           gl_FragColor = vec4(RGB.x, RGB.y, RGB.z, 1.0);                  \n"
-            "       }                                                                   \n"
-            "   }                                                                       \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_PickerSVBox], __FILE__, __LINE__,
-            vert, frag, 2, 3,
+    gl::compile_shader(mem->shaders[PapayaShader_PickerSVBox],
+            "vertex_default.glsl", "picker_sv.glsl", 2, 3,
             "Position", "UV",
             "ProjMtx", "Hue", "Cursor");
 
-        gl::init_quad(mem->meshes[PapayaMesh_PickerSVBox],
-                     mem->picker.pos + mem->picker.sv_box_pos,
-                     mem->picker.sv_box_size,
-                     GL_STATIC_DRAW);
-    }
+    gl::init_quad(mem->meshes[PapayaMesh_PickerSVBox],
+            mem->picker.pos + mem->picker.sv_box_pos,
+            mem->picker.sv_box_size,
+            GL_STATIC_DRAW);
 
     // Picker hue shader
-    {
-        const char* frag =
-            "   #version 120                                                    \n"
-            "                                                                   \n"
-            "   uniform float Cursor;                                           \n" // Uniforms[1]
-            "                                                                   \n"
-            "   varying  vec2 Frag_UV;                                          \n"
-            "                                                                   \n"
-            "   vec3 hsv2rgb(vec3 c)                                            \n" // Source: Fast branchless RGB to HSV conversion in GLSL
-            "   {                                                               \n" // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
-            "       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);              \n"
-            "       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);           \n"
-            "       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);   \n"
-            "   }                                                               \n"
-            "                                                                   \n"
-            "   void main()                                                     \n"
-            "   {                                                               \n"
-            "       vec4 Hue = vec4(hsv2rgb(vec3(1.0-Frag_UV.y, 1.0, 1.0))      \n"
-            "                  .xyz,1.0);                                       \n"
-            "       if (abs(0.5 - Frag_UV.x) > 0.3333)                          \n"
-            "       {                                                           \n"
-            "           gl_FragColor = vec4(0.36,0.36,0.37,                     \n"
-            "                       float(abs(1.0-Frag_UV.y-Cursor) < 0.0039)); \n"
-            "       }                                                           \n"
-            "       else                                                        \n"
-            "           gl_FragColor = Hue;                                     \n"
-            "   }                                                               \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_PickerHStrip], __FILE__, __LINE__,
-            vert, frag, 2, 2,
+    gl::compile_shader(mem->shaders[PapayaShader_PickerHStrip],
+            "vertex_default.glsl", "picker_h.glsl", 2, 2,
             "Position", "UV",
             "ProjMtx", "Cursor");
 
-        gl::init_quad(mem->meshes[PapayaMesh_PickerHStrip],
-                     mem->picker.pos + mem->picker.hue_strip_pos,
-                     mem->picker.hue_strip_size,
-                     GL_STATIC_DRAW);
-    }
+    gl::init_quad(mem->meshes[PapayaMesh_PickerHStrip],
+            mem->picker.pos + mem->picker.hue_strip_pos,
+            mem->picker.hue_strip_size,
+            GL_STATIC_DRAW);
 
-    // Imaze size preview shader
-    {
-        const char* frag =
-            "   #version 120                                                    \n"
-            "                                                                   \n"
-            "   uniform vec4  Color1;                                           \n" // Uniforms[1]
-            "   uniform vec4  Color2;                                           \n" // Uniforms[2]
-            "   uniform float width;                                            \n" // Uniforms[3]
-            "   uniform float height;                                           \n" // Uniforms[4]
-            "                                                                   \n"
-            "   varying  vec2 Frag_UV;                                          \n"
-            "                                                                   \n"
-            "   void main()                                                     \n"
-            "   {                                                               \n"
-            "       float d = mod(Frag_UV.x * width + Frag_UV.y * height, 150); \n"
-            "       if (d < 75)                                                 \n"
-            "           gl_FragColor = Color1;                                  \n"
-            "       else                                                        \n"
-            "           gl_FragColor = Color2;                                  \n"
-            "   }                                                               \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_ImageSizePreview], __FILE__, __LINE__,
-            vert, frag, 2, 5,
+    // New image preview shader
+    gl::compile_shader(mem->shaders[PapayaShader_ImageSizePreview],
+            "vertex_default.glsl", "new_image_preview.glsl", 2, 5,
             "Position", "UV",
             "ProjMtx", "Color1", "Color2", "width", "height");
 
-        gl::init_quad(mem->meshes[PapayaMesh_ImageSizePreview],
+    gl::init_quad(mem->meshes[PapayaMesh_ImageSizePreview],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
-    }
 
     // Alpha grid shader
-    {
-        const char* frag =
-            "   #version 120                                                    \n"
-            "                                                                   \n"
-            "   uniform vec4  Color1;                                           \n" // Uniforms[1]
-            "   uniform vec4  Color2;                                           \n" // Uniforms[2]
-            "   uniform float Zoom;                                             \n" // Uniforms[3]
-            "   uniform float InvAspect;                                        \n" // Uniforms[4]
-            "   uniform float MaxDim;                                           \n" // Uniforms[5]
-            "                                                                   \n"
-            "   varying  vec2 Frag_UV;                                          \n"
-            "                                                                   \n"
-            "   void main()                                                     \n"
-            "   {                                                               \n"
-            "       vec2 aspectUV;                                              \n"
-            "       if (InvAspect < 1.0)                                        \n"
-            "           aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);      \n"
-            "       else                                                        \n"
-            "           aspectUV = vec2(Frag_UV.x / InvAspect, Frag_UV.y);      \n"
-            "       vec2 uv = floor(aspectUV.xy * 0.1 * MaxDim * Zoom);         \n"
-            "       float a = mod(uv.x + uv.y, 2.0);                            \n"
-            "       gl_FragColor = mix(Color1, Color2, a);                      \n"
-            "   }                                                               \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_AlphaGrid], __FILE__, __LINE__,
-            vert, frag, 2, 6,
+    gl::compile_shader(mem->shaders[PapayaShader_AlphaGrid],
+            "vertex_default.glsl", "alpha_grid.glsl", 2, 6,
             "Position", "UV",
             "ProjMtx", "Color1", "Color2", "Zoom", "InvAspect", "MaxDim");
 
-        gl::init_quad(mem->meshes[PapayaMesh_AlphaGrid],
+    gl::init_quad(mem->meshes[PapayaMesh_AlphaGrid],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
-    }
 
     // PreMultiply Alpha shader
-    {
-        const char* frag =
-            "   #version 120                                                        \n"
-            "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
-            "                                                                       \n"
-            "   varying vec2 Frag_UV;                                               \n"
-            "   varying vec4 Frag_Color;                                            \n"
-            "                                                                       \n"
-            "   void main()                                                         \n"
-            "   {                                                                   \n"
-            "       vec4 col = Frag_Color * texture2D( Texture, Frag_UV.st);        \n"
-            "       gl_FragColor = vec4(col.r, col.g, col.b, 1.0) * col.a;          \n"
-            "   }                                                                   \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_PreMultiplyAlpha], __FILE__, __LINE__,
-            vert, frag, 3, 2,
+    gl::compile_shader(mem->shaders[PapayaShader_PreMultiplyAlpha],
+            "vertex_default.glsl", "alpha_premultiply.glsl", 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
-    }
 
     // DeMultiply Alpha shader
-    {
-        const char* frag =
-            "   #version 120                                                        \n"
-            "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
-            "                                                                       \n"
-            "   varying vec2 Frag_UV;                                               \n"
-            "   varying vec4 Frag_Color;                                            \n"
-            "                                                                       \n"
-            "   void main()                                                         \n"
-            "   {                                                                   \n"
-            "       vec4 col = Frag_Color * texture2D( Texture, Frag_UV.st);        \n"
-            "       gl_FragColor = vec4(col.rgb/col.a, col.a);                      \n"
-            "   }                                                                   \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_DeMultiplyAlpha], __FILE__, __LINE__,
-            vert, frag, 3, 2,
+    gl::compile_shader(mem->shaders[PapayaShader_DeMultiplyAlpha],
+            "vertex_default.glsl", "alpha_demultiply.glsl", 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
-    }
 
     // ImGui default shader
-    {
-        const char* frag =
-            "   #version 120                                                        \n"
-            "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
-            "                                                                       \n"
-            "   varying vec2 Frag_UV;                                               \n"
-            "   varying vec4 Frag_Color;                                            \n"
-            "                                                                       \n"
-            "   void main()                                                         \n"
-            "   {                                                                   \n"
-            "       gl_FragColor = Frag_Color * texture2D( Texture, Frag_UV.st);    \n"
-            "   }                                                                   \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_ImGui], __FILE__, __LINE__,
-            vert, frag, 3, 2,
+    gl::compile_shader(mem->shaders[PapayaShader_ImGui],
+            "vertex_default.glsl", "fragment_default.glsl", 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
 
-        gl::init_quad(mem->meshes[PapayaMesh_Canvas],
+    gl::init_quad(mem->meshes[PapayaMesh_Canvas],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
-    }
 
     // Unlit shader
-    {
-        const char* frag =
-            "   #version 120                                                        \n"
-            "   uniform sampler2D Texture;                                          \n" // Uniforms[1]
-            "                                                                       \n"
-            "   varying vec2 Frag_UV;                                               \n"
-            "   varying vec4 Frag_Color;                                            \n"
-            "                                                                       \n"
-            "   void main()                                                         \n"
-            "   {                                                                   \n"
-            "       gl_FragColor = Frag_Color;    \n"
-            "   }                                                                   \n";
-
-        gl::compile_shader(mem->shaders[PapayaShader_VertexColor], __FILE__, __LINE__,
-            vert, frag, 3, 2,
+    gl::compile_shader(mem->shaders[PapayaShader_VertexColor],
+            "vertex_default.glsl", "unlit.glsl", 3, 2,
             "Position", "UV", "Color",
             "ProjMtx", "Texture");
 
-        gl::init_quad(mem->meshes[PapayaMesh_Canvas],
+    gl::init_quad(mem->meshes[PapayaMesh_Canvas],
             Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
-    }
 
     // Setup for ImGui
     {
