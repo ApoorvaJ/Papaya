@@ -29,7 +29,6 @@
 #define GL_LITE_H
 
 #if defined(__linux__)
-#include <dlfcn.h>
 #define GLDECL // Empty define
 #define PAPAYA_GL_LIST_WIN32 // Empty define
 #endif // __linux__
@@ -121,6 +120,10 @@ bool gl_lite_init();
 // =============================================================================
 
 #ifdef GL_LITE_IMPLEMENTATION
+
+#if defined(__linux__)
+#include <dlfcn.h>
+#endif // __linux__
 
 #define GLE(ret, name, ...) name##proc * gl##name;
 PAPAYA_GL_LIST
