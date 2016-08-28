@@ -21,7 +21,9 @@ papaya: $(OBJS) misc_data
 	g++ $(OBJS) $(LIBS) $(CFLAGS) -o $@
 
 $(OBJS): %.o: %.cpp
-	g++ -MMD -MF $@.d $< $(LIBS) $(CFLAGS) -o $@ -c
+	g++ -MMD -MP -MF $@.d $< $(LIBS) $(CFLAGS) -o $@ -c
+
+-include $(OBJS:.o=.o.d)
 
 misc_data: ../../img/ui.png ../../src/shaders
 	cp -ru $^ .
