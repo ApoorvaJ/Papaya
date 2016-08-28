@@ -16,5 +16,4 @@ namespace platform
     void set_cursor_visibility(bool Visible);
     char* open_file_dialog();
     char* save_file_dialog();
-    double get_milliseconds();
 }

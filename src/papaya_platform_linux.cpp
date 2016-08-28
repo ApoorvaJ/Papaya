@@ -128,13 +128,6 @@ char* platform::save_file_dialog()
 #endif
 }
 
-double platform::get_milliseconds()
-{
-    timespec time;
-    clock_gettime(CLOCK_MONOTONIC, &time);
-    return (double)(time.tv_sec * 1000 + time.tv_nsec / 1000000);
-}
-
 // =================================================================================================
 
 int main(int argc, char **argv)
@@ -144,7 +137,7 @@ int main(int argc, char **argv)
     Atom xlib_delete_window_atom;
 
     timer::init(1.0); // TODO: Check linux timer manual. Is this correct?
-    timer::start(&mem.profile.timers[Timer_Startup]);
+    timer::start(Timer_Startup);
 
     // Initialize GTK for Open/Save file dialogs
 #ifdef USE_GTK
@@ -304,7 +297,7 @@ int main(int argc, char **argv)
         }
     }
 
-    timer::stop(&mem.profile.timers[Timer_Startup]);
+    timer::stop(Timer_Startup);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
     core::open_doc(PAPAYA_DEFAULT_IMAGE, &mem);
@@ -313,7 +306,7 @@ int main(int argc, char **argv)
     mem.is_running = true;
 
     while (mem.is_running) {
-        timer::start(&mem.profile.timers[Timer_Frame]);
+        timer::start(Timer_Frame);
 
         // Event handling
         while (XPending(xlib_display))
@@ -447,13 +440,13 @@ int main(int argc, char **argv)
 #endif
 
         // End Of Frame
-        timer::stop(&mem.profile.timers[Timer_Frame]);
+        timer::stop(Timer_Frame);
         double FrameRate =
             (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
             500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - mem.profile.timers[Timer_Frame].elapsed_ms;
-        mem.profile.timers[Timer_Sleep].elapsed_ms = SleepTime;
+        double SleepTime = FrameTime - timers[Timer_Frame].elapsed_ms;
+        timers[Timer_Sleep].elapsed_ms = SleepTime;
         if (SleepTime > 0) { usleep((uint32)SleepTime * 1000); }
     }
 

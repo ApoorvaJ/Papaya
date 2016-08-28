@@ -119,14 +119,6 @@ char* platform::save_file_dialog()
     }
 }
 
-double platform::get_milliseconds()
-{
-    LARGE_INTEGER ms;
-    QueryPerformanceCounter(&ms);
-    return (double)ms.QuadPart;
-}
-
-
 // =================================================================================================
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM w_param, LPARAM l_param)

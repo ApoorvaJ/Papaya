@@ -33,7 +33,7 @@ void core::resize_doc(PapayaMemory* mem, int32 width, int32 height)
 bool core::open_doc(char* path, PapayaMemory* mem)
 {
     // TODO: Move the profiling data into a globally accessible struct.
-    timer::start(&mem->profile.timers[Timer_ImageOpen]);
+    timer::start(Timer_ImageOpen);
 
     // Load/create image
     {
@@ -101,7 +101,7 @@ bool core::open_doc(char* path, PapayaMemory* mem)
 
     undo::init(mem);
 
-    timer::stop(&mem->profile.timers[Timer_ImageOpen]);
+    timer::stop(Timer_ImageOpen);
 
     //TODO: Move this to adjust after cropping and rotation
     mem->crop_rotate.top_left = Vec2(0,0);
@@ -1350,8 +1350,8 @@ EndOfDoc:
                 for (int32 i = 0; i < Timer_COUNT; i++)
                 {
                     ImGui::Text(TimerNames[i]);                                 ImGui::NextColumn();
-                    ImGui::Text("%llu", mem->profile.timers[i].elapsed_cycles);    ImGui::NextColumn();
-                    ImGui::Text("%f" , mem->profile.timers[i].elapsed_ms);         ImGui::NextColumn();
+                    ImGui::Text("%llu", timers[i].elapsed_cycles);    ImGui::NextColumn();
+                    ImGui::Text("%f" , timers[i].elapsed_ms);         ImGui::NextColumn();
                 }
 
                 ImGui::Columns(1);

@@ -2,9 +2,57 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-// TODO: Move rdtsc code into platform layer?
-#ifdef __linux__
-#include <x86intrin.h>
+struct Timer {
+    uint64_t start_cycles, stop_cycles, elapsed_cycles;
+    double start_ms, stop_ms, elapsed_ms;
+};
+
+#define TIMER_LIST \
+    /* timer name */ \
+    TME(Startup) \
+    TME(Frame) \
+    TME(Sleep) \
+    TME(ImageOpen) \
+    TME(GetUndoImage) \
+    TME(COUNT) \
+    /* end */
+
+enum Timer_ {
+#define TME(name) Timer_##name,
+    TIMER_LIST
+#undef TME
+};
+
+static const char* TimerNames[] = {
+#define TME(name) #name,
+    TIMER_LIST
+#undef TME
+};
+
+namespace timer {
+    void init(double freq);
+    double get_freq();
+    double get_milliseconds();
+    void start(Timer_ timer);
+    void stop(Timer_ timer);
+}
+
+extern Timer timers[Timer_COUNT];
+#endif // TIMER_H
+
+// =======================================================================================
+
+#ifdef TIMER_IMPLEMENTATION
+
+#include "papaya_platform.h" // TODO: Remove this dependency
+
+double tick_freq;
+Timer timers[Timer_COUNT];
+
+// TODO: Add things needed to implement rdtsc on Windows
+#if defined(__linux__)
+    #include <x86intrin.h>
+    #include <time.h>
 #elif defined(__APPLE__)
     #if defined(__x86_64__)
         static __inline__ unsigned long long __rdtsc()
@@ -25,53 +73,6 @@
     #endif
 #endif // __APPLE__
 
-// TODO: No need to expose the Timer struct to the caller. Improve API.
-
-struct Timer {
-    uint64 start_cycles, stop_cycles, elapsed_cycles;
-    double start_ms, stop_ms, elapsed_ms;
-};
-
-#define FOREACH_TIMER(TIMER)    \
-        TIMER(Startup)          \
-        TIMER(Frame)            \
-        TIMER(Sleep)            \
-        TIMER(ImageOpen)        \
-        TIMER(GetUndoImage)     \
-        TIMER(COUNT)            \
-
-#define GENERATE_ENUM(ENUM) Timer_##ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-
-enum Timer_ {
-    FOREACH_TIMER(GENERATE_ENUM)
-};
-
-static const char* TimerNames[] = {
-    FOREACH_TIMER(GENERATE_STRING)
-};
-
-#undef FOREACH_TIMER
-#undef GENERATE_ENUM
-#undef GENERATE_STRING
-
-namespace timer {
-    void init(double freq);
-    double get_freq();
-    void start(Timer* timer);
-    void stop(Timer* timer);
-}
-
-#endif // TIMER_H
-
-// =======================================================================================
-
-#ifdef TIMER_IMPLEMENTATION
-
-#include "papaya_platform.h" // TODO: Remove this dependency
-
-double tick_freq;
-
 void timer::init(double _tick_freq)
 {
     tick_freq = _tick_freq;
@@ -82,18 +83,40 @@ double timer::get_freq()
     return tick_freq;
 }
 
-void timer::start(Timer* timer)
+double timer::get_milliseconds()
 {
-    timer->start_ms = platform::get_milliseconds();
-    timer->start_cycles = __rdtsc();
+#if defined(__linux__)
+
+    timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    return (double)(time.tv_sec * 1000 + time.tv_nsec / 1000000);
+
+#elif defined(_WIN32)
+
+    LARGE_INTEGER ms;
+    QueryPerformanceCounter(&ms);
+    return (double)ms.QuadPart;
+
+#else
+    #error "Clock millisecond API not implemented on this platform"
+#endif
 }
 
-void timer::stop(Timer* timer)
+
+void timer::start(Timer_ timer)
 {
-    timer->stop_cycles = __rdtsc();
-    timer->stop_ms = platform::get_milliseconds();
-    timer->elapsed_cycles = timer->stop_cycles - timer->start_cycles;
-    timer->elapsed_ms = (timer->stop_ms - timer->start_ms) * tick_freq;
+    timers[timer].start_ms = get_milliseconds();
+    timers[timer].start_cycles = __rdtsc();
+}
+
+void timer::stop(Timer_ timer)
+{
+    timers[timer].stop_cycles = __rdtsc();
+    timers[timer].stop_ms = get_milliseconds();
+    timers[timer].elapsed_cycles = timers[timer].stop_cycles -
+                                   timers[timer].start_cycles;
+    timers[timer].elapsed_ms = (timers[timer].stop_ms - timers[timer].start_ms) *
+                               tick_freq;
 }
 
 #endif // TIMER_IMPLEMENTATION

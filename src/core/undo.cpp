@@ -100,10 +100,10 @@ void undo::push(UndoBuffer* undo, Profile* profile, Vec2i pos, Vec2i size,
         size.x * size.y * (data.IsSubRect ? 8 : 4);
     void* buf = malloc((size_t)buf_size);
 
-    timer::start(&profile->timers[Timer_GetUndoImage]);
+    timer::start(Timer_GetUndoImage);
     memcpy(buf, &data, sizeof(UndoData));
     GLCHK( glReadPixels(pos.x, pos.y, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, (int8*)buf + sizeof(UndoData)) );
-    timer::stop(&profile->timers[Timer_GetUndoImage]);
+    timer::stop(Timer_GetUndoImage);
 
     if (data.IsSubRect) {
         memcpy((int8*)buf + sizeof(UndoData) + 4 * size.x * size.y, pre_brush_img, 4 * size.x * size.y);

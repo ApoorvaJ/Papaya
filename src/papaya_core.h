@@ -140,7 +140,6 @@ struct EyeDropper {
 struct Profile {
     int64 current_time; // Used on Windows.
     float last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
-    Timer timers[Timer_COUNT];
 };
 
 struct Misc {
