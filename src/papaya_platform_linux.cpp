@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     XVisualInfo* xlib_visual_info;
     Atom xlib_delete_window_atom;
 
-    timer::init(1.0); // TODO: Check linux timer manual. Is this correct?
+    timer::init(); // TODO: Check linux timer manual. Is this correct?
     timer::start(Timer_Startup);
 
     // Initialize GTK for Open/Save file dialogs

@@ -326,15 +326,10 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM 
 
 int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line, int show_code)
 {
-    // Tick frequency
-    {
-        int64 ticks_per_second;
-        QueryPerformanceFrequency((LARGE_INTEGER *)&ticks_per_second);
-        timer::init(1000.0 / ticks_per_second);
-    }
+    timer::init();
 
     QueryPerformanceCounter((LARGE_INTEGER *)&mem.profile);
-    timer::start(&mem.profile.timers[Timer_Startup]);
+    timer::start(Timer_Startup);
 
     mem.is_running = true;
 
@@ -489,7 +484,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
     mem.window.title_bar_buttons_width = 109;
     mem.window.title_bar_height = 30;
 
-    timer::stop(&mem.profile.timers[Timer_Startup]);
+    timer::stop(Timer_Startup);
 
     // Handle command line arguments (if present)
     if (strlen(cmd_line)) {
@@ -510,7 +505,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
 #endif // PAPAYA_DEFAULT_IMAGE
 
     while (mem.is_running) {
-        timer::start(&mem.profile.timers[Timer_Frame]);
+        timer::start(Timer_Frame);
 
         // Windows message handling
         {
@@ -675,12 +670,12 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
         SwapBuffers(device_context);
 
     EndOfFrame:
-        timer::stop(&mem.profile.timers[Timer_Frame]);
+        timer::stop(Timer_Frame);
         double frame_rate = (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
                            500.0 : 60.0;
         double frame_time = 1000.0 / frame_rate;
-        double sleep_time = frame_time - mem.profile.timers[Timer_Frame].elapsed_ms;
-        mem.profile.timers[Timer_Sleep].elapsed_ms = sleep_time;
+        double sleep_time = frame_time - timers[Timer_Frame].elapsed_ms;
+        timers[Timer_Sleep].elapsed_ms = sleep_time;
         if (sleep_time > 0) { Sleep((int32)sleep_time); }
     }
 

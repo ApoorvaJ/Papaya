@@ -30,7 +30,7 @@ static const char* TimerNames[] = {
 };
 
 namespace timer {
-    void init(double freq);
+    void init();
     double get_freq();
     double get_milliseconds();
     void start(Timer_ timer);
@@ -44,10 +44,8 @@ extern Timer timers[Timer_COUNT];
 
 #ifdef TIMER_IMPLEMENTATION
 
-#include "papaya_platform.h" // TODO: Remove this dependency
-
-double tick_freq;
 Timer timers[Timer_COUNT];
+double tick_freq;
 
 // TODO: Add things needed to implement rdtsc on Windows
 #if defined(__linux__)
@@ -73,9 +71,20 @@ Timer timers[Timer_COUNT];
     #endif
 #endif // __APPLE__
 
-void timer::init(double _tick_freq)
+void timer::init()
 {
-    tick_freq = _tick_freq;
+#if defined (__linux__)
+
+    // TODO: Verify whether this is correct
+    tick_freq = 1.0;
+
+#elif defined (_WIN32)
+
+    int64_t ticks_per_second;
+    QueryPerformanceFrequency((LARGE_INTEGER *)&ticks_per_second);
+    tick_freq = 1000.0 / ticks_per_second;
+
+#endif
 }
 
 double timer::get_freq()
