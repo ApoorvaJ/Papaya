@@ -2,6 +2,8 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+#include <stdint.h>
+
 struct Timer {
     uint64_t start_cycles, stop_cycles, elapsed_cycles;
     double start_ms, stop_ms, elapsed_ms;
@@ -48,10 +50,19 @@ Timer timers[Timer_COUNT];
 double tick_freq;
 
 // TODO: Add things needed to implement rdtsc on Windows
-#if defined(__linux__)
+#if defined(_WIN32)
+
+    #define NOMINMAX
+    #define WIN32_LEAN_AND_MEAN
+    #include <Windows.h>
+
+#elif defined(__linux__)
+
     #include <x86intrin.h>
     #include <time.h>
+
 #elif defined(__APPLE__)
+
     #if defined(__x86_64__)
         static __inline__ unsigned long long __rdtsc()
         {
@@ -69,6 +80,7 @@ double tick_freq;
     #else
         #error "No __rdtsc implementation"
     #endif
+
 #endif // __APPLE__
 
 void timer::init()
