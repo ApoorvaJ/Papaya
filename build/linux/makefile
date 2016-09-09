@@ -16,6 +16,7 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
 CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security -g
 
+.SILENT:
 
 papaya: $(OBJS) misc_data
 	g++ $(OBJS) $(LIBS) $(CFLAGS) -o $@
