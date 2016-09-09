@@ -1150,10 +1150,9 @@ void core::update(PapayaMemory* mem)
             draw_list->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
             ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
-            ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %llu", BaseOffset);
-            ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %llu", CurrOffset);
-            //ImGui::TextColored(Color(1.0f,0.0f,0.0f,1.0f), "Last    %llu", LastOffset);
-            ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %llu", TopOffset);
+            ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %" PRIu64, BaseOffset);
+            ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %" PRIu64, CurrOffset);
+            ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %" PRIu64, TopOffset);
             ImGui::Text         ("Count   %lu", mem->doc.undo.count);
             ImGui::Text         ("Index   %lu", mem->doc.undo.current_index);
 
@@ -1350,14 +1349,14 @@ EndOfDoc:
                 for (int32 i = 0; i < Timer_COUNT; i++)
                 {
                     ImGui::Text(TimerNames[i]);                                 ImGui::NextColumn();
-                    ImGui::Text("%llu", timers[i].elapsed_cycles);    ImGui::NextColumn();
+                    ImGui::Text("%" PRIu64, timers[i].elapsed_cycles);    ImGui::NextColumn();
                     ImGui::Text("%f" , timers[i].elapsed_ms);         ImGui::NextColumn();
                 }
 
                 ImGui::Columns(1);
                 ImGui::Separator();
             }
-            if (ImGui::CollapsingHeader("Input"))
+            if (ImGui::CollapsingHeader("Input", 0, true, true))
             {
                 ImGui::Separator();
                 ImGui::Text("Tablet");
