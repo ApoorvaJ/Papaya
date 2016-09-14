@@ -377,9 +377,13 @@ int main(int argc, char **argv)
 
                     switch (keysym) {
                         case XK_Control_L:
-                        case XK_Control_R: { io.KeyCtrl = down; } break;
+                        case XK_Control_R: {
+                            mem.keyboard.ctrl = io.KeyCtrl = down;
+                        } break;
                         case XK_Shift_L:
-                        case XK_Shift_R: { io.KeyShift = down; } break;
+                        case XK_Shift_R: {
+                            mem.keyboard.shift = io.KeyShift = down;
+                        } break;
                         case XK_Alt_L:
                         case XK_Alt_R: { io.KeyAlt = down; } break;
 

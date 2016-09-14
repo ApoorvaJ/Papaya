@@ -103,6 +103,11 @@ struct Mouse {
     bool in_workspace;
 };
 
+struct Keyboard {
+    bool shift;
+    bool ctrl;
+};
+
 struct Tablet {
     Vec2i pos;
     float pressure;
@@ -159,6 +164,7 @@ struct PapayaMemory {
     SystemInfo system;
     Layout window;
     Document doc;
+    Keyboard keyboard;
     Mouse mouse;
     Tablet tablet;
     Profile profile;
