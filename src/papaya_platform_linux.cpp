@@ -16,6 +16,7 @@
 #include <GL/glx.h>
 #include "libs/imgui/imgui.h"
 #include "libs/easytab.h"
+#include "libs/easykey.h"
 #include "papaya_core.h"
 
 #define GLEW_NO_GLU
@@ -263,39 +264,10 @@ int main(int argc, char **argv)
     }
 
     EasyTab_Load(xlib_display, xlib_window);
+    easykey_init();
 
     core::init(&mem);
-
-    // Initialize ImGui
-    {
-        // TODO: Profiler timer setup
-
-        ImGuiIO& io = ImGui::GetIO();
-        io.RenderDrawListsFn = core::render_imgui;
-
-        // Keyboard mappings
-        {
-            io.KeyMap[ImGuiKey_Tab]        = 0;
-            io.KeyMap[ImGuiKey_LeftArrow]  = 1;
-            io.KeyMap[ImGuiKey_RightArrow] = 2;
-            io.KeyMap[ImGuiKey_UpArrow]    = 3;
-            io.KeyMap[ImGuiKey_DownArrow]  = 4;
-            io.KeyMap[ImGuiKey_PageUp]     = 5;
-            io.KeyMap[ImGuiKey_PageDown]   = 6;
-            io.KeyMap[ImGuiKey_Home]       = 7;
-            io.KeyMap[ImGuiKey_End]        = 8;
-            io.KeyMap[ImGuiKey_Delete]     = 9;
-            io.KeyMap[ImGuiKey_Backspace]  = 10;
-            io.KeyMap[ImGuiKey_Enter]      = 11;
-            io.KeyMap[ImGuiKey_Escape]     = 12;
-            io.KeyMap[ImGuiKey_A]          = XK_a;
-            io.KeyMap[ImGuiKey_C]          = XK_c;
-            io.KeyMap[ImGuiKey_V]          = XK_v;
-            io.KeyMap[ImGuiKey_X]          = XK_x;
-            io.KeyMap[ImGuiKey_Y]          = XK_y;
-            io.KeyMap[ImGuiKey_Z]          = XK_z;
-        }
-    }
+    ImGui::GetIO().RenderDrawListsFn = core::render_imgui;
 
     timer::stop(Timer_Startup);
 
@@ -309,12 +281,12 @@ int main(int argc, char **argv)
         timer::start(Timer_Frame);
 
         // Event handling
-        while (XPending(xlib_display))
-        {
+        while (XPending(xlib_display)) {
             XEvent event;
             XNextEvent(xlib_display, &event);
 
             if (EasyTab_HandleEvent(&event) == EASYTAB_OK) { continue; }
+            if (easykey_handle_event(&event, xlib_display) == EASYKEY_OK) { continue; }
 
             switch (event.type) {
                 case Expose: {
@@ -350,67 +322,6 @@ int main(int argc, char **argv)
                     }
                 } break;
 
-                case KeyPress:
-                case KeyRelease: {
-                    if (event.type == KeyRelease &&
-                        XEventsQueued(xlib_display, QueuedAfterReading)) {
-                        XEvent next_event;
-                        XPeekEvent(xlib_display, &next_event);
-                        if (next_event.type == KeyPress &&
-                            next_event.xkey.time == event.xkey.time &&
-                            next_event.xkey.keycode == event.xkey.keycode) {
-                            break; // Key wasn’t actually released
-                        }
-                    }
-
-                    // List of keysym's can be found in keysymdef.h or here
-                    // [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
-
-                    ImGuiIO& io = ImGui::GetIO();
-                    bool down = (event.type == KeyPress);
-
-                    KeySym keysym;
-                    XComposeStatus status;
-                    char input; // TODO: Do we need an array here?
-                    XLookupString(&event.xkey, &input, 1, &keysym, &status);
-                    if (down) { io.AddInputCharacter(input); }
-
-                    switch (keysym) {
-                        case XK_Control_L:
-                        case XK_Control_R: {
-                            mem.keyboard.ctrl = io.KeyCtrl = down;
-                        } break;
-                        case XK_Shift_L:
-                        case XK_Shift_R: {
-                            mem.keyboard.shift = io.KeyShift = down;
-                        } break;
-                        case XK_Alt_L:
-                        case XK_Alt_R: { io.KeyAlt = down; } break;
-
-                        case XK_Tab:        { io.KeysDown[0]  = down; } break;
-                        case XK_Left:       { io.KeysDown[1]  = down; } break;
-                        case XK_Right:      { io.KeysDown[2]  = down; } break;
-                        case XK_Up:         { io.KeysDown[3]  = down; } break;
-                        case XK_Down:       { io.KeysDown[4]  = down; } break;
-                        case XK_Page_Up:    { io.KeysDown[5]  = down; } break;
-                        case XK_Page_Down:  { io.KeysDown[6]  = down; } break;
-                        case XK_Home:       { io.KeysDown[7]  = down; } break;
-                        case XK_End:        { io.KeysDown[8]  = down; } break;
-                        case XK_Delete:     { io.KeysDown[9]  = down; } break;
-                        case XK_BackSpace:  { io.KeysDown[10] = down; } break;
-                        case XK_Return:     { io.KeysDown[11] = down; } break;
-                        case XK_Escape:     { io.KeysDown[12] = down; } break;
-
-                        case XK_a:     
-                        case XK_c:     
-                        case XK_v:     
-                        case XK_x:     
-                        case XK_y:     
-                        case XK_z:     
-                            io.KeysDown[keysym] = down;
-                            break;
-                    }
-                } break;
             }
         }
 

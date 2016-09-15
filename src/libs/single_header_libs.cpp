@@ -13,12 +13,14 @@
 #include "easytab.h"
 #endif // PAPAYA_NO_EASYTAB_SUPPORT
 
+#include "imgui/imgui.h"
+
  // EasyKey doesn't have support for all platforms yet, e.g. OS X
 #ifndef PAPAYA_NO_EASYKEY_SUPPORT
 #define EASYKEY_IMPLEMENTATION
+#define EASYKEY_IMGUI
 #include "easykey.h"
 #endif // PAPAYA_NO_EASYKEY_SUPPORT
-#include "imgui/imgui.h"
 
 #define GL_UTIL_IMPLEMENTATION
 #include "gl_util.h"
