@@ -167,6 +167,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\crop_rotate.cpp" />
+    <ClCompile Include="..\..\src\core\metrics_window.cpp" />
     <ClCompile Include="..\..\src\core\picker.cpp" />
     <ClCompile Include="..\..\src\core\prefs.cpp" />
     <ClCompile Include="..\..\src\core\undo.cpp" />
@@ -178,6 +179,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\crop_rotate.h" />
+    <ClInclude Include="..\..\src\core\metrics_window.h" />
     <ClInclude Include="..\..\src\core\picker.h" />
     <ClInclude Include="..\..\src\core\prefs.h" />
     <ClInclude Include="..\..\src\core\undo.h" />

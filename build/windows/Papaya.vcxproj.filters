@@ -64,6 +64,9 @@
     <ClCompile Include="..\..\src\core\undo.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\metrics_window.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\papaya_core.h">
@@ -122,6 +125,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\libs\gl_lite.h">
       <Filter>Header Files\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\metrics_window.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

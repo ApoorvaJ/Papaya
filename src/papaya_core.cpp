@@ -7,6 +7,7 @@
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
 #include "libs/linmath.h"
+#include <inttypes.h>
 
 
 void core::resize_doc(PapayaMemory* mem, int32 width, int32 height)

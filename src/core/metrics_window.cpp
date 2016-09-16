@@ -2,6 +2,7 @@
 #include "metrics_window.h"
 #include "papaya_core.h"
 #include "libs/imgui/imgui.h"
+#include <inttypes.h>
 
 void metrics_window::update(PapayaMemory* mem)
 {
