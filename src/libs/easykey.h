@@ -1,6 +1,9 @@
 /*
     EasyKey - Single-header multi-platform keyboard library
 
+    This library isn't ready yet. More functionality will be added as needed by
+    Papaya.
+
     ----------------------------------------------------------------------------
     USAGE
     ----------------------------------------------------------------------------
@@ -19,6 +22,7 @@
 */
 
 // TODO: Create a good enum mapping and key state recording mechanism.
+// TODO: Put ImGui guards where required.
 
 // =============================================================================
 // Header section
@@ -154,7 +158,6 @@ EasyKeyResult easykey_handle_event(XEvent* event, Display* disp)
     // List of keysym's can be found in keysymdef.h or here
     // [http://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h]
 
-    // TODO: Put ImGui guards in here
     ImGuiIO& io = ImGui::GetIO();
     bool down = (event->type == KeyPress);
 
