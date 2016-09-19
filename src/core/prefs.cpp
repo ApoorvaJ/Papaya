@@ -10,26 +10,11 @@ void prefs::show_panel(Picker* picker, Color* colors, Layout& layout)
     ImGui::SetNextWindowPos(ImVec2((float)layout.width - 36 - width, 58));
     ImGui::SetNextWindowSize(ImVec2(width, (float)layout.height - 64));
 
-    // TODO: Once the overall look has been established, make commonly used templates
-    ImGuiWindowFlags WindowFlags = 0;
-    WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-    WindowFlags |= ImGuiWindowFlags_NoResize;
-    WindowFlags |= ImGuiWindowFlags_NoMove;
-    WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-    WindowFlags |= ImGuiWindowFlags_NoCollapse;
-    WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5 , 5));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(2 , 2));
-
-    ImGui::PushStyleColor(ImGuiCol_Button, colors[PapayaCol_Button]);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[PapayaCol_ButtonHover]);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, colors[PapayaCol_ButtonActive]);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, colors[PapayaCol_Clear]);
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, colors[PapayaCol_ButtonActive]);
 
-    ImGui::Begin("Preferences Window", 0, WindowFlags);
+    ImGui::Begin("Preferences Window", 0, layout.default_imgui_flags);
 
     // char buf[512] = {0};
     // ImGui::InputText("Search", buf, 512);
@@ -101,7 +86,7 @@ void prefs::show_panel(Picker* picker, Color* colors, Layout& layout)
 
     ImGui::End();
 
-    ImGui::PopStyleVar(3);
-    ImGui::PopStyleColor(5);
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(1);
 }
 

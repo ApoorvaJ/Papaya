@@ -196,6 +196,13 @@ void core::init(PapayaMemory* mem)
         mem->colors[PapayaCol_ImageSizePreview2] = Color(45, 45, 45);
         mem->colors[PapayaCol_Transparent]       = Color(0, 0, 0, 0);
 
+        mem->window.default_imgui_flags = ImGuiWindowFlags_NoTitleBar
+                                        | ImGuiWindowFlags_NoResize
+                                        | ImGuiWindowFlags_NoMove
+                                        | ImGuiWindowFlags_NoScrollbar
+                                        | ImGuiWindowFlags_NoCollapse
+                                        | ImGuiWindowFlags_NoScrollWithMouse;
+
         // Load and bind image
         {
             uint8* img;
@@ -343,7 +350,16 @@ void core::init(PapayaMemory* mem)
     // ImGui Style Settings
     {
         ImGuiStyle& style = ImGui::GetStyle();
-        // TODO: Move repeated stuff here by setting global style
+        style.WindowRounding = 0.f;
+
+        style.Colors[ImGuiCol_WindowBg] = mem->colors[PapayaCol_Transparent];
+        style.Colors[ImGuiCol_MenuBarBg] = mem->colors[PapayaCol_Transparent];
+        style.Colors[ImGuiCol_HeaderHovered] = mem->colors[PapayaCol_ButtonHover];
+        style.Colors[ImGuiCol_Header] = mem->colors[PapayaCol_Transparent];
+        style.Colors[ImGuiCol_Button] = mem->colors[PapayaCol_Button];
+        style.Colors[ImGuiCol_ButtonActive] = mem->colors[PapayaCol_ButtonActive];
+        style.Colors[ImGuiCol_ButtonHovered] = mem->colors[PapayaCol_ButtonHover];
+        style.Colors[ImGuiCol_SliderGrabActive] = mem->colors[PapayaCol_ButtonActive];
     }
 }
 
@@ -441,28 +457,10 @@ void core::update(PapayaMemory* mem)
         ImGui::SetNextWindowPos(ImVec2(2.0f + mem->window.menu_horizontal_offset,
                                        6.0f));
 
-        ImGuiWindowFlags flags = 0;
-        flags |= ImGuiWindowFlags_NoTitleBar;
-        flags |= ImGuiWindowFlags_NoResize;
-        flags |= ImGuiWindowFlags_NoMove;
-        flags |= ImGuiWindowFlags_NoScrollbar;
-        flags |= ImGuiWindowFlags_NoCollapse;
-        flags |= ImGuiWindowFlags_NoScrollWithMouse;
-        flags |= ImGuiWindowFlags_MenuBar;
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 4));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5, 5));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
-
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_MenuBarBg, mem->colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, mem->colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 4));
-        ImGui::PushStyleColor(ImGuiCol_Header, mem->colors[PapayaCol_Transparent]);
-
         mem->misc.menu_open = false;
 
+        ImGuiWindowFlags flags = mem->window.default_imgui_flags
+                               | ImGuiWindowFlags_MenuBar;
         ImGui::Begin("Title Bar Menu", 0, flags);
         if (ImGui::BeginMenuBar()) {
             ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
@@ -523,126 +521,87 @@ void core::update(PapayaMemory* mem)
             ImGui::PopStyleColor();
         }
         ImGui::End();
-
-        ImGui::PopStyleColor(4);
-        ImGui::PopStyleVar(5);
     }
 
-    // Left toolbar
+    // Side toolbars
     {
-        ImGui::SetNextWindowSize(ImVec2(36, 650));
-        ImGui::SetNextWindowPos (ImVec2( 1, 57));
-
-        ImGuiWindowFlags flags = 0;
-        flags |= ImGuiWindowFlags_NoTitleBar;
-        flags |= ImGuiWindowFlags_NoResize;
-        flags |= ImGuiWindowFlags_NoMove;
-        flags |= ImGuiWindowFlags_NoScrollbar;
-        flags |= ImGuiWindowFlags_NoCollapse;
-        flags |= ImGuiWindowFlags_NoScrollWithMouse;
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, mem->colors[PapayaCol_Button]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Transparent]);
 
-        ImGui::Begin("Left toolbar", 0, flags);
+        // Left toolbar
+        // ============
+        ImGui::SetNextWindowSize(ImVec2(36, 650));
+        ImGui::SetNextWindowPos (ImVec2( 1, 57));
+        ImGui::Begin("Left toolbar", 0, mem->window.default_imgui_flags);
 
 #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
+
+        ImGui::PushID(0);
+        ImGui::PushStyleColor(ImGuiCol_Button, (mem->current_tool == PapayaTool_Brush) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->current_tool == PapayaTool_Brush) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
+        if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
         {
-            ImGui::PushID(0);
-            ImGui::PushStyleColor(ImGuiCol_Button, (mem->current_tool == PapayaTool_Brush) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->current_tool == PapayaTool_Brush) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(0, 0), CALCUV(20, 20), 6, ImVec4(0, 0, 0, 0)))
-            {
-                mem->current_tool = (mem->current_tool != PapayaTool_Brush) ? PapayaTool_Brush : PapayaTool_None;
+            mem->current_tool = (mem->current_tool != PapayaTool_Brush) ? PapayaTool_Brush : PapayaTool_None;
 
-            }
-            ImGui::PopStyleColor(2);
-            ImGui::PopID();
-
-            ImGui::PushID(1);
-            ImGui::PushStyleColor(ImGuiCol_Button, (mem->current_tool == PapayaTool_EyeDropper) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->current_tool == PapayaTool_EyeDropper) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(20, 0), CALCUV(40, 20), 6, ImVec4(0, 0, 0, 0)))
-            {
-                mem->current_tool = (mem->current_tool != PapayaTool_EyeDropper) ? PapayaTool_EyeDropper : PapayaTool_None;
-            }
-            ImGui::PopStyleColor(2);
-            ImGui::PopID();
-
-            ImGui::PushID(2);
-            ImGui::PushStyleColor(ImGuiCol_Button       , (mem->current_tool == PapayaTool_CropRotate) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->current_tool == PapayaTool_CropRotate) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
-            {
-                mem->current_tool = (mem->current_tool != PapayaTool_CropRotate) ? PapayaTool_CropRotate : PapayaTool_None;
-            }
-            ImGui::PopStyleColor(2);
-            ImGui::PopID();
-
-            ImGui::PushID(3);
-            if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, mem->picker.current_color))
-            {
-                mem->picker.is_open = !mem->picker.is_open;
-                picker::set_color(mem->picker.current_color, &mem->picker);
-            }
-            ImGui::PopID();
         }
-#undef CALCUV
+        ImGui::PopStyleColor(2);
+        ImGui::PopID();
+
+        ImGui::PushID(1);
+        ImGui::PushStyleColor(ImGuiCol_Button, (mem->current_tool == PapayaTool_EyeDropper) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->current_tool == PapayaTool_EyeDropper) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
+        if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(20, 0), CALCUV(40, 20), 6, ImVec4(0, 0, 0, 0)))
+        {
+            mem->current_tool = (mem->current_tool != PapayaTool_EyeDropper) ? PapayaTool_EyeDropper : PapayaTool_None;
+        }
+        ImGui::PopStyleColor(2);
+        ImGui::PopID();
+
+        ImGui::PushID(2);
+        ImGui::PushStyleColor(ImGuiCol_Button       , (mem->current_tool == PapayaTool_CropRotate) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->current_tool == PapayaTool_CropRotate) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
+        if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
+        {
+            mem->current_tool = (mem->current_tool != PapayaTool_CropRotate) ? PapayaTool_CropRotate : PapayaTool_None;
+        }
+        ImGui::PopStyleColor(2);
+        ImGui::PopID();
+
+        ImGui::PushID(3);
+        if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(33, 33), CALCUV(0, 0), CALCUV(0, 0), 0, mem->picker.current_color))
+        {
+            mem->picker.is_open = !mem->picker.is_open;
+            picker::set_color(mem->picker.current_color, &mem->picker);
+        }
+        ImGui::PopID();
 
         ImGui::End();
 
-        ImGui::PopStyleVar(5);
-        ImGui::PopStyleColor(2);
-    }
-
-    // Right toolbar
-    {
+        // Right toolbar
+        // ============
         ImGui::SetNextWindowSize(ImVec2(36, 650));
         ImGui::SetNextWindowPos (ImVec2((float)mem->window.width - 36, 57));
+        ImGui::Begin("Right toolbar", 0, mem->window.default_imgui_flags);
 
-        ImGuiWindowFlags flags = 0;
-        flags |= ImGuiWindowFlags_NoTitleBar;
-        flags |= ImGuiWindowFlags_NoResize;
-        flags |= ImGuiWindowFlags_NoMove;
-        flags |= ImGuiWindowFlags_NoScrollbar;
-        flags |= ImGuiWindowFlags_NoCollapse;
-        flags |= ImGuiWindowFlags_NoScrollWithMouse;
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding   , 0);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding    , ImVec2(0, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding     , ImVec2(0, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing , ImVec2(0, 0));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing      , ImVec2(0, 0));
-
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , mem->colors[PapayaCol_Button]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg      , mem->colors[PapayaCol_Transparent]);
-
-        ImGui::Begin("Right toolbar", 0, flags);
-
-#define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
+        ImGui::PushID(0);
+        ImGui::PushStyleColor(ImGuiCol_Button       , (mem->misc.prefs_open) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->misc.prefs_open) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
+        if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
         {
-            ImGui::PushID(0);
-            ImGui::PushStyleColor(ImGuiCol_Button       , (mem->misc.prefs_open) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->misc.prefs_open) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
-            if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
-            {
-                mem->misc.prefs_open = !mem->misc.prefs_open;
-            }
-            ImGui::PopStyleColor(2);
-            ImGui::PopID();
+            mem->misc.prefs_open = !mem->misc.prefs_open;
         }
+        ImGui::PopStyleColor(2);
+        ImGui::PopID();
 #undef CALCUV
 
         ImGui::End();
 
+        ImGui::PopStyleColor(1);
         ImGui::PopStyleVar(5);
-        ImGui::PopStyleColor(2);
     }
 
     if (mem->misc.prefs_open) {
@@ -651,8 +610,8 @@ void core::update(PapayaMemory* mem)
 
     // Color Picker
     if (mem->picker.is_open) {
-        picker::update(&mem->picker, mem->colors,
-                mem->mouse, mem->textures[PapayaTex_UI]);
+        picker::update(&mem->picker, mem->colors, mem->mouse,
+                       mem->textures[PapayaTex_UI], mem->window);
     }
 
     // Tool Param Bar
@@ -660,26 +619,13 @@ void core::update(PapayaMemory* mem)
         ImGui::SetNextWindowSize(ImVec2((float)mem->window.width - 70, 30));
         ImGui::SetNextWindowPos(ImVec2(34, 30));
 
-        ImGuiWindowFlags flags = 0;
-        flags |= ImGuiWindowFlags_NoTitleBar;
-        flags |= ImGuiWindowFlags_NoResize;
-        flags |= ImGuiWindowFlags_NoMove;
-        flags |= ImGuiWindowFlags_NoScrollbar;
-        flags |= ImGuiWindowFlags_NoCollapse;
-        flags |= ImGuiWindowFlags_NoScrollWithMouse; // TODO: Once the overall look has been established, make commonly used templates
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2( 0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(30, 0));
 
-        ImGui::PushStyleColor(ImGuiCol_Button           , mem->colors[PapayaCol_Button]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered    , mem->colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive     , mem->colors[PapayaCol_ButtonActive]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg         , mem->colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive , mem->colors[PapayaCol_ButtonActive]);
 
         bool Show = true;
-        ImGui::Begin("Tool param bar", &Show, flags);
+        ImGui::Begin("Tool param bar", &Show, mem->window.default_imgui_flags);
 
         // New document options. Might convert into modal window later.
         if (!mem->doc.texture_id) // No document is open
@@ -743,7 +689,6 @@ void core::update(PapayaMemory* mem)
         ImGui::End();
 
         ImGui::PopStyleVar(3);
-        ImGui::PopStyleColor(5);
     }
 
     // Image size preview

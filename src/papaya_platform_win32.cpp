@@ -565,14 +565,6 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             ImGui::SetNextWindowSize(ImVec2((float)mem.window.menu_horizontal_offset,(float)mem.window.title_bar_height));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
-            ImGuiWindowFlags flags = 0; // TODO: Create a commonly-used set of window flags, and use them across ImGui windows
-            flags |= ImGuiWindowFlags_NoTitleBar;
-            flags |= ImGuiWindowFlags_NoResize;
-            flags |= ImGuiWindowFlags_NoMove;
-            flags |= ImGuiWindowFlags_NoScrollbar;
-            flags |= ImGuiWindowFlags_NoCollapse;
-            flags |= ImGuiWindowFlags_NoScrollWithMouse;
-
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2,2));
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
@@ -582,7 +574,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             ImGui::PushStyleColor(ImGuiCol_WindowBg, mem.colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
-            ImGui::Begin("Title Bar Icon", &bTrue, flags);
+            ImGui::Begin("Title Bar Icon", &bTrue, mem->window.default_imgui_flags);
 
             #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
             ImGui::Image((void*)(intptr_t)mem.textures[PapayaTex_UI], ImVec2(28,28), CALCUV(0,200), CALCUV(28,228));
@@ -599,14 +591,6 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             ImGui::SetNextWindowSize(ImVec2((float)mem.window.title_bar_buttons_width,24.0f));
             ImGui::SetNextWindowPos(ImVec2((float)mem.window.width - mem.window.title_bar_buttons_width, 0.0f));
 
-            ImGuiWindowFlags flags = 0;
-            flags |= ImGuiWindowFlags_NoTitleBar;
-            flags |= ImGuiWindowFlags_NoResize;
-            flags |= ImGuiWindowFlags_NoMove;
-            flags |= ImGuiWindowFlags_NoScrollbar;
-            flags |= ImGuiWindowFlags_NoCollapse;
-            flags |= ImGuiWindowFlags_NoScrollWithMouse;
-
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
@@ -621,7 +605,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             bool bTrue = true;
 
             #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
-            ImGui::Begin("Title Bar Buttons", &bTrue, flags);
+            ImGui::Begin("Title Bar Buttons", &bTrue, mem->window.default_imgui_flags);
 
             ImGui::PushID(0);
             if(ImGui::ImageButton((void*)(size_t)mem.textures[PapayaTex_UI], 

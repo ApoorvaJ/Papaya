@@ -28,7 +28,8 @@ void picker::set_color(Color col, Picker* picker, bool set_new_color_only)
 }
 
 // TODO: Remove the last param
-void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
+void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank,
+                    Layout& layout)
 {
     // Picker panel
     {
@@ -36,24 +37,11 @@ void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
         ImGui::SetNextWindowSize(ImVec2(picker->size.x, 35));
         ImGui::SetNextWindowPos (picker->pos);
 
-        ImGuiWindowFlags WindowFlags = 0;
-        WindowFlags |= ImGuiWindowFlags_NoTitleBar;
-        WindowFlags |= ImGuiWindowFlags_NoResize;
-        WindowFlags |= ImGuiWindowFlags_NoMove;
-        WindowFlags |= ImGuiWindowFlags_NoScrollbar;
-        WindowFlags |= ImGuiWindowFlags_NoCollapse;
-        WindowFlags |= ImGuiWindowFlags_NoScrollWithMouse;
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding  , ImVec2(0, 0));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding , 0);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing    , ImVec2(0, 0));
 
-        ImGui::PushStyleColor(ImGuiCol_Button        , colors[PapayaCol_Button]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered , colors[PapayaCol_ButtonHover]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive  , colors[PapayaCol_ButtonActive]);
-        ImGui::PushStyleColor(ImGuiCol_WindowBg      , colors[PapayaCol_Transparent]);
-
-        ImGui::Begin("Color preview", 0, WindowFlags);
+        ImGui::Begin("Color preview", 0, layout.default_imgui_flags);
         {
             float width1 = (picker->size.x + 33.0f) / 2.0f;
             float width2 = width1 - 33.0f;
@@ -78,7 +66,6 @@ void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
             ImGui::PopID();
         }
         ImGui::End();
-        ImGui::PopStyleColor();
         ImGui::PopStyleVar(3);
 
         ImGui::PushStyleVar  (ImGuiStyleVar_WindowPadding, ImVec2(0, 8));
@@ -87,7 +74,7 @@ void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
         ImGui::SetNextWindowSize(picker->size - Vec2(0.0f, 34.0f));
         ImGui::SetNextWindowPos (picker->pos  + Vec2(0.0f, 34.0f));
         ImGui::PushStyleVar     (ImGuiStyleVar_WindowRounding, 0);
-        ImGui::Begin("Color picker", 0, WindowFlags);
+        ImGui::Begin("Color picker", 0, layout.default_imgui_flags);
         {
             ImGui::BeginChild("HSV Gradients", Vec2(315, 258));
             ImGui::EndChild();
@@ -126,7 +113,7 @@ void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
         }
         ImGui::End();
         ImGui::PopStyleVar(2);
-        ImGui::PopStyleColor(4);
+        ImGui::PopStyleColor();
     }
 
     // Update hue picker

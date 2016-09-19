@@ -3,6 +3,7 @@
 #include "libs/types.h"
 
 struct Mouse;
+struct Layout;
 
 struct Picker {
     bool is_open;
@@ -18,6 +19,7 @@ struct Picker {
 namespace picker {
     void init(Picker* picker);
     void set_color(Color col, Picker* picker, bool set_new_color_only = false);
-    void update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank_texture);
+    void update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank_texture,
+                Layout& layout);
 }
 

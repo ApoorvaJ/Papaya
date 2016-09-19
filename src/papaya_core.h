@@ -78,6 +78,7 @@ struct Layout {
     int32 width, height;
     uint32 menu_horizontal_offset, title_bar_buttons_width, title_bar_height;
     float proj_mtx[4][4];
+    int32 default_imgui_flags;
 };
 
 struct Document {
