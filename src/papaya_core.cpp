@@ -170,7 +170,7 @@ void core::init(PapayaMemory* mem)
         crop_rotate::init(mem);
 
         mem->misc.draw_overlay = false;
-        mem->misc.show_metrics = true;
+        mem->misc.show_metrics = false;
         mem->misc.show_undo_buffer = false;
         mem->misc.menu_open = false;
         mem->misc.prefs_open = false;
@@ -343,7 +343,7 @@ void core::init(PapayaMemory* mem)
     // ImGui Style Settings
     {
         ImGuiStyle& style = ImGui::GetStyle();
-        style.WindowFillAlphaDefault = 1.0f;
+        // style.WindowFillAlphaDefault = 1.0f;
         // TODO: Move repeated stuff here by setting global style
     }
 }

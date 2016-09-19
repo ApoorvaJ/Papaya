@@ -6,6 +6,7 @@ VPATH=../../src                 \
 SRCS=papaya_platform_linux.cpp  \
 	 papaya_core.cpp            \
 	 imgui.cpp                  \
+	 imgui_draw.cpp             \
 	 single_header_libs.cpp     \
 	 crop_rotate.cpp            \
 	 metrics_window.cpp         \
