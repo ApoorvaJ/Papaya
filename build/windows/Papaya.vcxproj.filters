@@ -67,6 +67,9 @@
     <ClCompile Include="..\..\src\libs\imgui\imgui_draw.cpp">
       <Filter>Source Files\libs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\nodes_window.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\papaya_core.h">
@@ -127,6 +130,9 @@
       <Filter>Header Files\libs</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\metrics_window.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\nodes_window.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>

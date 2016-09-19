@@ -574,7 +574,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             ImGui::PushStyleColor(ImGuiCol_WindowBg, mem.colors[PapayaCol_Transparent]);
 
             bool bTrue = true;
-            ImGui::Begin("Title Bar Icon", &bTrue, mem->window.default_imgui_flags);
+            ImGui::Begin("Title Bar Icon", &bTrue, mem.window.default_imgui_flags);
 
             #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
             ImGui::Image((void*)(intptr_t)mem.textures[PapayaTex_UI], ImVec2(28,28), CALCUV(0,200), CALCUV(28,228));
@@ -605,7 +605,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             bool bTrue = true;
 
             #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
-            ImGui::Begin("Title Bar Buttons", &bTrue, mem->window.default_imgui_flags);
+            ImGui::Begin("Title Bar Buttons", &bTrue, mem.window.default_imgui_flags);
 
             ImGui::PushID(0);
             if(ImGui::ImageButton((void*)(size_t)mem.textures[PapayaTex_UI], 
