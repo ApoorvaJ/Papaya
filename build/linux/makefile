@@ -10,6 +10,7 @@ SRCS=papaya_platform_linux.cpp  \
 	 single_header_libs.cpp     \
 	 crop_rotate.cpp            \
 	 metrics_window.cpp         \
+	 nodes_window.cpp           \
 	 picker.cpp                 \
 	 prefs.cpp                  \
 	 undo.cpp 

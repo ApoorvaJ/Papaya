@@ -155,6 +155,7 @@ struct Misc {
     bool draw_overlay;
     bool show_metrics;
     bool show_undo_buffer;
+    bool show_nodes;
     bool menu_open;
     bool prefs_open;
     bool preview_image_size;

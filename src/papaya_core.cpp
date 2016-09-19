@@ -2,6 +2,7 @@
 #include "papaya_core.h"
 
 #include "core/metrics_window.h"
+#include "core/nodes_window.h"
 #include "libs/stb_image.h"
 #include "libs/stb_image_write.h"
 #include "libs/imgui/imgui.h"
@@ -690,6 +691,8 @@ void core::update(PapayaMemory* mem)
 
         ImGui::PopStyleVar(3);
     }
+
+    ShowExampleAppCustomNodeGraph(&mem->misc.show_nodes);
 
     // Image size preview
     if (!mem->doc.texture_id && mem->misc.preview_image_size)
