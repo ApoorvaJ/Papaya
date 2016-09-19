@@ -172,7 +172,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
     <ClCompile Include="..\..\src\core\prefs.cpp" />
     <ClCompile Include="..\..\src\core\undo.cpp" />
     <ClCompile Include="..\..\src\libs\imgui\imgui.cpp" />
-    <ClCompile Include="..\..\src\libs\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\src\libs\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\..\src\libs\single_header_libs.cpp" />
     <ClCompile Include="..\..\src\papaya_core.cpp" />
     <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />
