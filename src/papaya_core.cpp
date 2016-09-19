@@ -343,7 +343,6 @@ void core::init(PapayaMemory* mem)
     // ImGui Style Settings
     {
         ImGuiStyle& style = ImGui::GetStyle();
-        // style.WindowFillAlphaDefault = 1.0f;
         // TODO: Move repeated stuff here by setting global style
     }
 }

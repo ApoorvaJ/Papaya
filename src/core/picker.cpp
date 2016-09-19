@@ -8,7 +8,7 @@ void picker::init(Picker* picker)
 {
     picker->current_color = Color(220, 163, 89);
     picker->is_open = false;
-    picker->pos = Vec2(34, 152);
+    picker->pos = Vec2(34, 153);
     picker->size = Vec2(292, 350);
     picker->hue_strip_pos  = Vec2(259, 42);
     picker->hue_strip_size = Vec2(30, 256);
@@ -58,7 +58,7 @@ void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
             float width1 = (picker->size.x + 33.0f) / 2.0f;
             float width2 = width1 - 33.0f;
             if (ImGui::ImageButton((void*)(intptr_t)blank,
-                                   ImVec2(width2, 34), ImVec2(0, 0),
+                                   ImVec2(width2, 33), ImVec2(0, 0),
                                    ImVec2(0, 0), 0, picker->current_color)) {
                 picker->is_open = false;
                 if (picker->bound_color) {
@@ -69,7 +69,7 @@ void picker::update(Picker* picker, Color* colors, Mouse& mouse, uint32 blank)
             ImGui::SameLine();
             ImGui::PushID(1);
             if (ImGui::ImageButton((void*)(intptr_t)blank,
-                                   ImVec2(width1, 34), ImVec2(0, 0),
+                                   ImVec2(width1, 33), ImVec2(0, 0),
                                    ImVec2(0, 0), 0, picker->new_color)) {
                 picker->is_open = false;
                 picker->current_color = picker->new_color;
