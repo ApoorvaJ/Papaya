@@ -36,9 +36,9 @@ void nodes_window::show_panel(PapayaMemory* mem)
     static int node_selected = -1;
     if (!inited)
     {
-        nodes.push_back(Node(0, "MainTex",  ImVec2(40,50), 0.5f, ImColor(255,100,100), 1, 1));
-        nodes.push_back(Node(1, "BumpMap",  ImVec2(40,150), 0.42f, ImColor(200,100,200), 1, 1));
-        nodes.push_back(Node(2, "Combine", ImVec2(270,80), 1.0f, ImColor(0,200,100), 2, 2));
+        nodes.push_back(Node(0, "L1",  ImVec2(50,150), 0.5f, ImColor(255,100,100), 1, 1));
+        nodes.push_back(Node(1, "L2",  ImVec2(150,150), 0.42f, ImColor(200,100,200), 1, 1));
+        nodes.push_back(Node(2, "L3", ImVec2(50,50), 1.0f, ImColor(0,200,100), 2, 1));
         links.push_back(NodeLink(0, 0, 2, 0));
         links.push_back(NodeLink(1, 0, 2, 1));
         inited = true;
@@ -56,7 +56,6 @@ void nodes_window::show_panel(PapayaMemory* mem)
     const ImVec2 NODE_WINDOW_PADDING(8.0f, 8.0f);
 
     // Create our child canvas
-    ImGui::Text("Hold middle mouse button to scroll (%.2f,%.2f)", scrolling.x, scrolling.y);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1,1));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(60,60,70,200));
@@ -89,7 +88,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
         Node* node_out = &nodes[link->OutputIdx];
         ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->InputSlot);
         ImVec2 p2 = offset + node_out->GetInputSlotPos(link->OutputSlot);		
-        draw_list->AddBezierCurve(p1, p1+ImVec2(+50,0), p2+ImVec2(-50,0), p2, ImColor(200,200,100), 3.0f);
+        draw_list->AddBezierCurve(p1, p1+ImVec2(0,-20), p2+ImVec2(0,+20), p2, ImColor(200,200,100), 3.0f);
     }
 
     // Display nodes
@@ -104,9 +103,8 @@ void nodes_window::show_panel(PapayaMemory* mem)
         bool old_any_active = ImGui::IsAnyItemActive();
         ImGui::SetCursorScreenPos(node_rect_min + NODE_WINDOW_PADDING);
         ImGui::BeginGroup(); // Lock horizontal position
+        bool pressed = ImGui::ImageButton(0, Vec2(40,40));//, const ImVec2& uv0 = ImVec2(0,0),  const ImVec2& uv1 = ImVec2(1,1), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0,0,0,0), const ImVec4& tint_col = ImVec4(1,1,1,1));    // <0 frame_padding uses default frame padding settings. 0 for no padding
         ImGui::Text("%s", node->Name);
-        ImGui::SliderFloat("##value", &node->Value, 0.0f, 1.0f, "Alpha %.2f");
-        ImGui::ColorEdit3("##color", &node->Color.x);
         ImGui::EndGroup();
 
         // Save the size of what we have emitted and whether any of the widgets are being used

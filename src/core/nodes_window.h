@@ -14,8 +14,15 @@ struct Node
 
     Node(int id, const char* name, const ImVec2& pos, float value, const ImVec4& color, int inputs_count, int outputs_count) { ID = id; strncpy(Name, name, 31); Name[31] = 0; Pos = pos; Value = value; Color = color; InputsCount = inputs_count; OutputsCount = outputs_count; }
 
-    ImVec2 GetInputSlotPos(int slot_no) const   { return ImVec2(Pos.x, Pos.y + Size.y * ((float)slot_no+1) / ((float)InputsCount+1)); }
-    ImVec2 GetOutputSlotPos(int slot_no) const  { return ImVec2(Pos.x + Size.x, Pos.y + Size.y * ((float)slot_no+1) / ((float)OutputsCount+1)); }
+    ImVec2 GetInputSlotPos(int slot_no) const {
+        return ImVec2(Pos.x + Size.x * ((float)slot_no+1) / ((float)InputsCount+1),
+                      Pos.y + Size.y);
+    }
+
+    ImVec2 GetOutputSlotPos(int slot_no) const {
+        return ImVec2(Pos.x + Size.x * ((float)slot_no+1) / ((float)OutputsCount+1),
+                      Pos.y);
+    }
 };
 struct NodeLink
 {
