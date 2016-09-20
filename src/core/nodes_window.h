@@ -1,5 +1,7 @@
 #include "libs/imgui/imgui.h"
 
+struct PapayaMemory;
+
 // Dummy
 struct Node
 {
@@ -22,4 +24,6 @@ struct NodeLink
     NodeLink(int input_idx, int input_slot, int output_idx, int output_slot) { InputIdx = input_idx; InputSlot = input_slot; OutputIdx = output_idx; OutputSlot = output_slot; }
 };
 
-void ShowExampleAppCustomNodeGraph(bool* opened);
+namespace nodes_window{
+    void show_panel(PapayaMemory* mem);
+}

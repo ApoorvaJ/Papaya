@@ -53,21 +53,6 @@ bool core::open_doc(char* path, PapayaMemory* mem)
         mem->doc.texture_id = gl::allocate_tex(mem->doc.width, mem->doc.height, img);
 
         mem->doc.inverse_aspect = (float)mem->doc.height / (float)mem->doc.width;
-        mem->doc.canvas_zoom = 0.8f *
-            math::min((float)mem->window.width  / (float)mem->doc.width,
-                      (float)mem->window.height / (float)mem->doc.height);
-        if (mem->doc.canvas_zoom > 1.0f) { mem->doc.canvas_zoom = 1.0f; }
-        // Center canvas
-        {
-            int32 top_margin = 53; // TODO: Put common layout constants in struct
-            int32 x = 
-                math::round_to_int((mem->window.width - 
-                                   (float)mem->doc.width * mem->doc.canvas_zoom) / 2.0f);
-            int32 y = top_margin + 
-                math::round_to_int((mem->window.height - top_margin -
-                                   (float)mem->doc.height * mem->doc.canvas_zoom) / 2.0f);
-            mem->doc.canvas_pos = Vec2i(x, y);
-        }
         free(img);
     }
 
@@ -175,6 +160,7 @@ void core::init(PapayaMemory* mem)
         mem->misc.show_undo_buffer = false;
         mem->misc.menu_open = false;
         mem->misc.prefs_open = false;
+        mem->misc.show_nodes = true;
         mem->misc.preview_image_size = false;
 
         float ortho_mtx[4][4] =
@@ -377,10 +363,25 @@ void core::resize(PapayaMemory* mem, int32 width, int32 height)
 
     // TODO: Intelligent centering. Recenter canvas only if the image was centered
     //       before window was resized.
-    // Center canvas
-    int32 top_margin = 53; // TODO: Put common layout constants in struct
-    int32 x = math::round_to_int((mem->window.width - (float)mem->doc.width * mem->doc.canvas_zoom) / 2.0f);
-    int32 y = top_margin + math::round_to_int((mem->window.height - top_margin - (float)mem->doc.height * mem->doc.canvas_zoom) / 2.0f);
+    // TODO: Improve this code to autocenter canvas on turning the right panels
+    //       on and off
+    // TODO: Put common layout constants in struct
+    int32 top_margin = 53; 
+    float available_width = mem->window.width;
+    if (mem->misc.show_nodes) { available_width -= 400.0f; }
+    float available_height = mem->window.height - top_margin;
+
+    mem->doc.canvas_zoom = 0.8f *
+        math::min(available_width  / (float)mem->doc.width,
+                  available_height / (float)mem->doc.height);
+    if (mem->doc.canvas_zoom > 1.0f) { mem->doc.canvas_zoom = 1.0f; }
+
+    int32 x = 
+        (available_width - (float)mem->doc.width * mem->doc.canvas_zoom)
+        / 2.0f;
+    int32 y = top_margin + 
+       (available_height - (float)mem->doc.height * mem->doc.canvas_zoom)
+       / 2.0f;
     mem->doc.canvas_pos = Vec2i(x, y);
 }
 
@@ -589,11 +590,11 @@ void core::update(PapayaMemory* mem)
         ImGui::Begin("Right toolbar", 0, mem->window.default_imgui_flags);
 
         ImGui::PushID(0);
-        ImGui::PushStyleColor(ImGuiCol_Button       , (mem->misc.prefs_open) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->misc.prefs_open) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
+        ImGui::PushStyleColor(ImGuiCol_Button       , (mem->misc.show_nodes) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_Transparent]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (mem->misc.show_nodes) ? mem->colors[PapayaCol_Button] :  mem->colors[PapayaCol_ButtonHover]);
         if (ImGui::ImageButton((void*)(intptr_t)mem->textures[PapayaTex_UI], ImVec2(20, 20), CALCUV(40, 0), CALCUV(60, 20), 6, ImVec4(0, 0, 0, 0)))
         {
-            mem->misc.prefs_open = !mem->misc.prefs_open;
+            mem->misc.show_nodes = !mem->misc.show_nodes;
         }
         ImGui::PopStyleColor(2);
         ImGui::PopID();
@@ -692,7 +693,9 @@ void core::update(PapayaMemory* mem)
         ImGui::PopStyleVar(3);
     }
 
-    ShowExampleAppCustomNodeGraph(&mem->misc.show_nodes);
+    if (mem->misc.show_nodes) {
+        nodes_window::show_panel(mem);
+    }
 
     // Image size preview
     if (!mem->doc.texture_id && mem->misc.preview_image_size)

@@ -21,7 +21,7 @@
 
 #define GLEW_NO_GLU
 
-#define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/Linux.png"
+#define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/sample.jpg"
 
 
 Display* xlib_display;
@@ -181,11 +181,11 @@ int main(int argc, char **argv)
             ButtonReleaseMask | KeyPressMask | KeyReleaseMask;
 
         xlib_window = XCreateWindow(xlib_display, DefaultRootWindow(xlib_display),
-                                    0, 0, 600, 600, 0, xlib_visual_info->depth,
+                                    0, 0, 1366, 768, 0, xlib_visual_info->depth,
                                     InputOutput, xlib_visual_info->visual,
                                     CWColormap | CWEventMask, &window_attribs);
-        mem.window.width = 600;
-        mem.window.height = 600;
+        mem.window.width = 1366;
+        mem.window.height = 768;
 
         XMapWindow(xlib_display, xlib_window);
         XStoreName(xlib_display, xlib_window, "Papaya");

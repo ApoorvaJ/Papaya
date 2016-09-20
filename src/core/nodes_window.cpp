@@ -1,5 +1,6 @@
 #include "core/nodes_window.h"
 #include <math.h>
+#include"papaya_core.h"
 
 // Creating a node graph editor for ImGui
 // Quick demo, not production code! This is more of a demo of how to use ImGui to create custom stuff.
@@ -15,15 +16,17 @@ static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return Im
 
 // Really dumb data structure provided for the example.
 // Note that we storing links are INDICES (not ID) to make example code shorter, obviously a bad idea for any general purpose code.
-void ShowExampleAppCustomNodeGraph(bool* opened)
+void nodes_window::show_panel(PapayaMemory* mem)
 {
-    ImGui::SetNextWindowSize(ImVec2(700,600), ImGuiSetCond_FirstUseEver);
-    if (!ImGui::Begin("Example: Custom Node Graph", opened))
-    {
-        ImGui::End();
-        return;
-    }
+    float width = 400.0f;
+    ImGui::SetNextWindowPos(ImVec2((float)mem->window.width - 36 - width, 58));
+    ImGui::SetNextWindowSize(ImVec2(width, (float)mem->window.height - 64));
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5 , 5));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(2 , 2));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
+
+    ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
 
     static ImVector<Node> nodes;
     static ImVector<NodeLink> links;
@@ -45,23 +48,6 @@ void ShowExampleAppCustomNodeGraph(bool* opened)
     bool open_context_menu = false;
     int node_hovered_in_list = -1;
     int node_hovered_in_scene = -1;
-    ImGui::BeginChild("node_list", ImVec2(100,0));
-    ImGui::Text("Nodes");
-    ImGui::Separator();
-    for (int node_idx = 0; node_idx < nodes.Size; node_idx++)
-    {
-        Node* node = &nodes[node_idx];
-        ImGui::PushID(node->ID);
-        if (ImGui::Selectable(node->Name, node->ID == node_selected))
-            node_selected = node->ID;
-        if (ImGui::IsItemHovered())
-        {
-            node_hovered_in_list = node->ID;
-            open_context_menu |= ImGui::IsMouseClicked(1);
-        }
-        ImGui::PopID();
-    }
-    ImGui::EndChild();
 
     ImGui::SameLine();
     ImGui::BeginGroup();
@@ -71,8 +57,6 @@ void ShowExampleAppCustomNodeGraph(bool* opened)
 
     // Create our child canvas
     ImGui::Text("Hold middle mouse button to scroll (%.2f,%.2f)", scrolling.x, scrolling.y);
-    ImGui::SameLine(ImGui::GetWindowWidth()-100);
-    ImGui::Checkbox("Show grid", &show_grid);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1,1));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(60,60,70,200));
@@ -206,4 +190,6 @@ void ShowExampleAppCustomNodeGraph(bool* opened)
     ImGui::EndGroup();
 
     ImGui::End();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
 }
