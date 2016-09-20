@@ -23,7 +23,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
     ImGui::SetNextWindowSize(ImVec2(width, (float)mem->window.height - 64));
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5 , 5));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(2 , 2));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5 , 2));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
 
     ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
@@ -34,6 +34,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
     static ImVec2 scrolling = ImVec2(0.0f, 0.0f);
     static bool show_grid = true;
     static int node_selected = -1;
+    static bool enabled_node = true;
     if (!inited)
     {
         nodes.push_back(Node(0, "L1",  ImVec2(50,150), 0.5f, ImColor(255,100,100), 1, 1));
@@ -44,12 +45,19 @@ void nodes_window::show_panel(PapayaMemory* mem)
         inited = true;
     }
 
-    // Draw a list of nodes on the left side
+    ImGui::BeginGroup();
+    ImGui::Text("Raster Node");
+    ImGui::Separator();
+    if (node_selected == -1) { ImGui::Text(" "); }
+    else {
+        ImGui::Checkbox(nodes[node_selected].Name, &enabled_node);
+    }
+    ImGui::EndGroup();
+
     bool open_context_menu = false;
     int node_hovered_in_list = -1;
     int node_hovered_in_scene = -1;
 
-    ImGui::SameLine();
     ImGui::BeginGroup();
 
     const float NODE_SLOT_RADIUS = 4.0f;
@@ -103,7 +111,9 @@ void nodes_window::show_panel(PapayaMemory* mem)
         bool old_any_active = ImGui::IsAnyItemActive();
         ImGui::SetCursorScreenPos(node_rect_min + NODE_WINDOW_PADDING);
         ImGui::BeginGroup(); // Lock horizontal position
-        bool pressed = ImGui::ImageButton(0, Vec2(40,40));//, const ImVec2& uv0 = ImVec2(0,0),  const ImVec2& uv1 = ImVec2(1,1), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0,0,0,0), const ImVec4& tint_col = ImVec4(1,1,1,1));    // <0 frame_padding uses default frame padding settings. 0 for no padding
+        ImGui::Image((void*)(intptr_t)mem->textures[PapayaTex_UI],
+                     Vec2(20,20),
+                     Vec2(0,0), Vec2(0,0));
         ImGui::Text("%s", node->Name);
         ImGui::EndGroup();
 
