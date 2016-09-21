@@ -2,57 +2,62 @@
 #include <math.h>
 #include"papaya_core.h"
 
-// Creating a node graph editor for ImGui
-// Quick demo, not production code! This is more of a demo of how to use ImGui to create custom stuff.
-// Better version by @daniel_collin here https://gist.github.com/emoon/b8ff4b4ce4f1b43e79f2
-// See https://github.com/ocornut/imgui/issues/306
-// v0.02
-// Animated gif: https://cloud.githubusercontent.com/assets/8225057/9472357/c0263c04-4b4c-11e5-9fdf-2cd4f33f6582.gif
+// NOTE: Most of this file is heavily work-in-progress at this point
 
-// NB: You can use math functions/operators on ImVec2 if you #define IMGUI_DEFINE_MATH_OPERATORS and #include "imgui_internal.h"
-// Here we only declare simple +/- operators so others don't leak into the demo code.
+// TODO: Remove
 static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x+rhs.x, lhs.y+rhs.y); }
 static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x-rhs.x, lhs.y-rhs.y); }
 
-// Really dumb data structure provided for the example.
-// Note that we storing links are INDICES (not ID) to make example code shorter, obviously a bad idea for any general purpose code.
+// TODO: Really dumb data structure provided for the example.
+//       Note that we storing links are INDICES (not ID) to make example code shorter, obviously a bad idea for any general purpose code.
 void nodes_window::show_panel(PapayaMemory* mem)
 {
-    float width = 400.0f;
-    ImGui::SetNextWindowPos(ImVec2((float)mem->window.width - 36 - width, 58));
-    ImGui::SetNextWindowSize(ImVec2(width, (float)mem->window.height - 64));
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5 , 5));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5 , 2));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
-
-    ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
-
     static ImVector<Node> nodes;
     static ImVector<NodeLink> links;
     static bool inited = false;
-    static ImVec2 scrolling = ImVec2(0.0f, 0.0f);
+    static ImVec2 scrolling = ImVec2(35.0f, -325.0f); // TODO: Automate this positioning
     static bool show_grid = true;
-    static int node_selected = -1;
+    static int node_selected = 0;
     static bool enabled_node = true;
+
+    float node_props_height = 200.0f;
+    float width = 300.0f;
+
     if (!inited)
     {
-        nodes.push_back(Node(0, "L1",  ImVec2(50,150), 0.5f, ImColor(255,100,100), 1, 1));
-        nodes.push_back(Node(1, "L2",  ImVec2(150,150), 0.42f, ImColor(200,100,200), 1, 1));
+        nodes.push_back(Node(0, "L1", ImVec2(50,100), 0.5f, ImColor(255,100,100), 1, 1));
+        nodes.push_back(Node(1, "L2", ImVec2(100,100), 0.42f, ImColor(200,100,200), 1, 1));
         nodes.push_back(Node(2, "L3", ImVec2(50,50), 1.0f, ImColor(0,200,100), 2, 1));
         links.push_back(NodeLink(0, 0, 2, 0));
         links.push_back(NodeLink(1, 0, 2, 1));
         inited = true;
     }
 
-    ImGui::BeginGroup();
-    ImGui::Text("Raster Node");
-    ImGui::Separator();
-    if (node_selected == -1) { ImGui::Text(" "); }
-    else {
-        ImGui::Checkbox(nodes[node_selected].Name, &enabled_node);
-    }
-    ImGui::EndGroup();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5, 2));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
+
+    // -------------------------------------------------------------------------
+
+    ImGui::SetNextWindowPos(Vec2((float)mem->window.width - 36 - width, 55));
+    ImGui::SetNextWindowSize(Vec2(width, node_props_height));
+
+    ImGui::Begin("Node properties", 0, mem->window.default_imgui_flags);
+
+    ImGui::Checkbox(nodes[node_selected].Name, &enabled_node);
+    ImGui::Text("Node properties controls go here");
+
+    ImGui::End();
+
+    // -------------------------------------------------------------------------
+
+    ImGui::SetNextWindowPos(
+        Vec2((float)mem->window.width - 36 - width, 55 + node_props_height));
+    ImGui::SetNextWindowSize(
+        Vec2(width, (float)mem->window.height - 58.0f - node_props_height));
+
+    ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
 
     bool open_context_menu = false;
     int node_hovered_in_list = -1;
@@ -70,21 +75,30 @@ void nodes_window::show_panel(PapayaMemory* mem)
     ImGui::BeginChild("scrolling_region", ImVec2(0,0), true, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoMove);
     ImGui::PushItemWidth(120.0f);
 
-    ImVec2 offset = ImGui::GetCursorScreenPos() - scrolling;
+    ImVec2 offset = ImGui::GetCursorScreenPos() - scrolling; 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     draw_list->ChannelsSplit(2);
 
     // Display grid
-    if (show_grid)
     {
         ImU32 GRID_COLOR = ImColor(200,200,200,40);
-        float GRID_SZ = 64.0f;
+        float GRID_SZ = 50.0f;
         ImVec2 win_pos = ImGui::GetCursorScreenPos();
         ImVec2 canvas_sz = ImGui::GetWindowSize();
-        for (float x = fmodf(offset.x,GRID_SZ); x < canvas_sz.x; x += GRID_SZ)
-            draw_list->AddLine(ImVec2(x,0.0f)+win_pos, ImVec2(x,canvas_sz.y)+win_pos, GRID_COLOR);
-        for (float y = fmodf(offset.y,GRID_SZ); y < canvas_sz.y; y += GRID_SZ)
-            draw_list->AddLine(ImVec2(0.0f,y)+win_pos, ImVec2(canvas_sz.x,y)+win_pos, GRID_COLOR);
+
+        for (float x = fmodf(offset.x,GRID_SZ); x < canvas_sz.x; x += GRID_SZ) {
+            float dummy_alignment_x = -1.0f; // TODO: Sooper temporary
+            draw_list->AddLine(Vec2(x + dummy_alignment_x, 0.0f) + win_pos,
+                               Vec2(x + dummy_alignment_x, canvas_sz.y) + win_pos,
+                               GRID_COLOR);
+        }
+
+        for (float y = fmodf(offset.y,GRID_SZ); y < canvas_sz.y; y += GRID_SZ) {
+            float dummy_alignment_y = 33.0f; // TODO: Sooper temporary
+            draw_list->AddLine(Vec2(0.0f, y + dummy_alignment_y) + win_pos,
+                               Vec2(canvas_sz.x, y + dummy_alignment_y) + win_pos,
+                               GRID_COLOR);
+        }
     }
 
     // Display links
@@ -96,7 +110,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
         Node* node_out = &nodes[link->OutputIdx];
         ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->InputSlot);
         ImVec2 p2 = offset + node_out->GetInputSlotPos(link->OutputSlot);		
-        draw_list->AddBezierCurve(p1, p1+ImVec2(0,-20), p2+ImVec2(0,+20), p2, ImColor(200,200,100), 3.0f);
+        draw_list->AddBezierCurve(p1, p1+ImVec2(0,-10), p2+ImVec2(0,+10), p2, ImColor(200,200,100), 3.0f);
     }
 
     // Display nodes
@@ -112,9 +126,9 @@ void nodes_window::show_panel(PapayaMemory* mem)
         ImGui::SetCursorScreenPos(node_rect_min + NODE_WINDOW_PADDING);
         ImGui::BeginGroup(); // Lock horizontal position
         ImGui::Image((void*)(intptr_t)mem->textures[PapayaTex_UI],
-                     Vec2(20,20),
+                     Vec2(21,21),
                      Vec2(0,0), Vec2(0,0));
-        ImGui::Text("%s", node->Name);
+        // ImGui::Text("%s", node->Name);
         ImGui::EndGroup();
 
         // Save the size of what we have emitted and whether any of the widgets are being used
