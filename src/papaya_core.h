@@ -4,8 +4,10 @@
 #include "libs/gl_util.h"
 #include "libs/timer.h"
 #include "libs/easytab.h"
+#include "libs/imgui/imgui.h"
 
 #include "core/crop_rotate.h"
+#include "core/node.h"
 #include "core/picker.h"
 #include "core/prefs.h"
 #include "core/undo.h"
@@ -82,9 +84,11 @@ struct Layout {
 };
 
 struct Document {
+    ImVector<Node> nodes; // TODO: Use custom vector type?
+    Node* final_node;
+    uint32 texture_id;
     int32 width, height;
     int32 components_per_pixel;
-    uint32 texture_id;
     Vec2i canvas_pos;
     float canvas_zoom;
     float inverse_aspect;

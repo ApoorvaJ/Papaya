@@ -12,7 +12,6 @@ static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return Im
 //       Note that we storing links are INDICES (not ID) to make example code shorter, obviously a bad idea for any general purpose code.
 void nodes_window::show_panel(PapayaMemory* mem)
 {
-    static ImVector<Node> nodes;
     static ImVector<NodeLink> links;
     static bool inited = false;
     static ImVec2 scrolling = ImVec2(35.0f, -325.0f); // TODO: Automate this positioning
@@ -25,9 +24,9 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     if (!inited)
     {
-        nodes.push_back(Node(0, "L1", ImVec2(50,100), 0.5f, ImColor(255,100,100), 1, 1));
-        nodes.push_back(Node(1, "L2", ImVec2(100,100), 0.42f, ImColor(200,100,200), 1, 1));
-        nodes.push_back(Node(2, "L3", ImVec2(50,50), 1.0f, ImColor(0,200,100), 2, 1));
+        mem->doc.nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
+        mem->doc.nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
+        mem->doc.nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
         links.push_back(NodeLink(0, 0, 2, 0));
         links.push_back(NodeLink(1, 0, 2, 1));
         inited = true;
@@ -45,7 +44,8 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     ImGui::Begin("Node properties", 0, mem->window.default_imgui_flags);
 
-    ImGui::Checkbox(nodes[node_selected].Name, &enabled_node);
+    ImGui::Checkbox(mem->doc.nodes[node_selected].name,
+                    &mem->doc.nodes[node_selected].is_active);
     ImGui::Text("Node properties controls go here");
 
     ImGui::End();
@@ -106,19 +106,19 @@ void nodes_window::show_panel(PapayaMemory* mem)
     for (int link_idx = 0; link_idx < links.Size; link_idx++)
     {
         NodeLink* link = &links[link_idx];
-        Node* node_inp = &nodes[link->InputIdx];
-        Node* node_out = &nodes[link->OutputIdx];
+        Node* node_inp = &mem->doc.nodes[link->InputIdx];
+        Node* node_out = &mem->doc.nodes[link->OutputIdx];
         ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->InputSlot);
         ImVec2 p2 = offset + node_out->GetInputSlotPos(link->OutputSlot);		
         draw_list->AddBezierCurve(p1, p1+ImVec2(0,-10), p2+ImVec2(0,+10), p2, ImColor(200,200,100), 3.0f);
     }
 
     // Display nodes
-    for (int node_idx = 0; node_idx < nodes.Size; node_idx++)
+    for (int node_idx = 0; node_idx < mem->doc.nodes.Size; node_idx++)
     {
-        Node* node = &nodes[node_idx];
-        ImGui::PushID(node->ID);
-        ImVec2 node_rect_min = offset + node->Pos;
+        Node* node = &mem->doc.nodes[node_idx];
+        ImGui::PushID(node->id);
+        ImVec2 node_rect_min = offset + node->pos;
 
         // Display node contents first
         draw_list->ChannelsSetCurrent(1); // Foreground
@@ -133,30 +133,30 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
         // Save the size of what we have emitted and whether any of the widgets are being used
         bool node_widgets_active = (!old_any_active && ImGui::IsAnyItemActive());
-        node->Size = ImGui::GetItemRectSize() + NODE_WINDOW_PADDING + NODE_WINDOW_PADDING;
-        ImVec2 node_rect_max = node_rect_min + node->Size;
+        node->size = ImGui::GetItemRectSize() + NODE_WINDOW_PADDING + NODE_WINDOW_PADDING;
+        Vec2 node_rect_max = node_rect_min + node->size;
 
         // Display node box
         draw_list->ChannelsSetCurrent(0); // Background
         ImGui::SetCursorScreenPos(node_rect_min);
-        ImGui::InvisibleButton("node", node->Size);
+        ImGui::InvisibleButton("node", node->size);
         if (ImGui::IsItemHovered())
         {
-            node_hovered_in_scene = node->ID;
+            node_hovered_in_scene = node->id;
             open_context_menu |= ImGui::IsMouseClicked(1);
         }
         bool node_moving_active = ImGui::IsItemActive();
         if (node_widgets_active || node_moving_active)
-            node_selected = node->ID;
+            node_selected = node->id;
         if (node_moving_active && ImGui::IsMouseDragging(0))
-            node->Pos = node->Pos + ImGui::GetIO().MouseDelta;
+            node->pos = node->pos + ImGui::GetIO().MouseDelta;
 
-        ImU32 node_bg_color = (node_hovered_in_list == node->ID || node_hovered_in_scene == node->ID || (node_hovered_in_list == -1 && node_selected == node->ID)) ? ImColor(75,75,75) : ImColor(60,60,60);
+        ImU32 node_bg_color = (node_hovered_in_list == node->id || node_hovered_in_scene == node->id || (node_hovered_in_list == -1 && node_selected == node->id)) ? ImColor(75,75,75) : ImColor(60,60,60);
         draw_list->AddRectFilled(node_rect_min, node_rect_max, node_bg_color, 4.0f); 
         draw_list->AddRect(node_rect_min, node_rect_max, ImColor(100,100,100), 4.0f); 
-        for (int slot_idx = 0; slot_idx < node->InputsCount; slot_idx++)
+        for (int slot_idx = 0; slot_idx < node->inputs_count; slot_idx++)
             draw_list->AddCircleFilled(offset + node->GetInputSlotPos(slot_idx), NODE_SLOT_RADIUS, ImColor(150,150,150,150));
-        for (int slot_idx = 0; slot_idx < node->OutputsCount; slot_idx++)
+        for (int slot_idx = 0; slot_idx < node->outputs_count; slot_idx++)
             draw_list->AddCircleFilled(offset + node->GetOutputSlotPos(slot_idx), NODE_SLOT_RADIUS, ImColor(150,150,150,150));
 
         ImGui::PopID();
@@ -182,11 +182,11 @@ void nodes_window::show_panel(PapayaMemory* mem)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,8));
     if (ImGui::BeginPopup("context_menu"))
     {
-        Node* node = node_selected != -1 ? &nodes[node_selected] : NULL;
+        Node* node = node_selected != -1 ? &mem->doc.nodes[node_selected] : NULL;
         ImVec2 scene_pos = ImGui::GetMousePosOnOpeningCurrentPopup() - offset;
         if (node)
         {
-            ImGui::Text("Node '%s'", node->Name);
+            ImGui::Text("Node '%s'", node->name);
             ImGui::Separator();
             if (ImGui::MenuItem("Rename..", NULL, false, false)) {}
             if (ImGui::MenuItem("Delete", NULL, false, false)) {}
@@ -194,7 +194,11 @@ void nodes_window::show_panel(PapayaMemory* mem)
         }
         else
         {
-            if (ImGui::MenuItem("Add")) { nodes.push_back(Node(nodes.Size, "New node", scene_pos, 0.5f, ImColor(100,100,200), 2, 2)); }
+            if (ImGui::MenuItem("Add")) {
+                mem->doc.nodes.push_back(Node(mem->doc.nodes.Size,
+                                              "New node", scene_pos,
+                                              NodeType_Raster));
+            }
             if (ImGui::MenuItem("Paste", NULL, false, false)) {}
         }
         ImGui::EndPopup();
