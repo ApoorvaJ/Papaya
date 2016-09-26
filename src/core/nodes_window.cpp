@@ -1,6 +1,6 @@
 #include "core/nodes_window.h"
 #include <math.h>
-#include"papaya_core.h"
+#include "papaya_core.h"
 
 // NOTE: Most of this file is heavily work-in-progress at this point
 
@@ -106,10 +106,10 @@ void nodes_window::show_panel(PapayaMemory* mem)
     for (int link_idx = 0; link_idx < links.Size; link_idx++)
     {
         NodeLink* link = &links[link_idx];
-        Node* node_inp = &mem->doc.nodes[link->InputIdx];
-        Node* node_out = &mem->doc.nodes[link->OutputIdx];
-        ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->InputSlot);
-        ImVec2 p2 = offset + node_out->GetInputSlotPos(link->OutputSlot);		
+        Node* node_inp = &mem->doc.nodes[link->input_idx];
+        Node* node_out = &mem->doc.nodes[link->output_idx];
+        ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->input_slot);
+        ImVec2 p2 = offset + node_out->GetInputSlotPos(link->output_slot);		
         draw_list->AddBezierCurve(p1, p1+ImVec2(0,-10), p2+ImVec2(0,+10), p2, ImColor(200,200,100), 3.0f);
     }
 

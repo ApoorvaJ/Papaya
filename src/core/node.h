@@ -16,7 +16,7 @@ struct Node {
     Vec2 pos, size;
     int inputs_count, outputs_count;
 
-    // TODO: Remove this
+    // TODO: Change these member functions to C-style functions
     Node(int id_, const char* name_, const Vec2& pos_, NodeType_ type_) {
         id = id_;
         strncpy(name, name_, 31);
@@ -37,7 +37,19 @@ struct Node {
     }
 };
 
+struct NodeLink {
+    int input_idx, output_idx;
+    int input_slot, output_slot;
+
+    // TODO: Change this member functions to a C-style function
+    NodeLink(int input_idx_, int input_slot_, int output_idx_, int output_slot_) {
+        input_idx = input_idx_;
+        input_slot = input_slot_;
+        output_idx = output_idx_;
+        output_slot = output_slot_;
+    }
+};
+
 namespace node {
     void init(Node* node);
 }
-
