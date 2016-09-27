@@ -24,11 +24,11 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     if (!inited)
     {
-        mem->doc.nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
-        mem->doc.nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
-        mem->doc.nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
-        links.push_back(NodeLink(0, 0, 2, 0));
-        links.push_back(NodeLink(1, 0, 2, 1));
+        // mem->doc.nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
+        // mem->doc.nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
+        // mem->doc.nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
+        // links.push_back(NodeLink(0, 0, 2, 0));
+        // links.push_back(NodeLink(1, 0, 2, 1));
         inited = true;
     }
 
@@ -125,9 +125,14 @@ void nodes_window::show_panel(PapayaMemory* mem)
         bool old_any_active = ImGui::IsAnyItemActive();
         ImGui::SetCursorScreenPos(node_rect_min + NODE_WINDOW_PADDING);
         ImGui::BeginGroup(); // Lock horizontal position
-        ImGui::Image((void*)(intptr_t)mem->textures[PapayaTex_UI],
+        // ImGui::Image((void*)(intptr_t)mem->textures[PapayaTex_UI],
+        //              Vec2(21,21),
+        //              Vec2(0,0), Vec2(0,0));
+
+        ImGui::Image((void*)(intptr_t)node->texture_id,
                      Vec2(21,21),
-                     Vec2(0,0), Vec2(0,0));
+                     Vec2(0,0), Vec2(1,1));
+
         // ImGui::Text("%s", node->Name);
         ImGui::EndGroup();
 

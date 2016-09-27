@@ -85,7 +85,8 @@ struct Layout {
 
 struct Document {
     ImVector<Node> nodes; // TODO: Use custom vector type?
-    Node* final_node;
+    // Node* final_node;
+    Node* current_node;
     uint32 texture_id;
     int32 width, height;
     int32 components_per_pixel;

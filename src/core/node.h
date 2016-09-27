@@ -16,6 +16,8 @@ struct Node {
     Vec2 pos, size;
     int inputs_count, outputs_count;
 
+    uint32 texture_id;
+    
     // TODO: Change these member functions to C-style functions
     Node(int id_, const char* name_, const Vec2& pos_, NodeType_ type_) {
         id = id_;
