@@ -59,14 +59,14 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
 
-    bool open_context_menu = false;
+    // bool open_context_menu = false;
     int node_hovered_in_list = -1;
     int node_hovered_in_scene = -1;
 
     ImGui::BeginGroup();
 
     const float NODE_SLOT_RADIUS = 4.0f;
-    const ImVec2 NODE_WINDOW_PADDING(8.0f, 8.0f);
+    const ImVec2 NODE_WINDOW_PADDING(2.0f, 2.0f);
 
     // Create our child canvas
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1,1));
@@ -125,15 +125,13 @@ void nodes_window::show_panel(PapayaMemory* mem)
         bool old_any_active = ImGui::IsAnyItemActive();
         ImGui::SetCursorScreenPos(node_rect_min + NODE_WINDOW_PADDING);
         ImGui::BeginGroup(); // Lock horizontal position
-        // ImGui::Image((void*)(intptr_t)mem->textures[PapayaTex_UI],
-        //              Vec2(21,21),
-        //              Vec2(0,0), Vec2(0,0));
 
+        // TODO: OPTIMIZE: Use mipmaps here.
+        // TODO: Unstretch aspect ratio
         ImGui::Image((void*)(intptr_t)node->texture_id,
-                     Vec2(21,21),
+                     Vec2(31,31),
                      Vec2(0,0), Vec2(1,1));
 
-        // ImGui::Text("%s", node->Name);
         ImGui::EndGroup();
 
         // Save the size of what we have emitted and whether any of the widgets are being used
@@ -145,10 +143,9 @@ void nodes_window::show_panel(PapayaMemory* mem)
         draw_list->ChannelsSetCurrent(0); // Background
         ImGui::SetCursorScreenPos(node_rect_min);
         ImGui::InvisibleButton("node", node->size);
-        if (ImGui::IsItemHovered())
-        {
+        if (ImGui::IsItemHovered()) {
             node_hovered_in_scene = node->id;
-            open_context_menu |= ImGui::IsMouseClicked(1);
+            // open_context_menu |= ImGui::IsMouseClicked(1);
         }
         bool node_moving_active = ImGui::IsItemActive();
         if (node_widgets_active || node_moving_active)
@@ -166,10 +163,11 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
         ImGui::PopID();
     }
+
     draw_list->ChannelsMerge();
 
     // Open context menu
-    if (!ImGui::IsAnyItemHovered() && ImGui::IsMouseHoveringWindow() && ImGui::IsMouseClicked(1))
+    /*if (!ImGui::IsAnyItemHovered() && ImGui::IsMouseHoveringWindow() && ImGui::IsMouseClicked(1))
     {
         node_selected = node_hovered_in_list = node_hovered_in_scene = -1;
         open_context_menu = true;
@@ -181,7 +179,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
             node_selected = node_hovered_in_list;
         if (node_hovered_in_scene != -1)
             node_selected = node_hovered_in_scene;
-    }
+    }*/
 
     // Draw context menu
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,8));
