@@ -3,8 +3,10 @@
 #include "libs/types.h"
 #include "string.h"
 
+struct PapayaMemory;
+
 enum NodeType_ {
-    NodeType_Raster
+    NodeType_Bitmap
 };
 
 struct Node {
@@ -19,15 +21,6 @@ struct Node {
     uint32 texture_id;
     
     // TODO: Change these member functions to C-style functions
-    Node(int id_, const char* name_, const Vec2& pos_, NodeType_ type_) {
-        id = id_;
-        strncpy(name, name_, 31);
-        name[31] = 0;
-        pos = pos_;
-        inputs_count = outputs_count = 1;
-        is_active = true;
-    }
-
     Vec2 GetInputSlotPos(int slot_no) const {
         return Vec2(pos.x + size.x * ((float)slot_no+1) / ((float)inputs_count+1),
                     pos.y + size.y);
@@ -53,5 +46,6 @@ struct NodeLink {
 };
 
 namespace node {
-    void init(Node* node);
+    void init(Node* node, int id, char* name, Vec2 pos, uint8* img,
+              PapayaMemory* mem);
 }

@@ -22,15 +22,13 @@ void nodes_window::show_panel(PapayaMemory* mem)
     float node_props_height = 200.0f;
     float width = 300.0f;
 
-    if (!inited)
-    {
-        // mem->doc.nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
-        // mem->doc.nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
-        // mem->doc.nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
-        // links.push_back(NodeLink(0, 0, 2, 0));
-        // links.push_back(NodeLink(1, 0, 2, 1));
-        inited = true;
-    }
+    /*{
+        mem->doc.nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
+        mem->doc.nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
+        mem->doc.nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
+        links.push_back(NodeLink(0, 0, 2, 0));
+        links.push_back(NodeLink(1, 0, 2, 1));
+    }*/
 
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
@@ -179,7 +177,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
             node_selected = node_hovered_in_list;
         if (node_hovered_in_scene != -1)
             node_selected = node_hovered_in_scene;
-    }*/
+    }
 
     // Draw context menu
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,8));
@@ -206,7 +204,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
         }
         ImGui::EndPopup();
     }
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar();*/
 
     // Scrolling
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
