@@ -10,7 +10,7 @@ enum NodeType_ {
 };
 
 struct Node {
-    uint32 id;
+    int64 id;
     NodeType_ type;
     char name[32];
     bool is_active;
@@ -46,6 +46,5 @@ struct NodeLink {
 };
 
 namespace node {
-    void init(Node* node, int id, char* name, Vec2 pos, uint8* img,
-              PapayaMemory* mem);
+    void init(Node* node, char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
 }

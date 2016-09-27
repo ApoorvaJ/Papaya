@@ -3,10 +3,10 @@
 #include "papaya_core.h"
 #include "libs/gl_util.h"
 
-void node::init(Node* node, int id, char* name, Vec2 pos, uint8* img,
+void node::init(Node* node, char* name, Vec2 pos, uint8* img,
                 PapayaMemory* mem)
 {
-    node->id = id;
+    node->id = mem->doc.next_node_id++;
     strncpy(node->name, name, 31);
     node->name[31] = 0;
     node->pos = pos;

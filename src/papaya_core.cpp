@@ -53,11 +53,11 @@ bool core::open_doc(char* path, PapayaMemory* mem)
         mem->doc.texture_id = gl::allocate_tex(mem->doc.width, mem->doc.height, img);
 
         Node node;
-        node::init(&node, 0, "Base", Vec2(50, 100), img, mem);
+        node::init(&node, "Base", Vec2(50, 100), img, mem);
         mem->doc.nodes.push_back(node);
 
         Node overlay_node;
-        node::init(&overlay_node, 1, "Overlay", Vec2(50, 50), 0, mem);
+        node::init(&overlay_node, "Overlay", Vec2(50, 50), 0, mem);
         mem->doc.nodes.push_back(overlay_node);
 
         mem->doc.inverse_aspect = (float)mem->doc.height / (float)mem->doc.width;
