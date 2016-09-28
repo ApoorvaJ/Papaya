@@ -18,7 +18,7 @@ struct Node {
     Vec2 pos, size;
     int inputs_count, outputs_count;
 
-    uint32 texture_id;
+    uint32 tex_id;
     
     // TODO: Change these member functions to C-style functions
     Vec2 GetInputSlotPos(int slot_no) const {
@@ -47,4 +47,5 @@ struct NodeLink {
 
 namespace node {
     void init(Node* node, char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
+    void destroy(Node* node);
 }

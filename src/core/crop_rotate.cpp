@@ -1,4 +1,6 @@
 
+// TODO: This whole file now needs a rethink with regards to moving to nodes
+
 #include "crop_rotate.h"
 #include "libs/gl_util.h"
 #include "libs/imgui/imgui.h"
@@ -39,23 +41,23 @@ void crop_rotate::toolbar(PapayaMemory* mem)
 
         // Swap render texture and document texture handles
         if (size_changed) {
-            int32 temp = mem->doc.width;
-            mem->doc.width  = mem->doc.height;
-            mem->doc.height = temp;
+            int32 temp = mem->cur_doc->width;
+            mem->cur_doc->width  = mem->cur_doc->height;
+            mem->cur_doc->height = temp;
 
-            mat4x4_ortho(mem->doc.proj_mtx,
-                         0.f, (float)mem->doc.width,
-                         0.f, (float)mem->doc.height,
+            mat4x4_ortho(mem->cur_doc->proj_mtx,
+                         0.f, (float)mem->cur_doc->width,
+                         0.f, (float)mem->cur_doc->height,
                          -1.f, 1.f);
-            mem->doc.inverse_aspect = (float)mem->doc.height /
-                                      (float)mem->doc.width;
+            mem->cur_doc->inverse_aspect = (float)mem->cur_doc->height /
+                                      (float)mem->cur_doc->width;
             GLCHK( glDeleteTextures(1, &mem->misc.fbo_sample_tex) );
-            mem->misc.fbo_sample_tex = gl::allocate_tex(mem->doc.width,
-                                                           mem->doc.height);
+            mem->misc.fbo_sample_tex = gl::allocate_tex(mem->cur_doc->width,
+                                                           mem->cur_doc->height);
         }
 
         GLCHK( glDisable(GL_BLEND) );
-        GLCHK( glViewport(0, 0, mem->doc.width, mem->doc.height) );
+        GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
 
         // Bind and clear the frame buffer
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, mem->misc.fbo) );
@@ -68,9 +70,9 @@ void crop_rotate::toolbar(PapayaMemory* mem)
         mat4x4 m, r;
         // Rotate around center
         {
-            Vec2 offset = Vec2(mem->doc.width  * 0.5f,
-                               mem->doc.height * 0.5f);
-            mat4x4_dup(m, mem->doc.proj_mtx);
+            Vec2 offset = Vec2(mem->cur_doc->width  * 0.5f,
+                               mem->cur_doc->height * 0.5f);
+            mat4x4_dup(m, mem->cur_doc->proj_mtx);
             mat4x4_translate_in_place(m, offset.x, offset.y, 0.f);
             // mat4x4_rotate_Z(r, m, math::to_radians(-90));
             mat4x4_rotate_Z(r, m, mem->crop_rotate.slider_angle +
@@ -88,23 +90,23 @@ void crop_rotate::toolbar(PapayaMemory* mem)
         GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0],
                                   1, GL_FALSE, (GLfloat*)r) );
         gl::set_vertex_attribs(mem->shaders[PapayaShader_DeMultiplyAlpha]);
-        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->doc.texture_id) );
+        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->cur_doc->final_node->tex_id) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
         uint32 temp = mem->misc.fbo_sample_tex;
-        mem->misc.fbo_sample_tex = mem->doc.texture_id;
-        mem->doc.texture_id = temp;
+        mem->misc.fbo_sample_tex = mem->cur_doc->final_node->tex_id;
+        mem->cur_doc->final_node->tex_id = temp;
 
         if (size_changed) {
-            core::resize_doc(mem, mem->doc.width, mem->doc.height);
+            core::resize_doc(mem, mem->cur_doc->width, mem->cur_doc->height);
 
             // Reposition canvas to maintain apparent position
-            int32 delta = math::round_to_int((mem->doc.height - mem->doc.width)
-                    * 0.5f * mem->doc.canvas_zoom);
-            mem->doc.canvas_pos.x += delta;
-            mem->doc.canvas_pos.y -= delta;
+            int32 delta = math::round_to_int((mem->cur_doc->height - mem->cur_doc->width)
+                    * 0.5f * mem->cur_doc->canvas_zoom);
+            mem->cur_doc->canvas_pos.x += delta;
+            mem->cur_doc->canvas_pos.y -= delta;
         }
 
         // Reset stuff
@@ -129,8 +131,8 @@ void crop_rotate::crop_outline(PapayaMemory* mem)
     // TODO: Function lacks grace
     Vec2 mouse = mem->mouse.pos;
     Vec2 p[4];
-    p[0] = mem->doc.canvas_pos + mem->crop_rotate.top_left * mem->doc.canvas_zoom;
-    p[2] = mem->doc.canvas_pos + mem->crop_rotate.bot_right * mem->doc.canvas_zoom;
+    p[0] = mem->cur_doc->canvas_pos + mem->crop_rotate.top_left * mem->cur_doc->canvas_zoom;
+    p[2] = mem->cur_doc->canvas_pos + mem->crop_rotate.bot_right * mem->cur_doc->canvas_zoom;
     p[1] = Vec2(p[0].x, p[2].y);
     p[3] = Vec2(p[2].x, p[0].y);
 
@@ -190,7 +192,7 @@ void crop_rotate::crop_outline(PapayaMemory* mem)
 
         // Entire rect selection
         {
-            Vec2 v = (mouse - mem->doc.canvas_pos) / mem->doc.canvas_zoom;
+            Vec2 v = (mouse - mem->cur_doc->canvas_pos) / mem->cur_doc->canvas_zoom;
             if (v.x >= mem->crop_rotate.top_left.x  &&
                 v.x <= mem->crop_rotate.bot_right.x &&
                 v.y >= mem->crop_rotate.top_left.y  &&
@@ -203,20 +205,20 @@ void crop_rotate::crop_outline(PapayaMemory* mem)
 
 dragging:
     if (mem->crop_rotate.crop_mode && mem->mouse.is_down[0]) {
-        Vec2 v = (mouse - mem->doc.canvas_pos) / mem->doc.canvas_zoom;
+        Vec2 v = (mouse - mem->cur_doc->canvas_pos) / mem->cur_doc->canvas_zoom;
         // TODO: Implement smart-bounds toggle for partial image rotational cropping
         //       while maintaining aspect ratio
         // Whole rect
         if (mem->crop_rotate.crop_mode == 15) {
-            Vec2 v = ((mouse - mem->doc.canvas_pos) / mem->doc.canvas_zoom)
+            Vec2 v = ((mouse - mem->cur_doc->canvas_pos) / mem->cur_doc->canvas_zoom)
                      - mem->crop_rotate.top_left;
             Vec2 delta = v - mem->crop_rotate.rect_drag_position;
             delta.x = math::clamp((float)round(delta.x),
                                   -1.f * mem->crop_rotate.top_left.x,
-                                  mem->doc.width - mem->crop_rotate.bot_right.x);
+                                  mem->cur_doc->width - mem->crop_rotate.bot_right.x);
             delta.y = math::clamp((float)round(delta.y),
                                   -1.f * mem->crop_rotate.top_left.y,
-                                  mem->doc.height - mem->crop_rotate.bot_right.y);
+                                  mem->cur_doc->height - mem->crop_rotate.bot_right.y);
             mem->crop_rotate.top_left  += delta;
             mem->crop_rotate.bot_right += delta;
             goto drawing;
@@ -251,13 +253,13 @@ dragging:
             mem->crop_rotate.bot_right.x =
                 math::clamp((float)round(mem->crop_rotate.bot_right.x),
                             mem->crop_rotate.top_left.x + 1,
-                            (float)mem->doc.width);
+                            (float)mem->cur_doc->width);
         }
         if (mem->crop_rotate.crop_mode & 6) {
             mem->crop_rotate.bot_right.y =
                 math::clamp((float)round(mem->crop_rotate.bot_right.y),
                             mem->crop_rotate.top_left.y + 1,
-                            (float)mem->doc.height);
+                            (float)mem->cur_doc->height);
         }
     }
 

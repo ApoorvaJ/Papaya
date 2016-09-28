@@ -85,11 +85,10 @@ struct Layout {
 
 struct Document {
     ImVector<Node> nodes; // TODO: Use custom vector type?
-    // Node* final_node;
+    Node* final_node;
     Node* current_node;
     int64 next_node_id;
 
-    uint32 texture_id;
     int32 width, height;
     int32 components_per_pixel;
     Vec2i canvas_pos;
@@ -166,17 +165,20 @@ struct Misc {
     bool menu_open;
     bool prefs_open;
     bool preview_image_size;
+    int32 preview_width, preview_height;
 };
 
 struct PapayaMemory {
     bool is_running;
     SystemInfo system;
     Layout window;
-    Document doc;
     Keyboard keyboard;
     Mouse mouse;
     Tablet tablet;
     Profile profile;
+
+    ImVector<Document> docs; // TODO: Use custom vector type?
+    Document* cur_doc;
 
     uint32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];

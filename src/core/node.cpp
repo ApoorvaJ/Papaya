@@ -6,7 +6,7 @@
 void node::init(Node* node, char* name, Vec2 pos, uint8* img,
                 PapayaMemory* mem)
 {
-    node->id = mem->doc.next_node_id++;
+    node->id = mem->cur_doc->next_node_id++;
     strncpy(node->name, name, 31);
     node->name[31] = 0;
     node->pos = pos;
@@ -16,5 +16,11 @@ void node::init(Node* node, char* name, Vec2 pos, uint8* img,
     node->is_active = true;
 
     // Allocate GPU texture
-    node->texture_id = gl::allocate_tex(mem->doc.width, mem->doc.height, img);
+    node->tex_id = gl::allocate_tex(mem->cur_doc->width, mem->cur_doc->height, img);
+}
+
+void node::destroy(Node* node)
+{
+    GLCHK( glDeleteTextures(1, &node->tex_id) );
+    node->tex_id = 0;
 }

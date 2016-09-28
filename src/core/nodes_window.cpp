@@ -23,9 +23,9 @@ void nodes_window::show_panel(PapayaMemory* mem)
     float width = 300.0f;
 
     /*{
-        mem->doc.nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
-        mem->doc.nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
-        mem->doc.nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
+        mem->cur_doc->nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
+        mem->cur_doc->nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
+        mem->cur_doc->nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
         links.push_back(NodeLink(0, 0, 2, 0));
         links.push_back(NodeLink(1, 0, 2, 1));
     }*/
@@ -42,8 +42,8 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     ImGui::Begin("Node properties", 0, mem->window.default_imgui_flags);
 
-    ImGui::Checkbox(mem->doc.nodes[node_selected].name,
-                    &mem->doc.nodes[node_selected].is_active);
+    ImGui::Checkbox(mem->cur_doc->nodes[node_selected].name,
+                    &mem->cur_doc->nodes[node_selected].is_active);
     ImGui::Text("Node properties controls go here");
 
     ImGui::End();
@@ -104,17 +104,17 @@ void nodes_window::show_panel(PapayaMemory* mem)
     for (int link_idx = 0; link_idx < links.Size; link_idx++)
     {
         NodeLink* link = &links[link_idx];
-        Node* node_inp = &mem->doc.nodes[link->input_idx];
-        Node* node_out = &mem->doc.nodes[link->output_idx];
+        Node* node_inp = &mem->cur_doc->nodes[link->input_idx];
+        Node* node_out = &mem->cur_doc->nodes[link->output_idx];
         ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->input_slot);
         ImVec2 p2 = offset + node_out->GetInputSlotPos(link->output_slot);		
         draw_list->AddBezierCurve(p1, p1+ImVec2(0,-10), p2+ImVec2(0,+10), p2, ImColor(200,200,100), 3.0f);
     }
 
     // Display nodes
-    for (int node_idx = 0; node_idx < mem->doc.nodes.Size; node_idx++)
+    for (int node_idx = 0; node_idx < mem->cur_doc->nodes.Size; node_idx++)
     {
-        Node* node = &mem->doc.nodes[node_idx];
+        Node* node = &mem->cur_doc->nodes[node_idx];
         ImGui::PushID(node->id);
         ImVec2 node_rect_min = offset + node->pos;
 
@@ -126,7 +126,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
         // TODO: OPTIMIZE: Use mipmaps here.
         // TODO: Unstretch aspect ratio
-        ImGui::Image((void*)(intptr_t)node->texture_id,
+        ImGui::Image((void*)(intptr_t)node->tex_id,
                      Vec2(31,31),
                      Vec2(0,0), Vec2(1,1));
 
@@ -183,7 +183,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,8));
     if (ImGui::BeginPopup("context_menu"))
     {
-        Node* node = node_selected != -1 ? &mem->doc.nodes[node_selected] : NULL;
+        Node* node = node_selected != -1 ? &mem->cur_doc->nodes[node_selected] : NULL;
         ImVec2 scene_pos = ImGui::GetMousePosOnOpeningCurrentPopup() - offset;
         if (node)
         {
@@ -196,7 +196,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
         else
         {
             if (ImGui::MenuItem("Add")) {
-                mem->doc.nodes.push_back(Node(mem->doc.nodes.Size,
+                mem->cur_doc->nodes.push_back(Node(mem->cur_doc->nodes.Size,
                                               "New node", scene_pos,
                                               NodeType_Raster));
             }

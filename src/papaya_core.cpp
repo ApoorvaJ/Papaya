@@ -40,31 +40,37 @@ bool core::open_doc(char* path, PapayaMemory* mem)
 
     // Load/create image
     {
-        uint8* img;
+        uint8* img = 0;
+        Document doc; // TODO: Move to friendlier vec and then init to zero via {0}
+
         if (path) {
-            img = stbi_load(path, &mem->doc.width, &mem->doc.height,
-                    &mem->doc.components_per_pixel, 4);
+            img = stbi_load(path, &doc.width, &doc.height,
+                            &doc.components_per_pixel, 4);
         } else {
-            img = (uint8*)calloc(1, mem->doc.width * mem->doc.height * 4);
+            // Creating new image
+            img = (uint8*)calloc(1,
+                mem->misc.preview_width * mem->misc.preview_height * 4);
         }
 
         if (!img) { return false; }
 
-        mem->doc.texture_id = gl::allocate_tex(mem->doc.width, mem->doc.height, img);
+        mem->docs.push_back(doc);
+        mem->cur_doc = &mem->docs[0];
 
         Node node;
         node::init(&node, "Base", Vec2(50, 100), img, mem);
-        mem->doc.nodes.push_back(node);
+        mem->cur_doc->nodes.push_back(node);
 
         Node overlay_node;
         node::init(&overlay_node, "Overlay", Vec2(50, 50), 0, mem);
-        mem->doc.nodes.push_back(overlay_node);
+        mem->cur_doc->nodes.push_back(overlay_node);
 
-        mem->doc.inverse_aspect = (float)mem->doc.height / (float)mem->doc.width;
+        mem->cur_doc->inverse_aspect = (float)mem->cur_doc->height /
+                                      (float)mem->cur_doc->width;
         free(img);
     }
 
-    resize_doc(mem, mem->doc.width, mem->doc.height);
+    resize_doc(mem, mem->cur_doc->width, mem->cur_doc->height);
 
     // Set up the frame buffer
     {
@@ -91,27 +97,25 @@ bool core::open_doc(char* path, PapayaMemory* mem)
     }
 
     // Projection matrix
-    mat4x4_ortho(mem->doc.proj_mtx, 0.f, 
-                 (float)mem->doc.width, 0.f, (float)mem->doc.height,
+    mat4x4_ortho(mem->cur_doc->proj_mtx, 0.f, 
+                 (float)mem->cur_doc->width, 0.f, (float)mem->cur_doc->height,
                  -1.f, 1.f);
 
-    undo::init(mem);
+    // undo::init(mem);
 
     timer::stop(Timer_ImageOpen);
 
     //TODO: Move this to adjust after cropping and rotation
     mem->crop_rotate.top_left = Vec2(0,0);
-    mem->crop_rotate.bot_right = Vec2((float)mem->doc.width, (float)mem->doc.height);
+    mem->crop_rotate.bot_right = Vec2((float)mem->cur_doc->width, (float)mem->cur_doc->height);
 
     return true;
 }
 
 void core::close_doc(PapayaMemory* mem)
 {
-    // Document
-    if (mem->doc.texture_id) {
-        GLCHK( glDeleteTextures(1, &mem->doc.texture_id) );
-        mem->doc.texture_id = 0;
+    for (int i = 0; i < mem->cur_doc->nodes.Size; i++) {
+        node::destroy(&mem->cur_doc->nodes[i]);
     }
 
     undo::destroy(mem);
@@ -149,7 +153,7 @@ void core::init(PapayaMemory* mem)
 {
     // Init values and load textures
     {
-        mem->doc.width = mem->doc.height = 512;
+        mem->misc.preview_height = mem->misc.preview_width = 512;
 
         mem->current_tool = PapayaTool_Brush;
 
@@ -379,18 +383,18 @@ void core::resize(PapayaMemory* mem, int32 width, int32 height)
     if (mem->misc.show_nodes) { available_width -= 400.0f; }
     float available_height = mem->window.height - top_margin;
 
-    mem->doc.canvas_zoom = 0.8f *
-        math::min(available_width  / (float)mem->doc.width,
-                  available_height / (float)mem->doc.height);
-    if (mem->doc.canvas_zoom > 1.0f) { mem->doc.canvas_zoom = 1.0f; }
+    mem->cur_doc->canvas_zoom = 0.8f *
+        math::min(available_width  / (float)mem->cur_doc->width,
+                  available_height / (float)mem->cur_doc->height);
+    if (mem->cur_doc->canvas_zoom > 1.0f) { mem->cur_doc->canvas_zoom = 1.0f; }
 
     int32 x = 
-        (available_width - (float)mem->doc.width * mem->doc.canvas_zoom)
+        (available_width - (float)mem->cur_doc->width * mem->cur_doc->canvas_zoom)
         / 2.0f;
     int32 y = top_margin + 
-       (available_height - (float)mem->doc.height * mem->doc.canvas_zoom)
+       (available_height - (float)mem->cur_doc->height * mem->cur_doc->canvas_zoom)
        / 2.0f;
-    mem->doc.canvas_pos = Vec2i(x, y);
+    mem->cur_doc->canvas_pos = Vec2i(x, y);
 }
 
 void core::update(PapayaMemory* mem)
@@ -400,9 +404,9 @@ void core::update(PapayaMemory* mem)
         // Current mouse info
         {
             mem->mouse.pos = math::round_to_vec2i(ImGui::GetMousePos());
-            Vec2 mouse_pixel_pos = Vec2(math::floor((mem->mouse.pos.x - mem->doc.canvas_pos.x) / mem->doc.canvas_zoom),
-                                        math::floor((mem->mouse.pos.y - mem->doc.canvas_pos.y) / mem->doc.canvas_zoom));
-            mem->mouse.uv = Vec2(mouse_pixel_pos.x / (float) mem->doc.width, mouse_pixel_pos.y / (float) mem->doc.height);
+            Vec2 mouse_pixel_pos = Vec2(math::floor((mem->mouse.pos.x - mem->cur_doc->canvas_pos.x) / mem->cur_doc->canvas_zoom),
+                                        math::floor((mem->mouse.pos.y - mem->cur_doc->canvas_pos.y) / mem->cur_doc->canvas_zoom));
+            mem->mouse.uv = Vec2(mouse_pixel_pos.x / (float) mem->cur_doc->width, mouse_pixel_pos.y / (float) mem->cur_doc->height);
 
             for (int32 i = 0; i < 3; i++) {
                 mem->mouse.is_down[i] = ImGui::IsMouseDown(i);
@@ -477,30 +481,34 @@ void core::update(PapayaMemory* mem)
             if (ImGui::BeginMenu("FILE")) {
                 mem->misc.menu_open = true;
 
-                if (mem->doc.texture_id) { 
+                if (mem->cur_doc && mem->cur_doc->final_node) {
                     // A document is already open
+
                     if (ImGui::MenuItem("Close")) { close_doc(mem); }
                     if (ImGui::MenuItem("Save")) {
                         char* Path = platform::save_file_dialog();
-                        uint8* Texture = (uint8*)malloc(4 * mem->doc.width * mem->doc.height);
+                        uint8* tex = (uint8*)malloc(4 * mem->cur_doc->width * mem->cur_doc->height);
                         if (Path) {
                             // TODO: Do this on a separate thread. Massively blocks UI for large images.
-                            GLCHK(glBindTexture(GL_TEXTURE_2D, mem->doc.texture_id));
-                            GLCHK(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Texture));
+                            GLCHK(glBindTexture(GL_TEXTURE_2D,
+                                                mem->cur_doc->final_node->tex_id));
+                            GLCHK(glGetTexImage(GL_TEXTURE_2D, 0,
+                                                GL_RGBA, GL_UNSIGNED_BYTE,
+                                                tex));
 
-                            int32 Result = stbi_write_png(Path, mem->doc.width, mem->doc.height, 4, Texture, 4 * mem->doc.width);
+                            int32 Result = stbi_write_png(Path, mem->cur_doc->width, mem->cur_doc->height, 4, tex, 4 * mem->cur_doc->width);
                             if (!Result) {
                                 // TODO: Log: Save failed
                                 platform::print("Save failed\n");
                             }
 
-                            free(Texture);
+                            free(tex);
                             free(Path);
                         }
                     }
-                }
-                else {
-                    // No document open
+                } else {
+                // No document open
+
                     if (ImGui::MenuItem("Open")) {
                         char* Path = platform::open_file_dialog();
                         if (Path)
@@ -638,18 +646,18 @@ void core::update(PapayaMemory* mem)
         ImGui::Begin("Tool param bar", &Show, mem->window.default_imgui_flags);
 
         // New document options. Might convert into modal window later.
-        if (!mem->doc.texture_id) // No document is open
+        if (!mem->cur_doc) // No document is open
         {
             // Size
             {
                 int32 size[2];
-                size[0] = mem->doc.width;
-                size[1] = mem->doc.height;
+                size[0] = mem->cur_doc->width;
+                size[1] = mem->cur_doc->height;
                 ImGui::PushItemWidth(85);
                 ImGui::InputInt2("Size", size);
                 ImGui::PopItemWidth();
-                mem->doc.width  = math::clamp(size[0], 1, 9000);
-                mem->doc.height = math::clamp(size[1], 1, 9000);
+                mem->cur_doc->width  = math::clamp(size[0], 1, 9000);
+                mem->cur_doc->height = math::clamp(size[1], 1, 9000);
                 ImGui::SameLine();
                 ImGui::Checkbox("Preview", &mem->misc.preview_image_size);
             }
@@ -659,7 +667,7 @@ void core::update(PapayaMemory* mem)
                 ImGui::SameLine(ImGui::GetWindowWidth() - 70); // TODO: Magic number alert
                 if (ImGui::Button("New Image"))
                 {
-                    mem->doc.components_per_pixel = 4;
+                    mem->cur_doc->components_per_pixel = 4;
                     open_doc(0, mem);
                 }
             }
@@ -706,23 +714,23 @@ void core::update(PapayaMemory* mem)
     }
 
     // Image size preview
-    if (!mem->doc.texture_id && mem->misc.preview_image_size)
+    if (!mem->cur_doc && mem->misc.preview_image_size)
     {
         int32 top_margin = 53; // TODO: Put common layout constants in struct
         gl::transform_quad(mem->meshes[PapayaMesh_ImageSizePreview],
-            Vec2((float)(mem->window.width - mem->doc.width) / 2, top_margin + (float)(mem->window.height - top_margin - mem->doc.height) / 2),
-            Vec2((float)mem->doc.width, (float)mem->doc.height));
+            Vec2((float)(mem->window.width - mem->cur_doc->width) / 2, top_margin + (float)(mem->window.height - top_margin - mem->cur_doc->height) / 2),
+            Vec2((float)mem->cur_doc->width, (float)mem->cur_doc->height));
 
         gl::draw_mesh(mem->meshes[PapayaMesh_ImageSizePreview], mem->shaders[PapayaShader_ImageSizePreview], true,
             5,
             UniformType_Matrix4, &mem->window.proj_mtx[0][0],
             UniformType_Color, mem->colors[PapayaCol_ImageSizePreview1],
             UniformType_Color, mem->colors[PapayaCol_ImageSizePreview2],
-            UniformType_Float, (float) mem->doc.width,
-            UniformType_Float, (float) mem->doc.height);
+            UniformType_Float, (float) mem->cur_doc->width,
+            UniformType_Float, (float) mem->cur_doc->height);
     }
 
-    if (!mem->doc.texture_id) { goto EndOfDoc; }
+    if (!mem->cur_doc) { goto EndOfDoc; }
 
     // Brush tool
     if (mem->current_tool == PapayaTool_Brush &&
@@ -750,7 +758,7 @@ void core::update(PapayaMemory* mem)
                 }
                 else
                 {
-                    float Diameter = mem->brush.rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / mem->doc.canvas_zoom * 2.0f);
+                    float Diameter = mem->brush.rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / mem->cur_doc->canvas_zoom * 2.0f);
                     mem->brush.diameter = math::clamp((int32)Diameter, 1, mem->brush.max_diameter);
 
                     float Hardness = mem->brush.rt_drag_start_hardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
@@ -772,7 +780,7 @@ void core::update(PapayaMemory* mem)
             if (mem->picker.is_open) {
                 mem->picker.current_color = mem->picker.new_color;
             }
-            mem->brush.paint_area_1 = Vec2i(mem->doc.width + 1, mem->doc.height + 1);
+            mem->brush.paint_area_1 = Vec2i(mem->cur_doc->width + 1, mem->cur_doc->height + 1);
             mem->brush.paint_area_2 = Vec2i(0,0);
         }
         else if (mem->mouse.released[0] && mem->brush.being_dragged)
@@ -790,7 +798,7 @@ void core::update(PapayaMemory* mem)
                 GLCHK( glDisable(GL_DEPTH_TEST) );
                 GLCHK( glBindFramebuffer     (GL_FRAMEBUFFER, mem->misc.fbo) );
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mem->misc.fbo_render_tex, 0) );
-                GLCHK( glViewport(0, 0, mem->doc.width, mem->doc.height) );
+                GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
 
                 Vec2i Pos  = mem->brush.paint_area_1;
                 Vec2i Size = mem->brush.paint_area_2 - mem->brush.paint_area_1;
@@ -803,11 +811,13 @@ void core::update(PapayaMemory* mem)
 
                     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
                     GLCHK( glUseProgram(mem->shaders[PapayaShader_ImGui].handle) );
-                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &mem->doc.proj_mtx[0][0]) );
+                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
                     gl::set_vertex_attribs(mem->shaders[PapayaShader_ImGui]);
 
-                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->doc.texture_id) );
-                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    // TODO: Node support 
+                    // GLCHK( glBindTexture(GL_TEXTURE_2D,
+                    //                      (GLuint)(intptr_t)mem->cur_doc->texture_id) );
+                    // GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
                     pre_brush_img = (int8*)malloc(4 * Size.x * Size.y);
                     GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, pre_brush_img) );
@@ -816,11 +826,12 @@ void core::update(PapayaMemory* mem)
                 // Render base image with premultiplied alpha
                 {
                     GLCHK( glUseProgram(mem->shaders[PapayaShader_PreMultiplyAlpha].handle) );
-                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_PreMultiplyAlpha].uniforms[0], 1, GL_FALSE, &mem->doc.proj_mtx[0][0]) );
+                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_PreMultiplyAlpha].uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
                     gl::set_vertex_attribs(mem->shaders[PapayaShader_PreMultiplyAlpha]);
 
-                    GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->doc.texture_id) );
-                    GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
+                    // TODO: Node support 
+                    // GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->cur_doc->texture_id) );
+                    // GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }
 
                 // Render brush overlay with premultiplied alpha
@@ -830,7 +841,7 @@ void core::update(PapayaMemory* mem)
                     GLCHK( glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA) );
 
                     GLCHK( glUseProgram(mem->shaders[PapayaShader_PreMultiplyAlpha].handle) );
-                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_PreMultiplyAlpha].uniforms[0], 1, GL_FALSE, &mem->doc.proj_mtx[0][0]) );
+                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_PreMultiplyAlpha].uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
                     gl::set_vertex_attribs(mem->shaders[PapayaShader_PreMultiplyAlpha]);
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
@@ -838,19 +849,20 @@ void core::update(PapayaMemory* mem)
                 }
 
                 // Render blended result with demultiplied alpha
-                {
+                /*{
                     GLCHK( glDisable(GL_BLEND) );
 
-                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mem->doc.texture_id, 0) );
+                    // TODO: Node support 
+                    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mem->cur_doc->texture_id, 0) );
                     GLCHK( glUseProgram(mem->shaders[PapayaShader_DeMultiplyAlpha].handle) );
-                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_DeMultiplyAlpha].uniforms[0], 1, GL_FALSE, &mem->doc.proj_mtx[0][0]) );
+                    GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_DeMultiplyAlpha].uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
                     gl::set_vertex_attribs(mem->shaders[PapayaShader_DeMultiplyAlpha]);
 
                     GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_render_tex) );
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
-                }
+                }*/
 
-                undo::push(&mem->doc.undo, &mem->profile,
+                undo::push(&mem->cur_doc->undo, &mem->profile,
                            Pos, Size, pre_brush_img,
                            mem->brush.line_segment_start_uv);
 
@@ -876,14 +888,14 @@ void core::update(PapayaMemory* mem)
                 GLCHK( glClear(GL_COLOR_BUFFER_BIT) );
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mem->misc.fbo_render_tex, 0) );
             }
-            GLCHK( glViewport(0, 0, mem->doc.width, mem->doc.height) );
+            GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
 
             GLCHK( glDisable(GL_BLEND) );
             GLCHK( glDisable(GL_SCISSOR_TEST) );
 
             // Setup orthographic projection matrix
-            float width  = (float)mem->doc.width;
-            float height = (float)mem->doc.height;
+            float width  = (float)mem->cur_doc->width;
+            float height = (float)mem->cur_doc->height;
             GLCHK( glUseProgram(mem->shaders[PapayaShader_Brush].handle) );
 
             mem->brush.was_straight_drag = mem->brush.is_straight_drag;
@@ -907,16 +919,16 @@ void core::update(PapayaMemory* mem)
             if (mem->brush.is_straight_drag && mem->brush.straight_drag_snap_x)
             {
                 mem->mouse.uv.x = mem->brush.straight_drag_start_uv.x;
-                float pixelPos = mem->mouse.uv.x * mem->doc.width + 0.5f;
-                mem->mouse.pos.x = math::round_to_int(pixelPos * mem->doc.canvas_zoom + mem->doc.canvas_pos.x);
+                float pixelPos = mem->mouse.uv.x * mem->cur_doc->width + 0.5f;
+                mem->mouse.pos.x = math::round_to_int(pixelPos * mem->cur_doc->canvas_zoom + mem->cur_doc->canvas_pos.x);
                 platform::set_mouse_position(mem->mouse.pos.x, mem->mouse.pos.y);
             }
 
             if (mem->brush.is_straight_drag && mem->brush.straight_drag_snap_y)
             {
                 mem->mouse.uv.y = mem->brush.straight_drag_start_uv.y;
-                float pixelPos = mem->mouse.uv.y * mem->doc.height + 0.5f;
-                mem->mouse.pos.y = math::round_to_int(pixelPos * mem->doc.canvas_zoom + mem->doc.canvas_pos.y);
+                float pixelPos = mem->mouse.uv.y * mem->cur_doc->height + 0.5f;
+                mem->mouse.pos.y = math::round_to_int(pixelPos * mem->cur_doc->canvas_zoom + mem->cur_doc->canvas_pos.y);
                 platform::set_mouse_position(mem->mouse.pos.x, mem->mouse.pos.y);
             }
 
@@ -954,26 +966,26 @@ void core::update(PapayaMemory* mem)
                 float UVMaxX = math::max(CorrectedPos.x, CorrectedLastPos.x);
                 float UVMaxY = math::max(CorrectedPos.y, CorrectedLastPos.y);
 
-                int32 PixelMinX = math::round_to_int(UVMinX * mem->doc.width  - 0.5f * mem->brush.diameter);
-                int32 PixelMinY = math::round_to_int(UVMinY * mem->doc.height - 0.5f * mem->brush.diameter);
-                int32 PixelMaxX = math::round_to_int(UVMaxX * mem->doc.width  + 0.5f * mem->brush.diameter);
-                int32 PixelMaxY = math::round_to_int(UVMaxY * mem->doc.height + 0.5f * mem->brush.diameter);
+                int32 PixelMinX = math::round_to_int(UVMinX * mem->cur_doc->width  - 0.5f * mem->brush.diameter);
+                int32 PixelMinY = math::round_to_int(UVMinY * mem->cur_doc->height - 0.5f * mem->brush.diameter);
+                int32 PixelMaxX = math::round_to_int(UVMaxX * mem->cur_doc->width  + 0.5f * mem->brush.diameter);
+                int32 PixelMaxY = math::round_to_int(UVMaxY * mem->cur_doc->height + 0.5f * mem->brush.diameter);
 
                 mem->brush.paint_area_1.x = math::min(mem->brush.paint_area_1.x, PixelMinX);
                 mem->brush.paint_area_1.y = math::min(mem->brush.paint_area_1.y, PixelMinY);
                 mem->brush.paint_area_2.x = math::max(mem->brush.paint_area_2.x, PixelMaxX);
                 mem->brush.paint_area_2.y = math::max(mem->brush.paint_area_2.y, PixelMaxY);
 
-                mem->brush.paint_area_1.x = math::clamp(mem->brush.paint_area_1.x, 0, mem->doc.width);
-                mem->brush.paint_area_1.y = math::clamp(mem->brush.paint_area_1.y, 0, mem->doc.height);
-                mem->brush.paint_area_2.x = math::clamp(mem->brush.paint_area_2.x, 0, mem->doc.width);
-                mem->brush.paint_area_2.y = math::clamp(mem->brush.paint_area_2.y, 0, mem->doc.height);
+                mem->brush.paint_area_1.x = math::clamp(mem->brush.paint_area_1.x, 0, mem->cur_doc->width);
+                mem->brush.paint_area_1.y = math::clamp(mem->brush.paint_area_1.y, 0, mem->cur_doc->height);
+                mem->brush.paint_area_2.x = math::clamp(mem->brush.paint_area_2.x, 0, mem->cur_doc->width);
+                mem->brush.paint_area_2.y = math::clamp(mem->brush.paint_area_2.y, 0, mem->cur_doc->height);
             }
 
-            GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_Brush].uniforms[0], 1, GL_FALSE, &mem->doc.proj_mtx[0][0]) );
-            GLCHK( glUniform2f(mem->shaders[PapayaShader_Brush].uniforms[2], CorrectedPos.x, CorrectedPos.y * mem->doc.inverse_aspect) ); // Pos uniform
-            GLCHK( glUniform2f(mem->shaders[PapayaShader_Brush].uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * mem->doc.inverse_aspect) ); // Lastpos uniform
-            GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush].uniforms[4], (float)mem->brush.diameter / ((float)mem->doc.width * 2.0f)) );
+            GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_Brush].uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
+            GLCHK( glUniform2f(mem->shaders[PapayaShader_Brush].uniforms[2], CorrectedPos.x, CorrectedPos.y * mem->cur_doc->inverse_aspect) ); // Pos uniform
+            GLCHK( glUniform2f(mem->shaders[PapayaShader_Brush].uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * mem->cur_doc->inverse_aspect) ); // Lastpos uniform
+            GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush].uniforms[4], (float)mem->brush.diameter / ((float)mem->cur_doc->width * 2.0f)) );
             float Opacity = mem->brush.opacity;
             //if (mem->tablet.Pressure > 0.0f) { Opacity *= mem->tablet.Pressure; }
             GLCHK( glUniform4f(mem->shaders[PapayaShader_Brush].uniforms[5], mem->picker.current_color.r,
@@ -997,7 +1009,7 @@ void core::update(PapayaMemory* mem)
                 GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush].uniforms[6], Hardness) );
             }
 
-            GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush].uniforms[7], mem->doc.inverse_aspect) ); // Inverse Aspect uniform
+            GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush].uniforms[7], mem->cur_doc->inverse_aspect) ); // Inverse Aspect uniform
 
             GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTBrush].vbo_handle) );
             gl::set_vertex_attribs(mem->shaders[PapayaShader_Brush]);
@@ -1048,26 +1060,26 @@ void core::update(PapayaMemory* mem)
             bool refresh = false;
 
             if (ImGui::GetIO().KeyShift &&
-                mem->doc.undo.current_index < mem->doc.undo.count - 1 &&
-                mem->doc.undo.current->next != 0) {
+                mem->cur_doc->undo.current_index < mem->cur_doc->undo.count - 1 &&
+                mem->cur_doc->undo.current->next != 0) {
                 // Redo 
-                mem->doc.undo.current = mem->doc.undo.current->next;
-                mem->doc.undo.current_index++;
-                mem->brush.line_segment_start_uv = mem->doc.undo.current->line_segment_start_uv;
+                mem->cur_doc->undo.current = mem->cur_doc->undo.current->next;
+                mem->cur_doc->undo.current_index++;
+                mem->brush.line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
                 refresh = true;
             } else if (!ImGui::GetIO().KeyShift &&
-                mem->doc.undo.current_index > 0 &&
-                mem->doc.undo.current->prev != 0) {
+                mem->cur_doc->undo.current_index > 0 &&
+                mem->cur_doc->undo.current->prev != 0) {
                 // Undo
-                if (mem->doc.undo.current->IsSubRect) {
+                if (mem->cur_doc->undo.current->IsSubRect) {
                     undo::pop(mem, true);
                 } else {
                     refresh = true;
                 }
 
-                mem->doc.undo.current = mem->doc.undo.current->prev;
-                mem->doc.undo.current_index--;
-                mem->brush.line_segment_start_uv = mem->doc.undo.current->line_segment_start_uv;
+                mem->cur_doc->undo.current = mem->cur_doc->undo.current->prev;
+                mem->cur_doc->undo.current_index--;
+                mem->brush.line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
             }
 
             if (refresh) {
@@ -1090,31 +1102,31 @@ void core::update(PapayaMemory* mem)
             draw_list->AddLine(P1, P2, 0xFFFFFFFF);
 
             // Base mark
-            uint64 BaseOffset = (int8*)mem->doc.undo.base - (int8*)mem->doc.undo.start;
-            float BaseX       = P1.x + (float)BaseOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
+            uint64 BaseOffset = (int8*)mem->cur_doc->undo.base - (int8*)mem->cur_doc->undo.start;
+            float BaseX       = P1.x + (float)BaseOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
 
             // Current mark
-            uint64 CurrOffset = (int8*)mem->doc.undo.current - (int8*)mem->doc.undo.start;
-            float CurrX       = P1.x + (float)CurrOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
+            uint64 CurrOffset = (int8*)mem->cur_doc->undo.current - (int8*)mem->cur_doc->undo.start;
+            float CurrX       = P1.x + (float)CurrOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
 
             // Last mark
-            uint64 LastOffset = (int8*)mem->doc.undo.last - (int8*)mem->doc.undo.start;
-            float LastX       = P1.x + (float)LastOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
+            uint64 LastOffset = (int8*)mem->cur_doc->undo.last - (int8*)mem->cur_doc->undo.start;
+            float LastX       = P1.x + (float)LastOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             //draw_list->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
 
             // Top mark
-            uint64 TopOffset = (int8*)mem->doc.undo.top - (int8*)mem->doc.undo.start;
-            float TopX       = P1.x + (float)TopOffset / (float)mem->doc.undo.size * (P2.x - P1.x);
+            uint64 TopOffset = (int8*)mem->cur_doc->undo.top - (int8*)mem->cur_doc->undo.start;
+            float TopX       = P1.x + (float)TopOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
             ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
             ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %" PRIu64, BaseOffset);
             ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %" PRIu64, CurrOffset);
             ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %" PRIu64, TopOffset);
-            ImGui::Text         ("Count   %lu", mem->doc.undo.count);
-            ImGui::Text         ("Index   %lu", mem->doc.undo.current_index);
+            ImGui::Text         ("Count   %lu", mem->cur_doc->undo.count);
+            ImGui::Text         ("Index   %lu", mem->cur_doc->undo.current_index);
 
             ImGui::End();
         }
@@ -1123,35 +1135,35 @@ void core::update(PapayaMemory* mem)
     // Canvas zooming and panning
     {
         // Panning
-        mem->doc.canvas_pos += math::round_to_vec2i(ImGui::GetMouseDragDelta(2));
+        mem->cur_doc->canvas_pos += math::round_to_vec2i(ImGui::GetMouseDragDelta(2));
         ImGui::ResetMouseDragDelta(2);
 
         // Zooming
         if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
         {
             float min_zoom = 0.01f, MaxZoom = 32.0f;
-            float zoom_speed = 0.2f * mem->doc.canvas_zoom;
-            float scale_delta = math::min(MaxZoom - mem->doc.canvas_zoom, ImGui::GetIO().MouseWheel * zoom_speed);
-            Vec2 old_zoom = Vec2((float)mem->doc.width, (float)mem->doc.height) * mem->doc.canvas_zoom;
+            float zoom_speed = 0.2f * mem->cur_doc->canvas_zoom;
+            float scale_delta = math::min(MaxZoom - mem->cur_doc->canvas_zoom, ImGui::GetIO().MouseWheel * zoom_speed);
+            Vec2 old_zoom = Vec2((float)mem->cur_doc->width, (float)mem->cur_doc->height) * mem->cur_doc->canvas_zoom;
 
-            mem->doc.canvas_zoom += scale_delta;
-            if (mem->doc.canvas_zoom < min_zoom) { mem->doc.canvas_zoom = min_zoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-            Vec2i new_canvas_size = math::round_to_vec2i(Vec2((float)mem->doc.width, (float)mem->doc.height) * mem->doc.canvas_zoom);
+            mem->cur_doc->canvas_zoom += scale_delta;
+            if (mem->cur_doc->canvas_zoom < min_zoom) { mem->cur_doc->canvas_zoom = min_zoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
+            Vec2i new_canvas_size = math::round_to_vec2i(Vec2((float)mem->cur_doc->width, (float)mem->cur_doc->height) * mem->cur_doc->canvas_zoom);
 
             if ((new_canvas_size.x > mem->window.width || new_canvas_size.y > mem->window.height))
             {
-                Vec2 pre_scale_mouse_pos = Vec2(mem->mouse.pos - mem->doc.canvas_pos) / old_zoom;
-                Vec2 new_pos = Vec2(mem->doc.canvas_pos) -
-                    Vec2(pre_scale_mouse_pos.x * scale_delta * (float)mem->doc.width,
-                        pre_scale_mouse_pos.y * scale_delta * (float)mem->doc.height);
-                mem->doc.canvas_pos = math::round_to_vec2i(new_pos);
+                Vec2 pre_scale_mouse_pos = Vec2(mem->mouse.pos - mem->cur_doc->canvas_pos) / old_zoom;
+                Vec2 new_pos = Vec2(mem->cur_doc->canvas_pos) -
+                    Vec2(pre_scale_mouse_pos.x * scale_delta * (float)mem->cur_doc->width,
+                        pre_scale_mouse_pos.y * scale_delta * (float)mem->cur_doc->height);
+                mem->cur_doc->canvas_pos = math::round_to_vec2i(new_pos);
             }
             else // Center canvas
             {
                 // TODO: Maybe disable centering on zoom out. Needs more usability testing.
                 int32 top_margin = 53; // TODO: Put common layout constants in struct
-                mem->doc.canvas_pos.x = math::round_to_int((mem->window.width - (float)mem->doc.width * mem->doc.canvas_zoom) / 2.0f);
-                mem->doc.canvas_pos.y = top_margin + math::round_to_int((mem->window.height - top_margin - (float)mem->doc.height * mem->doc.canvas_zoom) / 2.0f);
+                mem->cur_doc->canvas_pos.x = math::round_to_int((mem->window.width - (float)mem->cur_doc->width * mem->cur_doc->canvas_zoom) / 2.0f);
+                mem->cur_doc->canvas_pos.y = top_margin + math::round_to_int((mem->window.height - top_margin - (float)mem->cur_doc->height * mem->cur_doc->canvas_zoom) / 2.0f);
             }
         }
     }
@@ -1160,8 +1172,8 @@ void core::update(PapayaMemory* mem)
     {
         // TODO: Conflate PapayaMesh_AlphaGrid and PapayaMesh_Canvas?
         gl::transform_quad(mem->meshes[PapayaMesh_AlphaGrid],
-            mem->doc.canvas_pos,
-            Vec2(mem->doc.width * mem->doc.canvas_zoom, mem->doc.height * mem->doc.canvas_zoom));
+            mem->cur_doc->canvas_pos,
+            Vec2(mem->cur_doc->width * mem->cur_doc->canvas_zoom, mem->cur_doc->height * mem->cur_doc->canvas_zoom));
 
         mat4x4 m;
         mat4x4_ortho(m, 0.f, (float)mem->window.width, (float)mem->window.height, 0.f, -1.f, 1.f);
@@ -1169,10 +1181,10 @@ void core::update(PapayaMemory* mem)
         if (mem->current_tool == PapayaTool_CropRotate) // Rotate around center
         {
             mat4x4 r;
-            Vec2 Offset = Vec2(mem->doc.canvas_pos.x + mem->doc.width *
-                               mem->doc.canvas_zoom * 0.5f,
-                               mem->doc.canvas_pos.y + mem->doc.height *
-                               mem->doc.canvas_zoom * 0.5f);
+            Vec2 Offset = Vec2(mem->cur_doc->canvas_pos.x + mem->cur_doc->width *
+                               mem->cur_doc->canvas_zoom * 0.5f,
+                               mem->cur_doc->canvas_pos.y + mem->cur_doc->height *
+                               mem->cur_doc->canvas_zoom * 0.5f);
 
             mat4x4_translate_in_place(m, Offset.x, Offset.y, 0.f);
             mat4x4_rotate_Z(r, m, math::to_radians(90.0f * mem->crop_rotate.base_rotation));
@@ -1185,16 +1197,16 @@ void core::update(PapayaMemory* mem)
             UniformType_Matrix4, m,
             UniformType_Color, mem->colors[PapayaCol_AlphaGrid1],
             UniformType_Color, mem->colors[PapayaCol_AlphaGrid2],
-            UniformType_Float, mem->doc.canvas_zoom,
-            UniformType_Float, mem->doc.inverse_aspect,
-            UniformType_Float, math::max((float)mem->doc.width, (float)mem->doc.height));
+            UniformType_Float, mem->cur_doc->canvas_zoom,
+            UniformType_Float, mem->cur_doc->inverse_aspect,
+            UniformType_Float, math::max((float)mem->cur_doc->width, (float)mem->cur_doc->height));
     }
 
     // Draw canvas
     {
         gl::transform_quad(mem->meshes[PapayaMesh_Canvas],
-            mem->doc.canvas_pos,
-            Vec2(mem->doc.width * mem->doc.canvas_zoom, mem->doc.height * mem->doc.canvas_zoom));
+            mem->cur_doc->canvas_pos,
+            Vec2(mem->cur_doc->width * mem->cur_doc->canvas_zoom, mem->cur_doc->height * mem->cur_doc->canvas_zoom));
 
         mat4x4 m;
         mat4x4_ortho(m, 0.f, (float)mem->window.width, (float)mem->window.height, 0.f, -1.f, 1.f);
@@ -1202,10 +1214,10 @@ void core::update(PapayaMemory* mem)
         if (mem->current_tool == PapayaTool_CropRotate) // Rotate around center
         {
             mat4x4 r;
-            Vec2 Offset = Vec2(mem->doc.canvas_pos.x + mem->doc.width *
-                    mem->doc.canvas_zoom * 0.5f,
-                    mem->doc.canvas_pos.y + mem->doc.height *
-                    mem->doc.canvas_zoom * 0.5f);
+            Vec2 Offset = Vec2(mem->cur_doc->canvas_pos.x + mem->cur_doc->width *
+                    mem->cur_doc->canvas_zoom * 0.5f,
+                    mem->cur_doc->canvas_pos.y + mem->cur_doc->height *
+                    mem->cur_doc->canvas_zoom * 0.5f);
 
             mat4x4_translate_in_place(m, Offset.x, Offset.y, 0.f);
             mat4x4_rotate_Z(r, m, mem->crop_rotate.slider_angle + 
@@ -1214,7 +1226,8 @@ void core::update(PapayaMemory* mem)
             mat4x4_dup(m, r);
         }
 
-        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->doc.texture_id) );
+        // TODO: Node support 
+        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->cur_doc->final_node->tex_id) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
         gl::draw_mesh(mem->meshes[PapayaMesh_Canvas], mem->shaders[PapayaShader_ImGui],
@@ -1242,7 +1255,7 @@ void core::update(PapayaMemory* mem)
         if (mem->current_tool == PapayaTool_Brush &&
             (!ImGui::GetIO().KeyAlt || mem->mouse.is_down[1]))
         {
-            float ScaledDiameter = mem->brush.diameter * mem->doc.canvas_zoom;
+            float ScaledDiameter = mem->brush.diameter * mem->cur_doc->canvas_zoom;
 
             gl::transform_quad(mem->meshes[PapayaMesh_BrushCursor],
                 (mem->mouse.is_down[1] || mem->mouse.was_down[1] ? mem->brush.rt_drag_start_pos : mem->mouse.pos) - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
