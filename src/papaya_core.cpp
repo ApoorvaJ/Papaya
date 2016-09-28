@@ -41,7 +41,7 @@ bool core::open_doc(char* path, PapayaMemory* mem)
     // Load/create image
     {
         uint8* img = 0;
-        Document doc; // TODO: Move to friendlier vec and then init to zero via {0}
+        Document doc = {0};
 
         if (path) {
             img = stbi_load(path, &doc.width, &doc.height,
@@ -57,16 +57,15 @@ bool core::open_doc(char* path, PapayaMemory* mem)
         mem->docs.push_back(doc);
         mem->cur_doc = &mem->docs[0];
 
-        Node node;
-        node::init(&node, "Base", Vec2(50, 100), img, mem);
-        mem->cur_doc->nodes.push_back(node);
+        Node* node = node::init("Base", Vec2(50, 100), img, mem);
 
-        Node overlay_node;
-        node::init(&overlay_node, "Overlay", Vec2(50, 50), 0, mem);
-        mem->cur_doc->nodes.push_back(overlay_node);
+        int w,h,c;
+        uint8* o_img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
+        Node* o_node = node::init("Overlay", Vec2(50, 50), o_img, mem);
+        node::connect(node, o_node, mem);
 
         mem->cur_doc->inverse_aspect = (float)mem->cur_doc->height /
-                                      (float)mem->cur_doc->width;
+                                       (float)mem->cur_doc->width;
         free(img);
     }
 
@@ -114,11 +113,11 @@ bool core::open_doc(char* path, PapayaMemory* mem)
 
 void core::close_doc(PapayaMemory* mem)
 {
-    for (int i = 0; i < mem->cur_doc->nodes.Size; i++) {
-        node::destroy(&mem->cur_doc->nodes[i]);
+    for (int i = 0; i < mem->cur_doc->node_count; i++) {
+        node::destroy(mem->cur_doc->nodes[i]);
     }
 
-    undo::destroy(mem);
+    // undo::destroy(mem);
 
     // Frame buffer
     if (mem->misc.fbo) {
@@ -862,9 +861,9 @@ void core::update(PapayaMemory* mem)
                     GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
                 }*/
 
-                undo::push(&mem->cur_doc->undo, &mem->profile,
-                           Pos, Size, pre_brush_img,
-                           mem->brush.line_segment_start_uv);
+                // undo::push(&mem->cur_doc->undo, &mem->profile,
+                //            Pos, Size, pre_brush_img,
+                //            mem->brush.line_segment_start_uv);
 
                 if (pre_brush_img) { free(pre_brush_img); }
 
@@ -1072,7 +1071,7 @@ void core::update(PapayaMemory* mem)
                 mem->cur_doc->undo.current->prev != 0) {
                 // Undo
                 if (mem->cur_doc->undo.current->IsSubRect) {
-                    undo::pop(mem, true);
+                    // undo::pop(mem, true);
                 } else {
                     refresh = true;
                 }
@@ -1083,7 +1082,7 @@ void core::update(PapayaMemory* mem)
             }
 
             if (refresh) {
-                undo::pop(mem, false);
+                // undo::pop(mem, false);
             }
         }
 
@@ -1227,7 +1226,8 @@ void core::update(PapayaMemory* mem)
         }
 
         // TODO: Node support 
-        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->cur_doc->final_node->tex_id) );
+        // GLCHK( glBindTexture(GL_TEXTURE_2D, mem->cur_doc->final_node->tex_id) );
+        GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
         gl::draw_mesh(mem->meshes[PapayaMesh_Canvas], mem->shaders[PapayaShader_ImGui],

@@ -84,10 +84,15 @@ struct Layout {
 };
 
 struct Document {
-    ImVector<Node> nodes; // TODO: Use custom vector type?
+    Node* nodes[512];
+    int node_count;
     Node* final_node;
     Node* current_node;
     int64 next_node_id;
+
+    // Links are automatically maintained. Treat as read-only.
+    NodeLink* links[512];
+    int link_count;
 
     int32 width, height;
     int32 components_per_pixel;

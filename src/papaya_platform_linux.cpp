@@ -133,7 +133,7 @@ char* platform::save_file_dialog()
 
 int main(int argc, char **argv)
 {
-    PapayaMemory mem = {0};
+    PapayaMemory* mem = (PapayaMemory*) calloc(1, sizeof(*mem));
     XVisualInfo* xlib_visual_info;
     Atom xlib_delete_window_atom;
 
@@ -184,8 +184,8 @@ int main(int argc, char **argv)
                                     0, 0, 1366, 768, 0, xlib_visual_info->depth,
                                     InputOutput, xlib_visual_info->visual,
                                     CWColormap | CWEventMask, &window_attribs);
-        mem.window.width = 1366;
-        mem.window.height = 768;
+        mem->window.width = 1366;
+        mem->window.height = 768;
 
         XMapWindow(xlib_display, xlib_window);
         XStoreName(xlib_display, xlib_window, "Papaya");
@@ -247,8 +247,8 @@ int main(int argc, char **argv)
 
         if (!gl_lite_init()) { exit(1); }
 
-        glGetIntegerv(GL_MAJOR_VERSION, &mem.system.gl_version[0]);
-        glGetIntegerv(GL_MINOR_VERSION, &mem.system.gl_version[1]);
+        glGetIntegerv(GL_MAJOR_VERSION, &mem->system.gl_version[0]);
+        glGetIntegerv(GL_MINOR_VERSION, &mem->system.gl_version[1]);
 
         // Display vsync if possible
         typedef void SwapIntervalEXTproc(Display*, GLXDrawable, int32);
@@ -266,18 +266,18 @@ int main(int argc, char **argv)
     EasyTab_Load(xlib_display, xlib_window);
     easykey_init();
 
-    core::init(&mem);
+    core::init(mem);
     ImGui::GetIO().RenderDrawListsFn = core::render_imgui;
 
     timer::stop(Timer_Startup);
 
 #ifdef PAPAYA_DEFAULT_IMAGE
-    core::open_doc(PAPAYA_DEFAULT_IMAGE, &mem);
+    core::open_doc(PAPAYA_DEFAULT_IMAGE, mem);
 #endif
 
-    mem.is_running = true;
+    mem->is_running = true;
 
-    while (mem.is_running) {
+    while (mem->is_running) {
         timer::start(Timer_Frame);
 
         // Event handling
@@ -292,11 +292,11 @@ int main(int argc, char **argv)
                 case Expose: {
                     XWindowAttributes WindowAttributes;
                     XGetWindowAttributes(xlib_display, xlib_window, &WindowAttributes);
-                    core::resize(&mem, WindowAttributes.width,WindowAttributes.height);
+                    core::resize(mem, WindowAttributes.width,WindowAttributes.height);
                 } break;
 
                 case ClientMessage: {
-                    if (event.xclient.data.l[0] == xlib_delete_window_atom) { mem.is_running = false; }
+                    if (event.xclient.data.l[0] == xlib_delete_window_atom) { mem->is_running = false; }
                 } break;
 
                 case MotionNotify: {
@@ -327,9 +327,9 @@ int main(int argc, char **argv)
 
         // Tablet input // TODO: Put this in papaya.cpp
         {
-            mem.tablet.pressure = EasyTab->Pressure;
-            mem.tablet.pos.x = EasyTab->PosX;
-            mem.tablet.pos.y = EasyTab->PosY;
+            mem->tablet.pressure = EasyTab->Pressure;
+            mem->tablet.pos.x = EasyTab->PosX;
+            mem->tablet.pos.y = EasyTab->PosY;
         }
 
         // Start new ImGui Frame
@@ -337,15 +337,15 @@ int main(int argc, char **argv)
             timespec Time;
             clock_gettime(CLOCK_MONOTONIC, &Time);
             float CurTime = Time.tv_sec + (float)Time.tv_nsec / 1000000000.0f;
-            ImGui::GetIO().DeltaTime = (float)(CurTime - mem.profile.last_frame_time);
-            mem.profile.last_frame_time = CurTime;
+            ImGui::GetIO().DeltaTime = (float)(CurTime - mem->profile.last_frame_time);
+            mem->profile.last_frame_time = CurTime;
 
             ImGui::NewFrame();
         }
 
         // Update and render
         {
-            core::update(&mem);
+            core::update(mem);
             glXSwapBuffers(xlib_display, xlib_window);
         }
 
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
         // End Of Frame
         timer::stop(Timer_Frame);
         double FrameRate =
-            (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
+            (mem->current_tool == PapayaTool_Brush && mem->mouse.is_down[0]) ?
             500.0 : 60.0;
         double FrameTime = 1000.0 / FrameRate;
         double SleepTime = FrameTime - timers[Timer_Frame].elapsed_ms;

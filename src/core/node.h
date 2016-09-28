@@ -15,8 +15,10 @@ struct Node {
     char name[32];
     bool is_active;
 
-    Vec2 pos, size;
+    Node* inputs[8];
+    Node* outputs[8];
     int inputs_count, outputs_count;
+    Vec2 pos, size;
 
     uint32 tex_id;
     
@@ -46,6 +48,7 @@ struct NodeLink {
 };
 
 namespace node {
-    void init(Node* node, char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
+    Node* init(char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
     void destroy(Node* node);
+    void connect(Node* from, Node* to, PapayaMemory* mem);
 }

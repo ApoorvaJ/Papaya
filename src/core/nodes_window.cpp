@@ -12,7 +12,6 @@ static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return Im
 //       Note that we storing links are INDICES (not ID) to make example code shorter, obviously a bad idea for any general purpose code.
 void nodes_window::show_panel(PapayaMemory* mem)
 {
-    static ImVector<NodeLink> links;
     static bool inited = false;
     static ImVec2 scrolling = ImVec2(35.0f, -325.0f); // TODO: Automate this positioning
     static bool show_grid = true;
@@ -42,8 +41,8 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     ImGui::Begin("Node properties", 0, mem->window.default_imgui_flags);
 
-    ImGui::Checkbox(mem->cur_doc->nodes[node_selected].name,
-                    &mem->cur_doc->nodes[node_selected].is_active);
+    ImGui::Checkbox(mem->cur_doc->nodes[node_selected]->name,
+                    &mem->cur_doc->nodes[node_selected]->is_active);
     ImGui::Text("Node properties controls go here");
 
     ImGui::End();
@@ -101,20 +100,20 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     // Display links
     draw_list->ChannelsSetCurrent(0); // Background
-    for (int link_idx = 0; link_idx < links.Size; link_idx++)
+    for (int link_idx = 0; link_idx < mem->cur_doc->link_count; link_idx++)
     {
-        NodeLink* link = &links[link_idx];
-        Node* node_inp = &mem->cur_doc->nodes[link->input_idx];
-        Node* node_out = &mem->cur_doc->nodes[link->output_idx];
+        NodeLink* link = mem->cur_doc->links[link_idx];
+        Node* node_inp = mem->cur_doc->nodes[link->input_idx];
+        Node* node_out = mem->cur_doc->nodes[link->output_idx];
         ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->input_slot);
         ImVec2 p2 = offset + node_out->GetInputSlotPos(link->output_slot);		
         draw_list->AddBezierCurve(p1, p1+ImVec2(0,-10), p2+ImVec2(0,+10), p2, ImColor(200,200,100), 3.0f);
     }
 
     // Display nodes
-    for (int node_idx = 0; node_idx < mem->cur_doc->nodes.Size; node_idx++)
+    for (int node_idx = 0; node_idx < mem->cur_doc->node_count; node_idx++)
     {
-        Node* node = &mem->cur_doc->nodes[node_idx];
+        Node* node = mem->cur_doc->nodes[node_idx];
         ImGui::PushID(node->id);
         ImVec2 node_rect_min = offset + node->pos;
 
