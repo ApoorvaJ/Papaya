@@ -1,16 +1,10 @@
-Papaya is a free and open-source GPU-powered image editor, built with the following goals:
+Papaya is a free, open-source and cross-platform image editor.
 
 ![screenshot 1](/web/img.0.0.jpg?raw=true)
 
-**Fast:** Papaya is designed for efficiency. It starts up quickly, and is already [significantly faster](http://apoorvaj.io/building-a-fast-modern-image-editor.html) than other popular editors at zooming, panning and brushing.
+Papaya is completely free. The entire source code is open and is MIT-licensed, which means anyone is free to use and extend the code, even for commercial purposes.
 
-**Open:** Papaya is completely free. The entire source code is open and is MIT-licensed, which means anyone is free to use and extend the code, even for commercial purposes.
-
-**Beautiful:** While most other open editors use bulky UI toolkits, Papaya is rendered entirely on the GPU, with pixel-perfect precision and complete control over the visual design. I'm designing Papaya to be as beautiful as the images it will help create.
-
-**Cross-platform:** Papaya runs natively on Windows, Linux and OS X.
-
-This repository contains the Linux and Windows versions of Papaya. You can find the OS X version at [chemecse/Papaya](https://github.com/chemecse/Papaya/tree/osx-dev).
+Papaya runs natively on Windows and Linux. There is an OS X fork at [chemecse/Papaya](https://github.com/chemecse/Papaya/tree/osx-dev).
 
 Download
 --------
@@ -20,7 +14,11 @@ You can download a stable, inital version of Papaya on the [Releases page](https
 Development status
 ------------------
 
-Papaya is very much a work in progress. The following features are functional so far:
+Papaya is a part-time project, and very much a work in progress.
+
+The current development focus is on getting a node infrastructure in place that will enable layering of bitmaps and effects.
+
+The following features are functional so far:
 * Brush with adjustable size, hardness and opacity
 * Eye dropper
 * Color picker
