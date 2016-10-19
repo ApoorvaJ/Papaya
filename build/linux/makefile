@@ -1,7 +1,8 @@
 VPATH=../../src                 \
 	  ../../src/core            \
 	  ../../src/libs            \
-	  ../../src/libs/imgui
+	  ../../src/libs/imgui      \
+	  ../../src/libpapaya
 
 SRCS=papaya_platform_linux.cpp  \
 	 papaya_core.cpp            \
@@ -15,11 +16,12 @@ SRCS=papaya_platform_linux.cpp  \
 	 nodes_window.cpp           \
 	 picker.cpp                 \
 	 prefs.cpp                  \
-	 undo.cpp 
+	 undo.cpp                   \
+	 libpapaya.cpp
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
-CFLAGS=-I../../src -O0 -Wno-write-strings -Wno-format-security -g
+CFLAGS=-I../../src -I../../src/libpapaya -O0 -Wno-write-strings -Wno-format-security -g
 
 .SILENT:
 

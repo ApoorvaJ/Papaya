@@ -8,6 +8,7 @@
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
 #include "libs/linmath.h"
+#include "libpapaya.h"
 #include <inttypes.h>
 
 
@@ -358,6 +359,16 @@ void core::init(PapayaMemory* mem)
         style.Colors[ImGuiCol_ButtonActive] = mem->colors[PapayaCol_ButtonActive];
         style.Colors[ImGuiCol_ButtonHovered] = mem->colors[PapayaCol_ButtonHover];
         style.Colors[ImGuiCol_SliderGrabActive] = mem->colors[PapayaCol_ButtonActive];
+    }
+
+    // TODO: Temporary only
+    {
+        papaya_init(PapayaBackend_OpenGL);
+
+        int w, h, c;
+        uint8* img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
+        PapayaNode a;
+        init_bitmap_node(&a, "Node a", img, w, h, c);
     }
 }
 
