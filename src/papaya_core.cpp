@@ -365,10 +365,24 @@ void core::init(PapayaMemory* mem)
     {
         papaya_init(PapayaBackend_OpenGL);
 
-        int w, h, c;
-        uint8* img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
-        PapayaNode a;
-        init_bitmap_node(&a, "Node a", img, w, h, c);
+        int w0, w1, h0, h1, c0, c1;
+        uint8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
+        uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o1.png", &w1, &h1, &c1, 4);
+
+        PapayaNode n[2] = {0};
+        init_bitmap_node(&n[0], "Node 0", img0, w0, h0, c0);
+        init_bitmap_node(&n[1], "Node 1", img1, w1, h1, c1);
+
+        n[0].params.bitmap.out = &n[1];
+        n[1].params.bitmap.in = &n[0];
+
+        int w, h;
+        uint8_t* img = papaya_evaluate_node(&n[1], &w, &h);
+        int32 res = stbi_write_png("/home/apoorvaj/Pictures/res.png",
+                                   w, h, 4, img, 4 * w);
+        if(!res) {
+            printf("Initial node evaluation or write failed.\n");
+        }
     }
 }
 

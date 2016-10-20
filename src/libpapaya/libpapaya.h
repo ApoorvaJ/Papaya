@@ -46,7 +46,7 @@ struct HueSatNode {
 // -----------------------------------------------------------------------------
 
 struct PapayaNode {
-    PapayaNodeType_ type;
+    int type;
     char* name;
 
     union {
@@ -58,3 +58,4 @@ struct PapayaNode {
 // -----------------------------------------------------------------------------
 
 void papaya_init(PapayaBackend_ b);
+uint8_t* papaya_evaluate_node(PapayaNode* node, int* w, int* h);

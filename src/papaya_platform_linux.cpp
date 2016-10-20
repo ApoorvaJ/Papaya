@@ -21,7 +21,7 @@
 
 #define GLEW_NO_GLU
 
-#define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/sample.jpg"
+#define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/o1.png"
 
 
 Display* xlib_display;
