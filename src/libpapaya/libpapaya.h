@@ -7,11 +7,6 @@ enum PapayaNodeType_ {
     PapayaNodeType_HueSat
 };
 
-enum PapayaBackend_ {
-    PapayaBackend_OpenGL,
-    PapayaBackend_CPU, // TODO: Implement this
-};
-
 // -----------------------------------------------------------------------------
 
 struct PapayaNode;
@@ -51,11 +46,10 @@ struct PapayaNode {
 
     union {
         BitmapNode bitmap;
-        HueSatNode hue_sat;
+        HueSatNode huesat;
     } params;
 };
 
 // -----------------------------------------------------------------------------
 
-void papaya_init(PapayaBackend_ b);
-uint8_t* papaya_evaluate_node(PapayaNode* node, int* w, int* h);
+void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out);
