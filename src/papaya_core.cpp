@@ -367,15 +367,19 @@ void core::init(PapayaMemory* mem)
         uint8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
         uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o1.png", &w1, &h1, &c1, 4);
 
-        PapayaNode n[2] = {0};
+        PapayaNode n[3] = {0};
         init_bitmap_node(&n[0], "Node 0", img0, w0, h0, c0);
         init_bitmap_node(&n[1], "Node 1", img1, w1, h1, c1);
+        init_invert_color_node(&n[2], "Node 2");
 
         n[0].params.bitmap.out = &n[1];
         n[1].params.bitmap.in = &n[0];
 
+        n[1].params.bitmap.out = &n[2];
+        n[2].params.invert_color.in = &n[1];
+
         uint8_t* img = (uint8_t*) malloc(4 * w1 * h1);
-        papaya_evaluate_node(&n[1], w1, h1, img);
+        papaya_evaluate_node(&n[2], w1, h1, img);
         int32 res = stbi_write_png("/home/apoorvaj/Pictures/res.png",
                                    w1, h1, 4, img, 4 * w1);
         if(!res) {

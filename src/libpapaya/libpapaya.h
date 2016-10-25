@@ -4,7 +4,7 @@
 
 enum PapayaNodeType_ {
     PapayaNodeType_Bitmap,
-    PapayaNodeType_HueSat
+    PapayaNodeType_InvertColor
 };
 
 // -----------------------------------------------------------------------------
@@ -28,15 +28,14 @@ void init_bitmap_node(PapayaNode* node, char* name,
 
 // -----------------------------------------------------------------------------
 
-struct HueSatNode {
+struct InvertColorNode {
     PapayaNode* in;
     PapayaNode* in_mask;
     PapayaNode* out;
     int64_t out_len;
-
-    float hue;
-    float sat;
 };
+
+void init_invert_color_node(PapayaNode* node, char* name);
 
 // -----------------------------------------------------------------------------
 
@@ -46,7 +45,7 @@ struct PapayaNode {
 
     union {
         BitmapNode bitmap;
-        HueSatNode huesat;
+        InvertColorNode invert_color;
     } params;
 };
 

@@ -64,15 +64,30 @@ static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
     }
 }
 
-static void papaya_evaluate_huesat_node(PapayaNode* node, int w, int h,
-                                        uint8_t* out)
+// -----------------------------------------------------------------------------
+
+void init_invert_color_node(PapayaNode* node, char* name)
 {
-    PapayaNode* in = node->params.huesat.in;
+    node->type = PapayaNodeType_InvertColor;
+    node->name = name;
+}
+
+static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
+                                              uint8_t* out)
+{
+    PapayaNode* in = node->params.invert_color.in;
     if (!in) { return; }
 
     papaya_evaluate_node(in, w, h, out);
-    // TODO: Do processing here
+
+    for (size_t i = 0; i < 4 * w * h; i += 4) {
+        out[i]   = 255 - out[i];
+        out[i+1] = 255 - out[i+1];
+        out[i+2] = 255 - out[i+2];
+    }
 }
+
+// -----------------------------------------------------------------------------
 
 void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
 {
@@ -80,8 +95,8 @@ void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
         case PapayaNodeType_Bitmap:
             papaya_evaluate_bitmap_node(node, w, h, out);
             break;
-        case PapayaNodeType_HueSat:
-            papaya_evaluate_huesat_node(node, w, h, out);
+        case PapayaNodeType_InvertColor:
+            papaya_evaluate_invert_color_node(node, w, h, out);
             break;
     }
 }
