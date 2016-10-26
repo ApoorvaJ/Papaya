@@ -9,7 +9,7 @@
 #include "papaya_platform.h"
 #include "papaya_core.h"
 
-#include "libs/gl_lite.h"
+#include "gl_lite.h"
 #include "libs/imgui/imgui.h"
 #include "libs/easytab.h"
 
