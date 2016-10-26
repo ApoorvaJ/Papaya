@@ -11,7 +11,7 @@
 
 #include "papaya_platform.h"
 
-#include "libs/gl_lite.h"
+#include "gl_lite.h"
 #include <X11/Xlib.h>
 #include <GL/glx.h>
 #include "libs/imgui/imgui.h"
