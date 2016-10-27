@@ -51,20 +51,21 @@ namespace gl {
 
 void gl::check_error(char* expr, char* file, int line)
 {
-    GLenum error = glGetError();
-    const char* str = "";
+    const char* s;
 
-    if      (error == GL_NO_ERROR) { return; }
-    else if (error == GL_INVALID_ENUM) { str = "Invalid enum"; }
-    else if (error == GL_INVALID_VALUE) { str = "Invalid value"; }
-    else if (error == GL_INVALID_OPERATION) { str = "Invalid operation"; }
-    else if (error == GL_INVALID_FRAMEBUFFER_OPERATION) { str = "Invalid framebuffer operation"; }
-    else if (error == GL_OUT_OF_MEMORY) { str = "Out of memory"; }
-    else if (error == GL_STACK_UNDERFLOW) { str = "Stack underflow"; }
-    else if (error == GL_STACK_OVERFLOW) { str = "Stack overflow"; }
-    else { str = "Undefined error"; }
+    switch(glGetError()) {
+    case GL_NO_ERROR: return;
+    case GL_INVALID_ENUM:                  s = "Invalid enum"     ; break;
+    case GL_INVALID_VALUE:                 s = "Invalid value"    ; break;
+    case GL_INVALID_OPERATION:             s = "Invalid operation"; break;
+    case GL_OUT_OF_MEMORY:                 s = "Out of memory"    ; break;
+    case GL_STACK_UNDERFLOW:               s = "Stack underflow"  ; break;
+    case GL_STACK_OVERFLOW:                s = "Stack overflow"   ; break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION: s = "Invalid framebuffer operation"; break;
+    default:                               s = "Undefined error"  ; break;
+    }
 
-    printf("OpenGL Error: %s in %s:%d\n", str, file, line);
+    printf("OpenGL error: %s in %s:%d\n", s, file, line);
     printf("    --- Expression: %s\n", expr);
 }
 
