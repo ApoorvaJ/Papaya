@@ -247,8 +247,10 @@ int main(int argc, char **argv)
 
         if (!gl_lite_init()) { exit(1); }
 
-        glGetIntegerv(GL_MAJOR_VERSION, &mem->system.gl_version[0]);
-        glGetIntegerv(GL_MINOR_VERSION, &mem->system.gl_version[1]);
+        glGetIntegerv(GL_MAJOR_VERSION, &mem->sys.gl_version[0]);
+        glGetIntegerv(GL_MINOR_VERSION, &mem->sys.gl_version[1]);
+        mem->sys.gl_vendor = (char*)glGetString(GL_VENDOR);
+        mem->sys.gl_renderer = (char*)glGetString(GL_RENDERER);
 
         // Display vsync if possible
         typedef void SwapIntervalEXTproc(Display*, GLXDrawable, int32);

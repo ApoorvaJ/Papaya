@@ -385,8 +385,6 @@ void core::init(PapayaMemory* mem)
         if(!res) {
             printf("Initial node evaluation or write failed.\n");
         }
-
-        exit(0);
     }
 }
 

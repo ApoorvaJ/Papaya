@@ -72,8 +72,10 @@ enum PapayaTool_ {
     PapayaTool_COUNT
 };
 
-struct SystemInfo{
+struct System {
     int32 gl_version[2];
+    char* gl_vendor;
+    char* gl_renderer;
 };
 
 struct Layout {
@@ -175,7 +177,7 @@ struct Misc {
 
 struct PapayaMemory {
     bool is_running;
-    SystemInfo system;
+    System sys;
     Layout window;
     Keyboard keyboard;
     Mouse mouse;
