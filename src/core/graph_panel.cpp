@@ -1,23 +1,21 @@
-#include "core/nodes_window.h"
+#include "core/graph_panel.h"
 #include <math.h>
 #include "papaya_core.h"
 
 // NOTE: Most of this file is heavily work-in-progress at this point
 
 // TODO: Remove
-static inline ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x+rhs.x, lhs.y+rhs.y); }
-static inline ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x-rhs.x, lhs.y-rhs.y); }
+static inline ImVec2 operator+ (const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x+rhs.x, lhs.y+rhs.y); }
+static inline ImVec2 operator- (const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x-rhs.x, lhs.y-rhs.y); }
+static inline ImVec2 operator-=(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x-rhs.x, lhs.y-rhs.y); }
 
-// TODO: Really dumb data structure provided for the example.
-//       Note that we storing links are INDICES (not ID) to make example code shorter, obviously a bad idea for any general purpose code.
-void nodes_window::show_panel(PapayaMemory* mem)
+void init_graph_panel(PapayaMemory* mem) {
+    mem->graph_panel.scroll_pos = ImVec2(35.0f, -325.0f);
+}
+
+void show_graph_panel(PapayaMemory* mem)
 {
-    static bool inited = false;
-    static ImVec2 scrolling = ImVec2(35.0f, -325.0f); // TODO: Automate this positioning
-    static bool show_grid = true;
-    static int node_selected = 0;
-    static bool enabled_node = true;
-
+    static int node_selected = 0; // Move to papaya_core.h
     float node_props_height = 200.0f;
     float width = 300.0f;
 
@@ -72,7 +70,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
     ImGui::BeginChild("scrolling_region", ImVec2(0,0), true, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoMove);
     ImGui::PushItemWidth(120.0f);
 
-    ImVec2 offset = ImGui::GetCursorScreenPos() - scrolling; 
+    Vec2 offset = ImGui::GetCursorScreenPos() - mem->graph_panel.scroll_pos; 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     draw_list->ChannelsSplit(2);
 
@@ -207,7 +205,7 @@ void nodes_window::show_panel(PapayaMemory* mem)
 
     // Scrolling
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
-        scrolling = scrolling - ImGui::GetIO().MouseDelta;
+        mem->graph_panel.scroll_pos -= ImGui::GetIO().MouseDelta;
 
     ImGui::PopItemWidth();
     ImGui::EndChild();

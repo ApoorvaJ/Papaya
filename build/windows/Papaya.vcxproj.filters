@@ -70,7 +70,7 @@
     <ClCompile Include="..\..\src\core\node.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\nodes_window.cpp">
+    <ClCompile Include="..\..\src\core\graph_panel.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -138,7 +138,7 @@
     <ClInclude Include="..\..\src\core\node.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\nodes_window.h">
+    <ClInclude Include="..\..\src\core\graph_panel.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>

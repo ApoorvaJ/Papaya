@@ -2,7 +2,6 @@
 #include "papaya_core.h"
 
 #include "core/metrics_window.h"
-#include "core/nodes_window.h"
 #include "libs/stb_image.h"
 #include "libs/stb_image_write.h"
 #include "libs/imgui/imgui.h"
@@ -166,6 +165,7 @@ void core::init(PapayaMemory* mem)
 
         picker::init(&mem->picker);
         crop_rotate::init(mem);
+        init_graph_panel(mem);
 
         mem->misc.draw_overlay = false;
         mem->misc.show_metrics = false;
@@ -736,7 +736,7 @@ void core::update(PapayaMemory* mem)
     }
 
     if (mem->misc.show_nodes) {
-        nodes_window::show_panel(mem);
+        show_graph_panel(mem);
     }
 
     // Image size preview

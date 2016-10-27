@@ -13,7 +13,7 @@ SRCS=papaya_platform_linux.cpp  \
 	 crop_rotate.cpp            \
 	 metrics_window.cpp         \
 	 node.cpp                   \
-	 nodes_window.cpp           \
+	 graph_panel.cpp           \
 	 picker.cpp                 \
 	 prefs.cpp                  \
 	 undo.cpp                   \

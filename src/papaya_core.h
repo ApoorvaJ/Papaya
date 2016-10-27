@@ -7,12 +7,15 @@
 #include "libs/imgui/imgui.h"
 
 #include "core/crop_rotate.h"
+#include "core/graph_panel.h"
 #include "core/node.h"
 #include "core/picker.h"
 #include "core/prefs.h"
 #include "core/undo.h"
 
 struct ImDrawData;
+struct GraphPanel;
+struct PapayaDocument;
 
 enum PapayaTex_ {
     PapayaTex_Font,
@@ -186,6 +189,7 @@ struct PapayaMemory {
 
     ImVector<Document> docs; // TODO: Use custom vector type?
     Document* cur_doc;
+    PapayaDocument* doc;
 
     uint32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
@@ -197,6 +201,7 @@ struct PapayaMemory {
     EyeDropper eye_dropper;
     Picker picker;
     CropRotate crop_rotate;
+    GraphPanel graph_panel;
     Misc misc;
 };
 

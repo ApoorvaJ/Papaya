@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdlib.h>
 
 enum PapayaNodeType_ {
     PapayaNodeType_Bitmap,
@@ -42,11 +43,18 @@ void init_invert_color_node(PapayaNode* node, char* name);
 struct PapayaNode {
     int type;
     char* name;
-
     union {
         BitmapNode bitmap;
         InvertColorNode invert_color;
     } params;
+};
+
+struct PapayaDocument {
+    // Consumer-facing
+    PapayaNode* nodes;
+    size_t num_nodes;
+
+    // Editor-facing
 };
 
 // -----------------------------------------------------------------------------
