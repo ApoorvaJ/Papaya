@@ -1,41 +1,40 @@
+
 #include "core/graph_panel.h"
+
 #include <math.h>
+
 #include "papaya_core.h"
+#include "libs/types.h"
+#include "libs/imgui/imgui.h"
+#include "libs/mathlib.h"
 
 // NOTE: Most of this file is heavily work-in-progress at this point
 
-// TODO: Remove
-static inline ImVec2 operator+ (const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x+rhs.x, lhs.y+rhs.y); }
-static inline ImVec2 operator- (const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x-rhs.x, lhs.y-rhs.y); }
-static inline ImVec2 operator-=(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x-rhs.x, lhs.y-rhs.y); }
-
-void init_graph_panel(PapayaMemory* mem) {
-    mem->graph_panel.scroll_pos = ImVec2(35.0f, -325.0f);
+void init_graph_panel(GraphPanel* g) {
+    g->scroll_pos = Vec2(0,0);
+    g->node_properties_panel_height = 200.0f;
+    g->width = 300.0f;
 }
 
 void show_graph_panel(PapayaMemory* mem)
 {
-    static int node_selected = 0; // Move to papaya_core.h
-    float node_props_height = 200.0f;
-    float width = 300.0f;
+    static int node_selected = 0;
 
-    /*{
-        mem->cur_doc->nodes.push_back(Node(0, "L1", Vec2(50,100), NodeType_Raster));
-        mem->cur_doc->nodes.push_back(Node(1, "L2", Vec2(100,100), NodeType_Raster));
-        mem->cur_doc->nodes.push_back(Node(2, "L3", Vec2(50,50), NodeType_Raster));
-        links.push_back(NodeLink(0, 0, 2, 0));
-        links.push_back(NodeLink(1, 0, 2, 1));
-    }*/
+    GraphPanel* g = &mem->graph_panel;
 
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5, 2));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Vec2(5, 5));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, Vec2(5, 2));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
 
-    // -------------------------------------------------------------------------
+    float x = mem->window.width - 36 - g->width; // Panel X
+    float y = 55; // Panel Y
+    float w = g->width; // Panel width
+    float h = g->node_properties_panel_height; // Panel width
 
-    ImGui::SetNextWindowPos(Vec2((float)mem->window.width - 36 - width, 55));
-    ImGui::SetNextWindowSize(Vec2(width, node_props_height));
+    // -------------------------------------------------------------------------
+#if 1
+    ImGui::SetNextWindowPos(Vec2(x, y));
+    ImGui::SetNextWindowSize(Vec2(w, h));
 
     ImGui::Begin("Node properties", 0, mem->window.default_imgui_flags);
 
@@ -44,13 +43,13 @@ void show_graph_panel(PapayaMemory* mem)
     ImGui::Text("Node properties controls go here");
 
     ImGui::End();
-
+#endif
     // -------------------------------------------------------------------------
 
-    ImGui::SetNextWindowPos(
-        Vec2((float)mem->window.width - 36 - width, 55 + node_props_height));
-    ImGui::SetNextWindowSize(
-        Vec2(width, (float)mem->window.height - 58.0f - node_props_height));
+    y += g->node_properties_panel_height;
+    h = mem->window.height - 58.0f - h;
+    ImGui::SetNextWindowPos(Vec2(x, y));
+    ImGui::SetNextWindowSize(Vec2(w, h));
 
     ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
 
@@ -61,51 +60,53 @@ void show_graph_panel(PapayaMemory* mem)
     ImGui::BeginGroup();
 
     const float NODE_SLOT_RADIUS = 4.0f;
-    const ImVec2 NODE_WINDOW_PADDING(2.0f, 2.0f);
+    const Vec2 NODE_WINDOW_PADDING(2.0f, 2.0f);
 
     // Create our child canvas
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1,1));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, Vec2(1,1));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Vec2(0,0));
     ImGui::PushStyleColor(ImGuiCol_ChildWindowBg, ImColor(60,60,70,200));
-    ImGui::BeginChild("scrolling_region", ImVec2(0,0), true, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoMove);
+    ImGui::BeginChild("scrolling_region", Vec2(0,0), true, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoMove);
     ImGui::PushItemWidth(120.0f);
 
-    Vec2 offset = ImGui::GetCursorScreenPos() - mem->graph_panel.scroll_pos; 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     draw_list->ChannelsSplit(2);
 
-    // Display grid
+    // Draw the grid
     {
-        ImU32 GRID_COLOR = ImColor(200,200,200,40);
-        float GRID_SZ = 50.0f;
-        ImVec2 win_pos = ImGui::GetCursorScreenPos();
-        ImVec2 canvas_sz = ImGui::GetWindowSize();
+        ImU32 col = ImColor(200,200,200,40);
+        float grid_sz = 50.0f;
+        Vec2 win_pos = ImGui::GetCursorScreenPos();
+        Vec2 win_sz = ImGui::GetWindowSize();
 
-        for (float x = fmodf(offset.x,GRID_SZ); x < canvas_sz.x; x += GRID_SZ) {
-            float dummy_alignment_x = -1.0f; // TODO: Sooper temporary
-            draw_list->AddLine(Vec2(x + dummy_alignment_x, 0.0f) + win_pos,
-                               Vec2(x + dummy_alignment_x, canvas_sz.y) + win_pos,
-                               GRID_COLOR);
+        // Vertical lines
+        float x = fmodf(g->scroll_pos.x, grid_sz);
+        while (x < win_sz.x) {
+            draw_list->AddLine(win_pos + Vec2(x, 0),
+                               win_pos + Vec2(x, win_sz.y), col);
+            x += grid_sz;
         }
 
-        for (float y = fmodf(offset.y,GRID_SZ); y < canvas_sz.y; y += GRID_SZ) {
-            float dummy_alignment_y = 33.0f; // TODO: Sooper temporary
-            draw_list->AddLine(Vec2(0.0f, y + dummy_alignment_y) + win_pos,
-                               Vec2(canvas_sz.x, y + dummy_alignment_y) + win_pos,
-                               GRID_COLOR);
-        }
+        // Horizontal lines
+        float y = fmodf(g->scroll_pos.y, grid_sz);
+        while (y < win_sz.y) {
+            draw_list->AddLine(win_pos + Vec2(0, y),
+                               win_pos + Vec2(win_sz.x, y), col);
+            y += grid_sz;
+        };
     }
 
     // Display links
+    Vec2 offset = ImGui::GetCursorScreenPos() + mem->graph_panel.scroll_pos;
     draw_list->ChannelsSetCurrent(0); // Background
     for (int link_idx = 0; link_idx < mem->cur_doc->link_count; link_idx++)
     {
         NodeLink* link = mem->cur_doc->links[link_idx];
         Node* node_inp = mem->cur_doc->nodes[link->input_idx];
         Node* node_out = mem->cur_doc->nodes[link->output_idx];
-        ImVec2 p1 = offset + node_inp->GetOutputSlotPos(link->input_slot);
-        ImVec2 p2 = offset + node_out->GetInputSlotPos(link->output_slot);		
-        draw_list->AddBezierCurve(p1, p1+ImVec2(0,-10), p2+ImVec2(0,+10), p2, ImColor(200,200,100), 3.0f);
+        Vec2 p1 = offset + node_inp->GetOutputSlotPos(link->input_slot);
+        Vec2 p2 = offset + node_out->GetInputSlotPos(link->output_slot);
+        draw_list->AddBezierCurve(p1, p1+Vec2(0,-10), p2+Vec2(0,+10), p2, ImColor(200,200,100), 3.0f);
     }
 
     // Display nodes
@@ -113,7 +114,7 @@ void show_graph_panel(PapayaMemory* mem)
     {
         Node* node = mem->cur_doc->nodes[node_idx];
         ImGui::PushID(node->id);
-        ImVec2 node_rect_min = offset + node->pos;
+        Vec2 node_rect_min = offset + node->pos;
 
         // Display node contents first
         draw_list->ChannelsSetCurrent(1); // Foreground
@@ -177,11 +178,11 @@ void show_graph_panel(PapayaMemory* mem)
     }
 
     // Draw context menu
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8,8));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Vec2(8,8));
     if (ImGui::BeginPopup("context_menu"))
     {
         Node* node = node_selected != -1 ? &mem->cur_doc->nodes[node_selected] : NULL;
-        ImVec2 scene_pos = ImGui::GetMousePosOnOpeningCurrentPopup() - offset;
+        Vec2 scene_pos = ImGui::GetMousePosOnOpeningCurrentPopup() - offset;
         if (node)
         {
             ImGui::Text("Node '%s'", node->name);
@@ -205,7 +206,7 @@ void show_graph_panel(PapayaMemory* mem)
 
     // Scrolling
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
-        mem->graph_panel.scroll_pos -= ImGui::GetIO().MouseDelta;
+        mem->graph_panel.scroll_pos += ImGui::GetIO().MouseDelta;
 
     ImGui::PopItemWidth();
     ImGui::EndChild();

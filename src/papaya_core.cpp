@@ -165,7 +165,7 @@ void core::init(PapayaMemory* mem)
 
         picker::init(&mem->picker);
         crop_rotate::init(mem);
-        init_graph_panel(mem);
+        init_graph_panel(&mem->graph_panel);
 
         mem->misc.draw_overlay = false;
         mem->misc.show_metrics = false;
