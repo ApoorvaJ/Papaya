@@ -57,11 +57,11 @@ bool core::open_doc(char* path, PapayaMemory* mem)
         mem->docs.push_back(doc);
         mem->cur_doc = &mem->docs[0];
 
-        Node* node = node::init("Base", Vec2(50, 100), img, mem);
+        Node* node = node::init("Base", Vec2(58, 108), img, mem);
 
         int w,h,c;
         uint8* o_img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
-        Node* o_node = node::init("Overlay", Vec2(50, 50), o_img, mem);
+        Node* o_node = node::init("Overlay", Vec2(58, 58), o_img, mem);
         node::connect(node, o_node, mem);
 
         mem->cur_doc->inverse_aspect = (float)mem->cur_doc->height /
@@ -363,28 +363,36 @@ void core::init(PapayaMemory* mem)
 
     // TODO: Temporary only
     {
+        mem->doc = (PapayaDocument*) calloc(1, sizeof(PapayaDocument));
+        mem->doc->num_nodes = 3;
+        mem->doc->nodes = (PapayaNode*) calloc(1, mem->doc->num_nodes *
+                                               sizeof(PapayaNode));
         int w0, w1, h0, h1, c0, c1;
         uint8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
         uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o1.png", &w1, &h1, &c1, 4);
 
-        PapayaNode n[3] = {0};
+        PapayaNode* n = mem->doc->nodes;
         init_bitmap_node(&n[0], "Node 0", img0, w0, h0, c0);
         init_bitmap_node(&n[1], "Node 1", img1, w1, h1, c1);
         init_invert_color_node(&n[2], "Node 2");
 
-        n[0].params.bitmap.out = &n[1];
-        n[1].params.bitmap.in = &n[0];
+        n[0].out = &n[1];
+        n[0].num_out = 1;
+        n[1].in = &n[0];
 
-        n[1].params.bitmap.out = &n[2];
-        n[2].params.invert_color.in = &n[1];
+        n[1].out = &n[2];
+        n[1].num_out = 1;
+        n[2].in = &n[1];
+
+        n[0].pos_x = n[1].pos_x = n[2].pos_x = 58;
+        n[0].pos_y = 158;
+        n[1].pos_y = 108;
+        n[2].pos_y = 58;
 
         uint8_t* img = (uint8_t*) malloc(4 * w1 * h1);
-        papaya_evaluate_node(&n[2], w1, h1, img);
-        int32 res = stbi_write_png("/home/apoorvaj/Pictures/res.png",
-                                   w1, h1, 4, img, 4 * w1);
-        if(!res) {
-            printf("Initial node evaluation or write failed.\n");
-        }
+        // papaya_evaluate_node(&n[2], w1, h1, img);
+        // int32 res = stbi_write_png("/home/apoorvaj/Pictures/res.png",
+        //                            w1, h1, 4, img, 4 * w1);
     }
 }
 
@@ -736,7 +744,7 @@ void core::update(PapayaMemory* mem)
     }
 
     if (mem->misc.show_nodes) {
-        show_graph_panel(mem);
+        draw_graph_panel(mem);
     }
 
     // Image size preview

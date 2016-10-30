@@ -15,11 +15,6 @@ struct PapayaNode;
 // -----------------------------------------------------------------------------
 
 struct BitmapNode {
-    PapayaNode* in;
-    PapayaNode* in_mask;
-    PapayaNode* out;
-    int64_t out_len;
-    
     uint8_t* image;
     int64_t width, height;
 };
@@ -30,10 +25,7 @@ void init_bitmap_node(PapayaNode* node, char* name,
 // -----------------------------------------------------------------------------
 
 struct InvertColorNode {
-    PapayaNode* in;
-    PapayaNode* in_mask;
-    PapayaNode* out;
-    int64_t out_len;
+    int foo;
 };
 
 void init_invert_color_node(PapayaNode* node, char* name);
@@ -43,6 +35,14 @@ void init_invert_color_node(PapayaNode* node, char* name);
 struct PapayaNode {
     int type;
     char* name;
+    float pos_x, pos_y;
+    uint8_t is_active;
+
+    PapayaNode* in;
+    PapayaNode* in_mask;
+    PapayaNode* out;
+    int64_t num_out;
+
     union {
         BitmapNode bitmap;
         InvertColorNode invert_color;

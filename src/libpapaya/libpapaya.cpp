@@ -20,7 +20,7 @@ void init_bitmap_node(PapayaNode* node, char* name,
 static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
                                         uint8_t* out)
 {
-    PapayaNode* in = node->params.bitmap.in;
+    PapayaNode* in = node->in;
     if (!in) {
         // No input
         memcpy(out, node->params.bitmap.image, 4 * w * h);
@@ -75,7 +75,7 @@ void init_invert_color_node(PapayaNode* node, char* name)
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
                                               uint8_t* out)
 {
-    PapayaNode* in = node->params.invert_color.in;
+    PapayaNode* in = node->in;
     if (!in) { return; }
 
     papaya_evaluate_node(in, w, h, out);
