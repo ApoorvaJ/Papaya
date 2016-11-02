@@ -16,31 +16,96 @@ void init_graph_panel(GraphPanel* g) {
     g->node_properties_panel_height = 200.0f;
     g->width = 300.0f;
     g->cur_node = 0;
+    g->dragged_node = -1;
 }
 
 static void draw_nodes(PapayaMemory* mem)
 {
     float node_radius = 4.0f;
-    Vec2 offset = ImGui::GetCursorScreenPos() + mem->graph_panel.scroll_pos;
+    GraphPanel* g = &mem->graph_panel;
+    Vec2 offset = ImGui::GetCursorScreenPos() + g->scroll_pos;
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    int node_hovered_in_list = -1;
-    int node_hovered_in_scene = -1;
+    int hovered_node = -1;
 
     for (int i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
         Vec2 pos = offset + Vec2(n->pos_x - 1, n->pos_y - 1);
         Vec2 sz = Vec2(36, 36);
+        Vec2 v1, v2; // Output, input slot positions
 
         ImGui::PushID(i);
+
+        // Slots
+        {
+            v1 = offset + Vec2(n->pos_x + (sz.x * 0.5f), n->pos_y);
+            v2 = v1 + Vec2(0, sz.y);
+
+            Vec2 d = Vec2(2.0f * node_radius, 2.0f * node_radius);
+            ImColor c1 = ImColor(150,150,150,150);
+            ImColor c2 = ImColor(255,150,150,255);
+
+            // Output slot interaction
+            {
+                ImGui::SetCursorScreenPos(v1 - (d * 0.5f));
+                ImGui::InvisibleButton("output slot", d);
+                if (ImGui::IsItemHovered()) {
+                    draw_list->AddCircleFilled(v1, node_radius, c2);
+                } else {
+                    draw_list->AddCircleFilled(v1, node_radius, c1);
+                }
+
+                if (ImGui::IsItemActive()) {
+                    if (ImGui::IsMouseDragging(0)) {
+                        g->dragged_node = i;
+                        g->dragged_is_output = true;
+                    }
+                }
+            }
+            // Input slot interaction
+            {
+                ImGui::SetCursorScreenPos(v2 - (d * 0.5f));
+                ImGui::InvisibleButton("input slot", d);
+                if (ImGui::IsItemHovered()) {
+                    draw_list->AddCircleFilled(v2, node_radius, c2);
+                } else {
+                    draw_list->AddCircleFilled(v2, node_radius, c1);
+                }
+
+                if (ImGui::IsItemActive()) {
+                    if (ImGui::IsMouseDragging(0)) {
+                        g->dragged_node = i;
+                        g->dragged_is_output = false;
+                    }
+                }
+            }
+
+            if (ImGui::IsMouseReleased(0)) {
+                g->dragged_node = -1;
+            }
+        }
+
+        draw_list->ChannelsSetCurrent(0);
+        ImGui::SetCursorScreenPos(pos);
+        ImGui::InvisibleButton("node", sz);
+        if (ImGui::IsItemHovered()) {
+            hovered_node = i;
+        }
+
+        if (ImGui::IsItemActive()) {
+            mem->graph_panel.cur_node = i;
+            if (ImGui::IsMouseDragging(0)) {
+                n->pos_x += ImGui::GetIO().MouseDelta.x;
+                n->pos_y += ImGui::GetIO().MouseDelta.y;
+            }
+        }
 
         // Thumbnail
         draw_list->ChannelsSetCurrent(1);
         ImGui::SetCursorScreenPos(pos);
         ImGui::BeginGroup(); // Lock horizontal position
         {
-            ImColor c = (node_hovered_in_list == i || node_hovered_in_scene == i ||
-                       (node_hovered_in_list == -1 &&
-                        mem->graph_panel.cur_node == i)) ?
+            ImColor c = (hovered_node == i ||
+                         mem->graph_panel.cur_node == i) ?
                 ImColor(220,163,89, 150) : ImColor(60,60,60);
             // TODO: Optimization: Use mipmaps here.
             // TODO: Unstretch aspect ratio
@@ -49,44 +114,29 @@ static void draw_nodes(PapayaMemory* mem)
         }
         ImGui::EndGroup();
 
-
-        draw_list->ChannelsSetCurrent(0);
-        ImGui::SetCursorScreenPos(pos);
-        ImGui::InvisibleButton("node", sz);
-        if (ImGui::IsItemHovered()) {
-            node_hovered_in_scene = i;
-        }
-        bool node_moving_active = ImGui::IsItemActive();
-        if (node_moving_active)
-            mem->graph_panel.cur_node = i;
-        if (node_moving_active && ImGui::IsMouseDragging(0)) {
-            n->pos_x += ImGui::GetIO().MouseDelta.x;
-            n->pos_y += ImGui::GetIO().MouseDelta.y;
-        }
-
-        // Slots
-        Vec2 v1, v2; // Output, input slot positions
-        {
-            v1 = offset + Vec2(n->pos_x + (sz.x * 0.5f), n->pos_y);
-            v2 = v1 + Vec2(0, sz.y);
-            ImColor c = ImColor(150,150,150,150);
-
-            // draw_list->AddCircleFilled(v1, node_radius, c); // Input
-            // draw_list->AddCircleFilled(v2, node_radius, c); // Output
-        }
-
         // Output links
         {
-            draw_list->ChannelsSetCurrent(0); // Background
+            draw_list->ChannelsSetCurrent(0);
 
+            Vec2 b, t;
             for (int j = 0; j < n->num_out; j++) {
-                Vec2 v3 = offset + Vec2(n->out[j].pos_x,
-                                        n->out[j].pos_y)
-                                 + Vec2(sz.x * 0.5f, sz.y);
-                draw_list->AddBezierCurve(v1,
-                                          v1 + Vec2(0,-10),
-                                          v3 + Vec2(0,+10),
-                                          v3,
+
+                b = v1;
+                t = offset + Vec2(n->out[j].pos_x, n->out[j].pos_y)
+                           + Vec2(sz.x * 0.5f, sz.y);
+
+                if (g->dragged_is_output && g->dragged_node == i) {
+                    // Drag started from the lower part of a link, so the top
+                    t = mem->mouse.pos;
+                } else if (!g->dragged_is_output &&
+                           &n->out[j] == &mem->doc->nodes[g->dragged_node]) {
+                    b = mem->mouse.pos;
+                }
+
+                draw_list->AddBezierCurve(b,
+                                          b + Vec2(0,-10),
+                                          t + Vec2(0,+10),
+                                          t,
                                           ImColor(220, 163,89, 150),
                                           4.0f); // Link thickness
             }
@@ -131,10 +181,6 @@ void draw_graph_panel(PapayaMemory* mem)
 
     ImGui::Begin("Nodes", 0, mem->window.default_imgui_flags);
 
-    // bool open_context_menu = false;
-    int node_hovered_in_list = -1;
-    int node_hovered_in_scene = -1;
-
     ImGui::BeginGroup();
 
     const Vec2 NODE_WINDOW_PADDING(2.0f, 2.0f);
@@ -176,48 +222,6 @@ void draw_graph_panel(PapayaMemory* mem)
     // Display nodes
     draw_nodes(mem);
     draw_list->ChannelsMerge();
-
-    // Open context menu
-    /*if (!ImGui::IsAnyItemHovered() && ImGui::IsMouseHoveringWindow() && ImGui::IsMouseClicked(1))
-    {
-        node_selected = node_hovered_in_list = node_hovered_in_scene = -1;
-        open_context_menu = true;
-    }
-    if (open_context_menu)
-    {
-        ImGui::OpenPopup("context_menu");
-        if (node_hovered_in_list != -1)
-            node_selected = node_hovered_in_list;
-        if (node_hovered_in_scene != -1)
-            node_selected = node_hovered_in_scene;
-    }
-
-    // Draw context menu
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Vec2(8,8));
-    if (ImGui::BeginPopup("context_menu"))
-    {
-        Node* node = node_selected != -1 ? &mem->cur_doc->nodes[node_selected] : NULL;
-        Vec2 scene_pos = ImGui::GetMousePosOnOpeningCurrentPopup() - offset;
-        if (node)
-        {
-            ImGui::Text("Node '%s'", node->name);
-            ImGui::Separator();
-            if (ImGui::MenuItem("Rename..", NULL, false, false)) {}
-            if (ImGui::MenuItem("Delete", NULL, false, false)) {}
-            if (ImGui::MenuItem("Copy", NULL, false, false)) {}
-        }
-        else
-        {
-            if (ImGui::MenuItem("Add")) {
-                mem->cur_doc->nodes.push_back(Node(mem->cur_doc->nodes.Size,
-                                              "New node", scene_pos,
-                                              NodeType_Raster));
-            }
-            if (ImGui::MenuItem("Paste", NULL, false, false)) {}
-        }
-        ImGui::EndPopup();
-    }
-    ImGui::PopStyleVar();*/
 
     // Scrolling
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))

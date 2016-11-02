@@ -41,7 +41,7 @@ struct PapayaNode {
     PapayaNode* in;
     PapayaNode* in_mask;
     PapayaNode* out;
-    int64_t num_out;
+    size_t num_out;
 
     union {
         BitmapNode bitmap;
