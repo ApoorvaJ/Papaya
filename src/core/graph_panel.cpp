@@ -10,6 +10,7 @@
 #include "libpapaya.h"
 
 // NOTE: Most of this file is heavily work-in-progress at this point
+const Vec2 node_sz = Vec2(36, 36);
 
 void init_graph_panel(GraphPanel* g) {
     g->scroll_pos = Vec2(0,0);
@@ -17,6 +18,30 @@ void init_graph_panel(GraphPanel* g) {
     g->width = 300.0f;
     g->cur_node = 0;
     g->dragged_node = -1;
+}
+
+static Vec2 get_output_slot_pos(PapayaNode* node)
+{
+    return Vec2(node->pos_x, node->pos_y) + Vec2(node_sz.x * 0.5f, 0);
+}
+
+static Vec2 find_link_snap(PapayaMemory* mem, Vec2 offset)
+{
+    GraphPanel* g = &mem->graph_panel;
+    Vec2 m = mem->mouse.pos;
+
+    for (int i = 0; i < mem->doc->num_nodes; i++) {
+        PapayaNode* n = &mem->doc->nodes[i];
+        Vec2 p = Vec2(n->pos_x, n->pos_y) + offset;
+        if (m.x >= p.x &&
+            m.y >= p.y &&
+            m.x <= p.x + node_sz.x &&
+            m.y <= p.y + node_sz.y) {
+            return offset + get_output_slot_pos(n)
+                          + (g->dragged_is_output ? Vec2(0, node_sz.y) : Vec2());
+        }
+    }
+    return m;
 }
 
 static void draw_nodes(PapayaMemory* mem)
@@ -30,15 +55,15 @@ static void draw_nodes(PapayaMemory* mem)
     for (int i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
         Vec2 pos = offset + Vec2(n->pos_x - 1, n->pos_y - 1);
-        Vec2 sz = Vec2(36, 36);
         Vec2 v1, v2; // Output, input slot positions
 
         ImGui::PushID(i);
 
         // Slots
         {
-            v1 = offset + Vec2(n->pos_x + (sz.x * 0.5f), n->pos_y);
-            v2 = v1 + Vec2(0, sz.y);
+            v1 = offset + Vec2(n->pos_x + (node_sz.x * 0.5f), n->pos_y);
+            v1 = offset + get_output_slot_pos(n);
+            v2 = v1 + Vec2(0, node_sz.y);
 
             Vec2 d = Vec2(2.0f * node_radius, 2.0f * node_radius);
             ImColor c1 = ImColor(150,150,150,150);
@@ -86,7 +111,7 @@ static void draw_nodes(PapayaMemory* mem)
 
         draw_list->ChannelsSetCurrent(0);
         ImGui::SetCursorScreenPos(pos);
-        ImGui::InvisibleButton("node", sz);
+        ImGui::InvisibleButton("node", node_sz);
         if (ImGui::IsItemHovered()) {
             hovered_node = i;
         }
@@ -109,7 +134,7 @@ static void draw_nodes(PapayaMemory* mem)
                 ImColor(220,163,89, 150) : ImColor(60,60,60);
             // TODO: Optimization: Use mipmaps here.
             // TODO: Unstretch aspect ratio
-            ImGui::Image(0, sz, Vec2(0,0), Vec2(1,1),
+            ImGui::Image(0, node_sz, Vec2(0,0), Vec2(1,1),
                          ImVec4(1,1,1,1), c);
         }
         ImGui::EndGroup();
@@ -122,15 +147,15 @@ static void draw_nodes(PapayaMemory* mem)
             for (int j = 0; j < n->num_out; j++) {
 
                 b = v1;
-                t = offset + Vec2(n->out[j].pos_x, n->out[j].pos_y)
-                           + Vec2(sz.x * 0.5f, sz.y);
+                t = offset + get_output_slot_pos(&n->out[j])
+                           + Vec2(0, node_sz.y);
 
                 if (g->dragged_is_output && g->dragged_node == i) {
-                    // Drag started from the lower part of a link, so the top
-                    t = mem->mouse.pos;
+                    // Drag started from the lower part of a link
+                    t = find_link_snap(mem, offset);
                 } else if (!g->dragged_is_output &&
                            &n->out[j] == &mem->doc->nodes[g->dragged_node]) {
-                    b = mem->mouse.pos;
+                    b = find_link_snap(mem, offset);
                 }
 
                 draw_list->AddBezierCurve(b,

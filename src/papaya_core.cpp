@@ -384,7 +384,8 @@ void core::init(PapayaMemory* mem)
         n[1].num_out = 1;
         n[2].in = &n[1];
 
-        n[0].pos_x = n[1].pos_x = n[2].pos_x = 58;
+        n[0].pos_x = n[2].pos_x = 58;
+        n[1].pos_x = 108;
         n[0].pos_y = 158;
         n[1].pos_y = 108;
         n[2].pos_y = 58;
