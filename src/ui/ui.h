@@ -1,6 +1,10 @@
 #pragma once
 
-#include "papaya_platform.h"
+#if !defined(_DEBUG ) // TODO: Make this work for gcc
+#define PAPAYARELEASE // User-ready release mode
+#endif // !_DEBUG
+
+#include "libs/types.h"
 #include "libs/gl_util.h"
 #include "libs/timer.h"
 #include "libs/easytab.h"
@@ -217,4 +221,15 @@ namespace core {
     void close_doc(PapayaMemory* mem);
     void resize_doc(PapayaMemory* mem, int32 width, int32 height);
     void update_canvas(PapayaMemory* mem);
+}
+
+namespace platform
+{
+    void print(char* Message);
+    void start_mouse_capture();
+    void stop_mouse_capture();
+    void set_mouse_position(int32 x, int32 y);
+    void set_cursor_visibility(bool Visible);
+    char* open_file_dialog();
+    char* save_file_dialog();
 }

@@ -6,7 +6,6 @@
 #include <commdlg.h>
 #undef GetWindowFont // Windows API macro clashes with ImGui function
 
-#include "papaya_platform.h"
 #include "ui.h"
 
 #include "gl_lite.h"

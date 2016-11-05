@@ -9,8 +9,6 @@
 #include <gtk/gtk.h>
 #endif
 
-#include "papaya_platform.h"
-
 #include "gl_lite.h"
 #include <X11/Xlib.h>
 #include <GL/glx.h>
