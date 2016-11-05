@@ -6,7 +6,7 @@
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
 #include "libs/linmath.h"
-#include "papaya_core.h"
+#include "ui.h"
 
 void crop_rotate::init(PapayaMemory* mem)
 {

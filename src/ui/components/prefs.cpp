@@ -2,7 +2,7 @@
 #include "prefs.h"
 #include <stdio.h>
 #include "libs/imgui/imgui.h"
-#include "papaya_core.h"
+#include "ui.h"
 
 void prefs::show_panel(Picker* picker, Color* colors, Layout& layout)
 {

@@ -6,12 +6,12 @@
 #include "libs/easytab.h"
 #include "libs/imgui/imgui.h"
 
-#include "core/crop_rotate.h"
-#include "core/graph_panel.h"
-#include "core/node.h"
-#include "core/picker.h"
-#include "core/prefs.h"
-#include "core/undo.h"
+#include "components/crop_rotate.h"
+#include "components/graph_panel.h"
+#include "components/node.h"
+#include "components/picker.h"
+#include "components/prefs.h"
+#include "components/undo.h"
 
 struct ImDrawData;
 struct GraphPanel;

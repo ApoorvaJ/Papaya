@@ -17,7 +17,7 @@
 #include "libs/imgui/imgui.h"
 #include "libs/easytab.h"
 #include "libs/easykey.h"
-#include "papaya_core.h"
+#include "ui.h"
 
 #define GLEW_NO_GLU
 

@@ -1,11 +1,12 @@
 VPATH=../../src                 \
-	  ../../src/core            \
-	  ../../src/libs            \
-	  ../../src/libs/imgui      \
+	  ../../src/ui              \
+	  ../../src/ui/components   \
+	  ../../src/ui/libs         \
+	  ../../src/ui/libs/imgui   \
 	  ../../src/libpapaya
 
-SRCS=papaya_platform_linux.cpp  \
-	 papaya_core.cpp            \
+SRCS=linux_ui.cpp               \
+	 common_ui.cpp              \
 	 imgui.cpp                  \
 	 imgui_draw.cpp             \
 	 imgui_demo.cpp             \
@@ -13,7 +14,7 @@ SRCS=papaya_platform_linux.cpp  \
 	 crop_rotate.cpp            \
 	 metrics_window.cpp         \
 	 node.cpp                   \
-	 graph_panel.cpp           \
+	 graph_panel.cpp            \
 	 picker.cpp                 \
 	 prefs.cpp                  \
 	 undo.cpp                   \
@@ -21,7 +22,7 @@ SRCS=papaya_platform_linux.cpp  \
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
-CFLAGS=-I../../src -I../../src/libpapaya -O0 -Wno-write-strings -Wno-format-security -g
+CFLAGS=-I../../src/ui -I../../src/libpapaya -O0 -Wno-write-strings -Wno-format-security -g
 
 .SILENT:
 
@@ -33,7 +34,7 @@ $(OBJS): %.o: %.cpp
 
 -include $(OBJS:.o=.o.d)
 
-misc_data: ../../img/ui.png ../../src/shaders
+misc_data: ../../img/ui.png ../../src/ui/shaders
 	cp -ru $^ .
 
 clean:

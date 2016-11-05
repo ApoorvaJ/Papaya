@@ -1,9 +1,9 @@
 
-#include "core/graph_panel.h"
+#include "components/graph_panel.h"
 
 #include <math.h>
 
-#include "papaya_core.h"
+#include "ui.h"
 #include "libs/types.h"
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"

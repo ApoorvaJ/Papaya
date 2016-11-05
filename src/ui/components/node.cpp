@@ -1,6 +1,6 @@
 
 #include "node.h"
-#include "papaya_core.h"
+#include "ui.h"
 #include "libs/gl_util.h"
 
 Node* node::init(char* name, Vec2 pos, uint8* img, PapayaMemory* mem)

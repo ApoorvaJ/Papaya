@@ -1,7 +1,7 @@
 
-#include "papaya_core.h"
+#include "ui.h"
 
-#include "core/metrics_window.h"
+#include "components/metrics_window.h"
 #include "libs/stb_image.h"
 #include "libs/stb_image_write.h"
 #include "libs/imgui/imgui.h"

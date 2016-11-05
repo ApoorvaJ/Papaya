@@ -7,7 +7,7 @@
 #undef GetWindowFont // Windows API macro clashes with ImGui function
 
 #include "papaya_platform.h"
-#include "papaya_core.h"
+#include "ui.h"
 
 #include "gl_lite.h"
 #include "libs/imgui/imgui.h"
