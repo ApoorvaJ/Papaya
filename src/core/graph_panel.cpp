@@ -25,7 +25,12 @@ static Vec2 get_output_slot_pos(PapayaNode* node)
     return Vec2(node->pos_x, node->pos_y) + Vec2(node_sz.x * 0.5f, 0);
 }
 
-static Vec2 find_link_snap(PapayaMemory* mem, Vec2 offset)
+static Vec2 get_input_slot_pos(PapayaNode* node)
+{
+    return get_output_slot_pos(node) + Vec2(0, node_sz.y);
+}
+
+static Vec2 find_link_snap(PapayaMemory* mem, Vec2 offset, int* node_idx)
 {
     GraphPanel* g = &mem->graph_panel;
     Vec2 m = mem->mouse.pos;
@@ -37,11 +42,24 @@ static Vec2 find_link_snap(PapayaMemory* mem, Vec2 offset)
             m.y >= p.y &&
             m.x <= p.x + node_sz.x &&
             m.y <= p.y + node_sz.y) {
+            *node_idx = i;
             return offset + get_output_slot_pos(n)
                           + (g->dragged_is_output ? Vec2(0, node_sz.y) : Vec2());
         }
     }
+
+    *node_idx = -1;
     return m;
+}
+
+static void draw_link(Vec2 b, Vec2 t, ImDrawList* draw_list)
+{
+    draw_list->AddBezierCurve(b,
+                              b + Vec2(0,-10),
+                              t + Vec2(0,+10),
+                              t,
+                              ImColor(220, 163,89, 150),
+                              4.0f); // Link thickness
 }
 
 static void draw_nodes(PapayaMemory* mem)
@@ -104,9 +122,6 @@ static void draw_nodes(PapayaMemory* mem)
                 }
             }
 
-            if (ImGui::IsMouseReleased(0)) {
-                g->dragged_node = -1;
-            }
         }
 
         draw_list->ChannelsSetCurrent(0);
@@ -123,6 +138,23 @@ static void draw_nodes(PapayaMemory* mem)
                 n->pos_y += ImGui::GetIO().MouseDelta.y;
             }
         }
+
+#if 1
+        // Node debug info
+        {
+            ImGui::SetCursorScreenPos(pos + Vec2(node_sz.x + 5,0));
+            int in = -1;
+            int out = -1;
+            if (n->in) {
+                in = n->in - mem->doc->nodes;
+            }
+            if (n->out) {
+                out = n->out - mem->doc->nodes;
+            }
+            // ImGui::Text("in: %d\nout: %d", in, out);
+            ImGui::Text("%s", n->name);
+        }
+#endif
 
         // Thumbnail
         draw_list->ChannelsSetCurrent(1);
@@ -143,31 +175,73 @@ static void draw_nodes(PapayaMemory* mem)
         {
             draw_list->ChannelsSetCurrent(0);
 
-            Vec2 b, t;
-            for (int j = 0; j < n->num_out; j++) {
+            /*for (int j = 0; j < n->num_out; j++)*/
+            if (n->out) {
 
-                b = v1;
-                t = offset + get_output_slot_pos(&n->out[j])
-                           + Vec2(0, node_sz.y);
-
-                if (g->dragged_is_output && g->dragged_node == i) {
-                    // Drag started from the lower part of a link
-                    t = find_link_snap(mem, offset);
-                } else if (!g->dragged_is_output &&
-                           &n->out[j] == &mem->doc->nodes[g->dragged_node]) {
-                    b = find_link_snap(mem, offset);
+                if (g->dragged_node == i && g->dragged_is_output) {
+                    // This link is being dragged. Skip the normal drawing and
+                    // handle this in the link interaction code
+                    // continue;
+                    goto skip_link;
                 }
 
-                draw_list->AddBezierCurve(b,
-                                          b + Vec2(0,-10),
-                                          t + Vec2(0,+10),
-                                          t,
-                                          ImColor(220, 163,89, 150),
-                                          4.0f); // Link thickness
+                Vec2 b = v1;
+                Vec2 t = offset + get_input_slot_pos(n->out);
+                draw_link(b, t, draw_list);
+            }
+        }
+skip_link:
+
+        ImGui::PopID();
+    }
+
+    // Link interaction
+    {
+        bool o = g->dragged_is_output;
+        PapayaNode* d = 0; // Dragged node. 0 if nothing's being dragged.
+        if (g->dragged_node != -1) {
+            d = &mem->doc->nodes[g->dragged_node];
+        }
+
+        int s = -1; // Index of node snapped to. -1 if not snapped to any node.
+        if (d) {
+            if (o) {
+                Vec2 b = offset + get_output_slot_pos(d);
+                Vec2 t = find_link_snap(mem, offset, &s);
+                draw_link(b, t, draw_list);
+            } else {
+                Vec2 b = find_link_snap(mem, offset, &s);
+                Vec2 t = offset + get_input_slot_pos(d);
+                draw_link(b, t, draw_list);
             }
         }
 
-        ImGui::PopID();
+        if (d && ImGui::IsMouseReleased(0)) {
+
+            if (s != -1) {
+                PapayaNode* n1 = d;
+                PapayaNode* n2 = &mem->doc->nodes[s];
+
+                if (n1->out) {
+                    n1->out->in = 0;
+                }
+
+                if (n2->in) {
+                    n2->in->out = 0;
+                }
+
+                n1->out = n2;
+                n2->in = n1;
+                core::update_canvas(mem);
+            } else if (d->out) {
+                // Nothing to snap to. Disconnect the existing link.
+                d->out->in = 0;
+                d->out = 0;
+                core::update_canvas(mem);
+            }
+            g->dragged_node = -1;
+        }
+
     }
 }
 

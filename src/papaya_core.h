@@ -176,6 +176,8 @@ struct Misc {
     bool prefs_open;
     bool preview_image_size;
     int32 preview_width, preview_height;
+    uint32 canvas_tex; // Temporarily used for visualization during node bringup
+    int32 w, h;
 };
 
 struct PapayaMemory {
@@ -214,4 +216,5 @@ namespace core {
     bool open_doc(char* path, PapayaMemory* mem);
     void close_doc(PapayaMemory* mem);
     void resize_doc(PapayaMemory* mem, int32 width, int32 height);
+    void update_canvas(PapayaMemory* mem);
 }

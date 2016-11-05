@@ -372,16 +372,14 @@ void core::init(PapayaMemory* mem)
         uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o1.png", &w1, &h1, &c1, 4);
 
         PapayaNode* n = mem->doc->nodes;
-        init_bitmap_node(&n[0], "Node 0", img0, w0, h0, c0);
-        init_bitmap_node(&n[1], "Node 1", img1, w1, h1, c1);
-        init_invert_color_node(&n[2], "Node 2");
+        init_bitmap_node(&n[0], "Base image", img0, w0, h0, c0);
+        init_invert_color_node(&n[1], "Color inversion");
+        init_bitmap_node(&n[2], "Yellow circle", img1, w1, h1, c1);
 
         n[0].out = &n[1];
-        n[0].num_out = 1;
         n[1].in = &n[0];
 
         n[1].out = &n[2];
-        n[1].num_out = 1;
         n[2].in = &n[1];
 
         n[0].pos_x = n[2].pos_x = 58;
@@ -390,10 +388,15 @@ void core::init(PapayaMemory* mem)
         n[1].pos_y = 108;
         n[2].pos_y = 58;
 
-        uint8_t* img = (uint8_t*) malloc(4 * w1 * h1);
-        // papaya_evaluate_node(&n[2], w1, h1, img);
-        // int32 res = stbi_write_png("/home/apoorvaj/Pictures/res.png",
-        //                            w1, h1, 4, img, 4 * w1);
+        // Create texture
+        GLCHK( glGenTextures(1, &mem->misc.canvas_tex) );
+        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+
+        mem->misc.w = w0;
+        mem->misc.h = h0;
+        update_canvas(mem);
     }
 }
 
@@ -1263,12 +1266,10 @@ void core::update(PapayaMemory* mem)
 
         // TODO: Node support 
         // GLCHK( glBindTexture(GL_TEXTURE_2D, mem->cur_doc->final_node->tex_id) );
-        GLCHK( glBindTexture(GL_TEXTURE_2D, 0) );
+        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-        gl::draw_mesh(mem->meshes[PapayaMesh_Canvas], mem->shaders[PapayaShader_ImGui],
-            true, 1,
-            UniformType_Matrix4, m);
+        gl::draw_mesh(mem->meshes[PapayaMesh_Canvas], mem->shaders[PapayaShader_ImGui], true, 1, UniformType_Matrix4, m);
 
         if (mem->misc.draw_overlay)
         {
@@ -1438,4 +1439,16 @@ void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
     GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer) );
     GLCHK( glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer) );
     GLCHK( glDisable        (GL_SCISSOR_TEST) );
+}
+
+void core::update_canvas(PapayaMemory* mem)
+{
+        int w = mem->misc.w;
+        int h = mem->misc.h;
+        uint8_t* img = (uint8_t*) malloc(4 * w * h);
+        papaya_evaluate_node(&mem->doc->nodes[2], w, h, img);
+
+        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
+        GLCHK( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0,
+                            GL_RGBA, GL_UNSIGNED_BYTE, img) );
 }
