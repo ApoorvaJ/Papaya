@@ -132,7 +132,10 @@ static void draw_nodes(PapayaMemory* mem)
         }
 
         if (ImGui::IsItemActive()) {
-            mem->graph_panel.cur_node = i;
+            if (g->cur_node != i) {
+                g->cur_node = i;
+                core::update_canvas(mem);
+            }
             if (ImGui::IsMouseDragging(0)) {
                 n->pos_x += ImGui::GetIO().MouseDelta.x;
                 n->pos_y += ImGui::GetIO().MouseDelta.y;

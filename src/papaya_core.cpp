@@ -1446,7 +1446,8 @@ void core::update_canvas(PapayaMemory* mem)
         int w = mem->misc.w;
         int h = mem->misc.h;
         uint8_t* img = (uint8_t*) malloc(4 * w * h);
-        papaya_evaluate_node(&mem->doc->nodes[2], w, h, img);
+        papaya_evaluate_node(&mem->doc->nodes[mem->graph_panel.cur_node],
+                             w, h, img);
 
         GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
         GLCHK( glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0,
