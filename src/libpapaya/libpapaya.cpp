@@ -100,3 +100,22 @@ void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
             break;
     }
 }
+
+bool papaya_connect_nodes(PapayaNode* n1, PapayaNode* n2)
+{
+    if (n1) {
+        if (n1->out) {
+            n1->out->in = 0;
+        }
+        n1->out = n2;
+    }
+
+    if (n2) {
+        if (n2->in) {
+            n2->in->out = 0;
+        }
+        n2->in = n1;
+    }
+
+    return true;
+}

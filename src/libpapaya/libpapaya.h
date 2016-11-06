@@ -41,7 +41,10 @@ struct PapayaNode {
     PapayaNode* in;
     PapayaNode* in_mask;
     PapayaNode* out;
-    // size_t num_out;
+
+    PapayaNode** outs;
+    size_t num_outs;
+    size_t size_outs;
 
     union {
         BitmapNode bitmap;
@@ -60,3 +63,4 @@ struct PapayaDocument {
 // -----------------------------------------------------------------------------
 
 void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out);
+bool papaya_connect_nodes(PapayaNode* n1, PapayaNode* n2);

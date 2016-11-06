@@ -142,7 +142,7 @@ static void draw_nodes(PapayaMemory* mem)
             }
         }
 
-#if 1
+#if 0
         // Node debug info
         {
             ImGui::SetCursorScreenPos(pos + Vec2(node_sz.x + 5,0));
@@ -222,24 +222,11 @@ skip_link:
         if (d && ImGui::IsMouseReleased(0)) {
 
             if (s != -1) {
-                PapayaNode* n1 = d;
-                PapayaNode* n2 = &mem->doc->nodes[s];
-
-                if (n1->out) {
-                    n1->out->in = 0;
-                }
-
-                if (n2->in) {
-                    n2->in->out = 0;
-                }
-
-                n1->out = n2;
-                n2->in = n1;
+                papaya_connect_nodes(d, &mem->doc->nodes[s]);
                 core::update_canvas(mem);
             } else if (d->out) {
                 // Nothing to snap to. Disconnect the existing link.
-                d->out->in = 0;
-                d->out = 0;
+                papaya_connect_nodes(d, 0);
                 core::update_canvas(mem);
             }
             g->dragged_node = -1;
