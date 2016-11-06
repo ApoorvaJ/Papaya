@@ -74,7 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src\ui;$(SolutionDir)\..\..\src\libpapaya</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
@@ -87,7 +87,7 @@
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
 echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
+echo F|xcopy "$(SolutionDir)..\..\src\ui\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -95,7 +95,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src\ui;$(SolutionDir)\..\..\src\libpapaya</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
@@ -108,7 +108,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
 echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
+echo F|xcopy "$(SolutionDir)..\..\src\ui\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -118,7 +118,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src\ui;$(SolutionDir)\..\..\src\libpapaya</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -132,7 +132,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
 echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
+echo F|xcopy "$(SolutionDir)..\..\src\ui\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,7 +142,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\src\ui;$(SolutionDir)\..\..\src\libpapaya</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_MBCS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -156,7 +156,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
     <PostBuildEvent>
       <Command>echo F|xcopy "$(SolutionDir)..\..\img\ui.png" "$(TargetDir)ui.png" /Y /d
 echo F|xcopy "$(SolutionDir)..\..\img\papaya.ico" "$(TargetDir)papaya.ico" /Y /d
-echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
+echo F|xcopy "$(SolutionDir)..\..\src\ui\shaders" "$(TargetDir)shaders" /Y /d /i</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -166,42 +166,47 @@ echo F|xcopy "$(SolutionDir)..\..\src\shaders" "$(TargetDir)shaders" /Y /d /i</C
     <Image Include="..\..\img\papaya.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\core\crop_rotate.cpp" />
-    <ClCompile Include="..\..\src\core\metrics_window.cpp" />
-    <ClCompile Include="..\..\src\core\node.cpp" />
-    <ClCompile Include="..\..\src\core\graph_panel.cpp" />
-    <ClCompile Include="..\..\src\core\picker.cpp" />
-    <ClCompile Include="..\..\src\core\prefs.cpp" />
-    <ClCompile Include="..\..\src\core\undo.cpp" />
-    <ClCompile Include="..\..\src\libs\imgui\imgui.cpp" />
-    <ClCompile Include="..\..\src\libs\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\..\src\libs\single_header_libs.cpp" />
-    <ClCompile Include="..\..\src\papaya_core.cpp" />
-    <ClCompile Include="..\..\src\papaya_platform_win32.cpp" />
+    <ClInclude Include="..\..\src\libpapaya\gl_lite.h" />
+    <ClInclude Include="..\..\src\libpapaya\libpapaya.h" />
+    <ClInclude Include="..\..\src\ui\components\crop_rotate.h" />
+    <ClInclude Include="..\..\src\ui\components\graph_panel.h" />
+    <ClInclude Include="..\..\src\ui\components\metrics_window.h" />
+    <ClInclude Include="..\..\src\ui\components\node.h" />
+    <ClInclude Include="..\..\src\ui\components\picker.h" />
+    <ClInclude Include="..\..\src\ui\components\prefs.h" />
+    <ClInclude Include="..\..\src\ui\components\undo.h" />
+    <ClInclude Include="..\..\src\ui\libs\easykey.h" />
+    <ClInclude Include="..\..\src\ui\libs\easytab.h" />
+    <ClInclude Include="..\..\src\ui\libs\gl_util.h" />
+    <ClInclude Include="..\..\src\ui\libs\imgui\imconfig.h" />
+    <ClInclude Include="..\..\src\ui\libs\imgui\imgui.h" />
+    <ClInclude Include="..\..\src\ui\libs\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\src\ui\libs\linmath.h" />
+    <ClInclude Include="..\..\src\ui\libs\mathlib.h" />
+    <ClInclude Include="..\..\src\ui\libs\stb_image.h" />
+    <ClInclude Include="..\..\src\ui\libs\stb_image_write.h" />
+    <ClInclude Include="..\..\src\ui\libs\stb_rect_pack.h" />
+    <ClInclude Include="..\..\src\ui\libs\stb_textedit.h" />
+    <ClInclude Include="..\..\src\ui\libs\stb_truetype.h" />
+    <ClInclude Include="..\..\src\ui\libs\timer.h" />
+    <ClInclude Include="..\..\src\ui\libs\types.h" />
+    <ClInclude Include="..\..\src\ui\ui.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\crop_rotate.h" />
-    <ClInclude Include="..\..\src\core\metrics_window.h" />
-    <ClInclude Include="..\..\src\core\node.h" />
-    <ClInclude Include="..\..\src\core\graph_panel.h" />
-    <ClInclude Include="..\..\src\core\picker.h" />
-    <ClInclude Include="..\..\src\core\prefs.h" />
-    <ClInclude Include="..\..\src\core\undo.h" />
-    <ClInclude Include="..\..\src\libs\easytab.h" />
-    <ClInclude Include="..\..\src\libs\gl_lite.h" />
-    <ClInclude Include="..\..\src\libs\gl_util.h" />
-    <ClInclude Include="..\..\src\libs\imgui\imconfig.h" />
-    <ClInclude Include="..\..\src\libs\imgui\imgui.h" />
-    <ClInclude Include="..\..\src\libs\mathlib.h" />
-    <ClInclude Include="..\..\src\libs\stb_image.h" />
-    <ClInclude Include="..\..\src\libs\stb_image_write.h" />
-    <ClInclude Include="..\..\src\libs\stb_rect_pack.h" />
-    <ClInclude Include="..\..\src\libs\stb_textedit.h" />
-    <ClInclude Include="..\..\src\libs\stb_truetype.h" />
-    <ClInclude Include="..\..\src\libs\timer.h" />
-    <ClInclude Include="..\..\src\libs\types.h" />
-    <ClInclude Include="..\..\src\papaya_core.h" />
-    <ClInclude Include="..\..\src\papaya_platform.h" />
+    <ClCompile Include="..\..\src\libpapaya\libpapaya.cpp" />
+    <ClCompile Include="..\..\src\ui\common_ui.cpp" />
+    <ClCompile Include="..\..\src\ui\components\crop_rotate.cpp" />
+    <ClCompile Include="..\..\src\ui\components\graph_panel.cpp" />
+    <ClCompile Include="..\..\src\ui\components\metrics_window.cpp" />
+    <ClCompile Include="..\..\src\ui\components\node.cpp" />
+    <ClCompile Include="..\..\src\ui\components\picker.cpp" />
+    <ClCompile Include="..\..\src\ui\components\prefs.cpp" />
+    <ClCompile Include="..\..\src\ui\components\undo.cpp" />
+    <ClCompile Include="..\..\src\ui\libs\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\src\ui\libs\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\src\ui\libs\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\src\ui\libs\single_header_libs.cpp" />
+    <ClCompile Include="..\..\src\ui\windows_ui.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

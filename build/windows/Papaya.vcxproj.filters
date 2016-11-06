@@ -13,17 +13,29 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\core">
-      <UniqueIdentifier>{d3e5d53f-5914-4fc4-bf92-9824ce442910}</UniqueIdentifier>
+    <Filter Include="Header Files\ui">
+      <UniqueIdentifier>{01daae18-233d-4b55-9096-5b752fe762d7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\libs">
-      <UniqueIdentifier>{1a8d5a6e-3686-4b38-8087-4fc4be844e17}</UniqueIdentifier>
+    <Filter Include="Header Files\libpapaya">
+      <UniqueIdentifier>{78f05cb1-4867-4a59-bb59-9343b9161dfb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\core">
-      <UniqueIdentifier>{f8bf9636-c6a4-4065-a6d3-05d66f8c1c61}</UniqueIdentifier>
+    <Filter Include="Header Files\ui\components">
+      <UniqueIdentifier>{376434d4-ba44-49f4-95f2-2649dcb3d171}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\libs">
-      <UniqueIdentifier>{6ad8a5c7-8d4b-4369-85e1-9d28c4760174}</UniqueIdentifier>
+    <Filter Include="Header Files\ui\libs">
+      <UniqueIdentifier>{429f32b3-f165-4743-9ad4-507c29d8e902}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\libpapaya">
+      <UniqueIdentifier>{07e91474-4ba3-4c12-8c18-82e8e3595999}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{0383cfe6-453c-4dee-beae-e20a288ab9a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui\components">
+      <UniqueIdentifier>{2be8df5a-f9ae-4ebb-916b-4c9b7737da3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui\libs">
+      <UniqueIdentifier>{1a2b331f-2de4-4944-8c27-fff178cfc64d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -37,109 +49,124 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\papaya_platform_win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\papaya_core.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\picker.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\prefs.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\single_header_libs.cpp">
-      <Filter>Source Files\libs</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\imgui\imgui.cpp">
-      <Filter>Source Files\libs</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\crop_rotate.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\undo.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\metrics_window.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libs\imgui\imgui_draw.cpp">
-      <Filter>Source Files\libs</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\node.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\graph_panel.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
+    <ClInclude Include="..\..\src\ui\ui.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\crop_rotate.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\graph_panel.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\metrics_window.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\node.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\picker.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\prefs.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\undo.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\easykey.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\easytab.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\gl_util.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\linmath.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\mathlib.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\stb_image.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\stb_image_write.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\stb_rect_pack.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\stb_textedit.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\stb_truetype.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\timer.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\types.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\imgui\imconfig.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\imgui\imgui.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ui\libs\imgui\imgui_internal.h">
+      <Filter>Header Files\ui\libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libpapaya\gl_lite.h">
+      <Filter>Header Files\libpapaya</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\libpapaya\libpapaya.h">
+      <Filter>Header Files\libpapaya</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\papaya_core.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\papaya_platform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\picker.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\prefs.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\easytab.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\mathlib.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\stb_image.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\stb_image_write.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\stb_rect_pack.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\stb_textedit.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\stb_truetype.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\timer.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\types.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\imgui\imconfig.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\imgui\imgui.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\crop_rotate.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\undo.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\gl_util.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libs\gl_lite.h">
-      <Filter>Header Files\libs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\metrics_window.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\node.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\graph_panel.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\src\libpapaya\libpapaya.cpp">
+      <Filter>Source Files\libpapaya</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\common_ui.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\windows_ui.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\libs\single_header_libs.cpp">
+      <Filter>Source Files\ui\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\libs\imgui\imgui.cpp">
+      <Filter>Source Files\ui\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\libs\imgui\imgui_demo.cpp">
+      <Filter>Source Files\ui\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\libs\imgui\imgui_draw.cpp">
+      <Filter>Source Files\ui\libs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\crop_rotate.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\graph_panel.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\metrics_window.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\node.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\picker.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\prefs.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\undo.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
