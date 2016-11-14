@@ -178,18 +178,23 @@ static void draw_nodes(PapayaMemory* mem)
         {
             draw_list->ChannelsSetCurrent(0);
 
+            // TODO: Handle this inside libpapaya
             /*for (int j = 0; j < n->num_out; j++)*/
-            if (n->out) {
+            PapayaOutputSlot* out = (n->type == PapayaNodeType_Bitmap) ?
+                n->params.bitmap.in.from :
+                n->params.invert_color.in.from;
+            //
+            if (out) {
 
-                if (g->dragged_node == i && g->dragged_is_output) {
+                if (g->dragged_node == i && !g->dragged_is_output) {
                     // This link is being dragged. Skip the normal drawing and
                     // handle this in the link interaction code
                     // continue;
                     goto skip_link;
                 }
 
-                Vec2 b = v1;
-                Vec2 t = offset + get_input_slot_pos(n->out);
+                Vec2 b = offset + get_output_slot_pos(out->node);
+                Vec2 t = v2;
                 draw_link(b, t, draw_list);
             }
         }
@@ -221,14 +226,23 @@ skip_link:
 
         if (d && ImGui::IsMouseReleased(0)) {
 
+            // TODO: Handle this inside libpapaya
             if (s != -1) {
-                papaya_connect_nodes(d, &mem->doc->nodes[s]);
+                PapayaOutputSlot* out = (d->type == PapayaNodeType_Bitmap) ?
+                    &d->params.bitmap.out :
+                    &d->params.invert_color.out;
+                PapayaInputSlot* in  =
+                    (mem->doc->nodes[s].type == PapayaNodeType_Bitmap) ?
+                    &mem->doc->nodes[s].params.bitmap.in : 
+                    &mem->doc->nodes[s].params.invert_color.in;
+                papaya_connect(out, in);
                 core::update_canvas(mem);
-            } else if (d->out) {
+            } /*else if (d->out) {
                 // Nothing to snap to. Disconnect the existing link.
-                papaya_connect_nodes(d, 0);
+                papaya_connect(d, 0);
                 core::update_canvas(mem);
-            }
+            }*/
+            //
             g->dragged_node = -1;
         }
 

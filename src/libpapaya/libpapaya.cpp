@@ -12,6 +12,9 @@ void init_bitmap_node(PapayaNode* node, char* name,
     node->type = PapayaNodeType_Bitmap;
     node->name = name;
 
+    node->params.bitmap.in.node = node;
+    node->params.bitmap.out.node = node;
+
     node->params.bitmap.image = img;
     node->params.bitmap.width = w;
     node->params.bitmap.height = h;
@@ -20,46 +23,48 @@ void init_bitmap_node(PapayaNode* node, char* name,
 static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
                                         uint8_t* out)
 {
-    PapayaNode* in = node->in;
-    if (!in) {
+    PapayaOutputSlot* from = node->params.bitmap.in.from;
+
+    if (!from) {
         // No input
         memcpy(out, node->params.bitmap.image, 4 * w * h);
-    } else {
-        // Input exists
-        papaya_evaluate_node(in, w, h, out);
+        return;
+    }
 
-        uint8_t* img = node->params.bitmap.image;
+    PapayaNode* in = node->params.bitmap.in.from->node;
+    papaya_evaluate_node(in, w, h, out);
 
-        // Code is extremely unoptimized. Only proof-of-concept for nailing down
-        // the API.
-        for (size_t i = 0; i < 4 * w * h; i += 4) {
-            float r_d = out[i]   / 255.0f;
-            float g_d = out[i+1] / 255.0f;
-            float b_d = out[i+2] / 255.0f;
-            float a_d = out[i+3] / 255.0f;
+    uint8_t* img = node->params.bitmap.image;
 
-            float r_s = node->params.bitmap.image[i]   / 255.0f;
-            float g_s = node->params.bitmap.image[i+1] / 255.0f;
-            float b_s = node->params.bitmap.image[i+2] / 255.0f;
-            float a_s = node->params.bitmap.image[i+3] / 255.0f;
+    // Code is extremely unoptimized. Only proof-of-concept for nailing down
+    // the API.
+    for (size_t i = 0; i < 4 * w * h; i += 4) {
+        float r_d = out[i]   / 255.0f;
+        float g_d = out[i+1] / 255.0f;
+        float b_d = out[i+2] / 255.0f;
+        float a_d = out[i+3] / 255.0f;
 
-            // Alpha
-            float a_f = (a_s + a_d * (1.0f - a_s));
-            int a = 255.0f * a_f;
-            if (a < 0) { a = 0; }
-            else if (a > 255) { a = 255; }
-            out[i+3] = (uint8_t) a;
+        float r_s = node->params.bitmap.image[i]   / 255.0f;
+        float g_s = node->params.bitmap.image[i+1] / 255.0f;
+        float b_s = node->params.bitmap.image[i+2] / 255.0f;
+        float a_s = node->params.bitmap.image[i+3] / 255.0f;
 
-            if (a == 0) {
-                out[i] = out[i+1] = out[i+2] = 0;
-            } else {
-                int r = 255.0f * (r_s*a_s + r_d*a_d*(1.0f-a_s)) / a_f;
-                int g = 255.0f * (g_s*a_s + g_d*a_d*(1.0f-a_s)) / a_f;
-                int b = 255.0f * (b_s*a_s + b_d*a_d*(1.0f-a_s)) / a_f;
-                out[i]   = (uint8_t) r;
-                out[i+1] = (uint8_t) g;
-                out[i+2] = (uint8_t) b;
-            }
+        // Alpha
+        float a_f = (a_s + a_d * (1.0f - a_s));
+        int a = 255.0f * a_f;
+        if (a < 0) { a = 0; }
+        else if (a > 255) { a = 255; }
+        out[i+3] = (uint8_t) a;
+
+        if (a == 0) {
+            out[i] = out[i+1] = out[i+2] = 0;
+        } else {
+            int r = 255.0f * (r_s*a_s + r_d*a_d*(1.0f-a_s)) / a_f;
+            int g = 255.0f * (g_s*a_s + g_d*a_d*(1.0f-a_s)) / a_f;
+            int b = 255.0f * (b_s*a_s + b_d*a_d*(1.0f-a_s)) / a_f;
+            out[i]   = (uint8_t) r;
+            out[i+1] = (uint8_t) g;
+            out[i+2] = (uint8_t) b;
         }
     }
 }
@@ -70,12 +75,16 @@ void init_invert_color_node(PapayaNode* node, char* name)
 {
     node->type = PapayaNodeType_InvertColor;
     node->name = name;
+
+    node->params.invert_color.in.node = node;
+    node->params.invert_color.out.node = node;
 }
 
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
                                               uint8_t* out)
 {
-    PapayaNode* in = node->in;
+    PapayaNode* in = node->params.invert_color.in.from->node;
+
     if (!in) { return; }
 
     papaya_evaluate_node(in, w, h, out);
@@ -101,21 +110,37 @@ void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
     }
 }
 
-bool papaya_connect_nodes(PapayaNode* n1, PapayaNode* n2)
+// Currently assumes that a duplicate connection is not present, and does not
+// check for such connection
+bool papaya_connect(PapayaOutputSlot* out, PapayaInputSlot* in)
 {
-    if (n1) {
-        if (n1->out) {
-            n1->out->in = 0;
+    if (in) {
+        if (in->from) {
+            papaya_disconnect(in->from, in);
         }
-        n1->out = n2;
+        in->from = out;
     }
 
-    if (n2) {
-        if (n2->in) {
-            n2->in->out = 0;
+    for (int32_t i = 0; i < 16; i++) {
+        if (out->to[i] == 0) {
+            out->to[i] = in;
+            break;
         }
-        n2->in = n1;
     }
 
     return true;
+}
+
+void papaya_disconnect(PapayaOutputSlot* out, PapayaInputSlot* in)
+{
+    for (int32_t i = 0; i < 16; i++) {
+        if (out->to[i] == in) {
+            out->to[i] = 0;
+            break; // Assumption: only one such connection exists
+        }
+    }
+
+    if (in->from == out) {
+        in->from = 0;
+    }
 }
