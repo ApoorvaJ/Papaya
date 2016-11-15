@@ -83,6 +83,5 @@ struct PapayaDocument {
 // -----------------------------------------------------------------------------
 
 void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out);
-// bool papaya_connect_nodes(PapayaNode* n1, PapayaNode* n2);
 bool papaya_connect(PapayaOutputSlot* out, PapayaInputSlot* in);
 void papaya_disconnect(PapayaOutputSlot* out, PapayaInputSlot* in);
