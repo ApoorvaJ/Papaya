@@ -31,7 +31,7 @@ static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
         return;
     }
 
-    PapayaNode* in = node->params.bitmap.in.from->node;
+    PapayaNode* in = from->node;
     papaya_evaluate_node(in, w, h, out);
 
     uint8_t* img = node->params.bitmap.image;
@@ -83,9 +83,12 @@ void init_invert_color_node(PapayaNode* node, char* name)
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
                                               uint8_t* out)
 {
-    PapayaNode* in = node->params.invert_color.in.from->node;
+    PapayaOutputSlot* from = node->params.invert_color.in.from;
+    if (!from) {
+        return;
+    }
 
-    if (!in) { return; }
+    PapayaNode* in = from->node;
 
     papaya_evaluate_node(in, w, h, out);
 
@@ -110,12 +113,14 @@ void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
     }
 }
 
-// Currently assumes that a duplicate connection is not present, and does not
-// check for such connection
 bool papaya_connect(PapayaOutputSlot* out, PapayaInputSlot* in)
 {
     if (in) {
         if (in->from) {
+            if (in->from->node == out->node) {
+                // in and out are already connected
+                return true;
+            }
             papaya_disconnect(in->from, in);
         }
         in->from = out;

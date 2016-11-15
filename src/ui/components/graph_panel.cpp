@@ -17,7 +17,8 @@ void init_graph_panel(GraphPanel* g) {
     g->node_properties_panel_height = 200.0f;
     g->width = 300.0f;
     g->cur_node = 0;
-    g->dragged_node = -1;
+    g->dragged_slot = 0;
+    g->displaced_slot = 0;
 }
 
 static Vec2 get_output_slot_pos(PapayaNode* node)
@@ -99,7 +100,11 @@ static void draw_nodes(PapayaMemory* mem)
 
                 if (ImGui::IsItemActive()) {
                     if (ImGui::IsMouseDragging(0)) {
-                        g->dragged_node = i;
+                        // TODO: Handle this inside libpapaya
+                        g->dragged_slot = (n->type == PapayaNodeType_Bitmap) ?
+                            &n->params.bitmap.out :
+                            &n->params.invert_color.out;
+                        //
                         g->dragged_is_output = true;
                     }
                 }
@@ -116,8 +121,20 @@ static void draw_nodes(PapayaMemory* mem)
 
                 if (ImGui::IsItemActive()) {
                     if (ImGui::IsMouseDragging(0)) {
-                        g->dragged_node = i;
+                        // TODO: Handle this inside libpapaya
+                        g->dragged_slot = (n->type == PapayaNodeType_Bitmap) ?
+                            &n->params.bitmap.in :
+                            &n->params.invert_color.in;
+                        //
                         g->dragged_is_output = false;
+
+                        PapayaOutputSlot* from =
+                            ((PapayaInputSlot*)g->dragged_slot)->from;
+                        if (from) {
+                            g->displaced_slot = (PapayaInputSlot*)g->dragged_slot;
+                            g->dragged_slot = from;
+                            g->dragged_is_output = true;
+                        }
                     }
                 }
             }
@@ -186,10 +203,17 @@ static void draw_nodes(PapayaMemory* mem)
             //
             if (out) {
 
-                if (g->dragged_node == i && !g->dragged_is_output) {
+                if (!g->dragged_is_output &&
+                    g->dragged_slot &&
+                    ((PapayaOutputSlot*)g->dragged_slot)->node == n) {
                     // This link is being dragged. Skip the normal drawing and
                     // handle this in the link interaction code
                     // continue;
+                    goto skip_link;
+                }
+
+                if (g->displaced_slot &&
+                    g->displaced_slot->node == n) {
                     goto skip_link;
                 }
 
@@ -204,27 +228,24 @@ skip_link:
     }
 
     // Link interaction
-    {
-        bool o = g->dragged_is_output;
-        PapayaNode* d = 0; // Dragged node. 0 if nothing's being dragged.
-        if (g->dragged_node != -1) {
-            d = &mem->doc->nodes[g->dragged_node];
-        }
+    if (g->dragged_slot) {
+
+        PapayaNode* d = (g->dragged_is_output) ?
+            ((PapayaOutputSlot*)g->dragged_slot)->node :
+            ((PapayaInputSlot*)g->dragged_slot)->node;
 
         int s = -1; // Index of node snapped to. -1 if not snapped to any node.
-        if (d) {
-            if (o) {
-                Vec2 b = offset + get_output_slot_pos(d);
-                Vec2 t = find_link_snap(mem, offset, &s);
-                draw_link(b, t, draw_list);
-            } else {
-                Vec2 b = find_link_snap(mem, offset, &s);
-                Vec2 t = offset + get_input_slot_pos(d);
-                draw_link(b, t, draw_list);
-            }
+        if (g->dragged_is_output) {
+            Vec2 b = offset + get_output_slot_pos(d);
+            Vec2 t = find_link_snap(mem, offset, &s);
+            draw_link(b, t, draw_list);
+        } else {
+            Vec2 b = find_link_snap(mem, offset, &s);
+            Vec2 t = offset + get_input_slot_pos(d);
+            draw_link(b, t, draw_list);
         }
 
-        if (d && ImGui::IsMouseReleased(0)) {
+        if (ImGui::IsMouseReleased(0)) {
 
             // TODO: Handle this inside libpapaya
             if (s != -1) {
@@ -235,15 +256,26 @@ skip_link:
                     (mem->doc->nodes[s].type == PapayaNodeType_Bitmap) ?
                     &mem->doc->nodes[s].params.bitmap.in : 
                     &mem->doc->nodes[s].params.invert_color.in;
+
+                if (g->displaced_slot) {
+                    papaya_disconnect(out, g->displaced_slot);
+                } else if (!g->dragged_is_output) {
+                    in = (d->type == PapayaNodeType_Bitmap) ?
+                        &d->params.bitmap.in :
+                        &d->params.invert_color.in;
+                    out  =
+                        (mem->doc->nodes[s].type == PapayaNodeType_Bitmap) ?
+                        &mem->doc->nodes[s].params.bitmap.out : 
+                        &mem->doc->nodes[s].params.invert_color.out;
+                }
                 papaya_connect(out, in);
                 core::update_canvas(mem);
-            } /*else if (d->out) {
-                // Nothing to snap to. Disconnect the existing link.
-                papaya_connect(d, 0);
-                core::update_canvas(mem);
-            }*/
-            //
-            g->dragged_node = -1;
+            } else if (g->displaced_slot) {
+                // Disconnection
+                papaya_disconnect(g->displaced_slot->from, g->displaced_slot);
+            }
+            g->dragged_slot = 0;
+            g->displaced_slot = 0;
         }
 
     }
