@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <math.h>
 
+/*
+    Assumes that the slot struct is zeroed out. If it isn't, pointers may have
+    garbage values.
+*/
+static void init_slot(PapayaSlot* slot, PapayaNode* node, uint8_t is_out)
+{
+    slot->node = node;
+    slot->is_out = is_out;
+}
 
 void init_bitmap_node(PapayaNode* node, char* name,
                       uint8_t* img, int w, int h, int c)
@@ -12,18 +21,18 @@ void init_bitmap_node(PapayaNode* node, char* name,
     node->type = PapayaNodeType_Bitmap;
     node->name = name;
 
-    node->params.bitmap.in.node = node;
-    node->params.bitmap.out.node = node;
-
-    node->params.bitmap.image = img;
-    node->params.bitmap.width = w;
-    node->params.bitmap.height = h;
+    BitmapNode* b = &node->params.bitmap;
+    init_slot(&b->in, node, false);
+    init_slot(&b->out, node, true);
+    b->image = img;
+    b->width = w;
+    b->height = h;
 }
 
 static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
                                         uint8_t* out)
 {
-    PapayaOutputSlot* from = node->params.bitmap.in.from;
+    PapayaSlot* from = node->params.bitmap.in.to[0];
 
     if (!from) {
         // No input
@@ -76,14 +85,15 @@ void init_invert_color_node(PapayaNode* node, char* name)
     node->type = PapayaNodeType_InvertColor;
     node->name = name;
 
-    node->params.invert_color.in.node = node;
-    node->params.invert_color.out.node = node;
+    InvertColorNode* i = &node->params.invert_color;
+    init_slot(&i->in, node, false);
+    init_slot(&i->out, node, true);
 }
 
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
                                               uint8_t* out)
 {
-    PapayaOutputSlot* from = node->params.invert_color.in.from;
+    PapayaSlot* from = node->params.invert_color.in.to[0];
     if (!from) {
         return;
     }
@@ -113,17 +123,17 @@ void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
     }
 }
 
-bool papaya_connect(PapayaOutputSlot* out, PapayaInputSlot* in)
+bool papaya_connect(PapayaSlot* out, PapayaSlot* in)
 {
     if (in) {
-        if (in->from) {
-            if (in->from->node == out->node) {
+        if (in->to[0]) {
+            if (in->to[0]->node == out->node) {
                 // in and out are already connected
                 return true;
             }
-            papaya_disconnect(in->from, in);
+            papaya_disconnect(in->to[0], in);
         }
-        in->from = out;
+        in->to[0] = out;
     }
 
     for (int32_t i = 0; i < 16; i++) {
@@ -136,7 +146,7 @@ bool papaya_connect(PapayaOutputSlot* out, PapayaInputSlot* in)
     return true;
 }
 
-void papaya_disconnect(PapayaOutputSlot* out, PapayaInputSlot* in)
+void papaya_disconnect(PapayaSlot* out, PapayaSlot* in)
 {
     for (int32_t i = 0; i < 16; i++) {
         if (out->to[i] == in) {
@@ -145,7 +155,7 @@ void papaya_disconnect(PapayaOutputSlot* out, PapayaInputSlot* in)
         }
     }
 
-    if (in->from == out) {
-        in->from = 0;
+    if (in->to[0] == out) {
+        in->to[0] = 0;
     }
 }

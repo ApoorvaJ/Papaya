@@ -20,28 +20,28 @@ enum PapayaSlotType_ {
     PapayaSlotType_Vector,
 };
 
-struct PapayaOutputSlot;
-
-struct PapayaInputSlot {
+struct PapayaSlot {
+    uint8_t is_out; // Boolean to differentiate between input vs output slots
     PapayaSlotType_ type;
     PapayaNode* node; // Node that this slot belongs to
-    PapayaOutputSlot* from; // Output slot that this node is getting data
-                            // from.
-};
 
-struct PapayaOutputSlot {
-    PapayaSlotType_ type;
-    PapayaNode* node; // Node that this slot belongs to
-    PapayaInputSlot* to[16]; // Input slots that this node is sending data to.
-                             // 0 if not connected.
-                             // TODO: Move to dynamically sized array
+    /*
+        Slot(s) that this slot is connected to. 0 if not connected.
+
+        If this is an input slot, only one connection may exist, which will be
+        stored in to[0]. If this is an output slot, then multiple connections
+        may exist.
+
+        TODO: Move to dynamically sized array
+    */
+    PapayaSlot* to[16]; 
 };
 
 // -----------------------------------------------------------------------------
 
 struct BitmapNode {
-    PapayaInputSlot in;
-    PapayaOutputSlot out;
+    PapayaSlot in;
+    PapayaSlot out;
 
     uint8_t* image;
     int64_t width, height;
@@ -53,8 +53,8 @@ void init_bitmap_node(PapayaNode* node, char* name,
 // -----------------------------------------------------------------------------
 
 struct InvertColorNode {
-    PapayaInputSlot in;
-    PapayaOutputSlot out;
+    PapayaSlot in;
+    PapayaSlot out;
 
     int foo;
 };
@@ -64,7 +64,7 @@ void init_invert_color_node(PapayaNode* node, char* name);
 // -----------------------------------------------------------------------------
 
 struct PapayaNode {
-    int type;
+    PapayaNodeType_ type;
     char* name;
     float pos_x, pos_y;
     uint8_t is_active;
@@ -83,5 +83,5 @@ struct PapayaDocument {
 // -----------------------------------------------------------------------------
 
 void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out);
-bool papaya_connect(PapayaOutputSlot* out, PapayaInputSlot* in);
-void papaya_disconnect(PapayaOutputSlot* out, PapayaInputSlot* in);
+bool papaya_connect(PapayaSlot* out, PapayaSlot* in);
+void papaya_disconnect(PapayaSlot* out, PapayaSlot* in);
