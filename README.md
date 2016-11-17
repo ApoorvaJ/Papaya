@@ -35,10 +35,13 @@ To build on Linux, go to `build/linux/` in your Papaya folder, and run the `make
 
 To build on Windows, go to `build/windows` and open the Visual Studio 2015 solution. You should also be able build successfully in older versions of Visual Studio by changing the `Platform Toolset` in the Project Properties page in the General tab.
 
-Contributing
-------------
+**Papaya's master branch is currently very unstable because some [foundational work](https://handmade.network/forums/t/1561) is being done, on adding nodes for layering and effects. Please do not report segfaults or build failures on the master branch until the branch stabilizes, at which point I will again welcome bug reports and pull requests.**
 
-Papaya welcomes your contributions. If you are interested in helping, please read the pertinent [wiki page](https://github.com/ApoorvaJ/Papaya/wiki/Contributing-to-Papaya), an [overview of the structure of the project](https://github.com/ApoorvaJ/Papaya/wiki/Project-structure), and check out the [open issues](https://github.com/ApoorvaJ/Papaya/issues).
+**If you still want to explore and play with code, switch to the 0.1 release, but be warned - the code has changed substantially since.**
+
+<!-- Contributing -->
+
+<!-- Papaya welcomes your contributions. If you are interested in helping, please read the pertinent [wiki page](https://github.com/ApoorvaJ/Papaya/wiki/Contributing-to-Papaya), an [overview of the structure of the project](https://github.com/ApoorvaJ/Papaya/wiki/Project-structure), and check out the [open issues](https://github.com/ApoorvaJ/Papaya/issues). -->
 
 Credits
 ------
