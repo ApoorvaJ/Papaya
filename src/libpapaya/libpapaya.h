@@ -26,6 +26,13 @@ struct PapayaSlot {
     PapayaNode* node; // Node that this slot belongs to
 
     /*
+        The X, Y coordinates of the Slot. (0,0) represents the top-left corner
+        of the node and (1,1) represents the bottom right. Values may be greater
+        than 1.0 or smaller than 0.0 to represent positions outside the slot.
+    */
+    float pos_x, pos_y;
+
+    /*
         Slot(s) that this slot is connected to. 0 if not connected.
 
         If this is an input slot, only one connection may exist, which will be

@@ -5,28 +5,46 @@
 #include <stdio.h>
 #include <math.h>
 
+enum SlotPos_ {
+    SlotPos_Custom,
+    SlotPos_In,
+    SlotPos_Out,
+    SlotPos_InMask
+};
+
 /*
     Assumes that the slot struct is zeroed out. If it isn't, pointers may have
     garbage values.
 */
-static void init_slot(PapayaSlot* slot, PapayaNode* node, uint8_t is_out)
+static void init_slot(PapayaSlot* slot, PapayaNode* node, uint8_t is_out,
+                      SlotPos_ pos = SlotPos_Custom)
 {
     slot->node = node;
     slot->is_out = is_out;
+
+    switch (pos) {
+        case SlotPos_In:     slot->pos_x = 0.5f; slot->pos_y = 0;    break;
+        case SlotPos_Out:    slot->pos_x = 0.5f; slot->pos_y = 1;    break;
+        case SlotPos_InMask: slot->pos_x = 1;    slot->pos_y = 0.5f; break;
+        case SlotPos_Custom: break;
+    }
 }
+
+// -----------------------------------------------------------------------------
 
 void init_bitmap_node(PapayaNode* node, char* name,
                       uint8_t* img, int w, int h, int c)
 {
+    BitmapNode* b = &node->params.bitmap;
+
     node->type = PapayaNodeType_Bitmap;
     node->name = name;
-
-    BitmapNode* b = &node->params.bitmap;
-    init_slot(&b->in, node, false);
-    init_slot(&b->out, node, true);
     b->image = img;
     b->width = w;
     b->height = h;
+
+    init_slot(&b->in, node, false, SlotPos_In);
+    init_slot(&b->out, node, true, SlotPos_Out);
 }
 
 static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
@@ -82,12 +100,13 @@ static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
 
 void init_invert_color_node(PapayaNode* node, char* name)
 {
+    InvertColorNode* i = &node->params.invert_color;
+
     node->type = PapayaNodeType_InvertColor;
     node->name = name;
 
-    InvertColorNode* i = &node->params.invert_color;
-    init_slot(&i->in, node, false);
-    init_slot(&i->out, node, true);
+    init_slot(&i->in, node, false, SlotPos_In);
+    init_slot(&i->out, node, true, SlotPos_Out);
 }
 
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,

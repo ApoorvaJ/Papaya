@@ -191,7 +191,6 @@ static void draw_nodes(PapayaMemory* mem)
             draw_list->ChannelsSetCurrent(0);
 
             // TODO: Handle this inside libpapaya
-            /*for (int j = 0; j < n->num_out; j++)*/
             PapayaSlot* out = (n->type == PapayaNodeType_Bitmap) ?
                 n->params.bitmap.in.to[0] :
                 n->params.invert_color.in.to[0];
