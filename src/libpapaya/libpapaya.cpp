@@ -153,8 +153,17 @@ void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out)
     }
 }
 
-bool papaya_connect(PapayaSlot* out, PapayaSlot* in)
+bool papaya_connect(PapayaSlot* s1, PapayaSlot* s2)
 {
+    PapayaSlot* out, *in;
+    if (s1->is_out) {
+        out = s1;
+        in = s2;
+    } else {
+        out = s2;
+        in = s1;
+    }
+
     if (in) {
         if (in->to[0]) {
             if (in->to[0]->node == out->node) {
@@ -176,8 +185,17 @@ bool papaya_connect(PapayaSlot* out, PapayaSlot* in)
     return true;
 }
 
-void papaya_disconnect(PapayaSlot* out, PapayaSlot* in)
+void papaya_disconnect(PapayaSlot* s1, PapayaSlot* s2)
 {
+    PapayaSlot* out, *in;
+    if (s1->is_out) {
+        out = s1;
+        in = s2;
+    } else {
+        out = s2;
+        in = s1;
+    }
+
     for (int32_t i = 0; i < 16; i++) {
         if (out->to[i] == in) {
             out->to[i] = 0;

@@ -10,6 +10,7 @@
 #include "libpapaya.h"
 
 const Vec2 node_sz = Vec2(36, 36);
+const float slot_radius = 4.0f;
 
 void init_graph_panel(GraphPanel* g) {
     g->scroll_pos = Vec2(0,0);
@@ -20,9 +21,9 @@ void init_graph_panel(GraphPanel* g) {
     g->displaced_slot = 0;
 }
 
-static Vec2 get_slot_pos(PapayaNode* node, PapayaSlot* slot)
+static Vec2 get_slot_pos(PapayaSlot* slot)
 {
-    return Vec2(node->pos_x, node->pos_y)
+    return Vec2(slot->node->pos_x, slot->node->pos_y)
          + Vec2(node_sz.x * slot->pos_x,
                 node_sz.y * slot->pos_y);
 }
@@ -37,26 +38,26 @@ static Vec2 get_input_slot_pos(PapayaNode* node)
     return get_output_slot_pos(node) + Vec2(0, node_sz.y);
 }
 
-static Vec2 find_link_snap(PapayaMemory* mem, Vec2 offset, int* node_idx)
+static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
 {
     GraphPanel* g = &mem->graph_panel;
     Vec2 m = mem->mouse.pos;
 
     for (int i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
-        Vec2 p = Vec2(n->pos_x, n->pos_y) + offset;
-        if (m.x >= p.x &&
-            m.y >= p.y &&
-            m.x <= p.x + node_sz.x &&
-            m.y <= p.y + node_sz.y) {
-            *node_idx = i;
-            return offset + get_output_slot_pos(n)
-                          + (g->dragged_slot->is_out ? Vec2(0, node_sz.y) : Vec2());
+        for (int j = 0; j < n->num_slots; j++) {
+            PapayaSlot* s = &n->slots[j];
+            Vec2 p = offset + get_slot_pos(s);
+            if (m.x >= p.x &&
+                m.y >= p.y &&
+                m.x <= p.x + slot_radius &&
+                m.y <= p.y + slot_radius) {
+                return s;
+           }
         }
     }
 
-    *node_idx = -1;
-    return m;
+    return 0;
 }
 
 static void draw_link(Vec2 b, Vec2 t, ImDrawList* draw_list)
@@ -88,14 +89,14 @@ static void draw_nodes(PapayaMemory* mem)
             Vec2 pos = offset + Vec2(n->pos_x, n->pos_y)
                               + Vec2(node_sz.x * s->pos_x,
                                      node_sz.y * s->pos_y);
-            float rad = 4.0f;
-            Vec2 dia = Vec2(2.0f * rad, 2.0f * rad);
+            Vec2 dia = Vec2(2.0f * slot_radius, 2.0f * slot_radius);
             ImGui::PushID(j);
             ImGui::SetCursorScreenPos(pos - (dia * 0.5f));
             ImGui::InvisibleButton("slot", dia);
-            draw_list->AddCircleFilled(pos, rad, (ImGui::IsItemHovered() ?
-                                                  ImColor(255,150,150,255) :
-                                                  ImColor(150,150,150,150)));
+            draw_list->AddCircleFilled(pos, slot_radius,
+                                       (ImGui::IsItemHovered() ?
+                                        ImColor(255,150,150,255) :
+                                        ImColor(150,150,150,150)));
 
             if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0)) {
                 if (!s->to[0] || s->is_out) {
@@ -186,8 +187,8 @@ static void draw_nodes(PapayaMemory* mem)
                 continue;
             } 
 
-            draw_link(offset + get_slot_pos(b->node, b),
-                      offset + get_slot_pos(n, t),
+            draw_link(offset + get_slot_pos(b),
+                      offset + get_slot_pos(t),
                       draw_list);
         }
 
@@ -198,39 +199,29 @@ static void draw_nodes(PapayaMemory* mem)
     if (g->dragged_slot) {
 
         PapayaNode* d = g->dragged_slot->node;
+        PapayaSlot* s = find_snapped_slot(mem, offset);
 
-        int s = -1; // Index of node snapped to. -1 if not snapped to any node.
-        if (g->dragged_slot->is_out) {
-            Vec2 b = offset + get_output_slot_pos(d);
-            Vec2 t = find_link_snap(mem, offset, &s);
-            draw_link(b, t, draw_list);
-        } else {
-            Vec2 b = find_link_snap(mem, offset, &s);
-            Vec2 t = offset + get_input_slot_pos(d);
-            draw_link(b, t, draw_list);
-        }
+        Vec2 v1 = s ? (offset + get_slot_pos(s)) : mem->mouse.pos;
+        Vec2 v2 = offset + get_slot_pos(g->dragged_slot);
+        draw_link(v1, v2, draw_list);
 
         if (ImGui::IsMouseReleased(0)) {
 
-            // TODO: Handle this inside libpapaya
-            if (s != -1) {
-                PapayaSlot* out = &d->slots[1];
-                PapayaSlot* in  = &mem->doc->nodes[s].slots[0];
-
+            if (s) {
                 if (g->displaced_slot) {
-                    papaya_disconnect(out, g->displaced_slot);
-                } else if (!g->dragged_slot->is_out) {
-                    in = &d->slots[0];
-                    out  = &mem->doc->nodes[s].slots[1];
+                    papaya_disconnect(g->displaced_slot, g->dragged_slot);
                 }
-                papaya_connect(out, in);
-                core::update_canvas(mem);
+                papaya_connect(g->dragged_slot, s);
+
             } else if (g->displaced_slot) {
                 // Disconnection
-                papaya_disconnect(g->displaced_slot->to[0], g->displaced_slot);
+                papaya_disconnect(g->displaced_slot, g->displaced_slot->to[0]);
             }
+
             g->dragged_slot = 0;
             g->displaced_slot = 0;
+
+            core::update_canvas(mem);
         }
 
     }
