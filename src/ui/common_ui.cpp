@@ -376,10 +376,8 @@ void core::init(PapayaMemory* mem)
         init_invert_color_node(&n[1], "Color inversion");
         init_bitmap_node(&n[2], "Yellow circle", img1, w1, h1, c1);
 
-        papaya_connect(&n[0].params.bitmap.out,
-                       &n[1].params.invert_color.in);
-        papaya_connect(&n[1].params.invert_color.out,
-                       &n[2].params.bitmap.in);
+        papaya_connect(&n[0].slots[1], &n[1].slots[0]);
+        papaya_connect(&n[1].slots[1], &n[2].slots[0]);
 
         n[0].pos_x = n[2].pos_x = 58;
         n[1].pos_x = 108;

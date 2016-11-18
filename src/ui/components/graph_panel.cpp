@@ -20,6 +20,13 @@ void init_graph_panel(GraphPanel* g) {
     g->displaced_slot = 0;
 }
 
+static Vec2 get_slot_pos(PapayaNode* node, PapayaSlot* slot)
+{
+    return Vec2(node->pos_x, node->pos_y)
+         + Vec2(node_sz.x * slot->pos_x,
+                node_sz.y * slot->pos_y);
+}
+
 static Vec2 get_output_slot_pos(PapayaNode* node)
 {
     return Vec2(node->pos_x, node->pos_y) + Vec2(node_sz.x * 0.5f, 0);
@@ -64,7 +71,6 @@ static void draw_link(Vec2 b, Vec2 t, ImDrawList* draw_list)
 
 static void draw_nodes(PapayaMemory* mem)
 {
-    float node_radius = 4.0f;
     GraphPanel* g = &mem->graph_panel;
     Vec2 offset = ImGui::GetCursorScreenPos() + g->scroll_pos;
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -73,67 +79,33 @@ static void draw_nodes(PapayaMemory* mem)
     for (int i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
         Vec2 pos = offset + Vec2(n->pos_x - 1, n->pos_y - 1);
-        Vec2 v1, v2; // Output, input slot positions
 
         ImGui::PushID(i);
 
         // Slots
-        {
-            v1 = offset + Vec2(n->pos_x + (node_sz.x * 0.5f), n->pos_y);
-            v1 = offset + get_output_slot_pos(n);
-            v2 = v1 + Vec2(0, node_sz.y);
+        for (int j = 0; j < n->num_slots; j++) {
+            PapayaSlot* s = &n->slots[j];
+            Vec2 pos = offset + Vec2(n->pos_x, n->pos_y)
+                              + Vec2(node_sz.x * s->pos_x,
+                                     node_sz.y * s->pos_y);
+            float rad = 4.0f;
+            Vec2 dia = Vec2(2.0f * rad, 2.0f * rad);
+            ImGui::PushID(j);
+            ImGui::SetCursorScreenPos(pos - (dia * 0.5f));
+            ImGui::InvisibleButton("slot", dia);
+            draw_list->AddCircleFilled(pos, rad, (ImGui::IsItemHovered() ?
+                                                  ImColor(255,150,150,255) :
+                                                  ImColor(150,150,150,150)));
 
-            Vec2 d = Vec2(2.0f * node_radius, 2.0f * node_radius);
-            ImColor c1 = ImColor(150,150,150,150);
-            ImColor c2 = ImColor(255,150,150,255);
-
-            // Output slot interaction
-            {
-                ImGui::SetCursorScreenPos(v1 - (d * 0.5f));
-                ImGui::InvisibleButton("output slot", d);
-                if (ImGui::IsItemHovered()) {
-                    draw_list->AddCircleFilled(v1, node_radius, c2);
+            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(0)) {
+                if (!s->to[0] || s->is_out) {
+                    g->dragged_slot = s;
                 } else {
-                    draw_list->AddCircleFilled(v1, node_radius, c1);
-                }
-
-                if (ImGui::IsItemActive()) {
-                    if (ImGui::IsMouseDragging(0)) {
-                        // TODO: Handle this inside libpapaya
-                        g->dragged_slot = (n->type == PapayaNodeType_Bitmap) ?
-                            &n->params.bitmap.out :
-                            &n->params.invert_color.out;
-                        //
-                    }
+                    g->displaced_slot = s;
+                    g->dragged_slot = s->to[0];
                 }
             }
-            // Input slot interaction
-            {
-                ImGui::SetCursorScreenPos(v2 - (d * 0.5f));
-                ImGui::InvisibleButton("input slot", d);
-                if (ImGui::IsItemHovered()) {
-                    draw_list->AddCircleFilled(v2, node_radius, c2);
-                } else {
-                    draw_list->AddCircleFilled(v2, node_radius, c1);
-                }
-
-                if (ImGui::IsItemActive()) {
-                    if (ImGui::IsMouseDragging(0)) {
-                        // TODO: Handle this inside libpapaya
-                        g->dragged_slot = (n->type == PapayaNodeType_Bitmap) ?
-                            &n->params.bitmap.in :
-                            &n->params.invert_color.in;
-                        //
-
-                        PapayaSlot* from = g->dragged_slot->to[0];
-                        if (from) {
-                            g->displaced_slot = g->dragged_slot;
-                            g->dragged_slot = from;
-                        }
-                    }
-                }
-            }
-
+            ImGui::PopID();
         }
 
         draw_list->ChannelsSetCurrent(0);
@@ -186,37 +158,38 @@ static void draw_nodes(PapayaMemory* mem)
         }
         ImGui::EndGroup();
 
-        // Output links
-        {
-            draw_list->ChannelsSetCurrent(0);
+        // Incoming links
+        draw_list->ChannelsSetCurrent(0);
 
-            // TODO: Handle this inside libpapaya
-            PapayaSlot* out = (n->type == PapayaNodeType_Bitmap) ?
-                n->params.bitmap.in.to[0] :
-                n->params.invert_color.in.to[0];
-            //
-            if (out) {
+        for (int j = 0; j < n->num_slots; j++) {
 
-                if (g->dragged_slot &&
-                    !g->dragged_slot->is_out &&
-                    g->dragged_slot->node == n) {
-                    // This link is being dragged. Skip the normal drawing and
-                    // handle this in the link interaction code
-                    // continue;
-                    goto skip_link;
-                }
-
-                if (g->displaced_slot &&
-                    g->displaced_slot->node == n) {
-                    goto skip_link;
-                }
-
-                Vec2 b = offset + get_output_slot_pos(out->node);
-                Vec2 t = v2;
-                draw_link(b, t, draw_list);
+            PapayaSlot* t = &n->slots[j];
+            if (t->is_out) {
+                continue;
             }
+
+            PapayaSlot* b = t->to[0];
+            if (!b) {
+                continue;
+            }
+
+            if (g->dragged_slot &&
+                !g->dragged_slot->is_out &&
+                g->dragged_slot->node == n) {
+                // This link is being dragged. Skip the normal drawing and
+                // handle this in the link interaction code
+                continue;
+            }
+
+            if (g->displaced_slot &&
+                g->displaced_slot->node == n) {
+                continue;
+            } 
+
+            draw_link(offset + get_slot_pos(b->node, b),
+                      offset + get_slot_pos(n, t),
+                      draw_list);
         }
-skip_link:
 
         ImGui::PopID();
     }
@@ -241,24 +214,14 @@ skip_link:
 
             // TODO: Handle this inside libpapaya
             if (s != -1) {
-                PapayaSlot* out = (d->type == PapayaNodeType_Bitmap) ?
-                    &d->params.bitmap.out :
-                    &d->params.invert_color.out;
-                PapayaSlot* in  =
-                    (mem->doc->nodes[s].type == PapayaNodeType_Bitmap) ?
-                    &mem->doc->nodes[s].params.bitmap.in : 
-                    &mem->doc->nodes[s].params.invert_color.in;
+                PapayaSlot* out = &d->slots[1];
+                PapayaSlot* in  = &mem->doc->nodes[s].slots[0];
 
                 if (g->displaced_slot) {
                     papaya_disconnect(out, g->displaced_slot);
                 } else if (!g->dragged_slot->is_out) {
-                    in = (d->type == PapayaNodeType_Bitmap) ?
-                        &d->params.bitmap.in :
-                        &d->params.invert_color.in;
-                    out  =
-                        (mem->doc->nodes[s].type == PapayaNodeType_Bitmap) ?
-                        &mem->doc->nodes[s].params.bitmap.out : 
-                        &mem->doc->nodes[s].params.invert_color.out;
+                    in = &d->slots[0];
+                    out  = &mem->doc->nodes[s].slots[1];
                 }
                 papaya_connect(out, in);
                 core::update_canvas(mem);

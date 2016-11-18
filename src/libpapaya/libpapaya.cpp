@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <math.h>
 
+/*
+    TODO:
+    - Add destroy functions to nodes
+*/
+
 enum SlotPos_ {
     SlotPos_Custom,
     SlotPos_In,
@@ -23,8 +28,8 @@ static void init_slot(PapayaSlot* slot, PapayaNode* node, uint8_t is_out,
     slot->is_out = is_out;
 
     switch (pos) {
-        case SlotPos_In:     slot->pos_x = 0.5f; slot->pos_y = 0;    break;
-        case SlotPos_Out:    slot->pos_x = 0.5f; slot->pos_y = 1;    break;
+        case SlotPos_In:     slot->pos_x = 0.5f; slot->pos_y = 1;    break;
+        case SlotPos_Out:    slot->pos_x = 0.5f; slot->pos_y = 0;    break;
         case SlotPos_InMask: slot->pos_x = 1;    slot->pos_y = 0.5f; break;
         case SlotPos_Custom: break;
     }
@@ -37,20 +42,24 @@ void init_bitmap_node(PapayaNode* node, char* name,
 {
     BitmapNode* b = &node->params.bitmap;
 
+    node->num_slots = 2;
+    node->slots = (PapayaSlot*) calloc(node->num_slots * sizeof(PapayaSlot), 1);
+    init_slot(&node->slots[0], node, false, SlotPos_In);
+    init_slot(&node->slots[1], node, true, SlotPos_Out);
+
     node->type = PapayaNodeType_Bitmap;
     node->name = name;
+
     b->image = img;
     b->width = w;
     b->height = h;
 
-    init_slot(&b->in, node, false, SlotPos_In);
-    init_slot(&b->out, node, true, SlotPos_Out);
 }
 
 static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
                                         uint8_t* out)
 {
-    PapayaSlot* from = node->params.bitmap.in.to[0];
+    PapayaSlot* from = node->slots[0].to[0];
 
     if (!from) {
         // No input
@@ -102,17 +111,19 @@ void init_invert_color_node(PapayaNode* node, char* name)
 {
     InvertColorNode* i = &node->params.invert_color;
 
+    node->num_slots = 2;
+    node->slots = (PapayaSlot*) calloc(node->num_slots * sizeof(PapayaSlot), 1);
+    init_slot(&node->slots[0], node, false, SlotPos_In);
+    init_slot(&node->slots[1], node, true, SlotPos_Out);
+
     node->type = PapayaNodeType_InvertColor;
     node->name = name;
-
-    init_slot(&i->in, node, false, SlotPos_In);
-    init_slot(&i->out, node, true, SlotPos_Out);
 }
 
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
                                               uint8_t* out)
 {
-    PapayaSlot* from = node->params.invert_color.in.to[0];
+    PapayaSlot* from = node->slots[0].to[0];
     if (!from) {
         return;
     }

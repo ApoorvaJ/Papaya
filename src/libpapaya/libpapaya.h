@@ -47,9 +47,6 @@ struct PapayaSlot {
 // -----------------------------------------------------------------------------
 
 struct BitmapNode {
-    PapayaSlot in;
-    PapayaSlot out;
-
     uint8_t* image;
     int64_t width, height;
 };
@@ -60,9 +57,6 @@ void init_bitmap_node(PapayaNode* node, char* name,
 // -----------------------------------------------------------------------------
 
 struct InvertColorNode {
-    PapayaSlot in;
-    PapayaSlot out;
-
     int foo;
 };
 
@@ -75,6 +69,9 @@ struct PapayaNode {
     char* name;
     float pos_x, pos_y;
     uint8_t is_active;
+
+    PapayaSlot* slots;
+    size_t num_slots;
 
     union {
         BitmapNode bitmap;
