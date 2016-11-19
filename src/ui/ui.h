@@ -12,11 +12,11 @@
 
 #include "components/crop_rotate.h"
 #include "components/node.h"
-#include "components/picker.h"
 #include "components/prefs.h"
 #include "components/undo.h"
 
 struct ImDrawData;
+struct ColorPanel;
 struct GraphPanel;
 struct PapayaDocument;
 
@@ -204,8 +204,8 @@ struct PapayaMemory {
     PapayaTool_ current_tool;
     Brush brush;
     EyeDropper eye_dropper;
-    Picker picker;
     CropRotate crop_rotate;
+    ColorPanel* color_panel;
     GraphPanel* graph_panel;
     Misc misc;
 };

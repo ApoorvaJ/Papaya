@@ -15,7 +15,7 @@ SRCS=linux_ui.cpp               \
 	 metrics_window.cpp         \
 	 node.cpp                   \
 	 graph_panel.cpp            \
-	 picker.cpp                 \
+	 color_panel.cpp            \
 	 prefs.cpp                  \
 	 undo.cpp                   \
 	 libpapaya.cpp

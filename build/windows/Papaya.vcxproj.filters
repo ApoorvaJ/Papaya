@@ -64,7 +64,7 @@
     <ClInclude Include="..\..\src\ui\components\node.h">
       <Filter>Header Files\ui\components</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\ui\components\picker.h">
+    <ClInclude Include="..\..\src\ui\components\color_panel.h">
       <Filter>Header Files\ui\components</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\ui\components\prefs.h">
@@ -159,7 +159,7 @@
     <ClCompile Include="..\..\src\ui\components\node.cpp">
       <Filter>Source Files\ui\components</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ui\components\picker.cpp">
+    <ClCompile Include="..\..\src\ui\components\color_panel.cpp">
       <Filter>Source Files\ui\components</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ui\components\prefs.cpp">

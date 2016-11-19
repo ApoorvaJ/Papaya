@@ -15,4 +15,5 @@ struct GraphPanel {
 };
 
 GraphPanel* init_graph_panel();
+void destroy_graph_panel(GraphPanel* g);
 void draw_graph_panel(PapayaMemory* mem);

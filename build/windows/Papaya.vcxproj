@@ -172,7 +172,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\ui\shaders" "$(TargetDir)shaders" /Y /d /i
     <ClInclude Include="..\..\src\ui\components\graph_panel.h" />
     <ClInclude Include="..\..\src\ui\components\metrics_window.h" />
     <ClInclude Include="..\..\src\ui\components\node.h" />
-    <ClInclude Include="..\..\src\ui\components\picker.h" />
+    <ClInclude Include="..\..\src\ui\components\color_panel.h" />
     <ClInclude Include="..\..\src\ui\components\prefs.h" />
     <ClInclude Include="..\..\src\ui\components\undo.h" />
     <ClInclude Include="..\..\src\ui\libs\easykey.h" />
@@ -199,7 +199,7 @@ echo F|xcopy "$(SolutionDir)..\..\src\ui\shaders" "$(TargetDir)shaders" /Y /d /i
     <ClCompile Include="..\..\src\ui\components\graph_panel.cpp" />
     <ClCompile Include="..\..\src\ui\components\metrics_window.cpp" />
     <ClCompile Include="..\..\src\ui\components\node.cpp" />
-    <ClCompile Include="..\..\src\ui\components\picker.cpp" />
+    <ClCompile Include="..\..\src\ui\components\color_panel.cpp" />
     <ClCompile Include="..\..\src\ui\components\prefs.cpp" />
     <ClCompile Include="..\..\src\ui\components\undo.cpp" />
     <ClCompile Include="..\..\src\ui\libs\imgui\imgui.cpp" />

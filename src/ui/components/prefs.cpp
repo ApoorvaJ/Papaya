@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include "libs/imgui/imgui.h"
 #include "ui.h"
+#include "components/color_panel.h"
 
-void prefs::show_panel(Picker* picker, Color* colors, Layout& layout)
+void prefs::show_panel(ColorPanel* color_panel, Color* colors, Layout& layout)
 {
     float width = 400.0f;
     ImGui::SetNextWindowPos(ImVec2((float)layout.width - 36 - width, 58));
@@ -62,16 +63,16 @@ void prefs::show_panel(Picker* picker, Color* colors, Layout& layout)
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, col);
                 ImGui::PushID(i);
                 if (ImGui::Button(str)) {
-                    if (picker->bound_color == &colors[i]) {
+                    if (color_panel->bound_color == &colors[i]) {
                         // This color is bound
-                        picker->bound_color = 0;
-                        picker->is_open = false;
+                        color_panel->bound_color = 0;
+                        color_panel->is_open = false;
                     }
                     else {
                         // Some other color is bound or picker is unbound 
-                        picker->bound_color = &colors[i];
-                        picker::set_color(colors[i], picker);
-                        picker->is_open = true;
+                        color_panel->bound_color = &colors[i];
+                        color_panel_set_color(colors[i], color_panel);
+                        color_panel->is_open = true;
                     }
                 }
                 ImGui::PopID();

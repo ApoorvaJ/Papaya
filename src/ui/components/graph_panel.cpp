@@ -24,6 +24,11 @@ GraphPanel* init_graph_panel()
     return g;
 }
 
+void destroy_graph_panel(GraphPanel* g)
+{
+    free(g);
+}
+
 static Vec2 get_slot_pos(PapayaSlot* slot)
 {
     return Vec2(slot->node->pos_x, slot->node->pos_y)
@@ -207,7 +212,7 @@ static void draw_nodes(PapayaMemory* mem)
 
             if (g->displaced_slot &&
                 g->displaced_slot->node == n) {
-                continue;
+                // continue;
             } 
 
             draw_link(b, t, mem, offset, draw_list);
