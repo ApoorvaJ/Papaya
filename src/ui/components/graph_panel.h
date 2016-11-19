@@ -14,5 +14,5 @@ struct GraphPanel {
     PapayaSlot* displaced_slot;
 };
 
-void init_graph_panel(GraphPanel* g);
+GraphPanel* init_graph_panel();
 void draw_graph_panel(PapayaMemory* mem);

@@ -11,7 +11,6 @@
 #include "libs/imgui/imgui.h"
 
 #include "components/crop_rotate.h"
-#include "components/graph_panel.h"
 #include "components/node.h"
 #include "components/picker.h"
 #include "components/prefs.h"
@@ -207,7 +206,7 @@ struct PapayaMemory {
     EyeDropper eye_dropper;
     Picker picker;
     CropRotate crop_rotate;
-    GraphPanel graph_panel;
+    GraphPanel* graph_panel;
     Misc misc;
 };
 

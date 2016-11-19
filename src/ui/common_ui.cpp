@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "components/metrics_window.h"
+#include "components/graph_panel.h"
 #include "libs/stb_image.h"
 #include "libs/stb_image_write.h"
 #include "libs/imgui/imgui.h"
@@ -165,7 +166,7 @@ void core::init(PapayaMemory* mem)
 
         picker::init(&mem->picker);
         crop_rotate::init(mem);
-        init_graph_panel(&mem->graph_panel);
+        mem->graph_panel = init_graph_panel();
 
         mem->misc.draw_overlay = false;
         mem->misc.show_metrics = false;
@@ -1441,7 +1442,7 @@ void core::update_canvas(PapayaMemory* mem)
         int w = mem->misc.w;
         int h = mem->misc.h;
         uint8_t* img = (uint8_t*) malloc(4 * w * h);
-        papaya_evaluate_node(&mem->doc->nodes[mem->graph_panel.cur_node],
+        papaya_evaluate_node(&mem->doc->nodes[mem->graph_panel->cur_node],
                              w, h, img);
 
         GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );

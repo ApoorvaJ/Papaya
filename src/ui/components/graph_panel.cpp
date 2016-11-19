@@ -12,13 +12,16 @@
 const Vec2 node_sz = Vec2(36, 36);
 const float slot_radius = 4.0f;
 
-void init_graph_panel(GraphPanel* g) {
+GraphPanel* init_graph_panel()
+{
+    GraphPanel* g = (GraphPanel*) calloc(sizeof(*g), 1);
     g->scroll_pos = Vec2(0,0);
     g->node_properties_panel_height = 200.0f;
     g->width = 300.0f;
     g->cur_node = 0;
     g->dragged_slot = 0;
     g->displaced_slot = 0;
+    return g;
 }
 
 static Vec2 get_slot_pos(PapayaSlot* slot)
@@ -40,7 +43,7 @@ static Vec2 get_input_slot_pos(PapayaNode* node)
 
 static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
 {
-    GraphPanel* g = &mem->graph_panel;
+    GraphPanel* g = mem->graph_panel;
     Vec2 m = mem->mouse.pos;
 
     for (int i = 0; i < mem->doc->num_nodes; i++) {
@@ -92,7 +95,7 @@ static void draw_link(PapayaSlot* a, PapayaSlot* b, PapayaMemory* mem,
 
 static void draw_nodes(PapayaMemory* mem)
 {
-    GraphPanel* g = &mem->graph_panel;
+    GraphPanel* g = mem->graph_panel;
     Vec2 offset = ImGui::GetCursorScreenPos() + g->scroll_pos;
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     int hovered_node = -1;
@@ -170,7 +173,7 @@ static void draw_nodes(PapayaMemory* mem)
         ImGui::BeginGroup(); // Lock horizontal position
         {
             ImColor c = (hovered_node == i ||
-                         mem->graph_panel.cur_node == i) ?
+                         g->cur_node == i) ?
                 ImColor(220,163,89, 150) : ImColor(60,60,60);
             // TODO: Optimization: Use mipmaps here.
             // TODO: Unstretch aspect ratio
@@ -245,7 +248,7 @@ static void draw_nodes(PapayaMemory* mem)
 
 void draw_graph_panel(PapayaMemory* mem)
 {
-    GraphPanel* g = &mem->graph_panel;
+    GraphPanel* g = mem->graph_panel;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, Vec2(5, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, Vec2(5, 2));
@@ -322,7 +325,7 @@ void draw_graph_panel(PapayaMemory* mem)
 
     // Scrolling
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemActive() && ImGui::IsMouseDragging(2, 0.0f))
-        mem->graph_panel.scroll_pos += ImGui::GetIO().MouseDelta;
+        g->scroll_pos += ImGui::GetIO().MouseDelta;
 
     ImGui::PopItemWidth();
     ImGui::EndChild();
