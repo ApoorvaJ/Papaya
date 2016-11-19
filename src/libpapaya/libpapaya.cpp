@@ -10,28 +10,22 @@
     - Add destroy functions to nodes
 */
 
-enum SlotPos_ {
-    SlotPos_Custom,
-    SlotPos_In,
-    SlotPos_Out,
-    SlotPos_InMask
-};
-
 /*
     Assumes that the slot struct is zeroed out. If it isn't, pointers may have
     garbage values.
 */
 static void init_slot(PapayaSlot* slot, PapayaNode* node, uint8_t is_out,
-                      SlotPos_ pos = SlotPos_Custom)
+                      PapayaSlotPos_ pos = PapayaSlotPos_Custom)
 {
     slot->node = node;
     slot->is_out = is_out;
+    slot->pos = pos;
 
     switch (pos) {
-        case SlotPos_In:     slot->pos_x = 0.5f; slot->pos_y = 1;    break;
-        case SlotPos_Out:    slot->pos_x = 0.5f; slot->pos_y = 0;    break;
-        case SlotPos_InMask: slot->pos_x = 1;    slot->pos_y = 0.5f; break;
-        case SlotPos_Custom: break;
+        case PapayaSlotPos_In:     slot->pos_x = 0.5f; slot->pos_y = 1;    break;
+        case PapayaSlotPos_Out:    slot->pos_x = 0.5f; slot->pos_y = 0;    break;
+        case PapayaSlotPos_InMask: slot->pos_x = 1;    slot->pos_y = 0.5f; break;
+        case PapayaSlotPos_Custom: break;
     }
 }
 
@@ -44,8 +38,8 @@ void init_bitmap_node(PapayaNode* node, char* name,
 
     node->num_slots = 2;
     node->slots = (PapayaSlot*) calloc(node->num_slots * sizeof(PapayaSlot), 1);
-    init_slot(&node->slots[0], node, false, SlotPos_In);
-    init_slot(&node->slots[1], node, true, SlotPos_Out);
+    init_slot(&node->slots[0], node, false, PapayaSlotPos_In);
+    init_slot(&node->slots[1], node, true, PapayaSlotPos_Out);
 
     node->type = PapayaNodeType_Bitmap;
     node->name = name;
@@ -111,10 +105,11 @@ void init_invert_color_node(PapayaNode* node, char* name)
 {
     InvertColorNode* i = &node->params.invert_color;
 
-    node->num_slots = 2;
+    node->num_slots = 3;
     node->slots = (PapayaSlot*) calloc(node->num_slots * sizeof(PapayaSlot), 1);
-    init_slot(&node->slots[0], node, false, SlotPos_In);
-    init_slot(&node->slots[1], node, true, SlotPos_Out);
+    init_slot(&node->slots[0], node, false, PapayaSlotPos_In);
+    init_slot(&node->slots[1], node, true, PapayaSlotPos_Out);
+    init_slot(&node->slots[2], node, false, PapayaSlotPos_InMask);
 
     node->type = PapayaNodeType_InvertColor;
     node->name = name;
@@ -123,19 +118,39 @@ void init_invert_color_node(PapayaNode* node, char* name)
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
                                               uint8_t* out)
 {
-    PapayaSlot* from = node->slots[0].to[0];
-    if (!from) {
+    PapayaSlot* in = node->slots[0].to[0];
+    if (!in) {
         return;
     }
+    papaya_evaluate_node(in->node, w, h, out);
 
-    PapayaNode* in = from->node;
+    PapayaSlot* mask = node->slots[2].to[0];
+    if (mask) {
+        // Mask is provided
+        uint8_t* m = (uint8_t*) malloc(4 * w * h);
 
-    papaya_evaluate_node(in, w, h, out);
+        papaya_evaluate_node(mask->node, w, h, m);
+        for (size_t i = 0; i < 4 * w * h; i += 4) {
+            float t = (float)m[i+3] / 255.0f;
+            float r = (float)out[i]   / 255.0f;
+            float g = (float)out[i+1] / 255.0f;
+            float b = (float)out[i+2] / 255.0f;
+            r = t * (1.0f - r) + (1.0f - t) * r;
+            g = t * (1.0f - g) + (1.0f - t) * g;
+            b = t * (1.0f - b) + (1.0f - t) * b;
+            out[i]   = r * 255.0f;
+            out[i+1] = g * 255.0f;
+            out[i+2] = b * 255.0f;
+        }
 
-    for (size_t i = 0; i < 4 * w * h; i += 4) {
-        out[i]   = 255 - out[i];
-        out[i+1] = 255 - out[i+1];
-        out[i+2] = 255 - out[i+2];
+        free(m);
+    } else {
+        // No mask provided
+        for (size_t i = 0; i < 4 * w * h; i += 4) {
+            out[i]   = 255 - out[i];
+            out[i+1] = 255 - out[i+1];
+            out[i+2] = 255 - out[i+2];
+        }
     }
 }
 

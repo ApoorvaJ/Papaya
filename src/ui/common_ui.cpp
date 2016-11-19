@@ -369,7 +369,7 @@ void core::init(PapayaMemory* mem)
                                                sizeof(PapayaNode));
         int w0, w1, h0, h1, c0, c1;
         uint8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
-        uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o1.png", &w1, &h1, &c1, 4);
+        uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o2.png", &w1, &h1, &c1, 4);
 
         PapayaNode* n = mem->doc->nodes;
         init_bitmap_node(&n[0], "Base image", img0, w0, h0, c0);
@@ -377,13 +377,11 @@ void core::init(PapayaMemory* mem)
         init_bitmap_node(&n[2], "Yellow circle", img1, w1, h1, c1);
 
         papaya_connect(&n[0].slots[1], &n[1].slots[0]);
-        papaya_connect(&n[1].slots[1], &n[2].slots[0]);
+        papaya_connect(&n[2].slots[1], &n[1].slots[2]);
 
-        n[0].pos_x = n[2].pos_x = 58;
-        n[1].pos_x = 108;
-        n[0].pos_y = 158;
-        n[1].pos_y = 108;
-        n[2].pos_y = 58;
+        n[0].pos_x = 108; n[0].pos_y = 158;
+        n[1].pos_x = 108; n[1].pos_y = 108;
+        n[2].pos_x = 158; n[2].pos_y = 158;
 
         // Create texture
         GLCHK( glGenTextures(1, &mem->misc.canvas_tex) );

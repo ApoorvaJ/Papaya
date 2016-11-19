@@ -20,6 +20,14 @@ enum PapayaSlotType_ {
     PapayaSlotType_Vector,
 };
 
+enum PapayaSlotPos_ {
+    PapayaSlotPos_Custom,
+    PapayaSlotPos_In,
+    PapayaSlotPos_Out,
+    PapayaSlotPos_InMask
+};
+
+
 struct PapayaSlot {
     uint8_t is_out; // Boolean to differentiate between input vs output slots
     PapayaSlotType_ type;
@@ -31,6 +39,7 @@ struct PapayaSlot {
         than 1.0 or smaller than 0.0 to represent positions outside the slot.
     */
     float pos_x, pos_y;
+    PapayaSlotPos_ pos; // Enum used to denote commonly used slot positions
 
     /*
         Slot(s) that this slot is connected to. 0 if not connected.

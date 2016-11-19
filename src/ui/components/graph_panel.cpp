@@ -60,12 +60,32 @@ static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
     return 0;
 }
 
-static void draw_link(Vec2 b, Vec2 t, ImDrawList* draw_list)
+static Vec2 get_bezier_bend(PapayaSlot* s)
 {
-    draw_list->AddBezierCurve(b,
-                              b + Vec2(0,-10),
-                              t + Vec2(0,+10),
-                              t,
+    switch (s->pos){
+        case PapayaSlotPos_In:     return Vec2(0,+10);
+        case PapayaSlotPos_Out:    return Vec2(0,-10);
+        case PapayaSlotPos_InMask: return Vec2(+20,0);
+    }
+    return Vec2();
+}
+
+/*
+    Draws a bezier curve between the two given slots. If a slot is null, then
+    the mouse position is used instead of the slot position.
+*/
+static void draw_link(PapayaSlot* a, PapayaSlot* b, PapayaMemory* mem,
+                      Vec2 offset, ImDrawList* draw_list)
+{
+    Vec2 v1 = a ? offset + get_slot_pos(a) : mem->mouse.pos; // Positions
+    Vec2 v2 = b ? offset + get_slot_pos(b) : mem->mouse.pos; //
+    Vec2 u1 = a ? get_bezier_bend(a) : Vec2(); // Bends
+    Vec2 u2 = b ? get_bezier_bend(b) : Vec2(); //
+
+    draw_list->AddBezierCurve(v1,
+                              v1 + u1,
+                              v2 + u2,
+                              v2,
                               ImColor(220, 163,89, 150),
                               4.0f); // Link thickness
 }
@@ -187,9 +207,7 @@ static void draw_nodes(PapayaMemory* mem)
                 continue;
             } 
 
-            draw_link(offset + get_slot_pos(b),
-                      offset + get_slot_pos(t),
-                      draw_list);
+            draw_link(b, t, mem, offset, draw_list);
         }
 
         ImGui::PopID();
@@ -201,9 +219,7 @@ static void draw_nodes(PapayaMemory* mem)
         PapayaNode* d = g->dragged_slot->node;
         PapayaSlot* s = find_snapped_slot(mem, offset);
 
-        Vec2 v1 = s ? (offset + get_slot_pos(s)) : mem->mouse.pos;
-        Vec2 v2 = offset + get_slot_pos(g->dragged_slot);
-        draw_link(v1, v2, draw_list);
+        draw_link(s, g->dragged_slot, mem, offset, draw_list);
 
         if (ImGui::IsMouseReleased(0)) {
 
