@@ -17,6 +17,7 @@ struct ColorPanel {
 };
 
 ColorPanel* init_color_panel();
+void destroy_color_panel(ColorPanel* c);
 // TODO: This API could use some attention
 void color_panel_set_color(Color col, ColorPanel* c,
                            bool set_new_color_only = false);

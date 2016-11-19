@@ -19,6 +19,11 @@ ColorPanel* init_color_panel()
     c->bound_color = 0;
 }
 
+void destroy_color_panel(ColorPanel* c)
+{
+    free(c);
+}
+
 void color_panel_set_color(Color col, ColorPanel* c, bool set_new_color_only)
 {
     if (!set_new_color_only) { c->current_color = col; }
