@@ -50,18 +50,41 @@ static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
 {
     GraphPanel* g = mem->graph_panel;
     Vec2 m = mem->mouse.pos;
+    PapayaNode* snapped_node = 0; // Snapped node
 
+    // Find the node that is currently being moused over
     for (int i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
-        for (int j = 0; j < n->num_slots; j++) {
-            PapayaSlot* s = &n->slots[j];
-            Vec2 p = offset + get_slot_pos(s);
-            if (m.x >= p.x &&
-                m.y >= p.y &&
-                m.x <= p.x + slot_radius &&
-                m.y <= p.y + slot_radius) {
-                return s;
-           }
+
+        Vec2 p = offset + Vec2(n->pos_x, n->pos_y);
+        if (m.x >= p.x &&
+            m.y >= p.y &&
+            m.x <= p.x + node_sz.x &&
+            m.y <= p.y + node_sz.y) {
+            snapped_node = n;
+            break;
+        }
+    }
+
+    if (snapped_node) {
+        PapayaSlot* min_slot = 0;
+        float min_dist = FLT_MAX;
+
+        // Find the closest slot to the mouse in the snapped node
+        for (int j = 0; j < snapped_node->num_slots; j++) {
+            PapayaSlot* s = &snapped_node->slots[j];
+            float dist = math::distance(offset + get_slot_pos(s), m);
+            // TODO: Snappability check goes here, to verify the absence of
+            // cycles and the compatibility of slots
+            if (min_dist > dist) {
+                min_dist = dist;
+                min_slot = s;
+            }
+        }
+
+        if (min_slot) {
+            // Compatible slot exists. Snap to it.
+            return min_slot;
         }
     }
 
