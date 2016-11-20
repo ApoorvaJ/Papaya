@@ -40,8 +40,6 @@ namespace math {
     Vec2i round_to_vec2i(Vec2 a);
     float distance(Vec2 a, Vec2 b);
     float distance_squared(Vec2 a, Vec2 b);
-    void hsv_to_rgb(float h, float s, float v, float& out_r, float& out_g, float& out_b);
-    void rgb_to_hsv(float r, float g, float b, float& out_h, float& out_s, float& out_v);
     float to_radians(float degrees);
 }
 
@@ -86,53 +84,6 @@ float math::distance(Vec2 a, Vec2 b)
 float math::distance_squared(Vec2 a, Vec2 b)
 {
     return ( (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y) );
-}
-
-// Color math
-// TODO: Move to an array-based color type
-void math::hsv_to_rgb(float h, float s, float v,
-                      float& out_r, float& out_g, float& out_b)
-{
-    if (s == 0.0f) {
-        // gray
-        out_r = out_g = out_b = v;
-        return;
-    }
-
-    h = fmodf(h, 1.0f) / (60.0f / 360.0f);
-    int   i = (int)h;
-    float f = h - (float)i;
-    float p = v * (1.0f - s);
-    float q = v * (1.0f - s * f);
-    float t = v * (1.0f - s * (1.0f - f));
-
-    switch (i) {
-        case 0: out_r = v; out_g = t; out_b = p; break;
-        case 1: out_r = q; out_g = v; out_b = p; break;
-        case 2: out_r = p; out_g = v; out_b = t; break;
-        case 3: out_r = p; out_g = q; out_b = v; break;
-        case 4: out_r = t; out_g = p; out_b = v; break;
-        case 5: default: out_r = v; out_g = p; out_b = q; break;
-    }
-}
-
-void math::rgb_to_hsv(float r, float g, float b,
-                      float& out_h, float& out_s, float& out_v)
-{
-    float K = 0.f;
-    if (g < b) {
-        const float tmp = g; g = b; b = tmp;
-        K = -1.f;
-    }
-    if (r < g) {
-        const float tmp = r; r = g; g = tmp;
-        K = -2.f / 6.f - K;
-    }
-
-    const float chroma = r - (g < b ? g : b);
-    out_h = fabsf(K + (g - b) / (6.f * chroma + 1e-20f));
-    out_s = chroma / (r + 1e-20f);
-    out_v = r;
 }
 
 float math::to_radians(float degrees)

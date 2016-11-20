@@ -16,7 +16,6 @@ ColorPanel* init_color_panel()
     c->sv_box_pos = Vec2(0, 42);
     c->sv_box_size = Vec2(256, 256);
     c->cursor_sv = Vec2(0.5f, 0.5f);
-    c->bound_color = 0;
 }
 
 void destroy_color_panel(ColorPanel* c)
@@ -24,12 +23,65 @@ void destroy_color_panel(ColorPanel* c)
     free(c);
 }
 
+static void swap(float* a, float* b)
+{
+    float tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
+static void rgb_to_hsv(Color c, float* h, float* s, float* v)
+{
+    float r = c.r;
+    float g = c.g;
+    float b = c.b;
+    float K = 0.f;
+    if (g < b) {
+        swap(&g, &b);
+        K = -1.f;
+    }
+    if (r < g) {
+        swap(&r, &g);
+        K = -2.f / 6.f - K;
+    }
+
+    const float chroma = r - (g < b ? g : b);
+    *h = fabsf(K + (g - b) / (6.f * chroma + 1e-20f));
+    *s = chroma / (r + 1e-20f);
+    *v = r;
+}
+
+static void hsv_to_rgb(float h, float s, float v,
+                       float* r, float* g, float* b)
+{
+    if (s == 0.0f) {
+        // gray
+        *r = *g = *b = v;
+        return;
+    }
+
+    h = fmodf(h, 1.0f) / (60.0f / 360.0f);
+    int   i = (int)h;
+    float f = h - (float)i;
+    float p = v * (1.0f - s);
+    float q = v * (1.0f - s * f);
+    float t = v * (1.0f - s * (1.0f - f));
+
+    switch (i) {
+        case 0:  *r = v; *g = t; *b = p; break;
+        case 1:  *r = q; *g = v; *b = p; break;
+        case 2:  *r = p; *g = v; *b = t; break;
+        case 3:  *r = p; *g = q; *b = v; break;
+        case 4:  *r = t; *g = p; *b = v; break;
+        default: *r = v; *g = p; *b = q; break;
+    }
+}
+
 void color_panel_set_color(Color col, ColorPanel* c, bool set_new_color_only)
 {
     if (!set_new_color_only) { c->current_color = col; }
     c->new_color = col;
-    math::rgb_to_hsv(c->new_color.r, c->new_color.g, c->new_color.b,
-                     c->cursor_h, c->cursor_sv.x, c->cursor_sv.y);
+    rgb_to_hsv(c->new_color, &c->cursor_h, &c->cursor_sv.x, &c->cursor_sv.y);
     if (c->bound_color) { *c->bound_color = col; }
 }
 
@@ -93,8 +145,8 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
                 int32 g = math::clamp(rgbColor[1], 0, 255);
                 int32 b = math::clamp(rgbColor[2], 0, 255);
                 c->new_color = Color(r, g, b);
-                math::rgb_to_hsv(c->new_color.r, c->new_color.g, c->new_color.b,
-                               c->cursor_h, c->cursor_sv.x, c->cursor_sv.y);
+                rgb_to_hsv(c->new_color, &c->cursor_h, &c->cursor_sv.x,
+                           &c->cursor_sv.y);
             }
             char hexColor[6 + 1]; // null-terminated
             snprintf(hexColor, sizeof(hexColor), "%02x%02x%02x",
@@ -113,8 +165,8 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
                     case 6: sscanf(hexColor, "%2x%2x%2x", &r, &g, &b); break;
                 }
                 c->new_color = Color(r, g, b);
-                math::rgb_to_hsv(c->new_color.r, c->new_color.g, c->new_color.b,
-                               c->cursor_h, c->cursor_sv.x, c->cursor_sv.y);
+                rgb_to_hsv(c->new_color, &c->cursor_h, &c->cursor_sv.x,
+                           &c->cursor_sv.y);
             }
         }
         ImGui::End();
@@ -172,13 +224,13 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
     // Update new color
     {
         float r, g, b;
-        math::hsv_to_rgb(c->cursor_h, c->cursor_sv.x, c->cursor_sv.y,
-                       r, g, b);
+        hsv_to_rgb(c->cursor_h, c->cursor_sv.x, c->cursor_sv.y,
+                       &r, &g, &b);
         // Note: Rounding is essential. Without it, RGB->HSV->RGB is a lossy
         // operation.
-        c->new_color = Color(math::round_to_int(r * 255.0f),
-                                  math::round_to_int(g * 255.0f),
-                                  math::round_to_int(b * 255.0f));
+        c->new_color = Color((int)round(r * 255.0f),
+                             (int)round(g * 255.0f),
+                             (int)round(b * 255.0f));
     }
 
     if (c->bound_color) { *c->bound_color = c->new_color; }

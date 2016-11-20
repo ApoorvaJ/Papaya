@@ -165,8 +165,8 @@ void core::init(PapayaMemory* mem)
         mem->brush.anti_alias = true;
         mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
 
-        mem->color_panel = init_color_panel();
         crop_rotate::init(mem);
+        mem->color_panel = init_color_panel();
         mem->graph_panel = init_graph_panel();
 
         mem->misc.draw_overlay = false;
