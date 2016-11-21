@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "ui.h"
+#include "components/node_properties_panel.h"
 #include "libs/types.h"
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
@@ -282,25 +283,13 @@ void draw_graph_panel(PapayaMemory* mem)
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, Vec2(5, 2));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
 
+    // TODO: Streamline this layout code
     float x = mem->window.width - 36 - g->width; // Panel X
     float y = 55; // Panel Y
     float w = g->width; // Panel width
     float h = g->node_properties_panel_height; // Panel height
 
-    // -------------------------------------------------------------------------
-#if 1
-    ImGui::SetNextWindowPos(Vec2(x, y));
-    ImGui::SetNextWindowSize(Vec2(w, h));
-
-    ImGui::Begin("Node properties", 0, mem->window.default_imgui_flags);
-
-    ImGui::Checkbox(mem->doc->nodes[g->cur_node].name,
-                    (bool*)&mem->doc->nodes[g->cur_node].is_active);
-    ImGui::Text("Node properties controls go here");
-
-    ImGui::End();
-#endif
-    // -------------------------------------------------------------------------
+    draw_node_properties_panel(mem, Vec2(x, y), Vec2(w, h));
 
     y += h;
     h = mem->window.height - 58.0f - h;

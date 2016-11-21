@@ -113,6 +113,7 @@ void init_invert_color_node(PapayaNode* node, char* name)
 
     node->type = PapayaNodeType_InvertColor;
     node->name = name;
+    i->invert_r = i->invert_g = i->invert_b = 1;
 }
 
 static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
@@ -132,15 +133,24 @@ static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
         papaya_evaluate_node(mask->node, w, h, m);
         for (size_t i = 0; i < 4 * w * h; i += 4) {
             float t = (float)m[i+3] / 255.0f;
-            float r = (float)out[i]   / 255.0f;
-            float g = (float)out[i+1] / 255.0f;
-            float b = (float)out[i+2] / 255.0f;
-            r = t * (1.0f - r) + (1.0f - t) * r;
-            g = t * (1.0f - g) + (1.0f - t) * g;
-            b = t * (1.0f - b) + (1.0f - t) * b;
-            out[i]   = r * 255.0f;
-            out[i+1] = g * 255.0f;
-            out[i+2] = b * 255.0f;
+
+            if (node->params.invert_color.invert_r) {
+                float r = (float)out[i] / 255.0f;
+                r = t * (1.0f - r) + (1.0f - t) * r;
+                out[i]   = r * 255.0f;
+            }
+
+            if (node->params.invert_color.invert_g) {
+                float g = (float)out[i+1] / 255.0f;
+                g = t * (1.0f - g) + (1.0f - t) * g;
+                out[i+1] = g * 255.0f;
+            }
+
+            if (node->params.invert_color.invert_b) {
+                float b = (float)out[i+2] / 255.0f;
+                b = t * (1.0f - b) + (1.0f - t) * b;
+                out[i+2] = b * 255.0f;
+            }
         }
 
         free(m);

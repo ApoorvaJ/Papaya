@@ -66,7 +66,8 @@ void init_bitmap_node(PapayaNode* node, char* name,
 // -----------------------------------------------------------------------------
 
 struct InvertColorNode {
-    int foo;
+    // Booleans
+    uint8_t invert_r, invert_g, invert_b;
 };
 
 void init_invert_color_node(PapayaNode* node, char* name);
