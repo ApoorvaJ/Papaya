@@ -22,7 +22,7 @@ void metrics_window::update(PapayaMemory* mem)
         ImGui::Separator();
 
         for (int32 i = 0; i < Timer_COUNT; i++) {
-            ImGui::Text(TimerNames[i]);                     ImGui::NextColumn();
+            ImGui::Text("%s", TimerNames[i]);               ImGui::NextColumn();
             ImGui::Text("%" PRIu64,
                 timers[i].elapsed_cycles);                  ImGui::NextColumn();
             ImGui::Text("%f", timers[i].elapsed_ms);        ImGui::NextColumn();

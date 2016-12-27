@@ -79,7 +79,7 @@ void prefs::show_panel(ColorPanel* color_panel, Color* colors, Layout& layout)
                 ImGui::PopStyleColor(2);
 
                 ImGui::SameLine();
-                ImGui::Text(colorNames[i]);
+                ImGui::Text("%s", colorNames[i]);
             }
         }
         ImGui::EndChild();
