@@ -64,11 +64,9 @@ static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
     PapayaNode* in = from->node;
     papaya_evaluate_node(in, w, h, out);
 
-    uint8_t* img = node->params.bitmap.image;
-
     // Code is extremely unoptimized. Only proof-of-concept for nailing down
     // the API.
-    for (size_t i = 0; i < 4 * w * h; i += 4) {
+    for (int64_t i = 0; i < 4 * w * h; i += 4) {
         float r_d = out[i]   / 255.0f;
         float g_d = out[i+1] / 255.0f;
         float b_d = out[i+2] / 255.0f;
@@ -131,7 +129,7 @@ static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
         uint8_t* m = (uint8_t*) malloc(4 * w * h);
 
         papaya_evaluate_node(mask->node, w, h, m);
-        for (size_t i = 0; i < 4 * w * h; i += 4) {
+        for (int64_t i = 0; i < 4 * w * h; i += 4) {
             float t = (float)m[i+3] / 255.0f;
 
             if (node->params.invert_color.invert_r) {
@@ -156,7 +154,7 @@ static void papaya_evaluate_invert_color_node(PapayaNode* node, int w, int h,
         free(m);
     } else {
         // No mask provided
-        for (size_t i = 0; i < 4 * w * h; i += 4) {
+        for (int64_t i = 0; i < 4 * w * h; i += 4) {
             out[i]   = 255 - out[i];
             out[i+1] = 255 - out[i+1];
             out[i+2] = 255 - out[i+2];

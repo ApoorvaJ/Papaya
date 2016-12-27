@@ -16,6 +16,7 @@ ColorPanel* init_color_panel()
     c->sv_box_pos = Vec2(0, 42);
     c->sv_box_size = Vec2(256, 256);
     c->cursor_sv = Vec2(0.5f, 0.5f);
+    return c;
 }
 
 void destroy_color_panel(ColorPanel* c)

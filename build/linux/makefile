@@ -23,7 +23,7 @@ SRCS=linux_ui.cpp               \
 
 OBJS=$(subst .cpp,.o,$(SRCS))
 LIBS=-ldl -lGL -lX11 -lXi `pkg-config --cflags --libs gtk+-2.0` -DUSE_GTK
-CFLAGS=-I../../src/ui -I../../src/libpapaya -O0 -g
+CFLAGS=-I../../src/ui -I../../src/libpapaya -O0 -g -Werror -Wall -Wno-unknown-pragmas
 
 .SILENT:
 

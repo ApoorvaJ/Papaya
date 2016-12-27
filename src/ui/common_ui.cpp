@@ -1147,11 +1147,6 @@ void core::update(PapayaMemory* mem)
             float CurrX       = P1.x + (float)CurrOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
 
-            // Last mark
-            uint64 LastOffset = (int8*)mem->cur_doc->undo.last - (int8*)mem->cur_doc->undo.start;
-            float LastX       = P1.x + (float)LastOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
-            //draw_list->AddLine(Vec2(LastX, Pos.y + 32), Vec2(LastX, Pos.y + 48), 0xFF0000FF);
-
             // Top mark
             uint64 TopOffset = (int8*)mem->cur_doc->undo.top - (int8*)mem->cur_doc->undo.start;
             float TopX       = P1.x + (float)TopOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);

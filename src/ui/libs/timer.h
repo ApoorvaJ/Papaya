@@ -25,12 +25,6 @@ enum Timer_ {
 #undef TME
 };
 
-static const char* TimerNames[] = {
-#define TME(name) #name,
-    TIMER_LIST
-#undef TME
-};
-
 namespace timer {
     void init();
     double get_freq();
@@ -38,6 +32,8 @@ namespace timer {
     void start(Timer_ timer);
     void stop(Timer_ timer);
 }
+
+const char* get_timer_name(int idx);
 
 extern Timer timers[Timer_COUNT];
 #endif // TIMER_H
@@ -138,6 +134,17 @@ void timer::stop(Timer_ timer)
                                    timers[timer].start_cycles;
     timers[timer].elapsed_ms = (timers[timer].stop_ms - timers[timer].start_ms) *
                                tick_freq;
+}
+
+static const char* timer_names[] = {
+#define TME(name) #name,
+    TIMER_LIST
+#undef TME
+};
+
+const char* get_timer_name(int idx)
+{
+    return timer_names[idx];
 }
 
 #endif // TIMER_IMPLEMENTATION

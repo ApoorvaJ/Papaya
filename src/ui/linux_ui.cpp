@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     // Set path to executable path
     {
         char path_buf[PATH_MAX];
-        size_t path_len = readlink("/proc/self/exe", path_buf, sizeof(path_buf)-1);
+        ssize_t path_len = readlink("/proc/self/exe", path_buf, sizeof(path_buf)-1);
         if (path_len != -1) {
             char *last_slash = strrchr(path_buf, '/');
             if (last_slash != NULL) { *last_slash = '\0'; }
@@ -296,7 +296,9 @@ int main(int argc, char **argv)
                 } break;
 
                 case ClientMessage: {
-                    if (event.xclient.data.l[0] == xlib_delete_window_atom) { mem->is_running = false; }
+                    if ((Atom)event.xclient.data.l[0] == xlib_delete_window_atom) {
+                        mem->is_running = false;
+                    }
                 } break;
 
                 case MotionNotify: {

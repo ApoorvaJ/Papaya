@@ -81,7 +81,7 @@ struct PapayaNode {
     uint8_t is_active;
 
     PapayaSlot* slots;
-    size_t num_slots;
+    int num_slots;
 
     union {
         BitmapNode bitmap;
@@ -91,7 +91,7 @@ struct PapayaNode {
 
 struct PapayaDocument {
     PapayaNode* nodes;
-    size_t num_nodes;
+    int num_nodes;
 };
 
 // -----------------------------------------------------------------------------

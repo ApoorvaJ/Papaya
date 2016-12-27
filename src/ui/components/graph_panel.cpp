@@ -37,19 +37,8 @@ static Vec2 get_slot_pos(PapayaSlot* slot)
                 node_sz.y * slot->pos_y);
 }
 
-static Vec2 get_output_slot_pos(PapayaNode* node)
-{
-    return Vec2(node->pos_x, node->pos_y) + Vec2(node_sz.x * 0.5f, 0);
-}
-
-static Vec2 get_input_slot_pos(PapayaNode* node)
-{
-    return get_output_slot_pos(node) + Vec2(0, node_sz.y);
-}
-
 static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
 {
-    GraphPanel* g = mem->graph_panel;
     Vec2 m = mem->mouse.pos;
     PapayaNode* snapped_node = 0; // Snapped node
 
@@ -98,8 +87,8 @@ static Vec2 get_bezier_bend(PapayaSlot* s)
         case PapayaSlotPos_In:     return Vec2(0,+10);
         case PapayaSlotPos_Out:    return Vec2(0,-10);
         case PapayaSlotPos_InMask: return Vec2(+20,0);
+        default:                   return Vec2();
     }
-    return Vec2();
 }
 
 /*
@@ -248,7 +237,6 @@ static void draw_nodes(PapayaMemory* mem)
     // Link interaction
     if (g->dragged_slot) {
 
-        PapayaNode* d = g->dragged_slot->node;
         PapayaSlot* s = find_snapped_slot(mem, offset);
 
         draw_link(s, g->dragged_slot, mem, offset, draw_list);

@@ -42,7 +42,7 @@ void undo::init(PapayaMemory* mem)
                    Vec2i(0,0), Vec2i(mem->cur_doc->width, mem->cur_doc->height),
                    0, Vec2());
 
-        uint32 temp = mem->misc.fbo_render_tex;
+        // uint32 temp = mem->misc.fbo_render_tex;
         // mem->misc.fbo_render_tex = mem->cur_doc->texture_id;
         GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                       GL_TEXTURE_2D, mem->misc.fbo_render_tex,
