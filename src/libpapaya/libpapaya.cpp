@@ -31,7 +31,7 @@ static void init_slot(PapayaSlot* slot, PapayaNode* node, uint8_t is_out,
 
 // -----------------------------------------------------------------------------
 
-void init_bitmap_node(PapayaNode* node, char* name,
+void init_bitmap_node(PapayaNode* node, const char* name,
                       uint8_t* img, int w, int h, int c)
 {
     BitmapNode* b = &node->params.bitmap;
@@ -101,7 +101,7 @@ static void papaya_evaluate_bitmap_node(PapayaNode* node, int w, int h,
 
 // -----------------------------------------------------------------------------
 
-void init_invert_color_node(PapayaNode* node, char* name)
+void init_invert_color_node(PapayaNode* node, const char* name)
 {
     InvertColorNode* i = &node->params.invert_color;
 

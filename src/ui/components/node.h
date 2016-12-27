@@ -48,7 +48,7 @@ struct NodeLink {
 };
 
 namespace node {
-    Node* init(char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
+    Node* init(const char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
     void destroy(Node* node);
     void connect(Node* from, Node* to, PapayaMemory* mem);
 }

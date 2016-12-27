@@ -29,9 +29,9 @@ struct Mesh {
 };
 
 namespace gl {
-    void check_error(char* expr, char* file, int line);
-    char* read_file(char* file_name);
-    void compile_shader(Shader& shader, char* vert_file, char* frag_file,
+    void check_error(const char* expr, const char* file, int line);
+    char* read_file(const char* file_name);
+    void compile_shader(Shader& shader, const char* vert_file, const char* frag_file,
         int32 attrib_count, int32 uniform_count, ...);
     void set_vertex_attribs(Shader& shader);
     void init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage);
@@ -49,7 +49,7 @@ namespace gl {
 #include <stdio.h>
 #include <stdlib.h>
 
-void gl::check_error(char* expr, char* file, int line)
+void gl::check_error(const char* expr, const char* file, int line)
 {
     const char* s;
 
@@ -69,7 +69,7 @@ void gl::check_error(char* expr, char* file, int line)
     printf("    --- Expression: %s\n", expr);
 }
 
-char* gl::read_file(char* file_name)
+char* gl::read_file(const char* file_name)
 {
     char path[512];
     snprintf(path, sizeof(path), "shaders/%s", file_name);
@@ -87,7 +87,7 @@ char* gl::read_file(char* file_name)
 }
 
 
-internal void print_compilation_errors(uint32 handle, char* glsl_file)
+internal void print_compilation_errors(uint32 handle, const char* glsl_file)
 {
     int32 compilation_status;
     GLCHK( glGetShaderiv(handle, GL_COMPILE_STATUS, &compilation_status) );
@@ -102,7 +102,7 @@ internal void print_compilation_errors(uint32 handle, char* glsl_file)
     }
 }
 
-void gl::compile_shader(Shader& shader, char* vert_file, char* frag_file,
+void gl::compile_shader(Shader& shader, const char* vert_file, const char* frag_file,
     int32 attrib_count, int32 uniform_count, ...)
 {
     shader.handle = GLCHK( glCreateProgram() );

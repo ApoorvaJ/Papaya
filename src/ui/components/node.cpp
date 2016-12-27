@@ -3,7 +3,7 @@
 #include "ui.h"
 #include "libs/gl_util.h"
 
-Node* node::init(char* name, Vec2 pos, uint8* img, PapayaMemory* mem)
+Node* node::init(const char* name, Vec2 pos, uint8* img, PapayaMemory* mem)
 {
     Node* n = (Node*)malloc(sizeof(*n));
     n->id = mem->cur_doc->next_node_id++;

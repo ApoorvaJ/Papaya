@@ -26,7 +26,7 @@ Display* xlib_display;
 Window xlib_window;
 // =================================================================================================
 
-void platform::print(char* msg)
+void platform::print(const char* msg)
 {
     printf("%s", msg);
 }

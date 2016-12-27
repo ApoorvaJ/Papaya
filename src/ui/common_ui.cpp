@@ -35,7 +35,7 @@ void core::resize_doc(PapayaMemory* mem, int32 width, int32 height)
     }
 }
 
-bool core::open_doc(char* path, PapayaMemory* mem)
+bool core::open_doc(const char* path, PapayaMemory* mem)
 {
     // TODO: Move the profiling data into a globally accessible struct.
     timer::start(Timer_ImageOpen);

@@ -60,7 +60,7 @@ struct BitmapNode {
     int64_t width, height;
 };
 
-void init_bitmap_node(PapayaNode* node, char* name,
+void init_bitmap_node(PapayaNode* node, const char* name,
                       uint8_t* img, int w, int h, int c);
 
 // -----------------------------------------------------------------------------
@@ -70,13 +70,13 @@ struct InvertColorNode {
     uint8_t invert_r, invert_g, invert_b;
 };
 
-void init_invert_color_node(PapayaNode* node, char* name);
+void init_invert_color_node(PapayaNode* node, const char* name);
 
 // -----------------------------------------------------------------------------
 
 struct PapayaNode {
     PapayaNodeType_ type;
-    char* name;
+    const char* name;
     float pos_x, pos_y;
     uint8_t is_active;
 

@@ -25,7 +25,7 @@ global_variable RECT windows_work_area; // Needed because WS_POPUP by default ma
 
 // =================================================================================================
 
-void platform::print(char* msg)
+void platform::print(const char* msg)
 {
     OutputDebugString((LPCSTR)msg);
 }

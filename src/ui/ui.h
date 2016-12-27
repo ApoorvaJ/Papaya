@@ -216,7 +216,7 @@ namespace core {
     void resize(PapayaMemory* mem, int32 width, int32 height);
     void update(PapayaMemory* mem);
     void render_imgui(ImDrawData* draw_data, void* mem_ptr);
-    bool open_doc(char* path, PapayaMemory* mem);
+    bool open_doc(const char* path, PapayaMemory* mem);
     void close_doc(PapayaMemory* mem);
     void resize_doc(PapayaMemory* mem, int32 width, int32 height);
     void update_canvas(PapayaMemory* mem);
@@ -224,7 +224,7 @@ namespace core {
 
 namespace platform
 {
-    void print(char* Message);
+    void print(const char* Message);
     void start_mouse_capture();
     void stop_mouse_capture();
     void set_mouse_position(int32 x, int32 y);
