@@ -40,7 +40,7 @@ void platform::stop_mouse_capture()
     ReleaseCapture();
 }
 
-void platform::set_mouse_position(int32 x, int32 y)
+void platform::set_mouse_position(i32 x, i32 y)
 {
     RECT rect;
     GetWindowRect(GetActiveWindow(), &rect);
@@ -54,7 +54,7 @@ void platform::set_cursor_visibility(bool visible)
 
 char* platform::open_file_dialog()
 {
-    const int32 file_name_size = MAX_PATH;
+    const i32 file_name_size = MAX_PATH;
     char* file_name = (char*)malloc(file_name_size);
 
     OPENFILENAME dialog_params = {};
@@ -79,7 +79,7 @@ char* platform::open_file_dialog()
 
 char* platform::save_file_dialog()
 {
-    const int32 file_nameSize = MAX_PATH;
+    const i32 file_nameSize = MAX_PATH;
     char* file_name = (char*)malloc(file_nameSize);
 
     OPENFILENAME dialog_params = {};
@@ -230,19 +230,19 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM 
         } break;
 
         case WM_SIZE: {
-            int32 width, height;
+            i32 width, height;
 
             if (w_param == SIZE_MAXIMIZED) {
-                int32 work_area_width = windows_work_area.right - windows_work_area.left;
-                int32 work_area_height = windows_work_area.bottom - windows_work_area.top;
+                i32 work_area_width = windows_work_area.right - windows_work_area.left;
+                i32 work_area_height = windows_work_area.bottom - windows_work_area.top;
                 SetWindowPos(window, HWND_TOP, windows_work_area.left, windows_work_area.top, work_area_width, work_area_height, NULL);
                 width = work_area_width;
                 height = work_area_height;
             }
             else
             {
-                width = (int32) LOWORD(l_param);
-                height = (int32) HIWORD(l_param);
+                width = (i32) LOWORD(l_param);
+                height = (i32) HIWORD(l_param);
             }
 
             core::resize(&mem, width, height);
@@ -336,7 +336,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
     {
         HMODULE module = GetModuleHandleA(NULL);
         char path_string[MAX_PATH];
-        uint32 path_len = GetModuleFileNameA(module, path_string, MAX_PATH);
+        u32 path_len = GetModuleFileNameA(module, path_string, MAX_PATH);
         if (path_len != -1) {
             char *last_slash = strrchr(path_string, '\\');
             if (last_slash) { *last_slash = '\0'; }
@@ -387,14 +387,14 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
         SetWindowPos(window, HWND_TOP, 0, 0, 600, 600, NULL);
         ShowWindow(window, SW_MAXIMIZE);
 #else
-        uint32 screen_width = GetSystemMetrics(SM_CXSCREEN);
-        uint32 screen_height = GetSystemMetrics(SM_CYSCREEN);
+        u32 screen_width = GetSystemMetrics(SM_CXSCREEN);
+        u32 screen_height = GetSystemMetrics(SM_CYSCREEN);
 
-        mem.window.width = (uint32)((float)screen_width * 0.5);
-        mem.window.height = (uint32)((float)screen_height * 0.8);
+        mem.window.width = (u32)((float)screen_width * 0.5);
+        mem.window.height = (u32)((float)screen_height * 0.8);
 
-        uint32 window_x = (screen_width - mem.window.width) / 2;
-        uint32 window_y = (screen_height - mem.window.height) / 2;
+        u32 window_x = (screen_width - mem.window.width) / 2;
+        u32 window_y = (screen_height - mem.window.height) / 2;
 
         SetWindowPos(window, HWND_TOP, window_x, window_y, mem.window.width, mem.window.height, NULL);
 #endif // PAPAYARELEASE
@@ -426,7 +426,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             pixel_format_desc.dwLayerMask = PFD_MAIN_PLANE;
             //
 
-            int32 pixel_format = ChoosePixelFormat(device_context, &pixel_format_desc);
+            i32 pixel_format = ChoosePixelFormat(device_context, &pixel_format_desc);
             if (!pixel_format) { exit(1); } // TODO: Log: Choose pixel format failed
             if (!SetPixelFormat(device_context, pixel_format, &pixel_format_desc)) { exit(1); } // TODO: Log: Set pixel format failed
         }
@@ -661,7 +661,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
         double frame_time = 1000.0 / frame_rate;
         double sleep_time = frame_time - timers[Timer_Frame].elapsed_ms;
         timers[Timer_Sleep].elapsed_ms = sleep_time;
-        if (sleep_time > 0) { Sleep((int32)sleep_time); }
+        if (sleep_time > 0) { Sleep((i32)sleep_time); }
     }
 
     core::destroy(&mem);

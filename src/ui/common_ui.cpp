@@ -13,7 +13,7 @@
 #include <inttypes.h>
 
 
-void core::resize_doc(PapayaMemory* mem, int32 width, int32 height)
+void core::resize_doc(PapayaMemory* mem, i32 width, i32 height)
 {
     // Free existing texture memory
     if (mem->misc.fbo_sample_tex) {
@@ -42,7 +42,7 @@ bool core::open_doc(const char* path, PapayaMemory* mem)
 
     // Load/create image
     {
-        uint8* img = 0;
+        u8* img = 0;
         Document doc = {0};
 
         if (path) {
@@ -50,7 +50,7 @@ bool core::open_doc(const char* path, PapayaMemory* mem)
                             &doc.components_per_pixel, 4);
         } else {
             // Creating new image
-            img = (uint8*)calloc(1,
+            img = (u8*)calloc(1,
                 mem->misc.preview_width * mem->misc.preview_height * 4);
         }
 
@@ -62,7 +62,7 @@ bool core::open_doc(const char* path, PapayaMemory* mem)
         Node* node = node::init("Base", Vec2(58, 108), img, mem);
 
         int w,h,c;
-        uint8* o_img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
+        u8* o_img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
         Node* o_node = node::init("Overlay", Vec2(58, 58), o_img, mem);
         node::connect(node, o_node, mem);
 
@@ -206,8 +206,8 @@ void core::init(PapayaMemory* mem)
 
         // Load and bind image
         {
-            uint8* img;
-            int32 ImageWidth, ImageHeight, ComponentsPerPixel;
+            u8* img;
+            i32 ImageWidth, ImageHeight, ComponentsPerPixel;
             img = stbi_load("ui.png", &ImageWidth, &ImageHeight, &ComponentsPerPixel, 0);
 
             // Create texture
@@ -221,7 +221,7 @@ void core::init(PapayaMemory* mem)
 
             // Store our identifier
             free(img);
-            mem->textures[PapayaTex_UI] = (uint32)Id_GLuint;
+            mem->textures[PapayaTex_UI] = (u32)Id_GLuint;
         }
     }
 
@@ -329,8 +329,8 @@ void core::init(PapayaMemory* mem)
         // Create fonts texture
         ImGuiIO& io = ImGui::GetIO();
 
-        uint8* pixels;
-        int32 width, height;
+        u8* pixels;
+        i32 width, height;
         //ImFont* my_font0 = io.Fonts->AddFontFromFileTTF("d:\\DroidSans.ttf", 15.0f);
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
@@ -370,8 +370,8 @@ void core::init(PapayaMemory* mem)
         mem->doc->nodes = (PapayaNode*) calloc(1, mem->doc->num_nodes *
                                                sizeof(PapayaNode));
         int w0, w1, h0, h1, c0, c1;
-        uint8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
-        uint8* img1 = stbi_load("/home/apoorvaj/Pictures/o2.png", &w1, &h1, &c1, 4);
+        u8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
+        u8* img1 = stbi_load("/home/apoorvaj/Pictures/o2.png", &w1, &h1, &c1, 4);
 
         PapayaNode* n = mem->doc->nodes;
         init_bitmap_node(&n[0], "Base image", img0, w0, h0, c0);
@@ -402,7 +402,7 @@ void core::destroy(PapayaMemory* mem)
     //TODO: Free stuff
 }
 
-void core::resize(PapayaMemory* mem, int32 width, int32 height)
+void core::resize(PapayaMemory* mem, i32 width, i32 height)
 {
     mem->window.width = width;
     mem->window.height = height;
@@ -413,7 +413,7 @@ void core::resize(PapayaMemory* mem, int32 width, int32 height)
     // TODO: Improve this code to autocenter canvas on turning the right panels
     //       on and off
     // TODO: Put common layout constants in struct
-    int32 top_margin = 53; 
+    i32 top_margin = 53; 
     float available_width = mem->window.width;
     if (mem->misc.show_nodes) { available_width -= 400.0f; }
     float available_height = mem->window.height - top_margin;
@@ -423,10 +423,10 @@ void core::resize(PapayaMemory* mem, int32 width, int32 height)
                   available_height / (float)mem->cur_doc->height);
     if (mem->cur_doc->canvas_zoom > 1.0f) { mem->cur_doc->canvas_zoom = 1.0f; }
 
-    int32 x = 
+    i32 x = 
         (available_width - (float)mem->cur_doc->width * mem->cur_doc->canvas_zoom)
         / 2.0f;
-    int32 y = top_margin + 
+    i32 y = top_margin + 
        (available_height - (float)mem->cur_doc->height * mem->cur_doc->canvas_zoom)
        / 2.0f;
     mem->cur_doc->canvas_pos = Vec2i(x, y);
@@ -443,7 +443,7 @@ void core::update(PapayaMemory* mem)
                                         math::floor((mem->mouse.pos.y - mem->cur_doc->canvas_pos.y) / mem->cur_doc->canvas_zoom));
             mem->mouse.uv = Vec2(mouse_pixel_pos.x / (float) mem->cur_doc->width, mouse_pixel_pos.y / (float) mem->cur_doc->height);
 
-            for (int32 i = 0; i < 3; i++) {
+            for (i32 i = 0; i < 3; i++) {
                 mem->mouse.is_down[i] = ImGui::IsMouseDown(i);
                 mem->mouse.pressed[i] = (mem->mouse.is_down[i] && !mem->mouse.was_down[i]);
                 mem->mouse.released[i] = (!mem->mouse.is_down[i] && mem->mouse.was_down[i]);
@@ -471,8 +471,8 @@ void core::update(PapayaMemory* mem)
 
         // Clear screen buffer
         {
-            GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x,
-                              (int32)ImGui::GetIO().DisplaySize.y) );
+            GLCHK( glViewport(0, 0, (i32)ImGui::GetIO().DisplaySize.x,
+                              (i32)ImGui::GetIO().DisplaySize.y) );
 
             GLCHK( glClearColor(mem->colors[PapayaCol_Clear].r,
                                 mem->colors[PapayaCol_Clear].g,
@@ -481,8 +481,8 @@ void core::update(PapayaMemory* mem)
 
             GLCHK( glEnable(GL_SCISSOR_TEST) );
             GLCHK( glScissor(34, 3,
-                             (int32)mem->window.width  - 70,
-                             (int32)mem->window.height - 58) ); // TODO: Remove magic numbers
+                             (i32)mem->window.width  - 70,
+                             (i32)mem->window.height - 58) ); // TODO: Remove magic numbers
 
             GLCHK( glClearColor(mem->colors[PapayaCol_Workspace].r,
                 mem->colors[PapayaCol_Workspace].g,
@@ -522,7 +522,7 @@ void core::update(PapayaMemory* mem)
                     if (ImGui::MenuItem("Close")) { close_doc(mem); }
                     if (ImGui::MenuItem("Save")) {
                         char* Path = platform::save_file_dialog();
-                        uint8* tex = (uint8*)malloc(4 * mem->cur_doc->width * mem->cur_doc->height);
+                        u8* tex = (u8*)malloc(4 * mem->cur_doc->width * mem->cur_doc->height);
                         if (Path) {
                             // TODO: Do this on a separate thread. Massively blocks UI for large images.
                             GLCHK(glBindTexture(GL_TEXTURE_2D,
@@ -531,7 +531,7 @@ void core::update(PapayaMemory* mem)
                                                 GL_RGBA, GL_UNSIGNED_BYTE,
                                                 tex));
 
-                            int32 Result = stbi_write_png(Path, mem->cur_doc->width, mem->cur_doc->height, 4, tex, 4 * mem->cur_doc->width);
+                            i32 Result = stbi_write_png(Path, mem->cur_doc->width, mem->cur_doc->height, 4, tex, 4 * mem->cur_doc->width);
                             if (!Result) {
                                 // TODO: Log: Save failed
                                 platform::print("Save failed\n");
@@ -686,7 +686,7 @@ void core::update(PapayaMemory* mem)
         {
             // Size
             {
-                int32 size[2];
+                i32 size[2];
                 size[0] = mem->cur_doc->width;
                 size[1] = mem->cur_doc->height;
                 ImGui::PushItemWidth(85);
@@ -752,7 +752,7 @@ void core::update(PapayaMemory* mem)
     // Image size preview
     if (!mem->cur_doc && mem->misc.preview_image_size)
     {
-        int32 top_margin = 53; // TODO: Put common layout constants in struct
+        i32 top_margin = 53; // TODO: Put common layout constants in struct
         gl::transform_quad(mem->meshes[PapayaMesh_ImageSizePreview],
             Vec2((float)(mem->window.width - mem->cur_doc->width) / 2, top_margin + (float)(mem->window.height - top_margin - mem->cur_doc->height) / 2),
             Vec2((float)mem->cur_doc->width, (float)mem->cur_doc->height));
@@ -795,7 +795,7 @@ void core::update(PapayaMemory* mem)
                 else
                 {
                     float Diameter = mem->brush.rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / mem->cur_doc->canvas_zoom * 2.0f);
-                    mem->brush.diameter = math::clamp((int32)Diameter, 1, mem->brush.max_diameter);
+                    mem->brush.diameter = math::clamp((i32)Diameter, 1, mem->brush.max_diameter);
 
                     float Hardness = mem->brush.rt_drag_start_hardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
                     mem->brush.hardness = math::clamp(Hardness, 0.0f, 1.0f);
@@ -838,7 +838,7 @@ void core::update(PapayaMemory* mem)
 
                 Vec2i Pos  = mem->brush.paint_area_1;
                 Vec2i Size = mem->brush.paint_area_2 - mem->brush.paint_area_1;
-                int8* pre_brush_img = 0;
+                i8* pre_brush_img = 0;
 
                 // TODO: OPTIMIZE: The following block seems optimizable
                 // Render base image for pre-brush undo
@@ -855,7 +855,7 @@ void core::update(PapayaMemory* mem)
                     //                      (GLuint)(intptr_t)mem->cur_doc->texture_id) );
                     // GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-                    pre_brush_img = (int8*)malloc(4 * Size.x * Size.y);
+                    pre_brush_img = (i8*)malloc(4 * Size.x * Size.y);
                     GLCHK( glReadPixels(Pos.x, Pos.y, Size.x, Size.y, GL_RGBA, GL_UNSIGNED_BYTE, pre_brush_img) );
                 }
 
@@ -905,7 +905,7 @@ void core::update(PapayaMemory* mem)
                 if (pre_brush_img) { free(pre_brush_img); }
 
                 GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-                GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
+                GLCHK( glViewport(0, 0, (i32)ImGui::GetIO().DisplaySize.x, (i32)ImGui::GetIO().DisplaySize.y) );
 
                 GLCHK( glDisable(GL_BLEND) );
             }
@@ -976,18 +976,18 @@ void core::update(PapayaMemory* mem)
 
 #if 0
             // Brush testing routine
-            local_persist int32 i = 0;
+            local_persist i32 i = 0;
 
             if (i%2)
             {
-                local_persist int32 j = 0;
+                local_persist i32 j = 0;
                 CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 j++;
             }
             else
             {
-                local_persist int32 k = 0;
+                local_persist i32 k = 0;
                 CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 k++;
@@ -1002,10 +1002,10 @@ void core::update(PapayaMemory* mem)
                 float UVMaxX = math::max(CorrectedPos.x, CorrectedLastPos.x);
                 float UVMaxY = math::max(CorrectedPos.y, CorrectedLastPos.y);
 
-                int32 PixelMinX = math::round_to_int(UVMinX * mem->cur_doc->width  - 0.5f * mem->brush.diameter);
-                int32 PixelMinY = math::round_to_int(UVMinY * mem->cur_doc->height - 0.5f * mem->brush.diameter);
-                int32 PixelMaxX = math::round_to_int(UVMaxX * mem->cur_doc->width  + 0.5f * mem->brush.diameter);
-                int32 PixelMaxY = math::round_to_int(UVMaxY * mem->cur_doc->height + 0.5f * mem->brush.diameter);
+                i32 PixelMinX = math::round_to_int(UVMinX * mem->cur_doc->width  - 0.5f * mem->brush.diameter);
+                i32 PixelMinY = math::round_to_int(UVMinY * mem->cur_doc->height - 0.5f * mem->brush.diameter);
+                i32 PixelMaxX = math::round_to_int(UVMaxX * mem->cur_doc->width  + 0.5f * mem->brush.diameter);
+                i32 PixelMaxY = math::round_to_int(UVMaxY * mem->cur_doc->height + 0.5f * mem->brush.diameter);
 
                 mem->brush.paint_area_1.x = math::min(mem->brush.paint_area_1.x, PixelMinX);
                 mem->brush.paint_area_1.y = math::min(mem->brush.paint_area_1.y, PixelMinY);
@@ -1053,13 +1053,13 @@ void core::update(PapayaMemory* mem)
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
             GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
 
-            uint32 Temp = mem->misc.fbo_render_tex;
+            u32 Temp = mem->misc.fbo_render_tex;
             mem->misc.fbo_render_tex = mem->misc.fbo_sample_tex;
             mem->misc.fbo_sample_tex = Temp;
             GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mem->misc.fbo_render_tex, 0) );
 
             GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-            GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
+            GLCHK( glViewport(0, 0, (i32)ImGui::GetIO().DisplaySize.x, (i32)ImGui::GetIO().DisplaySize.y) );
         }
 
 
@@ -1067,7 +1067,7 @@ void core::update(PapayaMemory* mem)
         // =========================================================================================
         // Visualization: Brush falloff
 
-        const int32 ArraySize = 256;
+        const i32 ArraySize = 256;
         local_persist float Opacities[ArraySize] = { 0 };
 
         float MaxScale = 90.0f;
@@ -1075,7 +1075,7 @@ void core::update(PapayaMemory* mem)
         float Phase    = (1.0f - Scale) * (float)Math::Pi;
         float Period   = (float)Math::Pi * Scale / (float)ArraySize;
 
-        for (int32 i = 0; i < ArraySize; i++)
+        for (i32 i = 0; i < ArraySize; i++)
         {
             Opacities[i] = (cosf(((float)i * Period) + Phase) + 1.0f) * 0.5f;
             if ((float)i < (float)ArraySize - ((float)ArraySize / Scale)) { Opacities[i] = 1.0f; }
@@ -1138,17 +1138,17 @@ void core::update(PapayaMemory* mem)
             draw_list->AddLine(P1, P2, 0xFFFFFFFF);
 
             // Base mark
-            uint64 BaseOffset = (int8*)mem->cur_doc->undo.base - (int8*)mem->cur_doc->undo.start;
+            u64 BaseOffset = (i8*)mem->cur_doc->undo.base - (i8*)mem->cur_doc->undo.start;
             float BaseX       = P1.x + (float)BaseOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
 
             // Current mark
-            uint64 CurrOffset = (int8*)mem->cur_doc->undo.current - (int8*)mem->cur_doc->undo.start;
+            u64 CurrOffset = (i8*)mem->cur_doc->undo.current - (i8*)mem->cur_doc->undo.start;
             float CurrX       = P1.x + (float)CurrOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
 
             // Top mark
-            uint64 TopOffset = (int8*)mem->cur_doc->undo.top - (int8*)mem->cur_doc->undo.start;
+            u64 TopOffset = (i8*)mem->cur_doc->undo.top - (i8*)mem->cur_doc->undo.start;
             float TopX       = P1.x + (float)TopOffset / (float)mem->cur_doc->undo.size * (P2.x - P1.x);
             draw_list->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
 
@@ -1192,7 +1192,7 @@ void core::update(PapayaMemory* mem)
             else // Center canvas
             {
                 // TODO: Maybe disable centering on zoom out. Needs more usability testing.
-                int32 top_margin = 53; // TODO: Put common layout constants in struct
+                i32 top_margin = 53; // TODO: Put common layout constants in struct
                 mem->cur_doc->canvas_pos.x = math::round_to_int((mem->window.width - (float)mem->cur_doc->width * mem->cur_doc->canvas_zoom) / 2.0f);
                 mem->cur_doc->canvas_pos.y = top_margin + math::round_to_int((mem->window.height - top_margin - (float)mem->cur_doc->height * mem->cur_doc->canvas_zoom) / 2.0f);
             }
@@ -1310,7 +1310,7 @@ void core::update(PapayaMemory* mem)
                 // Get pixel color
                 {
                     float Pixel[3] = { 0 };
-                    GLCHK( glReadPixels((int32)mem->mouse.pos.x, mem->window.height - (int32)mem->mouse.pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel) );
+                    GLCHK( glReadPixels((i32)mem->mouse.pos.x, mem->window.height - (i32)mem->mouse.pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel) );
                     mem->eye_dropper.color = Color(Pixel[0], Pixel[1], Pixel[2]);
                 }
 
@@ -1397,7 +1397,7 @@ void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
     GLCHK( glUniform1i       (mem->shaders[PapayaShader_ImGui].uniforms[1], 0) );
     GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0], 1, GL_FALSE, &mem->window.proj_mtx[0][0]) );
 
-    for (int32 n = 0; n < draw_data->CmdListsCount; n++)
+    for (i32 n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
         const ImDrawIdx* idx_buffer_offset = 0;
@@ -1419,7 +1419,7 @@ void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
             else
             {
                 GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->TextureId) );
-                GLCHK( glScissor((int32)pcmd->ClipRect.x, (int32)(fb_height - pcmd->ClipRect.w), (int32)(pcmd->ClipRect.z - pcmd->ClipRect.x), (int32)(pcmd->ClipRect.w - pcmd->ClipRect.y)) );
+                GLCHK( glScissor((i32)pcmd->ClipRect.x, (i32)(fb_height - pcmd->ClipRect.w), (i32)(pcmd->ClipRect.z - pcmd->ClipRect.x), (i32)(pcmd->ClipRect.w - pcmd->ClipRect.y)) );
                 GLCHK( glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, GL_UNSIGNED_SHORT, idx_buffer_offset) );
             }
             idx_buffer_offset += pcmd->ElemCount;

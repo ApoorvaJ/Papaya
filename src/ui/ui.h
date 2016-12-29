@@ -79,16 +79,16 @@ enum PapayaTool_ {
 };
 
 struct System {
-    int32 gl_version[2];
+    i32 gl_version[2];
     char* gl_vendor;
     char* gl_renderer;
 };
 
 struct Layout {
-    int32 width, height;
-    uint32 menu_horizontal_offset, title_bar_buttons_width, title_bar_height;
+    i32 width, height;
+    u32 menu_horizontal_offset, title_bar_buttons_width, title_bar_height;
     float proj_mtx[4][4];
-    int32 default_imgui_flags;
+    i32 default_imgui_flags;
 };
 
 struct Document {
@@ -96,14 +96,14 @@ struct Document {
     int node_count;
     Node* final_node;
     Node* current_node;
-    int64 next_node_id;
+    i64 next_node_id;
 
     // Links are automatically maintained. Treat as read-only.
     NodeLink* links[512];
     int link_count;
 
-    int32 width, height;
-    int32 components_per_pixel;
+    i32 width, height;
+    i32 components_per_pixel;
     Vec2i canvas_pos;
     float canvas_zoom;
     float inverse_aspect;
@@ -131,12 +131,12 @@ struct Keyboard {
 struct Tablet {
     Vec2i pos;
     float pressure;
-    int32 buttons;
+    i32 buttons;
 };
 
 struct Brush {
-    int32 diameter;
-    int32 max_diameter;
+    i32 diameter;
+    i32 max_diameter;
     float opacity; // Range: [0.0, 1.0]
     float hardness; // Range: [0.0, 1.0]
     bool anti_alias;
@@ -146,7 +146,7 @@ struct Brush {
     // TODO: Move some of this stuff to the Mouse struct?
     Vec2i rt_drag_start_pos;
     bool rt_drag_with_shift;
-    int32 rt_drag_start_diameter;
+    i32 rt_drag_start_diameter;
     float rt_drag_start_hardness, rt_drag_start_opacity;
     bool draw_line_segment;
     Vec2 line_segment_start_uv;
@@ -163,14 +163,14 @@ struct EyeDropper {
 };
 
 struct Profile {
-    int64 current_time; // Used on Windows.
+    i64 current_time; // Used on Windows.
     float last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
 };
 
 struct Misc {
     // TODO: This entire struct is for stuff to be refactored at some point
-    uint32 fbo;
-    uint32 fbo_render_tex, fbo_sample_tex;
+    u32 fbo;
+    u32 fbo_render_tex, fbo_sample_tex;
     bool draw_overlay;
     bool show_metrics;
     bool show_undo_buffer;
@@ -178,9 +178,9 @@ struct Misc {
     bool menu_open;
     bool prefs_open;
     bool preview_image_size;
-    int32 preview_width, preview_height;
-    uint32 canvas_tex; // Temporarily used for visualization during node bringup
-    int32 w, h;
+    i32 preview_width, preview_height;
+    u32 canvas_tex; // Temporarily used for visualization during node bringup
+    i32 w, h;
 };
 
 struct PapayaMemory {
@@ -196,7 +196,7 @@ struct PapayaMemory {
     Document* cur_doc;
     PapayaDocument* doc;
 
-    uint32 textures[PapayaTex_COUNT];
+    u32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
     Mesh meshes[PapayaMesh_COUNT];
     Shader shaders[PapayaShader_COUNT];
@@ -213,12 +213,12 @@ struct PapayaMemory {
 namespace core {
     void init(PapayaMemory* mem);
     void destroy(PapayaMemory* mem);
-    void resize(PapayaMemory* mem, int32 width, int32 height);
+    void resize(PapayaMemory* mem, i32 width, i32 height);
     void update(PapayaMemory* mem);
     void render_imgui(ImDrawData* draw_data, void* mem_ptr);
     bool open_doc(const char* path, PapayaMemory* mem);
     void close_doc(PapayaMemory* mem);
-    void resize_doc(PapayaMemory* mem, int32 width, int32 height);
+    void resize_doc(PapayaMemory* mem, i32 width, i32 height);
     void update_canvas(PapayaMemory* mem);
 }
 
@@ -227,7 +227,7 @@ namespace platform
     void print(const char* Message);
     void start_mouse_capture();
     void stop_mouse_capture();
-    void set_mouse_position(int32 x, int32 y);
+    void set_mouse_position(i32 x, i32 y);
     void set_cursor_visibility(bool Visible);
     char* open_file_dialog();
     char* save_file_dialog();

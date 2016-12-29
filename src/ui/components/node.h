@@ -10,7 +10,7 @@ enum NodeType_ {
 };
 
 struct Node {
-    int64 id;
+    i64 id;
     NodeType_ type;
     char name[32];
     bool is_active;
@@ -20,7 +20,7 @@ struct Node {
     int inputs_count, outputs_count;
     Vec2 pos, size;
 
-    uint32 tex_id;
+    u32 tex_id;
     
     // TODO: Change these member functions to C-style functions
     Vec2 GetInputSlotPos(int slot_no) const {
@@ -48,7 +48,7 @@ struct NodeLink {
 };
 
 namespace node {
-    Node* init(const char* name, Vec2 pos, uint8* img, PapayaMemory* mem);
+    Node* init(const char* name, Vec2 pos, u8* img, PapayaMemory* mem);
     void destroy(Node* node);
     void connect(Node* from, Node* to, PapayaMemory* mem);
 }

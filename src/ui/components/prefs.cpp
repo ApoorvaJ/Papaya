@@ -51,13 +51,13 @@ void prefs::show_panel(ColorPanel* color_panel, Color* colors, Layout& layout)
                 "Image size preview color 2"
             };
 
-            for (int32 i = PapayaCol_Clear; i <= PapayaCol_ImageSizePreview2; i++) {
+            for (i32 i = PapayaCol_Clear; i <= PapayaCol_ImageSizePreview2; i++) {
                 char str[8];
                 Color col = colors[i];
                 snprintf(str, 8, "#%02x%02x%02x", 
-                        (uint32)(col.r * 255.0),
-                        (uint32)(col.g * 255.0),
-                        (uint32)(col.b * 255.0));
+                        (u32)(col.r * 255.0),
+                        (u32)(col.g * 255.0),
+                        (u32)(col.b * 255.0));
 
                 ImGui::PushStyleColor(ImGuiCol_Button, col);
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, col);

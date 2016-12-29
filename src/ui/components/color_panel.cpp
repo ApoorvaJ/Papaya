@@ -88,7 +88,7 @@ void color_panel_set_color(Color col, ColorPanel* c, bool set_new_color_only)
 
 // TODO: Remove the last param
 void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
-                        uint32 blank_texture, Layout& layout)
+                        u32 blank_texture, Layout& layout)
 {
     // Picker panel
     {
@@ -137,26 +137,26 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
         {
             ImGui::BeginChild("HSV Gradients", Vec2(315, 258));
             ImGui::EndChild();
-            int32 rgbColor[3];
-            rgbColor[0] = (int32)(c->new_color.r * 255.0f);
-            rgbColor[1] = (int32)(c->new_color.g * 255.0f);
-            rgbColor[2] = (int32)(c->new_color.b * 255.0f);
+            i32 rgbColor[3];
+            rgbColor[0] = (i32)(c->new_color.r * 255.0f);
+            rgbColor[1] = (i32)(c->new_color.g * 255.0f);
+            rgbColor[2] = (i32)(c->new_color.b * 255.0f);
             if (ImGui::InputInt3("RGB", rgbColor)) {
-                int32 r = math::clamp(rgbColor[0], 0, 255);
-                int32 g = math::clamp(rgbColor[1], 0, 255);
-                int32 b = math::clamp(rgbColor[2], 0, 255);
+                i32 r = math::clamp(rgbColor[0], 0, 255);
+                i32 g = math::clamp(rgbColor[1], 0, 255);
+                i32 b = math::clamp(rgbColor[2], 0, 255);
                 c->new_color = Color(r, g, b);
                 rgb_to_hsv(c->new_color, &c->cursor_h, &c->cursor_sv.x,
                            &c->cursor_sv.y);
             }
             char hexColor[6 + 1]; // null-terminated
             snprintf(hexColor, sizeof(hexColor), "%02x%02x%02x",
-                     (int32)(c->new_color.r * 255.0f),
-                     (int32)(c->new_color.g * 255.0f),
-                     (int32)(c->new_color.b * 255.0f));
+                     (i32)(c->new_color.r * 255.0f),
+                     (i32)(c->new_color.g * 255.0f),
+                     (i32)(c->new_color.b * 255.0f));
             if (ImGui::InputText("Hex", hexColor, sizeof(hexColor),
                                  ImGuiInputTextFlags_CharsHexadecimal)) {
-                int32 r = 0, g = 0, b = 0;
+                i32 r = 0, g = 0, b = 0;
                 switch (strlen(hexColor)) {
                     case 1: sscanf(hexColor, "%1x", &b); break;
                     case 2: sscanf(hexColor, "%2x", &b); break;

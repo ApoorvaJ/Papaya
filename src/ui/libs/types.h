@@ -3,20 +3,15 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define internal static
-#define local_persist static
-#define global_variable static
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-typedef int32 bool32;
-
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
 
 struct Vec2 {
     float x, y;
@@ -25,9 +20,9 @@ struct Vec2 {
 };
 
 struct Vec2i {
-    int32 x, y;
+    i32 x, y;
     Vec2i() { x = y = 0; }
-    Vec2i(int32 _x, int32 _y) { x = _x; y = _y; }
+    Vec2i(i32 _x, i32 _y) { x = _x; y = _y; }
     operator Vec2() const { return Vec2((float)x, (float)y); }
 };
 
@@ -45,11 +40,11 @@ struct Color {
         r = _r; g = _g; b = _b; a = _a;
     }
 
-    operator uint32() const {
-        return ( (uint32)(r * 255.0f)) |
-               (((uint32)(g * 255.0f)) << 8) |
-               (((uint32)(b * 255.0f)) << 16) |
-               (((uint32)(a * 255.0f)) << 24);
+    operator u32() const {
+        return ( (u32)(r * 255.0f)) |
+               (((u32)(g * 255.0f)) << 8) |
+               (((u32)(b * 255.0f)) << 16) |
+               (((u32)(a * 255.0f)) << 24);
     }
 };
 

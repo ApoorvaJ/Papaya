@@ -6,7 +6,7 @@ struct Mouse;
 struct PapayaMemory; // TODO: Remove. Manage struct knowledge on a need-to-know-basis.
 
 struct CropRotate {
-    int32 base_rotation; // Multiply this by 90 to get the rotation in degrees
+    i32 base_rotation; // Multiply this by 90 to get the rotation in degrees
     float slider_angle;
     Vec2 top_left;
     Vec2 bot_right;
@@ -17,7 +17,7 @@ struct CropRotate {
     // 1 Vertex active   -> Vertex drag
     // 2 Vertices active -> Edge drag
     // 4 Vertices active -> Full rect drag
-    uint8 crop_mode;
+    u8 crop_mode;
     Vec2 rect_drag_position;
 };
 

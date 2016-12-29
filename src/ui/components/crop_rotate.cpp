@@ -41,7 +41,7 @@ void crop_rotate::toolbar(PapayaMemory* mem)
 
         // Swap render texture and document texture handles
         if (size_changed) {
-            int32 temp = mem->cur_doc->width;
+            i32 temp = mem->cur_doc->width;
             mem->cur_doc->width  = mem->cur_doc->height;
             mem->cur_doc->height = temp;
 
@@ -95,7 +95,7 @@ void crop_rotate::toolbar(PapayaMemory* mem)
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
         GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-        uint32 temp = mem->misc.fbo_sample_tex;
+        u32 temp = mem->misc.fbo_sample_tex;
         mem->misc.fbo_sample_tex = mem->cur_doc->final_node->tex_id;
         mem->cur_doc->final_node->tex_id = temp;
 
@@ -103,7 +103,7 @@ void crop_rotate::toolbar(PapayaMemory* mem)
             core::resize_doc(mem, mem->cur_doc->width, mem->cur_doc->height);
 
             // Reposition canvas to maintain apparent position
-            int32 delta = math::round_to_int((mem->cur_doc->height - mem->cur_doc->width)
+            i32 delta = math::round_to_int((mem->cur_doc->height - mem->cur_doc->width)
                     * 0.5f * mem->cur_doc->canvas_zoom);
             mem->cur_doc->canvas_pos.x += delta;
             mem->cur_doc->canvas_pos.y -= delta;
@@ -111,7 +111,7 @@ void crop_rotate::toolbar(PapayaMemory* mem)
 
         // Reset stuff
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-        GLCHK( glViewport(0, 0, (int32)ImGui::GetIO().DisplaySize.x, (int32)ImGui::GetIO().DisplaySize.y) );
+        GLCHK( glViewport(0, 0, (i32)ImGui::GetIO().DisplaySize.x, (i32)ImGui::GetIO().DisplaySize.y) );
 
         mem->crop_rotate.slider_angle = 0.f;
         mem->crop_rotate.base_rotation = 0;
@@ -143,9 +143,9 @@ void crop_rotate::crop_outline(PapayaMemory* mem)
         // Vertex selection
         {
             float min_dist = FLT_MAX;
-            int32 min_index;
+            i32 min_index;
 
-            for (int32 i = 0; i < 4; i++) {
+            for (i32 i = 0; i < 4; i++) {
                 float dist = math::distance(p[i], mouse);
                 if (min_dist > dist) {
                     min_dist = dist;
@@ -162,10 +162,10 @@ void crop_rotate::crop_outline(PapayaMemory* mem)
         // Edge selecton
         {
             float min_dist = FLT_MAX;
-            int32 min_index;
+            i32 min_index;
 
-            for (int32 i = 0; i < 4; i++) {
-                int32 j = (i + 1) % 4;
+            for (i32 i = 0; i < 4; i++) {
+                i32 j = (i + 1) % 4;
                 vec2 v1 = { p[i].x  , p[i].y  };
                 vec2 v2 = { p[j].x  , p[j].y  };
                 vec2 m  = { mouse.x , mouse.y };
@@ -277,10 +277,10 @@ drawing:
         verts[2].uv = Vec2(1.0f, 1.0f);
         verts[3].uv = Vec2(1.0f, 0.0f);
 
-        uint32 col1 = 0xffcc7a00;
-        uint32 col2 = 0xff1189e6;
-        uint32 col3 = 0xff36bb0a;
-        uint8 Mode = mem->crop_rotate.crop_mode;
+        u32 col1 = 0xffcc7a00;
+        u32 col2 = 0xff1189e6;
+        u32 col3 = 0xff36bb0a;
+        u8 Mode = mem->crop_rotate.crop_mode;
         if (Mode == 15) {
             verts[0].col = verts[1].col = verts[2].col = verts[3].col = col3;
         }

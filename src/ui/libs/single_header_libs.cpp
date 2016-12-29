@@ -1,5 +1,5 @@
 
-#pragma warning (disable: 4312) // Warning C4312 during 64 bit compilation: 'type cast': conversion from 'uint32' to 'void *' of greater size
+#pragma warning (disable: 4312) // Warning C4312 during 64 bit compilation: 'type cast': conversion from 'u32' to 'void *' of greater size
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #pragma warning (default: 4312)

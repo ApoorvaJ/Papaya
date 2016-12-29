@@ -16,28 +16,28 @@ enum UniformType_ {
 };
 
 struct Shader {
-    uint32 handle;
-    int32 attrib_count, uniform_count;
-    int32 attribs[8];
-    int32 uniforms[8];
+    u32 handle;
+    i32 attrib_count, uniform_count;
+    i32 attribs[8];
+    i32 uniforms[8];
 };
 
 struct Mesh {
     bool is_line_loop; // 0 -> Triangle, !0 -> Line
-    uint32 vbo_size, index_count;
-    uint32 vbo_handle, elements_handle;
+    u32 vbo_size, index_count;
+    u32 vbo_handle, elements_handle;
 };
 
 namespace gl {
     void check_error(const char* expr, const char* file, int line);
     char* read_file(const char* file_name);
     void compile_shader(Shader& shader, const char* vert_file, const char* frag_file,
-        int32 attrib_count, int32 uniform_count, ...);
+        i32 attrib_count, i32 uniform_count, ...);
     void set_vertex_attribs(Shader& shader);
-    void init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage);
+    void init_quad(Mesh& mesh, Vec2 pos, Vec2 size, u32 usage);
     void transform_quad(Mesh& mesh, Vec2 pos, Vec2 size);
-    void draw_mesh(Mesh& mesh, Shader& shader, bool scissor, int32 uniform_count, ...);
-    uint32 allocate_tex(int32 width, int32 height, uint8* data = 0);
+    void draw_mesh(Mesh& mesh, Shader& shader, bool scissor, i32 uniform_count, ...);
+    u32 allocate_tex(i32 width, i32 height, u8* data = 0);
 }
 
 #endif //GL_UTIL_H
@@ -87,15 +87,15 @@ char* gl::read_file(const char* file_name)
 }
 
 
-internal void print_compilation_errors(uint32 handle, const char* glsl_file)
+static void print_compilation_errors(u32 handle, const char* glsl_file)
 {
-    int32 compilation_status;
+    i32 compilation_status;
     GLCHK( glGetShaderiv(handle, GL_COMPILE_STATUS, &compilation_status) );
     if (compilation_status != GL_TRUE) {
         printf("Compilation error in %s\n", glsl_file);
 
         char log[4096];
-        int32 out_length;
+        i32 out_length;
         GLCHK( glGetShaderInfoLog(handle, 4096, &out_length, log) );
         printf("%s", log);
         printf("\n");
@@ -103,11 +103,11 @@ internal void print_compilation_errors(uint32 handle, const char* glsl_file)
 }
 
 void gl::compile_shader(Shader& shader, const char* vert_file, const char* frag_file,
-    int32 attrib_count, int32 uniform_count, ...)
+    i32 attrib_count, i32 uniform_count, ...)
 {
     shader.handle = GLCHK( glCreateProgram() );
-    uint32 vert_handle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
-    uint32 frag_handle = GLCHK( glCreateShader(GL_FRAGMENT_SHADER) );
+    u32 vert_handle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
+    u32 frag_handle = GLCHK( glCreateShader(GL_FRAGMENT_SHADER) );
 
     {
         char* vert = read_file(vert_file);
@@ -131,7 +131,7 @@ void gl::compile_shader(Shader& shader, const char* vert_file, const char* frag_
     shader.uniform_count = uniform_count;
     va_list args;
     va_start(args, uniform_count);
-    for (int32 i = 0; i < attrib_count; i++) {
+    for (i32 i = 0; i < attrib_count; i++) {
         const char* name = va_arg(args, const char*);
         shader.attribs[i] = GLCHK( glGetAttribLocation(shader.handle, name) );
 
@@ -140,7 +140,7 @@ void gl::compile_shader(Shader& shader, const char* vert_file, const char* frag_
         }
     }
 
-    for (int32 i = 0; i < uniform_count; i++) {
+    for (i32 i = 0; i < uniform_count; i++) {
         const char* name = va_arg(args, const char*);
         shader.uniforms[i] = GLCHK( glGetUniformLocation(shader.handle, name) );
 
@@ -153,7 +153,7 @@ void gl::compile_shader(Shader& shader, const char* vert_file, const char* frag_
 
 void gl::set_vertex_attribs(Shader& shader)
 {
-    for (int32 i = 0; i < shader.attrib_count; i++) {
+    for (i32 i = 0; i < shader.attrib_count; i++) {
         GLCHK( glEnableVertexAttribArray(shader.attribs[i]) );
     }
 
@@ -175,7 +175,7 @@ void gl::set_vertex_attribs(Shader& shader)
 #undef OFFSETOF
 }
 
-void gl::init_quad(Mesh& mesh, Vec2 pos, Vec2 size, uint32 usage)
+void gl::init_quad(Mesh& mesh, Vec2 pos, Vec2 size, u32 usage)
 {
     GLCHK( glGenBuffers  (1, &mesh.vbo_handle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, mesh.vbo_handle) );
@@ -204,7 +204,7 @@ void gl::transform_quad(Mesh& mesh, Vec2 pos, Vec2 size)
 }
 
 void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
-    int32 uniform_count, ...)
+    i32 uniform_count, ...)
 {
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
@@ -224,7 +224,7 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
     {
         va_list args;
         va_start(args, uniform_count);
-        for (int32 i = 0; i < uniform_count; i++) {
+        for (i32 i = 0; i < uniform_count; i++) {
             switch (va_arg(args, int)) {
             case UniformType_Float: {
                 GLCHK( glUniform1f(shader.uniforms[i],
@@ -266,9 +266,9 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
     GLCHK( glBindTexture(GL_TEXTURE_2D, last_texture) ); //
 }
 
-uint32 gl::allocate_tex(int32 width, int32 height, uint8* data)
+u32 gl::allocate_tex(i32 width, i32 height, u8* data)
 {
-    uint32 tex;
+    u32 tex;
     GLCHK( glGenTextures(1, &tex) );
     GLCHK( glBindTexture(GL_TEXTURE_2D, tex) );
     GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );

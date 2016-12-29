@@ -4,13 +4,13 @@
 
 #include <math.h>
 
-inline Vec2i operator*(const Vec2i& lhs, const int32 rhs)  { return Vec2i(lhs.x*rhs, lhs.y*rhs); }
+inline Vec2i operator*(const Vec2i& lhs, const i32 rhs)  { return Vec2i(lhs.x*rhs, lhs.y*rhs); }
 inline Vec2i operator+(const Vec2i& lhs, const Vec2i& rhs) { return Vec2i(lhs.x+rhs.x, lhs.y+rhs.y); }
 inline Vec2i operator-(const Vec2i& lhs, const Vec2i& rhs) { return Vec2i(lhs.x-rhs.x, lhs.y-rhs.y); }
 inline Vec2i operator*(const Vec2i& lhs, const Vec2i rhs)  { return Vec2i(lhs.x*rhs.x, lhs.y*rhs.y); }
 inline Vec2i& operator+=(Vec2i& lhs, const Vec2i& rhs)     { lhs.x += rhs.x; lhs.y += rhs.y; return lhs; }
 inline Vec2i& operator-=(Vec2i& lhs, const Vec2i& rhs)     { lhs.x -= rhs.x; lhs.y -= rhs.y; return lhs; }
-inline Vec2i& operator*=(Vec2i& lhs, const int32 rhs)      { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
+inline Vec2i& operator*=(Vec2i& lhs, const i32 rhs)      { lhs.x *= rhs; lhs.y *= rhs; return lhs; }
 
 struct ImVec2;
 
@@ -34,9 +34,9 @@ namespace math {
     template<class T> T clamp(T a, T min, T max) { return math::min(math::max(a, min), max); }
 
     float abs(float a);
-    int32 abs(int32 a);
+    i32 abs(i32 a);
     float floor(float a);
-    int32 round_to_int(float a);
+    i32 round_to_int(float a);
     Vec2i round_to_vec2i(Vec2 a);
     float distance(Vec2 a, Vec2 b);
     float distance_squared(Vec2 a, Vec2 b);
@@ -55,20 +55,20 @@ float math::abs(float a)
     return (a < 0.0f ? a * -1.0f : a);
 }
 
-int32 math::abs(int32 a)
+i32 math::abs(i32 a)
 {
     return (a < 0 ? a * -1 : a);
 }
 
 float math::floor(float a)
 {
-    int32 i = (int32)a;
+    i32 i = (i32)a;
     return (float)(i - (i > a));
 }
 
-int32 math::round_to_int(float a)
+i32 math::round_to_int(float a)
 {
-    return (int32)floor(a + 0.5f);
+    return (i32)floor(a + 0.5f);
 }
 
 Vec2i math::round_to_vec2i(Vec2 a)

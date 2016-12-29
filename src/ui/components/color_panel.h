@@ -22,4 +22,4 @@ void destroy_color_panel(ColorPanel* c);
 void color_panel_set_color(Color col, ColorPanel* c,
                            bool set_new_color_only = false);
 void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
-                        uint32 blank_texture, Layout& layout);
+                        u32 blank_texture, Layout& layout);
