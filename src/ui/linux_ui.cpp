@@ -338,8 +338,8 @@ int main(int argc, char **argv)
         {
             timespec Time;
             clock_gettime(CLOCK_MONOTONIC, &Time);
-            float CurTime = Time.tv_sec + (float)Time.tv_nsec / 1000000000.0f;
-            ImGui::GetIO().DeltaTime = (float)(CurTime - mem->profile.last_frame_time);
+            f32 CurTime = Time.tv_sec + (f32)Time.tv_nsec / 1000000000.0f;
+            ImGui::GetIO().DeltaTime = (f32)(CurTime - mem->profile.last_frame_time);
             mem->profile.last_frame_time = CurTime;
 
             ImGui::NewFrame();
@@ -358,11 +358,11 @@ int main(int argc, char **argv)
 
         // End Of Frame
         timer::stop(Timer_Frame);
-        double FrameRate =
+        f64 FrameRate =
             (mem->current_tool == PapayaTool_Brush && mem->mouse.is_down[0]) ?
             500.0 : 60.0;
-        double FrameTime = 1000.0 / FrameRate;
-        double SleepTime = FrameTime - timers[Timer_Frame].elapsed_ms;
+        f64 FrameTime = 1000.0 / FrameRate;
+        f64 SleepTime = FrameTime - timers[Timer_Frame].elapsed_ms;
         timers[Timer_Sleep].elapsed_ms = SleepTime;
         if (SleepTime > 0) { usleep((u32)SleepTime * 1000); }
     }

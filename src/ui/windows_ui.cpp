@@ -305,9 +305,9 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM 
                 }
             }
 
-            if (Y - window_rect.top <= (float)mem.window.title_bar_height &&
+            if (Y - window_rect.top <= (f32)mem.window.title_bar_height &&
                 X > window_rect.left + 200.0f &&
-                X < window_rect.right - (float)(mem.window.title_bar_buttons_width + 10)) {
+                X < window_rect.right - (f32)(mem.window.title_bar_buttons_width + 10)) {
                 return HTCAPTION;
             }
 
@@ -390,8 +390,8 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
         u32 screen_width = GetSystemMetrics(SM_CXSCREEN);
         u32 screen_height = GetSystemMetrics(SM_CYSCREEN);
 
-        mem.window.width = (u32)((float)screen_width * 0.5);
-        mem.window.height = (u32)((float)screen_height * 0.8);
+        mem.window.width = (u32)((f32)screen_width * 0.5);
+        mem.window.height = (u32)((f32)screen_height * 0.8);
 
         u32 window_x = (screen_width - mem.window.width) / 2;
         u32 window_y = (screen_height - mem.window.height) / 2;
@@ -489,7 +489,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
 
     // Handle command line arguments (if present)
     if (strlen(cmd_line)) {
-        // Remove double quotes from string if present
+        // Remove f64 quotes from string if present
         char* ptr_read  = cmd_line;
         char* ptr_write = cmd_line;
         while (*ptr_read) 
@@ -540,7 +540,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             // Setup display size (every frame to accommodate for window resizing)
             RECT rect;
             GetClientRect(window, &rect);
-            io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+            io.DisplaySize = ImVec2((f32)(rect.right - rect.left), (f32)(rect.bottom - rect.top));
 
             // Read keyboard modifiers inputs
             io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
@@ -550,8 +550,8 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             // Setup time step
             INT64 current_time;
             QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-            io.DeltaTime = (float)(current_time - mem.profile.current_time) * 
-                           (float)timer::get_freq() / 1000.0f;
+            io.DeltaTime = (f32)(current_time - mem.profile.current_time) * 
+                           (f32)timer::get_freq() / 1000.0f;
             mem.profile.current_time = current_time; // TODO: Move Imgui timers from Debug to their own struct
 
             // Hide OS mouse cursor if ImGui is drawing it
@@ -563,7 +563,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
 
         // Title Bar Icon
         {
-            ImGui::SetNextWindowSize(ImVec2((float)mem.window.menu_horizontal_offset,(float)mem.window.title_bar_height));
+            ImGui::SetNextWindowSize(ImVec2((f32)mem.window.menu_horizontal_offset,(f32)mem.window.title_bar_height));
             ImGui::SetNextWindowPos(ImVec2(1.0f, 1.0f));
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
@@ -577,7 +577,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
             bool bTrue = true;
             ImGui::Begin("Title Bar Icon", &bTrue, mem.window.default_imgui_flags);
 
-            #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
+            #define CALCUV(X, Y) ImVec2((f32)X/256.0f, (f32)Y/256.0f)
             ImGui::Image((void*)(intptr_t)mem.textures[PapayaTex_UI], ImVec2(28,28), CALCUV(0,200), CALCUV(28,228));
             #undef CALCUV
 
@@ -589,8 +589,8 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
 
         // Title Bar Buttons
         {
-            ImGui::SetNextWindowSize(ImVec2((float)mem.window.title_bar_buttons_width,24.0f));
-            ImGui::SetNextWindowPos(ImVec2((float)mem.window.width - mem.window.title_bar_buttons_width, 0.0f));
+            ImGui::SetNextWindowSize(ImVec2((f32)mem.window.title_bar_buttons_width,24.0f));
+            ImGui::SetNextWindowPos(ImVec2((f32)mem.window.width - mem.window.title_bar_buttons_width, 0.0f));
 
             ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
@@ -605,7 +605,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
 
             bool bTrue = true;
 
-            #define CALCUV(X, Y) ImVec2((float)X/256.0f, (float)Y/256.0f)
+            #define CALCUV(X, Y) ImVec2((f32)X/256.0f, (f32)Y/256.0f)
             ImGui::Begin("Title Bar Buttons", &bTrue, mem.window.default_imgui_flags);
 
             ImGui::PushID(0);
@@ -656,10 +656,10 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line
 
     EndOfFrame:
         timer::stop(Timer_Frame);
-        double frame_rate = (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
+        f64 frame_rate = (mem.current_tool == PapayaTool_Brush && mem.mouse.is_down[0]) ?
                            500.0 : 60.0;
-        double frame_time = 1000.0 / frame_rate;
-        double sleep_time = frame_time - timers[Timer_Frame].elapsed_ms;
+        f64 frame_time = 1000.0 / frame_rate;
+        f64 sleep_time = frame_time - timers[Timer_Frame].elapsed_ms;
         timers[Timer_Sleep].elapsed_ms = sleep_time;
         if (sleep_time > 0) { Sleep((i32)sleep_time); }
     }

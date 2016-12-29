@@ -11,7 +11,7 @@ struct ColorPanel {
     Color* bound_color; // This color is changed along with current_color. Zero
                         // if no color is bound.
     Vec2 cursor_sv;
-    float cursor_h;
+    f32 cursor_h;
     Vec2 pos, size, hue_strip_pos, hue_strip_size, sv_box_pos, sv_box_size;
     bool dragging_hue, dragging_sv;
 };

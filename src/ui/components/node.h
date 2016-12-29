@@ -24,12 +24,12 @@ struct Node {
     
     // TODO: Change these member functions to C-style functions
     Vec2 GetInputSlotPos(int slot_no) const {
-        return Vec2(pos.x + size.x * ((float)slot_no+1) / ((float)inputs_count+1),
+        return Vec2(pos.x + size.x * ((f32)slot_no+1) / ((f32)inputs_count+1),
                     pos.y + size.y);
     }
 
     Vec2 GetOutputSlotPos(int slot_no) const {
-        return Vec2(pos.x + size.x * ((float)slot_no+1) / ((float)outputs_count+1),
+        return Vec2(pos.x + size.x * ((f32)slot_no+1) / ((f32)outputs_count+1),
                     pos.y);
     }
 };

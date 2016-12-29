@@ -87,7 +87,7 @@ struct System {
 struct Layout {
     i32 width, height;
     u32 menu_horizontal_offset, title_bar_buttons_width, title_bar_height;
-    float proj_mtx[4][4];
+    f32 proj_mtx[4][4];
     i32 default_imgui_flags;
 };
 
@@ -105,9 +105,9 @@ struct Document {
     i32 width, height;
     i32 components_per_pixel;
     Vec2i canvas_pos;
-    float canvas_zoom;
-    float inverse_aspect;
-    float proj_mtx[4][4];
+    f32 canvas_zoom;
+    f32 inverse_aspect;
+    f32 proj_mtx[4][4];
     UndoBuffer undo;
 };
 
@@ -130,15 +130,15 @@ struct Keyboard {
 
 struct Tablet {
     Vec2i pos;
-    float pressure;
+    f32 pressure;
     i32 buttons;
 };
 
 struct Brush {
     i32 diameter;
     i32 max_diameter;
-    float opacity; // Range: [0.0, 1.0]
-    float hardness; // Range: [0.0, 1.0]
+    f32 opacity; // Range: [0.0, 1.0]
+    f32 hardness; // Range: [0.0, 1.0]
     bool anti_alias;
 
     Vec2i paint_area_1, paint_area_2;
@@ -147,7 +147,7 @@ struct Brush {
     Vec2i rt_drag_start_pos;
     bool rt_drag_with_shift;
     i32 rt_drag_start_diameter;
-    float rt_drag_start_hardness, rt_drag_start_opacity;
+    f32 rt_drag_start_hardness, rt_drag_start_opacity;
     bool draw_line_segment;
     Vec2 line_segment_start_uv;
     bool being_dragged;
@@ -164,7 +164,7 @@ struct EyeDropper {
 
 struct Profile {
     i64 current_time; // Used on Windows.
-    float last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
+    f32 last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
 };
 
 struct Misc {

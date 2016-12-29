@@ -11,7 +11,7 @@
 #include "libpapaya.h"
 
 const Vec2 node_sz = Vec2(36, 36);
-const float slot_radius = 4.0f;
+const f32 slot_radius = 4.0f;
 
 GraphPanel* init_graph_panel()
 {
@@ -58,12 +58,12 @@ static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
 
     if (snapped_node) {
         PapayaSlot* min_slot = 0;
-        float min_dist = FLT_MAX;
+        f32 min_dist = FLT_MAX;
 
         // Find the closest slot to the mouse in the snapped node
         for (int j = 0; j < snapped_node->num_slots; j++) {
             PapayaSlot* s = &snapped_node->slots[j];
-            float dist = math::distance(offset + get_slot_pos(s), m);
+            f32 dist = math::distance(offset + get_slot_pos(s), m);
             // TODO: Snappability check goes here, to verify the absence of
             // cycles and the compatibility of slots
             if (min_dist > dist) {
@@ -272,10 +272,10 @@ void draw_graph_panel(PapayaMemory* mem)
     ImGui::PushStyleColor(ImGuiCol_WindowBg, mem->colors[PapayaCol_Clear]);
 
     // TODO: Streamline this layout code
-    float x = mem->window.width - 36 - g->width; // Panel X
-    float y = 55; // Panel Y
-    float w = g->width; // Panel width
-    float h = g->node_properties_panel_height; // Panel height
+    f32 x = mem->window.width - 36 - g->width; // Panel X
+    f32 y = 55; // Panel Y
+    f32 w = g->width; // Panel width
+    f32 h = g->node_properties_panel_height; // Panel height
 
     draw_node_properties_panel(mem, Vec2(x, y), Vec2(w, h));
 
@@ -303,12 +303,12 @@ void draw_graph_panel(PapayaMemory* mem)
     // Draw the grid
     {
         ImU32 col = ImColor(200,200,200,40);
-        float grid_sz = 50.0f;
+        f32 grid_sz = 50.0f;
         Vec2 win_pos = ImGui::GetCursorScreenPos();
         Vec2 win_sz = ImGui::GetWindowSize();
 
         // Vertical lines
-        float x = fmodf(g->scroll_pos.x, grid_sz);
+        f32 x = fmodf(g->scroll_pos.x, grid_sz);
         while (x < win_sz.x) {
             draw_list->AddLine(win_pos + Vec2(x, 0),
                                win_pos + Vec2(x, win_sz.y), col);
@@ -316,7 +316,7 @@ void draw_graph_panel(PapayaMemory* mem)
         }
 
         // Horizontal lines
-        float y = fmodf(g->scroll_pos.y, grid_sz);
+        f32 y = fmodf(g->scroll_pos.y, grid_sz);
         while (y < win_sz.y) {
             draw_list->AddLine(win_pos + Vec2(0, y),
                                win_pos + Vec2(win_sz.x, y), col);

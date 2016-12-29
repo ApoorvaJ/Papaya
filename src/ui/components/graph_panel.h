@@ -7,8 +7,8 @@ struct PapayaSlot;
 
 struct GraphPanel {
     Vec2 scroll_pos;
-    float node_properties_panel_height;
-    float width;
+    f32 node_properties_panel_height;
+    f32 width;
     int cur_node; // Index of current node
     PapayaSlot* dragged_slot;
     PapayaSlot* displaced_slot;

@@ -7,9 +7,9 @@
 
 void prefs::show_panel(ColorPanel* color_panel, Color* colors, Layout& layout)
 {
-    float width = 400.0f;
-    ImGui::SetNextWindowPos(ImVec2((float)layout.width - 36 - width, 58));
-    ImGui::SetNextWindowSize(ImVec2(width, (float)layout.height - 64));
+    f32 width = 400.0f;
+    ImGui::SetNextWindowPos(ImVec2((f32)layout.width - 36 - width, 58));
+    ImGui::SetNextWindowSize(ImVec2(width, (f32)layout.height - 64));
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5 , 5));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(2 , 2));

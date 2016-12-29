@@ -7,7 +7,7 @@ struct PapayaMemory; // TODO: Remove. Manage struct knowledge on a need-to-know-
 
 struct CropRotate {
     i32 base_rotation; // Multiply this by 90 to get the rotation in degrees
-    float slider_angle;
+    f32 slider_angle;
     Vec2 top_left;
     Vec2 bot_right;
 

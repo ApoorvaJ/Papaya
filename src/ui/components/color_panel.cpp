@@ -24,19 +24,19 @@ void destroy_color_panel(ColorPanel* c)
     free(c);
 }
 
-static void swap(float* a, float* b)
+static void swap(f32* a, f32* b)
 {
-    float tmp = *a;
+    f32 tmp = *a;
     *a = *b;
     *b = tmp;
 }
 
-static void rgb_to_hsv(Color c, float* h, float* s, float* v)
+static void rgb_to_hsv(Color c, f32* h, f32* s, f32* v)
 {
-    float r = c.r;
-    float g = c.g;
-    float b = c.b;
-    float K = 0.f;
+    f32 r = c.r;
+    f32 g = c.g;
+    f32 b = c.b;
+    f32 K = 0.f;
     if (g < b) {
         swap(&g, &b);
         K = -1.f;
@@ -46,14 +46,14 @@ static void rgb_to_hsv(Color c, float* h, float* s, float* v)
         K = -2.f / 6.f - K;
     }
 
-    const float chroma = r - (g < b ? g : b);
+    const f32 chroma = r - (g < b ? g : b);
     *h = fabsf(K + (g - b) / (6.f * chroma + 1e-20f));
     *s = chroma / (r + 1e-20f);
     *v = r;
 }
 
-static void hsv_to_rgb(float h, float s, float v,
-                       float* r, float* g, float* b)
+static void hsv_to_rgb(f32 h, f32 s, f32 v,
+                       f32* r, f32* g, f32* b)
 {
     if (s == 0.0f) {
         // gray
@@ -63,10 +63,10 @@ static void hsv_to_rgb(float h, float s, float v,
 
     h = fmodf(h, 1.0f) / (60.0f / 360.0f);
     int   i = (int)h;
-    float f = h - (float)i;
-    float p = v * (1.0f - s);
-    float q = v * (1.0f - s * f);
-    float t = v * (1.0f - s * (1.0f - f));
+    f32 f = h - (f32)i;
+    f32 p = v * (1.0f - s);
+    f32 q = v * (1.0f - s * f);
+    f32 t = v * (1.0f - s * (1.0f - f));
 
     switch (i) {
         case 0:  *r = v; *g = t; *b = p; break;
@@ -102,8 +102,8 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
 
         ImGui::Begin("Color preview", 0, layout.default_imgui_flags);
         {
-            float width1 = (c->size.x + 33.0f) / 2.0f;
-            float width2 = width1 - 33.0f;
+            f32 width1 = (c->size.x + 33.0f) / 2.0f;
+            f32 width2 = width1 - 33.0f;
             if (ImGui::ImageButton((void*)(intptr_t)blank_texture,
                                    ImVec2(width2, 33), ImVec2(0, 0),
                                    ImVec2(0, 0), 0, c->current_color)) {
@@ -224,7 +224,7 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
 
     // Update new color
     {
-        float r, g, b;
+        f32 r, g, b;
         hsv_to_rgb(c->cursor_h, c->cursor_sv.x, c->cursor_sv.y,
                        &r, &g, &b);
         // Note: Rounding is essential. Without it, RGB->HSV->RGB is a lossy
