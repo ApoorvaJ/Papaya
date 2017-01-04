@@ -124,6 +124,9 @@
     <ClInclude Include="..\..\src\libpapaya\libpapaya.h">
       <Filter>Header Files\libpapaya</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\ui\components\node_properties_panel.h">
+      <Filter>Header Files\ui\components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\libpapaya\libpapaya.cpp">
@@ -166,6 +169,9 @@
       <Filter>Source Files\ui\components</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\ui\components\undo.cpp">
+      <Filter>Source Files\ui\components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ui\components\node_properties_panel.cpp">
       <Filter>Source Files\ui\components</Filter>
     </ClCompile>
   </ItemGroup>

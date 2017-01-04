@@ -18,10 +18,10 @@
 
 // =================================================================================================
 
-global_variable PapayaMemory mem = {};
-global_variable HDC device_context;
-global_variable HGLRC rendering_context;
-global_variable RECT windows_work_area; // Needed because WS_POPUP by default maximizes to cover task bar
+static PapayaMemory mem = {};
+static HDC device_context;
+static HGLRC rendering_context;
+static RECT windows_work_area; // Needed because WS_POPUP by default maximizes to cover task bar
 
 // =================================================================================================
 
@@ -120,7 +120,7 @@ char* platform::save_file_dialog()
 
 // =================================================================================================
 
-internal LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM w_param, LPARAM l_param)
+static LRESULT CALLBACK Win32MainWindowCallback(HWND window, UINT msg, WPARAM w_param, LPARAM l_param)
 {
     if (EasyTab_HandleEvent(window, msg, l_param, w_param) == EASYTAB_OK) {
         return true;  // Tablet input

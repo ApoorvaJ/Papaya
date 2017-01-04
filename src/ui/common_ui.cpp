@@ -403,7 +403,7 @@ void core::destroy(PapayaMemory* mem)
 }
 
 void core::resize(PapayaMemory* mem, i32 width, i32 height)
-{
+{/*
     mem->window.width = width;
     mem->window.height = height;
     ImGui::GetIO().DisplaySize = ImVec2((f32)width, (f32)height);
@@ -430,7 +430,7 @@ void core::resize(PapayaMemory* mem, i32 width, i32 height)
        (available_height - (f32)mem->cur_doc->height * mem->cur_doc->canvas_zoom)
        / 2.0f;
     mem->cur_doc->canvas_pos = Vec2i(x, y);
-}
+*/}
 
 void core::update(PapayaMemory* mem)
 {
