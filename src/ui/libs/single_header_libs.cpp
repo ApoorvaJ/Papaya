@@ -28,6 +28,9 @@
 #define GL_LITE_IMPLEMENTATION
 #include "gl_lite.h"
 
+#define PAGL_IMPLEMENTATION
+#include "pagl.h"
+
 
 #define MATHLIB_IMPLEMENTATION
 #include "mathlib.h"

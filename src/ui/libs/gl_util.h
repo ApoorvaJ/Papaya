@@ -5,6 +5,7 @@
 #include "gl_lite.h"
 #include "types.h"
 
+// TODO: Turn this off in release mode
 #define GLCHK(stmt) stmt; gl::check_error(#stmt, __FILE__, __LINE__)
 
 enum UniformType_ {

@@ -10,6 +10,7 @@
 #include "libs/mathlib.h"
 #include "libs/linmath.h"
 #include "libpapaya.h"
+#include "pagl.h"
 #include <inttypes.h>
 
 
@@ -154,6 +155,7 @@ void core::init(PapayaMemory* mem)
 {
     // Init values and load textures
     {
+        pagl_init();
         mem->misc.preview_height = mem->misc.preview_width = 512;
 
         mem->current_tool = PapayaTool_Brush;
@@ -399,11 +401,11 @@ void core::init(PapayaMemory* mem)
 
 void core::destroy(PapayaMemory* mem)
 {
-    //TODO: Free stuff
+    pagl_destroy();
 }
 
 void core::resize(PapayaMemory* mem, i32 width, i32 height)
-{/*
+{
     mem->window.width = width;
     mem->window.height = height;
     ImGui::GetIO().DisplaySize = ImVec2((f32)width, (f32)height);
@@ -430,7 +432,7 @@ void core::resize(PapayaMemory* mem, i32 width, i32 height)
        (available_height - (f32)mem->cur_doc->height * mem->cur_doc->canvas_zoom)
        / 2.0f;
     mem->cur_doc->canvas_pos = Vec2i(x, y);
-*/}
+}
 
 void core::update(PapayaMemory* mem)
 {
@@ -1372,6 +1374,7 @@ void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
 {
     PapayaMemory* mem = (PapayaMemory*)mem_ptr;
 
+    pagl_push_state();
     // Backup GL state
     GLint last_program, last_texture, last_array_buffer, last_element_array_buffer;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
@@ -1380,12 +1383,11 @@ void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
     GLCHK( glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer) );
 
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled
-    GLCHK( glEnable       (GL_BLEND) );
+    pagl_enable(2, GL_BLEND, GL_SCISSOR_TEST);
+    pagl_disable(2, GL_CULL_FACE, GL_DEPTH_TEST);
+    
     GLCHK( glBlendEquation(GL_FUNC_ADD) );
     GLCHK( glBlendFunc    (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-    GLCHK( glDisable      (GL_CULL_FACE) );
-    GLCHK( glDisable      (GL_DEPTH_TEST) );
-    GLCHK( glEnable       (GL_SCISSOR_TEST) );
     GLCHK( glActiveTexture(GL_TEXTURE0) );
 
     // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
@@ -1431,7 +1433,7 @@ void core::render_imgui(ImDrawData* draw_data, void* mem_ptr)
     GLCHK( glBindTexture    (GL_TEXTURE_2D, last_texture) );
     GLCHK( glBindBuffer     (GL_ARRAY_BUFFER, last_array_buffer) );
     GLCHK( glBindBuffer     (GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer) );
-    GLCHK( glDisable        (GL_SCISSOR_TEST) );
+    pagl_pop_state();
 }
 
 void core::update_canvas(PapayaMemory* mem)
