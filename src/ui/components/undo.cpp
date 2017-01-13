@@ -25,9 +25,9 @@ void undo::init(PapayaMemory* mem)
                                       0) );
 
         GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
-        GLCHK( glUseProgram(mem->shaders[PapayaShader_ImGui].handle) );
+        GLCHK( glUseProgram(mem->shaders[PapayaShader_ImGui]->id) );
 
-        GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0],
+        GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui]->uniforms[0],
                                   1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
 
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER,

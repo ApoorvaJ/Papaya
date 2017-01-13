@@ -6,6 +6,7 @@
 
 #include "libs/types.h"
 #include "libs/gl_util.h"
+#include "pagl.h"
 #include "libs/timer.h"
 #include "libs/easytab.h"
 #include "libs/imgui/imgui.h"
@@ -199,7 +200,7 @@ struct PapayaMemory {
     u32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
     Mesh meshes[PapayaMesh_COUNT];
-    Shader shaders[PapayaShader_COUNT];
+    Pagl_Program* shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;
     Brush brush;

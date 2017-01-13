@@ -86,8 +86,8 @@ void crop_rotate::toolbar(PapayaMemory* mem)
 
         // Draw the image onto the frame buffer
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
-        GLCHK( glUseProgram(mem->shaders[PapayaShader_DeMultiplyAlpha].handle) );
-        GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui].uniforms[0],
+        GLCHK( glUseProgram(mem->shaders[PapayaShader_DeMultiplyAlpha]->id) );
+        GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui]->uniforms[0],
                                   1, GL_FALSE, (GLfloat*)r) );
         gl::set_vertex_attribs(mem->shaders[PapayaShader_DeMultiplyAlpha]);
         GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->cur_doc->final_node->tex_id) );

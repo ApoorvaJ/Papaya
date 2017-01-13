@@ -35,7 +35,7 @@ $(OBJS): %.o: %.cpp
 
 -include $(OBJS:.o=.o.d)
 
-misc_data: ../../img/ui.png ../../src/ui/shaders
+misc_data: ../../img/ui.png
 	cp -ru $^ .
 
 clean:

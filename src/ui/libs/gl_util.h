@@ -4,6 +4,7 @@
 
 #include "gl_lite.h"
 #include "types.h"
+#include "pagl.h"
 
 // TODO: Turn this off in release mode
 #define GLCHK(stmt) stmt; gl::check_error(#stmt, __FILE__, __LINE__)
@@ -16,13 +17,6 @@ enum UniformType_ {
     UniformType_COUNT
 };
 
-struct Shader {
-    u32 handle;
-    i32 attrib_count, uniform_count;
-    i32 attribs[8];
-    i32 uniforms[8];
-};
-
 struct Mesh {
     bool is_line_loop; // 0 -> Triangle, !0 -> Line
     u32 vbo_size, index_count;
@@ -32,12 +26,10 @@ struct Mesh {
 namespace gl {
     void check_error(const char* expr, const char* file, int line);
     char* read_file(const char* file_name);
-    void compile_shader(Shader& shader, const char* vert_file, const char* frag_file,
-        i32 attrib_count, i32 uniform_count, ...);
-    void set_vertex_attribs(Shader& shader);
+    void set_vertex_attribs(Pagl_Program* shader);
     void init_quad(Mesh& mesh, Vec2 pos, Vec2 size, u32 usage);
     void transform_quad(Mesh& mesh, Vec2 pos, Vec2 size);
-    void draw_mesh(Mesh& mesh, Shader& shader, bool scissor, i32 uniform_count, ...);
+    void draw_mesh(Mesh& mesh, Pagl_Program* shader, bool scissor, i32 uniform_count, ...);
     u32 allocate_tex(i32 width, i32 height, u8* data = 0);
 }
 
@@ -87,89 +79,24 @@ char* gl::read_file(const char* file_name)
     return buf;
 }
 
-
-static void print_compilation_errors(u32 handle, const char* glsl_file)
+void gl::set_vertex_attribs(Pagl_Program* shader)
 {
-    i32 compilation_status;
-    GLCHK( glGetShaderiv(handle, GL_COMPILE_STATUS, &compilation_status) );
-    if (compilation_status != GL_TRUE) {
-        printf("Compilation error in %s\n", glsl_file);
-
-        char log[4096];
-        i32 out_length;
-        GLCHK( glGetShaderInfoLog(handle, 4096, &out_length, log) );
-        printf("%s", log);
-        printf("\n");
-    }
-}
-
-void gl::compile_shader(Shader& shader, const char* vert_file, const char* frag_file,
-    i32 attrib_count, i32 uniform_count, ...)
-{
-    shader.handle = GLCHK( glCreateProgram() );
-    u32 vert_handle = GLCHK( glCreateShader(GL_VERTEX_SHADER) );
-    u32 frag_handle = GLCHK( glCreateShader(GL_FRAGMENT_SHADER) );
-
-    {
-        char* vert = read_file(vert_file);
-        char* frag = read_file(frag_file);
-        GLCHK( glShaderSource (vert_handle, 1, &vert, 0) );
-        GLCHK( glShaderSource (frag_handle, 1, &frag, 0) );
-        free(vert);
-        free(frag);
-    }
-    GLCHK( glCompileShader(vert_handle) );
-    GLCHK( glCompileShader(frag_handle) );
-    GLCHK( glAttachShader (shader.handle, vert_handle) );
-    GLCHK( glAttachShader (shader.handle, frag_handle) );
-
-    print_compilation_errors(vert_handle, vert_file);
-    print_compilation_errors(frag_handle, frag_file);
-
-    GLCHK( glLinkProgram(shader.handle) ); // TODO: Print linking errors
-
-    shader.attrib_count = attrib_count;
-    shader.uniform_count = uniform_count;
-    va_list args;
-    va_start(args, uniform_count);
-    for (i32 i = 0; i < attrib_count; i++) {
-        const char* name = va_arg(args, const char*);
-        shader.attribs[i] = GLCHK( glGetAttribLocation(shader.handle, name) );
-
-        if (shader.attribs[i] == -1) {
-            printf("Attribute %s not found in %s\n", name, frag_file);
-        }
-    }
-
-    for (i32 i = 0; i < uniform_count; i++) {
-        const char* name = va_arg(args, const char*);
-        shader.uniforms[i] = GLCHK( glGetUniformLocation(shader.handle, name) );
-
-        if (shader.uniforms[i] == -1) {
-            printf("Uniform %s not found in shader at %s\n", name, frag_file);
-        }
-    }
-    va_end(args);
-}
-
-void gl::set_vertex_attribs(Shader& shader)
-{
-    for (i32 i = 0; i < shader.attrib_count; i++) {
-        GLCHK( glEnableVertexAttribArray(shader.attribs[i]) );
+    for (i32 i = 0; i < shader->num_attribs; i++) {
+        GLCHK( glEnableVertexAttribArray(shader->attribs[i]) );
     }
 
 #define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
     // Position attribute
-    GLCHK( glVertexAttribPointer(shader.attribs[0], 2, GL_FLOAT, GL_FALSE,
+    GLCHK( glVertexAttribPointer(shader->attribs[0], 2, GL_FLOAT, GL_FALSE,
         sizeof(ImDrawVert),
         (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
     // UV attribute
-    GLCHK( glVertexAttribPointer(shader.attribs[1], 2, GL_FLOAT, GL_FALSE,
+    GLCHK( glVertexAttribPointer(shader->attribs[1], 2, GL_FLOAT, GL_FALSE,
         sizeof(ImDrawVert),
         (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
-    if (shader.attrib_count > 2) {
+    if (shader->num_attribs > 2) {
         // Color attribute 
-        GLCHK( glVertexAttribPointer(shader.attribs[2], 4, GL_UNSIGNED_BYTE,
+        GLCHK( glVertexAttribPointer(shader->attribs[2], 4, GL_UNSIGNED_BYTE,
             GL_TRUE, sizeof(ImDrawVert),
             (GLvoid*)OFFSETOF(ImDrawVert, col)) );
     }
@@ -204,7 +131,7 @@ void gl::transform_quad(Mesh& mesh, Vec2 pos, Vec2 size)
     GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts) );
 }
 
-void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
+void gl::draw_mesh(Mesh& mesh, Pagl_Program* shader, bool scissor,
     i32 uniform_count, ...)
 {
     GLint last_program, last_texture;
@@ -219,7 +146,7 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
     else{ GLCHK( glDisable(GL_SCISSOR_TEST) ); }
 
     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_handle) );
-    GLCHK( glUseProgram(shader.handle) );
+    GLCHK( glUseProgram(shader->id) );
 
     // Uniforms
     {
@@ -228,23 +155,23 @@ void gl::draw_mesh(Mesh& mesh, Shader& shader, bool scissor,
         for (i32 i = 0; i < uniform_count; i++) {
             switch (va_arg(args, int)) {
             case UniformType_Float: {
-                GLCHK( glUniform1f(shader.uniforms[i],
+                GLCHK( glUniform1f(shader->uniforms[i],
                     (float)va_arg(args, double)) );
             } break;
 
             case UniformType_Matrix4: {
-                GLCHK( glUniformMatrix4fv(shader.uniforms[i], 1, GL_FALSE,
+                GLCHK( glUniformMatrix4fv(shader->uniforms[i], 1, GL_FALSE,
                     va_arg(args, float*)) );
             } break;
 
             case UniformType_Vec2: {
                 Vec2 vec = va_arg(args, Vec2);
-                GLCHK( glUniform2f(shader.uniforms[i], vec.x, vec.y) );
+                GLCHK( glUniform2f(shader->uniforms[i], vec.x, vec.y) );
             } break;
 
             case UniformType_Color: {
                 Color col = va_arg(args, Color);
-                GLCHK( glUniform4f(shader.uniforms[i], col.r, col.g, col.b,
+                GLCHK( glUniform4f(shader->uniforms[i], col.r, col.g, col.b,
                     col.a) );
             } break;
             }
