@@ -1388,22 +1388,22 @@ static void compile_shaders(PapayaMemory* mem)
 {
     // TODO: Move the GLSL strings to their respective cpp files
     const char* vertex_src =
-"   #version 120                                       \n"
-"   uniform mat4 ProjMtx;    // Uniforms[0]            \n"
-"                                                      \n"
-"   attribute vec2 Position; // Attributes[0]          \n"
-"   attribute vec2 UV;       // Attributes[1]          \n"
-"   attribute vec4 Color;    // Attributes[2]          \n"
-"                                                      \n"
-"   varying vec2 Frag_UV;                              \n"
-"   varying vec4 Frag_Color;                           \n"
-"                                                      \n"
-"   void main()                                        \n"
-"   {                                                  \n"
-"       Frag_UV = UV;                                  \n"
-"       Frag_Color = Color;                            \n"
-"       gl_Position = ProjMtx * vec4(Position.xy,0,1); \n"
-"   }                                                  \n";
+"   #version 120                                                            \n"
+"   uniform mat4 proj_mtx; // uniforms[0]                                   \n"
+"                                                                           \n"
+"   attribute vec2 pos;    // attributes[0]                                 \n"
+"   attribute vec2 uv;     // attributes[1]                                 \n"
+"   attribute vec4 col;    // attributes[2]                                 \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"   varying vec4 frag_col;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       frag_uv = uv;                                                       \n"
+"       frag_col = col;                                                     \n"
+"       gl_Position = proj_mtx * vec4(pos.xy, 0, 1);                        \n"
+"   }                                                                       \n";
 
     u32 vert = pagl_compile_shader("default vertex", vertex_src,
                                    GL_VERTEX_SHADER);
@@ -1414,27 +1414,25 @@ static void compile_shaders(PapayaMemory* mem)
 "                                                                           \n"
 "   #define M_PI 3.1415926535897932384626433832795                          \n"
 "                                                                           \n"
-"   uniform sampler2D Texture; // Uniforms[1]                               \n"
-"   uniform vec2 Pos;          // Uniforms[2]                               \n"
-"   uniform vec2 LastPos;      // Uniforms[3]                               \n"
-"   uniform float Radius;      // Uniforms[4]                               \n"
-"   uniform vec4 BrushColor;   // Uniforms[5]                               \n"
-"   uniform float Hardness;    // Uniforms[6]                               \n"
-"   uniform float InvAspect;   // Uniforms[7]                               \n"
+"   uniform sampler2D tex;    // uniforms[1]                                \n"
+"   uniform vec2 cur_pos;     // uniforms[2]                                \n"
+"   uniform vec2 last_pos;    // uniforms[3]                                \n"
+"   uniform float radius;     // uniforms[4]                                \n"
+"   uniform vec4 brush_col;   // uniforms[5]                                \n"
+"   uniform float hardness;   // uniforms[6]                                \n"
+"   uniform float inv_aspect; // uniforms[7]                                \n"
 "                                                                           \n"
-"   varying vec2 Frag_UV;                                                   \n"
+"   varying vec2 frag_uv;                                                   \n"
 "                                                                           \n"
-"   bool isnan( float val )                                                 \n"
+"   bool isnan(float val)                                                   \n"
 "   {                                                                       \n"
-"       return ( val < 0.0 || 0.0 < val || val == 0.0 ) ?                   \n"
-"       false : true;                                                       \n"
+"       return !( val < 0.0 || 0.0 < val || val == 0.0 );                   \n"
 "   }                                                                       \n"
 "                                                                           \n"
 "   void line(vec2 p1, vec2 p2, vec2 uv, float radius,                      \n"
 "             out float distLine, out float distp1)                         \n"
 "   {                                                                       \n"
-"       if (distance(p1,p2) <= 0.0)                                         \n"
-"       {                                                                   \n"
+"       if (distance(p1,p2) <= 0.0) {                                       \n"
 "           distLine = distance(uv, p1);                                    \n"
 "           distp1 = 0.0;                                                   \n"
 "           return;                                                         \n"
@@ -1448,15 +1446,13 @@ static void compile_shaders(PapayaMemory* mem)
 "       vec2 a1 = normalize(uv - p1);                                       \n"
 "       vec2 b1 = normalize(uv - p2);                                       \n"
 "       vec2 c1 = normalize(p2 - p1);                                       \n"
-"       if (dot(a1,c1) < 0.0)                                               \n"
-"       {                                                                   \n"
+"       if (dot(a1,c1) < 0.0) {                                             \n"
 "           distLine = a;                                                   \n"
 "           distp1 = 0.0;                                                   \n"
 "           return;                                                         \n"
 "       }                                                                   \n"
 "                                                                           \n"
-"       if (dot(b1,c1) > 0.0)                                               \n"
-"       {                                                                   \n"
+"       if (dot(b1,c1) > 0.0) {                                             \n"
 "           distLine = b;                                                   \n"
 "           distp1 = 1.0;                                                   \n"
 "           return;                                                         \n"
@@ -1465,13 +1461,10 @@ static void compile_shaders(PapayaMemory* mem)
 "       float p = (a + b + c) * 0.5;                                        \n"
 "       float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );              \n"
 "                                                                           \n"
-"       if (isnan(h))                                                       \n"
-"       {                                                                   \n"
+"       if (isnan(h)) {                                                     \n"
 "           distLine = 0.0;                                                 \n"
 "           distp1 = a / c;                                                 \n"
-"       }                                                                   \n"
-"       else                                                                \n"
-"       {                                                                   \n"
+"       } else {                                                            \n"
 "           distLine = h;                                                   \n"
 "           distp1 = sqrt(a*a - h*h) / c;                                   \n"
 "       }                                                                   \n"
@@ -1479,335 +1472,335 @@ static void compile_shaders(PapayaMemory* mem)
 "                                                                           \n"
 "   void main()                                                             \n"
 "   {                                                                       \n"
-"       vec4 t = texture2D(Texture, Frag_UV.st);                            \n"
+"       vec4 t = texture2D(tex, frag_uv.st);                                \n"
 "                                                                           \n"
 "       float distLine, distp1;                                             \n"
-"       vec2 aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);             \n"
-"       line(LastPos, Pos, aspectUV, Radius, distLine, distp1);             \n"
+"       vec2 aspect_uv = vec2(frag_uv.x, frag_uv.y * inv_aspect);           \n"
+"       line(last_pos, cur_pos, aspect_uv, radius, distLine, distp1);       \n"
 "                                                                           \n"
-"       float Scale = 1.0 / (2.0 * Radius * (1.0 - Hardness));              \n"
-"       float Period = M_PI * Scale;                                        \n"
-"       float Phase = (1.0 - Scale * 2.0 * Radius) * M_PI * 0.5;            \n"
-"       float Alpha = cos((Period * distLine) + Phase);                     \n"
-"       if (distLine < Radius - (0.5/Scale)) Alpha = 1.0;                   \n"
-"       if (distLine > Radius) Alpha = 0.0;                                 \n"
+"       float scale = 1.0 / (2.0 * radius * (1.0 - hardness));              \n"
+"       float period = M_PI * scale;                                        \n"
+"       float phase = (1.0 - scale * 2.0 * radius) * M_PI * 0.5;            \n"
+"       float alpha = cos((period * distLine) + phase);                     \n"
 "                                                                           \n"
-"       float FinalAlpha = max(t.a, Alpha * BrushColor.a);                  \n"
+"       if (distLine < radius - (0.5/scale)) {                              \n"
+"           alpha = 1.0;                                                    \n"
+"       } else if (distLine > radius) {                                     \n"
+"           alpha = 0.0;                                                    \n"
+"       }                                                                   \n"
+"                                                                           \n"
+"       float final_alpha = max(t.a, alpha * brush_col.a);                  \n"
 "                                                                           \n"
 "       // TODO: Needs improvement. Self-intersection corners look weird.   \n"
-"       gl_FragColor = vec4(BrushColor.r,                                   \n"
-"                           BrushColor.g,                                   \n"
-"                           BrushColor.b,                                   \n"
-"                           clamp(FinalAlpha,0.0,1.0));                     \n"
+"       gl_FragColor = vec4(brush_col.rgb,                                  \n"
+"                           clamp(final_alpha,0.0,1.0));                    \n"
 "   }                                                                       \n";
         const char* name = "brush stroke";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_Brush] =
             pagl_init_program(name, vert, frag, 2, 8,
-                              "Position", "UV",
-                              "ProjMtx", "Texture", "Pos", "LastPos", "Radius",
-                              "BrushColor", "Hardness", "InvAspect");
+                              "pos", "uv",
+                              "proj_mtx", "tex", "cur_pos", "last_pos",
+                              "radius", "brush_col", "hardness", "inv_aspect");
     }
 
     // Brush cursor
     {
         const char* frag_src =
-"   #version 120                                                                \n"
-"                                                                               \n"
-"   #define M_PI 3.1415926535897932384626433832795                              \n"
-"                                                                               \n"
-"   uniform vec4 BrushColor;                                                    \n"
-"   uniform float Hardness;                                                     \n"
-"   uniform float PixelDiameter;                                                \n"
-"                                                                               \n"
-"   varying vec2 Frag_UV;                                                       \n"
-"                                                                               \n"
-"                                                                               \n"
-"   void main()                                                                 \n"
-"   {                                                                           \n"
-"       float Scale = 1.0 / (1.0 - Hardness);                                   \n"
-"       float Period = M_PI * Scale;                                            \n"
-"       float Phase = (1.0 - Scale) * M_PI * 0.5;                               \n"
-"       float Dist = distance(Frag_UV,vec2(0.5,0.5));                           \n"
-"       float Alpha = cos((Period * Dist) + Phase);                             \n"
-"       if (Dist < 0.5 - (0.5/Scale)) Alpha = 1.0;                              \n"
-"       else if (Dist > 0.5)          Alpha = 0.0;                              \n"
-"       float BorderThickness = 1.0 / PixelDiameter;                            \n"
-"       gl_FragColor = (Dist > 0.5 - BorderThickness && Dist < 0.5) ?           \n"
-"       vec4(0.0,0.0,0.0,1.0) :                                                 \n"
-"       vec4(BrushColor.r, BrushColor.g, BrushColor.b,  Alpha * BrushColor.a);  \n"
-"   }                                                                           \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   #define M_PI 3.1415926535897932384626433832795                          \n"
+"                                                                           \n"
+"   uniform vec4 brush_col;                                                 \n"
+"   uniform float hardness;                                                 \n"
+"   uniform float pixel_sz; // Size in pixels                               \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"                                                                           \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       float scale = 1.0 / (1.0 - hardness);                               \n"
+"       float period = M_PI * scale;                                        \n"
+"       float phase = (1.0 - scale) * M_PI * 0.5;                           \n"
+"       float dist = distance(frag_uv, vec2(0.5,0.5));                      \n"
+"       float alpha = cos((period * dist) + phase);                         \n"
+"       if (dist < 0.5 - (0.5/scale)) {                                     \n"
+"           alpha = 1.0;                                                    \n"
+"       } else if (dist > 0.5) {                                            \n"
+"           alpha = 0.0;                                                    \n"
+"       }                                                                   \n"
+"       float border = 1.0 / pixel_sz; // Thickness of border               \n"
+"       gl_FragColor = (dist > 0.5 - border && dist < 0.5) ?                \n"
+"           vec4(0.0,0.0,0.0,1.0) :                                         \n"
+"           vec4(brush_col.rgb, alpha * brush_col.a);                       \n"
+"   }                                                                       \n";
 
         const char* name = "brush cursor";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_BrushCursor] =
             pagl_init_program(name, vert, frag, 2, 4,
-                              "Position", "UV",
-                              "ProjMtx", "BrushColor", "Hardness",
-                              "PixelDiameter");
+                              "pos", "uv",
+                              "proj_mtx", "brush_col", "hardness",
+                              "pixel_sz");
     }
 
     // Eye dropper cursor
     {
         const char* frag_src =
-"   #version 120                                              \n"
-"                                                             \n"
-"   uniform vec4 Color1; // Uniforms[1]                       \n"
-"   uniform vec4 Color2; // Uniforms[2]                       \n"
-"                                                             \n"
-"   varying vec2 Frag_UV;                                     \n"
-"                                                             \n"
-"   void main()                                               \n"
-"   {                                                         \n"
-"       float d = length(vec2(0.5,0.5) - Frag_UV);            \n"
-"       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);  \n"
-"       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);     \n"
-"       gl_FragColor = (Frag_UV.y < 0.5) ? Color1 : Color2;   \n"
-"       gl_FragColor.a = t;                                   \n"
-"   }                                                         \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform vec4 col1; // Uniforms[1]                                       \n"
+"   uniform vec4 col2; // Uniforms[2]                                       \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       float d = length(vec2(0.5,0.5) - frag_uv);                          \n"
+"       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);                \n"
+"       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);                   \n"
+"       gl_FragColor = (frag_uv.y < 0.5) ? col1: col2;                      \n"
+"       gl_FragColor.a = t;                                                 \n"
+"   }                                                                       \n";
 
         const char* name = "eye dropper cursor";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_EyeDropperCursor] =
             pagl_init_program(name, vert, frag, 2, 3,
-                              "Position", "UV",
-                              "ProjMtx", "Color1", "Color2");
+                              "pos", "uv",
+                              "proj_mtx", "col1", "col2");
     }
 
     // Color picker SV box
+    //  Source: Fast branchless RGB to HSV conversion in GLSL
+    //  http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
     {
         const char* frag_src =
-"   #version 120                                                             \n"
-"                                                                            \n"
-"   uniform float Hue;   // Uniforms[1]                                      \n"
-"   uniform vec2 Cursor; // Uniforms[2]                                      \n"
-"   uniform float Thickness = 1.0 / 256.0;                                   \n"
-"   uniform float Radius = 0.0075;                                           \n"
-"                                                                            \n"
-"   varying  vec2 Frag_UV;                                                   \n"
-"                                                                            \n"
-"   // Source: Fast branchless RGB to HSV conversion in GLSL                 \n"
-"   // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl               \n"
-"                                                                            \n"
-"   vec3 hsv2rgb(vec3 c)                                                     \n"
-"   {                                                                        \n"
-"       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                       \n"
-"       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);                    \n"
-"       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);            \n"
-"   }                                                                        \n"
-"                                                                            \n"
-"   void main()                                                              \n"
-"   {                                                                        \n"
-"       vec3 RGB = hsv2rgb(vec3(Hue, Frag_UV.x, 1.0 - Frag_UV.y));           \n"
-"       vec2 CursorInv = vec2(Cursor.x, 1.0 - Cursor.y);                     \n"
-"       float Dist = distance(Frag_UV, CursorInv);                           \n"
-"                                                                            \n"
-"       if (Dist > Radius && Dist < Radius + Thickness)                      \n"
-"       {                                                                    \n"
-"           float a = (CursorInv.x < 0.4 && CursorInv.y > 0.6) ? 0.0 : 1.0;  \n"
-"           gl_FragColor = vec4(a, a, a, 1.0);                               \n"
-"       }                                                                    \n"
-"       else                                                                 \n"
-"       {                                                                    \n"
-"           gl_FragColor = vec4(RGB.x, RGB.y, RGB.z, 1.0);                   \n"
-"       }                                                                    \n"
-"   }                                                                        \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform float hue;   // Uniforms[1]                                     \n"
+"   uniform vec2 cursor; // Uniforms[2]                                     \n"
+"   uniform float thickness = 1.0 / 256.0;                                  \n"
+"   uniform float radius = 0.0075;                                          \n"
+"                                                                           \n"
+"   varying  vec2 frag_uv;                                                  \n"
+"                                                                           \n"
+"                                                                           \n"
+"   vec3 hsv2rgb(vec3 c)                                                    \n"
+"   {                                                                       \n"
+"       vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
+"       vec3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);                   \n"
+"       return c.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), c.y);           \n"
+"   }                                                                       \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec3 rgb = hsv2rgb(vec3(hue, frag_uv.x, 1.0 - frag_uv.y));          \n"
+"       vec2 inv = vec2(cursor.x, 1.0 - cursor.y);                          \n"
+"       float dist = distance(frag_uv, inv);                                \n"
+"                                                                           \n"
+"       if (dist > radius && dist < radius + thickness) {                   \n"
+"           float a = (inv.x < 0.4 && inv.y > 0.6) ? 0.0 : 1.0;             \n"
+"           gl_FragColor = vec4(a, a, a, 1.0);                              \n"
+"       } else {                                                            \n"
+"           gl_FragColor = vec4(rgb.x, rgb.y, rgb.z, 1.0);                  \n"
+"       }                                                                   \n"
+"   }                                                                       \n";
 
         const char* name = "color picker SV box";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_PickerSVBox] =
             pagl_init_program(name, vert, frag, 2, 3,
-                              "Position", "UV",
-                              "ProjMtx", "Hue", "Cursor");
+                              "pos", "uv",
+                              "proj_mtx", "hue", "cursor");
     }
 
     // Color picker hue strip
     {
         const char* frag_src =
-"   #version 120                                                          \n"
-"                                                                         \n"
-"   uniform float Cursor; // Uniforms[1]                                  \n"
-"                                                                         \n"
-"   varying  vec2 Frag_UV;                                                \n"
-"                                                                         \n"
-"   // Source: Fast branchless RGB to HSV conversion in GLSL              \n"
-"   // http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl            \n"
-"                                                                         \n"
-"   vec3 hsv2rgb(vec3 c)                                                  \n"
-"   {                                                                     \n"
-"       vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                    \n"
-"       vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);                 \n"
-"       return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);         \n"
-"   }                                                                     \n"
-"                                                                         \n"
-"   void main()                                                           \n"
-"   {                                                                     \n"
-"       vec4 Hue = vec4(hsv2rgb(vec3(1.0-Frag_UV.y, 1.0, 1.0))            \n"
-"                  .xyz,1.0);                                             \n"
-"       if (abs(0.5 - Frag_UV.x) > 0.3333)                                \n"
-"       {                                                                 \n"
-"           gl_FragColor = vec4(0.36,0.36,0.37,                           \n"
-"                       float(abs(1.0-Frag_UV.y-Cursor) < 0.0039));       \n"
-"       }                                                                 \n"
-"       else                                                              \n"
-"           gl_FragColor = Hue;                                           \n"
-"   }                                                                     \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform float cursor; // Uniforms[1]                                    \n"
+"                                                                           \n"
+"   varying  vec2 frag_uv;                                                  \n"
+"                                                                           \n"
+"   vec3 hsv2rgb(vec3 c)                                                    \n"
+"   {                                                                       \n"
+"       vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
+"       vec3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);                   \n"
+"       return c.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), c.y);           \n"
+"   }                                                                       \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec4 hue = vec4(hsv2rgb(vec3(1.0-frag_uv.y, 1.0, 1.0))              \n"
+"                  .xyz,1.0);                                               \n"
+"       if (abs(0.5 - frag_uv.x) > 0.3333) {                                \n"
+"           gl_FragColor = vec4(0.36,0.36,0.37,                             \n"
+"                               float(abs(1.0-frag_uv.y-cursor) < 0.0039)); \n"
+"       } else {                                                            \n"
+"           gl_FragColor = hue;                                             \n"
+"       }                                                                   \n"
+"   }                                                                       \n";
 
         const char* name = "color picker hue strip";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_PickerHStrip] =
             pagl_init_program(name, vert, frag, 2, 2,
-                              "Position", "UV",
-                              "ProjMtx", "Cursor");
+                              "pos", "uv",
+                              "proj_mtx", "cursor");
     }
 
     // New image preview
     {
         const char* frag_src =
-"   #version 120                                                       \n"
-"                                                                      \n"
-"   uniform vec4  Color1; // Uniforms[1]                               \n"
-"   uniform vec4  Color2; // Uniforms[2]                               \n"
-"   uniform float width;  // Uniforms[3]                               \n"
-"   uniform float height; // Uniforms[4]                               \n"
-"                                                                      \n"
-"   varying  vec2 Frag_UV;                                             \n"
-"                                                                      \n"
-"   void main()                                                        \n"
-"   {                                                                  \n"
-"       float d = mod(Frag_UV.x * width + Frag_UV.y * height, 150);    \n"
-"       if (d < 75)                                                    \n"
-"           gl_FragColor = Color1;                                     \n"
-"       else                                                           \n"
-"           gl_FragColor = Color2;                                     \n"
-"   }                                                                  \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform vec4  col1;   // Uniforms[1]                                    \n"
+"   uniform vec4  col2;   // Uniforms[2]                                    \n"
+"   uniform float width;  // Uniforms[3]                                    \n"
+"   uniform float height; // Uniforms[4]                                    \n"
+"                                                                           \n"
+"   varying  vec2 frag_uv;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       float d = mod(frag_uv.x * width + frag_uv.y * height, 150);         \n"
+"       gl_FragColor = (d < 75) ? col1 : col2;                              \n"
+"   }                                                                       \n";
         const char* name = "new-image preview";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_ImageSizePreview] =
             pagl_init_program(name, vert, frag, 2, 5,
-                              "Position", "UV",
-                              "ProjMtx", "Color1", "Color2", "width", "height");
+                              "pos", "uv",
+                              "proj_mtx", "col1", "col2", "width", "height");
     }
 
     // Alpha grid
     {
         const char* frag_src =
-"   #version 120                                                  \n"
-"                                                                 \n"
-"   uniform vec4  Color1;    // Uniforms[1]                       \n"
-"   uniform vec4  Color2;    // Uniforms[2]                       \n"
-"   uniform float Zoom;      // Uniforms[3]                       \n"
-"   uniform float InvAspect; // Uniforms[4]                       \n"
-"   uniform float MaxDim;    // Uniforms[5]                       \n"
-"                                                                 \n"
-"   varying  vec2 Frag_UV;                                        \n"
-"                                                                 \n"
-"   void main()                                                   \n"
-"   {                                                             \n"
-"       vec2 aspectUV;                                            \n"
-"       if (InvAspect < 1.0)                                      \n"
-"           aspectUV = vec2(Frag_UV.x, Frag_UV.y * InvAspect);    \n"
-"       else                                                      \n"
-"           aspectUV = vec2(Frag_UV.x / InvAspect, Frag_UV.y);    \n"
-"       vec2 uv = floor(aspectUV.xy * 0.1 * MaxDim * Zoom);       \n"
-"       float a = mod(uv.x + uv.y, 2.0);                          \n"
-"       gl_FragColor = mix(Color1, Color2, a);                    \n"
-"   }                                                             \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform vec4  col1;       // Uniforms[1]                                \n"
+"   uniform vec4  col2;       // Uniforms[2]                                \n"
+"   uniform float zoom;       // Uniforms[3]                                \n"
+"   uniform float inv_aspect; // Uniforms[4]                                \n"
+"   uniform float max_dim;    // Uniforms[5]                                \n"
+"                                                                           \n"
+"   varying  vec2 frag_uv;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec2 aspect_uv;                                                     \n"
+"       if (inv_aspect < 1.0) {                                             \n"
+"           aspect_uv = vec2(frag_uv.x, frag_uv.y * inv_aspect);            \n"
+"       } else {                                                            \n"
+"           aspect_uv = vec2(frag_uv.x / inv_aspect, frag_uv.y);            \n"
+"       }                                                                   \n"
+"       vec2 uv = floor(aspect_uv.xy * 0.1 * max_dim * zoom);               \n"
+"       float a = mod(uv.x + uv.y, 2.0);                                    \n"
+"       gl_FragColor = mix(col1, col2, a);                                  \n"
+"   }                                                                       \n";
         const char* name = "alpha grid";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_AlphaGrid] =
             pagl_init_program(name, vert, frag, 2, 6,
-                              "Position", "UV",
-                              "ProjMtx", "Color1", "Color2", "Zoom",
-                              "InvAspect", "MaxDim");
+                              "pos", "uv",
+                              "proj_mtx", "col1", "col2", "zoom",
+                              "inv_aspect", "max_dim");
     }
 
     // PreMultiply alpha
     {
         const char* frag_src =
-"   #version 120                                                   \n"
-"   uniform sampler2D Texture; // Uniforms[1]                      \n"
-"                                                                  \n"
-"   varying vec2 Frag_UV;                                          \n"
-"   varying vec4 Frag_Color;                                       \n"
-"                                                                  \n"
-"   void main()                                                    \n"
-"   {                                                              \n"
-"       vec4 col = Frag_Color * texture2D( Texture, Frag_UV.st);   \n"
-"       gl_FragColor = vec4(col.r, col.g, col.b, 1.0) * col.a;     \n"
-"   }                                                              \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform sampler2D tex; // Uniforms[1]                                   \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"   varying vec4 frag_col;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec4 col = frag_col * texture2D( tex, frag_uv.st);                  \n"
+"       gl_FragColor = vec4(col.r, col.g, col.b, 1.0) * col.a;              \n"
+"   }                                                                       \n";
         const char* name = "premultiply alpha";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_PreMultiplyAlpha] =
             pagl_init_program(name, vert, frag, 3, 2,
-                              "Position", "UV", "Color",
-                              "ProjMtx", "Texture");
+                              "pos", "uv", "col",
+                              "proj_mtx", "tex");
     }
 
     // DeMultiply alpha
     {
         const char* frag_src =
-"   #version 120                                                    \n"
-"   uniform sampler2D Texture; // Uniforms[1]                       \n"
-"                                                                   \n"
-"   varying vec2 Frag_UV;                                           \n"
-"   varying vec4 Frag_Color;                                        \n"
-"                                                                   \n"
-"   void main()                                                     \n"
-"   {                                                               \n"
-"       vec4 col = Frag_Color * texture2D( Texture, Frag_UV.st);    \n"
-"       gl_FragColor = vec4(col.rgb/col.a, col.a);                  \n"
-"   }                                                               \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform sampler2D tex; // Uniforms[1]                                   \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"   varying vec4 frag_col;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec4 col = frag_col * texture2D( tex, frag_uv.st);                  \n"
+"       gl_FragColor = vec4(col.rgb/col.a, col.a);                          \n"
+"   }                                                                       \n";
 
         const char* name = "demultiply alpha";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_DeMultiplyAlpha] =
             pagl_init_program(name, vert, frag, 3, 2,
-                              "Position", "UV", "Color",
-                              "ProjMtx", "Texture");
+                              "pos", "uv", "col",
+                              "proj_mtx", "tex");
     }
 
     // default fragment
     {
         const char* frag_src =
-"   #version 120                                                       \n"
-"   uniform sampler2D Texture; // Uniforms[1]                          \n"
-"                                                                      \n"
-"   varying vec2 Frag_UV;                                              \n"
-"   varying vec4 Frag_Color;                                           \n"
-"                                                                      \n"
-"   void main()                                                        \n"
-"   {                                                                  \n"
-"       gl_FragColor = Frag_Color * texture2D( Texture, Frag_UV.st);   \n"
-"   }                                                                  \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform sampler2D tex; // Uniforms[1]                                   \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"   varying vec4 frag_col;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       gl_FragColor = frag_col * texture2D( tex, frag_uv.st);              \n"
+"   }                                                                       \n";
 
         const char* name = "default fragment";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_ImGui] =
             pagl_init_program(name, vert, frag, 3, 2,
-                              "Position", "UV", "Color",
-                              "ProjMtx", "Texture");
+                              "pos", "uv", "col",
+                              "proj_mtx", "tex");
     }
 
     // Unlit shader
     {
         const char* frag_src =
-"   #version 120                                 \n"
-"   uniform sampler2D Texture; // Uniforms[1]    \n"
-"                                                \n"
-"   varying vec2 Frag_UV;                        \n"
-"   varying vec4 Frag_Color;                     \n"
-"                                                \n"
-"   void main()                                  \n"
-"   {                                            \n"
-"       gl_FragColor = Frag_Color;               \n"
-"   }                                            \n";
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform sampler2D tex; // Uniforms[1]                                   \n"
+"                                                                           \n"
+"   varying vec2 frag_uv;                                                   \n"
+"   varying vec4 frag_col;                                                  \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       gl_FragColor = frag_col;                                            \n"
+"   }                                                                       \n";
 
         const char* name = "unlit";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_VertexColor] =
             pagl_init_program(name, vert, frag, 3, 2,
-                              "Position", "UV", "Color",
-                              "ProjMtx", "Texture");
+                              "pos", "uv", "col",
+                              "proj_mtx", "tex");
     }
 }
