@@ -337,6 +337,9 @@ void core::destroy(PapayaMemory* mem)
     for (i32 i = 0; i < PapayaShader_COUNT; i++) {
         pagl_destroy_program(mem->shaders[i]);
     }
+    for (i32 i = 0; i < PapayaMesh_COUNT; i++) {
+        pagl_destroy_mesh(mem->meshes[i]);
+    }
 
     pagl_destroy();
 }

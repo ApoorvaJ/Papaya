@@ -296,23 +296,20 @@ void pagl_set_vertex_attribs(Pagl_Program* p)
         GLCHK( glEnableVertexAttribArray(a[i]) );
     }
 
-    //TODO: Remove macro
-#define OFFSETOF(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
     // Pos
     GLCHK( glVertexAttribPointer(a[0], 2, GL_FLOAT, GL_FALSE,
                                  sizeof(ImDrawVert),
-                                 (GLvoid*)OFFSETOF(ImDrawVert, pos)) );
+                                 (GLvoid*)offsetof(ImDrawVert, pos)) );
     // UV
     GLCHK( glVertexAttribPointer(a[1], 2, GL_FLOAT, GL_FALSE,
                                  sizeof(ImDrawVert),
-                                 (GLvoid*)OFFSETOF(ImDrawVert, uv)) );
+                                 (GLvoid*)offsetof(ImDrawVert, uv)) );
     if (p->num_attribs > 2) {
         // Color attribute
         GLCHK( glVertexAttribPointer(a[2], 4, GL_UNSIGNED_BYTE, GL_TRUE,
                                      sizeof(ImDrawVert),
-                                     (GLvoid*)OFFSETOF(ImDrawVert, col)) );
+                                     (GLvoid*)offsetof(ImDrawVert, col)) );
     }
-#undef OFFSETOF
 }
 
 
