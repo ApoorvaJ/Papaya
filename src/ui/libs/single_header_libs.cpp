@@ -22,9 +22,6 @@
 #include "easykey.h"
 #endif // PAPAYA_NO_EASYKEY_SUPPORT
 
-#define GL_UTIL_IMPLEMENTATION
-#include "gl_util.h"
-
 #define GL_LITE_IMPLEMENTATION
 #include "gl_lite.h"
 

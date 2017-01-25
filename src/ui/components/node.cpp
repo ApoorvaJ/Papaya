@@ -1,7 +1,8 @@
 
 #include "node.h"
 #include "ui.h"
-#include "libs/gl_util.h"
+#include "pagl.h"
+#include "gl_lite.h"
 
 Node* node::init(const char* name, Vec2 pos, u8* img, PapayaMemory* mem)
 {
@@ -16,7 +17,7 @@ Node* node::init(const char* name, Vec2 pos, u8* img, PapayaMemory* mem)
     n->is_active = true;
 
     // Allocate GPU texture
-    n->tex_id = gl::allocate_tex(mem->cur_doc->width, mem->cur_doc->height, img);
+    n->tex_id = pagl_alloc_texture(mem->cur_doc->width, mem->cur_doc->height, img);
 
     // Register in current doc
     mem->cur_doc->nodes[mem->cur_doc->node_count] = n; // TODO: Array bounds check

@@ -17,8 +17,6 @@
 #include "libs/easykey.h"
 #include "ui.h"
 
-#define GLEW_NO_GLU
-
 #define PAPAYA_DEFAULT_IMAGE "/home/apoorvaj/Pictures/o1.png"
 
 
@@ -367,7 +365,7 @@ int main(int argc, char **argv)
         if (SleepTime > 0) { usleep((u32)SleepTime * 1000); }
     }
 
-    //core::destroy(&mem);
+    core::destroy(mem);
     EasyTab_Unload();
 
     return 0;

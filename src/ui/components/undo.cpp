@@ -3,8 +3,8 @@
 
 #include "undo.h"
 #include "libs/mathlib.h"
-#include "libs/gl_util.h"
 #include "ui.h"
+#include "gl_lite.h"
 
 void undo::init(PapayaMemory* mem)
 {
@@ -31,8 +31,8 @@ void undo::init(PapayaMemory* mem)
                                   1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
 
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER,
-                            mem->meshes[PapayaMesh_RTTAdd].vbo_handle) );
-        gl::set_vertex_attribs(mem->shaders[PapayaShader_ImGui]);
+                            mem->meshes[PapayaMesh_RTTAdd]->vbo_handle) );
+        pagl_set_vertex_attribs(mem->shaders[PapayaShader_ImGui]);
 
         // GLCHK( glBindTexture(GL_TEXTURE_2D,
         //                      (GLuint)(intptr_t)mem->cur_doc->texture_id) );

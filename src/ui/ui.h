@@ -5,7 +5,6 @@
 #endif // !_DEBUG
 
 #include "libs/types.h"
-#include "libs/gl_util.h"
 #include "pagl.h"
 #include "libs/timer.h"
 #include "libs/easytab.h"
@@ -199,7 +198,8 @@ struct PapayaMemory {
 
     u32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
-    Mesh meshes[PapayaMesh_COUNT];
+    Pagl_Mesh* meshes[PapayaMesh_COUNT]; // TODO: Instead of array,
+                                         //       move to respective files
     Pagl_Program* shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;

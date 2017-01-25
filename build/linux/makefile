@@ -40,5 +40,4 @@ misc_data: ../../img/ui.png
 
 clean:
 	rm -f *.d *.o *.png papaya
-	rm -rf shaders
 
