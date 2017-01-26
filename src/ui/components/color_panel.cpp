@@ -6,7 +6,8 @@
 #include "pagl.h"
 #include "gl_lite.h"
 
-static void compile_shaders(ColorPanel* c, u32 vertex_shader);
+static PaglProgram* compile_hue_shader(u32 vertex_shader);
+static PaglProgram* compile_sat_val_shader(u32 vertex_shader);
 
 ColorPanel* init_color_panel(PapayaMemory* mem)
 {
@@ -27,7 +28,8 @@ ColorPanel* init_color_panel(PapayaMemory* mem)
     c->mesh_sat_val = pagl_init_quad_mesh(c->pos + c->sv_box_pos,
                                           c->sv_box_size,
                                           GL_STATIC_DRAW);
-    compile_shaders(c, mem->misc.vertex_shader);
+    c->pgm_hue = compile_hue_shader(mem->misc.vertex_shader);
+    c->pgm_sat_val = compile_sat_val_shader(mem->misc.vertex_shader);
     return c;
 }
 
@@ -273,12 +275,9 @@ void render_color_panel(PapayaMemory* mem)
                    Pagl_UniformType_Vec2, mem->color_panel->cursor_sv);
 }
 
-static void compile_shaders(ColorPanel* c, u32 vertex_shader)
+static PaglProgram* compile_hue_shader(u32 vertex_shader)
 {
-
-    // Color picker hue strip
-    {
-        const char* frag_src =
+    const char* frag_src =
 "   #version 120                                                            \n"
 "                                                                           \n"
 "   uniform float cursor; // Uniforms[1]                                    \n"
@@ -304,18 +303,18 @@ static void compile_shaders(ColorPanel* c, u32 vertex_shader)
 "       }                                                                   \n"
 "   }                                                                       \n";
 
-        const char* name = "color picker hue strip";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        c->pgm_hue = pagl_init_program(name, vertex_shader, frag, 2, 2,
-                                       "pos", "uv",
-                                       "proj_mtx", "cursor");
-    }
+    const char* name = "color picker hue strip";
+    u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
+    return pagl_init_program(name, vertex_shader, frag, 2, 2,
+                             "pos", "uv",
+                             "proj_mtx", "cursor");
+}
 
-    // Color picker SV box
+static PaglProgram* compile_sat_val_shader(u32 vertex_shader)
+{
     //  Source: Fast branchless RGB to HSV conversion in GLSL
     //  http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
-    {
-        const char* frag_src =
+    const char* frag_src =
 "   #version 120                                                            \n"
 "                                                                           \n"
 "   uniform float hue;   // Uniforms[1]                                     \n"
@@ -347,10 +346,9 @@ static void compile_shaders(ColorPanel* c, u32 vertex_shader)
 "       }                                                                   \n"
 "   }                                                                       \n";
 
-        const char* name = "color picker SV box";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        c->pgm_sat_val = pagl_init_program(name, vertex_shader, frag, 2, 3,
-                                           "pos", "uv",
-                                           "proj_mtx", "hue", "cursor");
-    }
+    const char* name = "color picker SV box";
+    u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
+    return pagl_init_program(name, vertex_shader, frag, 2, 3,
+                             "pos", "uv",
+                             "proj_mtx", "hue", "cursor");
 }

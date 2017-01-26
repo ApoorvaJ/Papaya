@@ -15,9 +15,12 @@
 #include "components/undo.h"
 
 struct ImDrawData;
+
+struct Brush;
 struct ColorPanel;
 struct EyeDropper;
 struct GraphPanel;
+
 struct PapayaDocument;
 struct PaglMesh;
 struct PaglProgram;
@@ -47,9 +50,7 @@ enum PapayaMesh_ {
     PapayaMesh_Canvas,
     PapayaMesh_ImageSizePreview,
     PapayaMesh_AlphaGrid,
-    PapayaMesh_BrushCursor,
     PapayaMesh_CropOutline,
-    PapayaMesh_RTTBrush,
     PapayaMesh_RTTAdd,
     PapayaMesh_COUNT
 };
@@ -58,8 +59,6 @@ enum PapayaShader_ {
     PapayaShader_ImGui,
     PapayaShader_VertexColor,
     PapayaShader_ImageSizePreview,
-    PapayaShader_Brush,
-    PapayaShader_BrushCursor,
     PapayaShader_AlphaGrid,
     PapayaShader_PreMultiplyAlpha,
     PapayaShader_DeMultiplyAlpha,
@@ -130,30 +129,6 @@ struct Tablet {
     i32 buttons;
 };
 
-struct Brush {
-    i32 diameter;
-    i32 max_diameter;
-    f32 opacity; // Range: [0.0, 1.0]
-    f32 hardness; // Range: [0.0, 1.0]
-    bool anti_alias;
-
-    Vec2i paint_area_1, paint_area_2;
-
-    // TODO: Move some of this stuff to the Mouse struct?
-    Vec2i rt_drag_start_pos;
-    bool rt_drag_with_shift;
-    i32 rt_drag_start_diameter;
-    f32 rt_drag_start_hardness, rt_drag_start_opacity;
-    bool draw_line_segment;
-    Vec2 line_segment_start_uv;
-    bool being_dragged;
-    bool is_straight_drag;
-    bool was_straight_drag;
-    bool straight_drag_snap_x;
-    bool straight_drag_snap_y;
-    Vec2 straight_drag_start_uv;
-};
-
 struct Profile {
     i64 current_time; // Used on Windows.
     f32 last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
@@ -196,11 +171,13 @@ struct PapayaMemory {
     PaglProgram* shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;
-    Brush brush;
     CropRotate crop_rotate;
+
+    Brush* brush;
     EyeDropper* eye_dropper;
     ColorPanel* color_panel;
     GraphPanel* graph_panel;
+
     Misc misc;
 };
 

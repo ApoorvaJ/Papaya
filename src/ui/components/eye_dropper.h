@@ -7,8 +7,8 @@ struct PaglMesh;
 struct PaglProgram;
 
 struct EyeDropper {
-	PaglMesh* mesh;
-	PaglProgram* pgm;
+    PaglMesh* mesh;
+    PaglProgram* pgm;
 };
 
 EyeDropper* init_eye_dropper(PapayaMemory* mem);

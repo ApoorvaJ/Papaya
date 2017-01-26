@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "components/metrics_window.h"
+#include "components/brush.h"
 #include "components/color_panel.h"
 #include "components/eye_dropper.h"
 #include "components/graph_panel.h"
@@ -33,13 +34,8 @@ void core::resize_doc(PapayaMemory* mem, i32 width, i32 height)
     mem->misc.fbo_render_tex = pagl_alloc_texture(width, height, 0);
 
     // Set up meshes for rendering to texture
-    {
-        Vec2 size = Vec2((f32)width, (f32)height);
-        mem->meshes[PapayaMesh_RTTBrush] = pagl_init_quad_mesh(Vec2(0,0), size,
-                                                               GL_STATIC_DRAW);
-        mem->meshes[PapayaMesh_RTTAdd] = pagl_init_quad_mesh(Vec2(0,0), size,
-                                                             GL_STATIC_DRAW);
-    }
+    Vec2 sz = Vec2((f32)width, (f32)height);
+    resize_brush_meshes(mem->brush, sz);
 }
 
 bool core::open_doc(const char* path, PapayaMemory* mem)
@@ -144,17 +140,7 @@ void core::close_doc(PapayaMemory* mem)
         mem->misc.fbo_sample_tex = 0;
     }
 
-    // Vertex Buffer: RTTBrush
-    if (mem->meshes[PapayaMesh_RTTBrush]->vbo_handle) {
-        GLCHK( glDeleteBuffers(1, &mem->meshes[PapayaMesh_RTTBrush]->vbo_handle) );
-        mem->meshes[PapayaMesh_RTTBrush]->vbo_handle = 0;
-    }
-
-    // Vertex Buffer: RTTAdd
-    if (mem->meshes[PapayaMesh_RTTAdd]->vbo_handle) {
-        GLCHK( glDeleteBuffers(1, &mem->meshes[PapayaMesh_RTTAdd]->vbo_handle) );
-        mem->meshes[PapayaMesh_RTTAdd]->vbo_handle = 0;
-    }
+    destroy_brush_meshes(mem->brush);
 }
 
 void core::init(PapayaMemory* mem)
@@ -168,14 +154,9 @@ void core::init(PapayaMemory* mem)
 
         mem->current_tool = PapayaTool_Brush;
 
-        mem->brush.diameter = 100;
-        mem->brush.max_diameter = 9999;
-        mem->brush.hardness = 1.0f;
-        mem->brush.opacity = 1.0f;
-        mem->brush.anti_alias = true;
-        mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
-
         crop_rotate::init(mem);
+
+        mem->brush = init_brush(mem);
         mem->eye_dropper = init_eye_dropper(mem);
         mem->color_panel = init_color_panel(mem);
         mem->graph_panel = init_graph_panel();
@@ -236,8 +217,6 @@ void core::init(PapayaMemory* mem)
         }
     }
 
-    mem->meshes[PapayaMesh_BrushCursor] =
-        pagl_init_quad_mesh(Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     mem->meshes[PapayaMesh_ImageSizePreview] =
         pagl_init_quad_mesh(Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     mem->meshes[PapayaMesh_AlphaGrid] =
@@ -651,24 +630,24 @@ void core::update(PapayaMemory* mem)
             if (mem->current_tool == PapayaTool_Brush)
             {
                 ImGui::PushItemWidth(85);
-                ImGui::InputInt("Diameter", &mem->brush.diameter);
-                mem->brush.diameter = math::clamp(mem->brush.diameter, 1, mem->brush.max_diameter);
+                ImGui::InputInt("Diameter", &mem->brush->diameter);
+                mem->brush->diameter = math::clamp(mem->brush->diameter, 1, mem->brush->max_diameter);
 
                 ImGui::PopItemWidth();
                 ImGui::PushItemWidth(80);
                 ImGui::SameLine();
 
-                f32 scaled_hardness = mem->brush.hardness * 100.0f;
+                f32 scaled_hardness = mem->brush->hardness * 100.0f;
                 ImGui::SliderFloat("Hardness", &scaled_hardness, 0.0f, 100.0f, "%.0f");
-                mem->brush.hardness = scaled_hardness / 100.0f;
+                mem->brush->hardness = scaled_hardness / 100.0f;
                 ImGui::SameLine();
 
-                f32 scaled_opacity = mem->brush.opacity * 100.0f;
+                f32 scaled_opacity = mem->brush->opacity * 100.0f;
                 ImGui::SliderFloat("Opacity", &scaled_opacity, 0.0f, 100.0f, "%.0f");
-                mem->brush.opacity = scaled_opacity / 100.0f;
+                mem->brush->opacity = scaled_opacity / 100.0f;
                 ImGui::SameLine();
 
-                ImGui::Checkbox("Anti-alias", &mem->brush.anti_alias); // TODO: Replace this with a toggleable icon button
+                ImGui::Checkbox("Anti-alias", &mem->brush->anti_alias); // TODO: Replace this with a toggleable icon button
 
                 ImGui::PopItemWidth();
             }
@@ -715,55 +694,55 @@ void core::update(PapayaMemory* mem)
         {
             if (mem->mouse.pressed[1])
             {
-                mem->brush.rt_drag_start_pos      = mem->mouse.pos;
-                mem->brush.rt_drag_start_diameter = mem->brush.diameter;
-                mem->brush.rt_drag_start_hardness = mem->brush.hardness;
-                mem->brush.rt_drag_start_opacity  = mem->brush.opacity;
-                mem->brush.rt_drag_with_shift     = ImGui::GetIO().KeyShift;
+                mem->brush->rt_drag_start_pos      = mem->mouse.pos;
+                mem->brush->rt_drag_start_diameter = mem->brush->diameter;
+                mem->brush->rt_drag_start_hardness = mem->brush->hardness;
+                mem->brush->rt_drag_start_opacity  = mem->brush->opacity;
+                mem->brush->rt_drag_with_shift     = ImGui::GetIO().KeyShift;
                 platform::start_mouse_capture();
                 platform::set_cursor_visibility(false);
             }
             else if (mem->mouse.is_down[1])
             {
-                if (mem->brush.rt_drag_with_shift)
+                if (mem->brush->rt_drag_with_shift)
                 {
-                    f32 Opacity = mem->brush.rt_drag_start_opacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
-                    mem->brush.opacity = math::clamp(Opacity, 0.0f, 1.0f);
+                    f32 Opacity = mem->brush->rt_drag_start_opacity + (ImGui::GetMouseDragDelta(1).x * 0.0025f);
+                    mem->brush->opacity = math::clamp(Opacity, 0.0f, 1.0f);
                 }
                 else
                 {
-                    f32 Diameter = mem->brush.rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / mem->cur_doc->canvas_zoom * 2.0f);
-                    mem->brush.diameter = math::clamp((i32)Diameter, 1, mem->brush.max_diameter);
+                    f32 Diameter = mem->brush->rt_drag_start_diameter + (ImGui::GetMouseDragDelta(1).x / mem->cur_doc->canvas_zoom * 2.0f);
+                    mem->brush->diameter = math::clamp((i32)Diameter, 1, mem->brush->max_diameter);
 
-                    f32 Hardness = mem->brush.rt_drag_start_hardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
-                    mem->brush.hardness = math::clamp(Hardness, 0.0f, 1.0f);
+                    f32 Hardness = mem->brush->rt_drag_start_hardness + (ImGui::GetMouseDragDelta(1).y * 0.0025f);
+                    mem->brush->hardness = math::clamp(Hardness, 0.0f, 1.0f);
                 }
             }
             else if (mem->mouse.released[1])
             {
                 platform::stop_mouse_capture();
-                platform::set_mouse_position(mem->brush.rt_drag_start_pos.x, mem->brush.rt_drag_start_pos.y);
+                platform::set_mouse_position(mem->brush->rt_drag_start_pos.x, mem->brush->rt_drag_start_pos.y);
                 platform::set_cursor_visibility(true);
             }
         }
 
         if (mem->mouse.pressed[0] && mem->mouse.in_workspace)
         {
-            mem->brush.being_dragged = true;
-            mem->brush.draw_line_segment = ImGui::GetIO().KeyShift && mem->brush.line_segment_start_uv.x >= 0.0f;
+            mem->brush->being_dragged = true;
+            mem->brush->draw_line_segment = ImGui::GetIO().KeyShift && mem->brush->line_segment_start_uv.x >= 0.0f;
             if (mem->color_panel->is_open) {
                 mem->color_panel->current_color = mem->color_panel->new_color;
             }
-            mem->brush.paint_area_1 = Vec2i(mem->cur_doc->width + 1, mem->cur_doc->height + 1);
-            mem->brush.paint_area_2 = Vec2i(0,0);
+            mem->brush->paint_area_1 = Vec2i(mem->cur_doc->width + 1, mem->cur_doc->height + 1);
+            mem->brush->paint_area_2 = Vec2i(0,0);
         }
-        else if (mem->mouse.released[0] && mem->brush.being_dragged)
+        else if (mem->mouse.released[0] && mem->brush->being_dragged)
         {
             mem->misc.draw_overlay         = false;
-            mem->brush.being_dragged       = false;
-            mem->brush.is_straight_drag     = false;
-            mem->brush.was_straight_drag    = false;
-            mem->brush.line_segment_start_uv = mem->mouse.uv;
+            mem->brush->being_dragged       = false;
+            mem->brush->is_straight_drag     = false;
+            mem->brush->was_straight_drag    = false;
+            mem->brush->line_segment_start_uv = mem->mouse.uv;
 
             // TODO: Make a vararg-based RTT function
             // Additive render-to-texture
@@ -774,8 +753,8 @@ void core::update(PapayaMemory* mem)
                 GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mem->misc.fbo_render_tex, 0) );
                 GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
 
-                Vec2i Pos  = mem->brush.paint_area_1;
-                Vec2i Size = mem->brush.paint_area_2 - mem->brush.paint_area_1;
+                Vec2i Pos  = mem->brush->paint_area_1;
+                Vec2i Size = mem->brush->paint_area_2 - mem->brush->paint_area_1;
                 i8* pre_brush_img = 0;
 
                 // TODO: OPTIMIZE: The following block seems optimizable
@@ -838,7 +817,7 @@ void core::update(PapayaMemory* mem)
 
                 // undo::push(&mem->cur_doc->undo, &mem->profile,
                 //            Pos, Size, pre_brush_img,
-                //            mem->brush.line_segment_start_uv);
+                //            mem->brush->line_segment_start_uv);
 
                 if (pre_brush_img) { free(pre_brush_img); }
 
@@ -849,7 +828,7 @@ void core::update(PapayaMemory* mem)
             }
         }
 
-        if (mem->brush.being_dragged)
+        if (mem->brush->being_dragged)
         {
             mem->misc.draw_overlay = true;
 
@@ -870,47 +849,47 @@ void core::update(PapayaMemory* mem)
             // Setup orthographic projection matrix
             f32 width  = (f32)mem->cur_doc->width;
             f32 height = (f32)mem->cur_doc->height;
-            GLCHK( glUseProgram(mem->shaders[PapayaShader_Brush]->id) );
+            GLCHK( glUseProgram(mem->brush->pgm_stroke->id) );
 
-            mem->brush.was_straight_drag = mem->brush.is_straight_drag;
-            mem->brush.is_straight_drag = ImGui::GetIO().KeyShift;
+            mem->brush->was_straight_drag = mem->brush->is_straight_drag;
+            mem->brush->is_straight_drag = ImGui::GetIO().KeyShift;
 
-            if (!mem->brush.was_straight_drag && mem->brush.is_straight_drag)
+            if (!mem->brush->was_straight_drag && mem->brush->is_straight_drag)
             {
-                mem->brush.straight_drag_start_uv = mem->mouse.uv;
-                mem->brush.straight_drag_snap_x = false;
-                mem->brush.straight_drag_snap_y = false;
+                mem->brush->straight_drag_start_uv = mem->mouse.uv;
+                mem->brush->straight_drag_snap_x = false;
+                mem->brush->straight_drag_snap_y = false;
             }
 
-            if (mem->brush.is_straight_drag && !mem->brush.straight_drag_snap_x && !mem->brush.straight_drag_snap_y)
+            if (mem->brush->is_straight_drag && !mem->brush->straight_drag_snap_x && !mem->brush->straight_drag_snap_y)
             {
-                f32 dx = math::abs(mem->brush.straight_drag_start_uv.x - mem->mouse.uv.x);
-                f32 dy = math::abs(mem->brush.straight_drag_start_uv.y - mem->mouse.uv.y);
-                mem->brush.straight_drag_snap_x = (dx < dy);
-                mem->brush.straight_drag_snap_y = (dy < dx);
+                f32 dx = math::abs(mem->brush->straight_drag_start_uv.x - mem->mouse.uv.x);
+                f32 dy = math::abs(mem->brush->straight_drag_start_uv.y - mem->mouse.uv.y);
+                mem->brush->straight_drag_snap_x = (dx < dy);
+                mem->brush->straight_drag_snap_y = (dy < dx);
             }
 
-            if (mem->brush.is_straight_drag && mem->brush.straight_drag_snap_x)
+            if (mem->brush->is_straight_drag && mem->brush->straight_drag_snap_x)
             {
-                mem->mouse.uv.x = mem->brush.straight_drag_start_uv.x;
+                mem->mouse.uv.x = mem->brush->straight_drag_start_uv.x;
                 f32 pixelPos = mem->mouse.uv.x * mem->cur_doc->width + 0.5f;
                 mem->mouse.pos.x = math::round_to_int(pixelPos * mem->cur_doc->canvas_zoom + mem->cur_doc->canvas_pos.x);
                 platform::set_mouse_position(mem->mouse.pos.x, mem->mouse.pos.y);
             }
 
-            if (mem->brush.is_straight_drag && mem->brush.straight_drag_snap_y)
+            if (mem->brush->is_straight_drag && mem->brush->straight_drag_snap_y)
             {
-                mem->mouse.uv.y = mem->brush.straight_drag_start_uv.y;
+                mem->mouse.uv.y = mem->brush->straight_drag_start_uv.y;
                 f32 pixelPos = mem->mouse.uv.y * mem->cur_doc->height + 0.5f;
                 mem->mouse.pos.y = math::round_to_int(pixelPos * mem->cur_doc->canvas_zoom + mem->cur_doc->canvas_pos.y);
                 platform::set_mouse_position(mem->mouse.pos.x, mem->mouse.pos.y);
             }
 
-            Vec2 Correction = (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+            Vec2 Correction = (mem->brush->diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
             Vec2 CorrectedPos = mem->mouse.uv + Correction;
-            Vec2 CorrectedLastPos = (mem->brush.draw_line_segment ? mem->brush.line_segment_start_uv : mem->mouse.last_uv) + Correction;
+            Vec2 CorrectedLastPos = (mem->brush->draw_line_segment ? mem->brush->line_segment_start_uv : mem->mouse.last_uv) + Correction;
 
-            mem->brush.draw_line_segment = false;
+            mem->brush->draw_line_segment = false;
 
 #if 0
             // Brush testing routine
@@ -919,15 +898,15 @@ void core::update(PapayaMemory* mem)
             if (i%2)
             {
                 local_persist i32 j = 0;
-                CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedPos		= Vec2( j*0.2f,     j*0.2f) + (mem->brush->diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedLastPos	= Vec2((j+1)*0.2f, (j+1)*0.2f) + (mem->brush->diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 j++;
             }
             else
             {
                 local_persist i32 k = 0;
-                CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-                CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (mem->brush.diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedPos		= Vec2( k*0.2f,     1.0f-k*0.2f) + (mem->brush->diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
+                CorrectedLastPos	= Vec2((k+1)*0.2f, 1.0f-(k+1)*0.2f) + (mem->brush->diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
                 k++;
             }
             i++;
@@ -940,53 +919,54 @@ void core::update(PapayaMemory* mem)
                 f32 UVMaxX = math::max(CorrectedPos.x, CorrectedLastPos.x);
                 f32 UVMaxY = math::max(CorrectedPos.y, CorrectedLastPos.y);
 
-                i32 PixelMinX = math::round_to_int(UVMinX * mem->cur_doc->width  - 0.5f * mem->brush.diameter);
-                i32 PixelMinY = math::round_to_int(UVMinY * mem->cur_doc->height - 0.5f * mem->brush.diameter);
-                i32 PixelMaxX = math::round_to_int(UVMaxX * mem->cur_doc->width  + 0.5f * mem->brush.diameter);
-                i32 PixelMaxY = math::round_to_int(UVMaxY * mem->cur_doc->height + 0.5f * mem->brush.diameter);
+                i32 PixelMinX = math::round_to_int(UVMinX * mem->cur_doc->width  - 0.5f * mem->brush->diameter);
+                i32 PixelMinY = math::round_to_int(UVMinY * mem->cur_doc->height - 0.5f * mem->brush->diameter);
+                i32 PixelMaxX = math::round_to_int(UVMaxX * mem->cur_doc->width  + 0.5f * mem->brush->diameter);
+                i32 PixelMaxY = math::round_to_int(UVMaxY * mem->cur_doc->height + 0.5f * mem->brush->diameter);
 
-                mem->brush.paint_area_1.x = math::min(mem->brush.paint_area_1.x, PixelMinX);
-                mem->brush.paint_area_1.y = math::min(mem->brush.paint_area_1.y, PixelMinY);
-                mem->brush.paint_area_2.x = math::max(mem->brush.paint_area_2.x, PixelMaxX);
-                mem->brush.paint_area_2.y = math::max(mem->brush.paint_area_2.y, PixelMaxY);
+                mem->brush->paint_area_1.x = math::min(mem->brush->paint_area_1.x, PixelMinX);
+                mem->brush->paint_area_1.y = math::min(mem->brush->paint_area_1.y, PixelMinY);
+                mem->brush->paint_area_2.x = math::max(mem->brush->paint_area_2.x, PixelMaxX);
+                mem->brush->paint_area_2.y = math::max(mem->brush->paint_area_2.y, PixelMaxY);
 
-                mem->brush.paint_area_1.x = math::clamp(mem->brush.paint_area_1.x, 0, mem->cur_doc->width);
-                mem->brush.paint_area_1.y = math::clamp(mem->brush.paint_area_1.y, 0, mem->cur_doc->height);
-                mem->brush.paint_area_2.x = math::clamp(mem->brush.paint_area_2.x, 0, mem->cur_doc->width);
-                mem->brush.paint_area_2.y = math::clamp(mem->brush.paint_area_2.y, 0, mem->cur_doc->height);
+                mem->brush->paint_area_1.x = math::clamp(mem->brush->paint_area_1.x, 0, mem->cur_doc->width);
+                mem->brush->paint_area_1.y = math::clamp(mem->brush->paint_area_1.y, 0, mem->cur_doc->height);
+                mem->brush->paint_area_2.x = math::clamp(mem->brush->paint_area_2.x, 0, mem->cur_doc->width);
+                mem->brush->paint_area_2.y = math::clamp(mem->brush->paint_area_2.y, 0, mem->cur_doc->height);
             }
 
-            GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_Brush]->uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
-            GLCHK( glUniform2f(mem->shaders[PapayaShader_Brush]->uniforms[2], CorrectedPos.x, CorrectedPos.y * mem->cur_doc->inverse_aspect) ); // Pos uniform
-            GLCHK( glUniform2f(mem->shaders[PapayaShader_Brush]->uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * mem->cur_doc->inverse_aspect) ); // Lastpos uniform
-            GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush]->uniforms[4], (f32)mem->brush.diameter / ((f32)mem->cur_doc->width * 2.0f)) );
-            f32 Opacity = mem->brush.opacity;
+            PaglProgram* pgm = mem->brush->pgm_stroke;
+            GLCHK( glUniformMatrix4fv(pgm->uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
+            GLCHK( glUniform2f(pgm->uniforms[2], CorrectedPos.x, CorrectedPos.y * mem->cur_doc->inverse_aspect) ); // Pos uniform
+            GLCHK( glUniform2f(pgm->uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * mem->cur_doc->inverse_aspect) ); // Lastpos uniform
+            GLCHK( glUniform1f(pgm->uniforms[4], (f32)mem->brush->diameter / ((f32)mem->cur_doc->width * 2.0f)) );
+            f32 Opacity = mem->brush->opacity;
             //if (mem->tablet.Pressure > 0.0f) { Opacity *= mem->tablet.Pressure; }
-            GLCHK( glUniform4f(mem->shaders[PapayaShader_Brush]->uniforms[5], mem->color_panel->current_color.r,
+            GLCHK( glUniform4f(pgm->uniforms[5], mem->color_panel->current_color.r,
                         mem->color_panel->current_color.g,
                         mem->color_panel->current_color.b,
                         Opacity) );
             // Brush hardness
             {
                 f32 Hardness;
-                if (mem->brush.anti_alias && mem->brush.diameter > 2)
+                if (mem->brush->anti_alias && mem->brush->diameter > 2)
                 {
                     f32 AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
-                    f32 Radius  = mem->brush.diameter / 2.0f;
-                    Hardness      = math::min(mem->brush.hardness, 1.0f - (AAWidth / Radius));
+                    f32 Radius  = mem->brush->diameter / 2.0f;
+                    Hardness      = math::min(mem->brush->hardness, 1.0f - (AAWidth / Radius));
                 }
                 else
                 {
-                    Hardness      = mem->brush.hardness;
+                    Hardness      = mem->brush->hardness;
                 }
 
-                GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush]->uniforms[6], Hardness) );
+                GLCHK( glUniform1f(pgm->uniforms[6], Hardness) );
             }
 
-            GLCHK( glUniform1f(mem->shaders[PapayaShader_Brush]->uniforms[7], mem->cur_doc->inverse_aspect) ); // Inverse Aspect uniform
+            GLCHK( glUniform1f(pgm->uniforms[7], mem->cur_doc->inverse_aspect) ); // Inverse Aspect uniform
 
-            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTBrush]->vbo_handle) );
-            pagl_set_vertex_attribs(mem->shaders[PapayaShader_Brush]);
+            GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->brush->mesh_RTTBrush->vbo_handle) );
+            pagl_set_vertex_attribs(pgm);
 
             GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
             GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
@@ -1009,7 +989,7 @@ void core::update(PapayaMemory* mem)
         local_persist f32 Opacities[ArraySize] = { 0 };
 
         f32 MaxScale = 90.0f;
-        f32 Scale    = 1.0f / (1.0f - mem->brush.hardness);
+        f32 Scale    = 1.0f / (1.0f - mem->brush->hardness);
         f32 Phase    = (1.0f - Scale) * (f32)Math::Pi;
         f32 Period   = (f32)Math::Pi * Scale / (f32)ArraySize;
 
@@ -1039,7 +1019,7 @@ void core::update(PapayaMemory* mem)
                 // Redo 
                 mem->cur_doc->undo.current = mem->cur_doc->undo.current->next;
                 mem->cur_doc->undo.current_index++;
-                mem->brush.line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
+                mem->brush->line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
                 refresh = true;
             } else if (!ImGui::GetIO().KeyShift &&
                 mem->cur_doc->undo.current_index > 0 &&
@@ -1053,7 +1033,7 @@ void core::update(PapayaMemory* mem)
 
                 mem->cur_doc->undo.current = mem->cur_doc->undo.current->prev;
                 mem->cur_doc->undo.current_index--;
-                mem->brush.line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
+                mem->brush->line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
             }
 
             if (refresh) {
@@ -1231,22 +1211,22 @@ void core::update(PapayaMemory* mem)
         if (mem->current_tool == PapayaTool_Brush &&
             (!ImGui::GetIO().KeyAlt || mem->mouse.is_down[1]))
         {
-            f32 ScaledDiameter = mem->brush.diameter * mem->cur_doc->canvas_zoom;
+            f32 ScaledDiameter = mem->brush->diameter * mem->cur_doc->canvas_zoom;
 
-            pagl_transform_quad_mesh(mem->meshes[PapayaMesh_BrushCursor],
+            pagl_transform_quad_mesh(mem->brush->mesh_cursor,
                                      (mem->mouse.is_down[1] ||
                                       mem->mouse.was_down[1] ?
-                                      mem->brush.rt_drag_start_pos :
+                                      mem->brush->rt_drag_start_pos :
                                       mem->mouse.pos)
                                      - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
                                     Vec2(ScaledDiameter,ScaledDiameter));
 
-            pagl_draw_mesh(mem->meshes[PapayaMesh_BrushCursor],
-                           mem->shaders[PapayaShader_BrushCursor],
+            pagl_draw_mesh(mem->brush->mesh_cursor,
+                           mem->brush->pgm_cursor,
                            4,
                            Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
-                           Pagl_UniformType_Color, Color(1.0f, 0.0f, 0.0f, mem->mouse.is_down[1] ? mem->brush.opacity : 0.0f),
-                           Pagl_UniformType_Float, mem->brush.hardness,
+                           Pagl_UniformType_Color, Color(1.0f, 0.0f, 0.0f, mem->mouse.is_down[1] ? mem->brush->opacity : 0.0f),
+                           Pagl_UniformType_Float, mem->brush->hardness,
                            Pagl_UniformType_Float, ScaledDiameter);
         }
     }
@@ -1380,144 +1360,6 @@ static void compile_shaders(PapayaMemory* mem)
 
     mem->misc.vertex_shader = pagl_compile_shader("default vertex", vertex_src,
                                    GL_VERTEX_SHADER);
-    // Brush shader
-    {
-        const char* frag_src =
-"   #version 120                                                            \n"
-"                                                                           \n"
-"   #define M_PI 3.1415926535897932384626433832795                          \n"
-"                                                                           \n"
-"   uniform sampler2D tex;    // uniforms[1]                                \n"
-"   uniform vec2 cur_pos;     // uniforms[2]                                \n"
-"   uniform vec2 last_pos;    // uniforms[3]                                \n"
-"   uniform float radius;     // uniforms[4]                                \n"
-"   uniform vec4 brush_col;   // uniforms[5]                                \n"
-"   uniform float hardness;   // uniforms[6]                                \n"
-"   uniform float inv_aspect; // uniforms[7]                                \n"
-"                                                                           \n"
-"   varying vec2 frag_uv;                                                   \n"
-"                                                                           \n"
-"   bool isnan(float val)                                                   \n"
-"   {                                                                       \n"
-"       return !( val < 0.0 || 0.0 < val || val == 0.0 );                   \n"
-"   }                                                                       \n"
-"                                                                           \n"
-"   void line(vec2 p1, vec2 p2, vec2 uv, float radius,                      \n"
-"             out float distLine, out float distp1)                         \n"
-"   {                                                                       \n"
-"       if (distance(p1,p2) <= 0.0) {                                       \n"
-"           distLine = distance(uv, p1);                                    \n"
-"           distp1 = 0.0;                                                   \n"
-"           return;                                                         \n"
-"       }                                                                   \n"
-"                                                                           \n"
-"       float a = abs(distance(p1, uv));                                    \n"
-"       float b = abs(distance(p2, uv));                                    \n"
-"       float c = abs(distance(p1, p2));                                    \n"
-"       float d = sqrt(c*c + radius*radius);                                \n"
-"                                                                           \n"
-"       vec2 a1 = normalize(uv - p1);                                       \n"
-"       vec2 b1 = normalize(uv - p2);                                       \n"
-"       vec2 c1 = normalize(p2 - p1);                                       \n"
-"       if (dot(a1,c1) < 0.0) {                                             \n"
-"           distLine = a;                                                   \n"
-"           distp1 = 0.0;                                                   \n"
-"           return;                                                         \n"
-"       }                                                                   \n"
-"                                                                           \n"
-"       if (dot(b1,c1) > 0.0) {                                             \n"
-"           distLine = b;                                                   \n"
-"           distp1 = 1.0;                                                   \n"
-"           return;                                                         \n"
-"       }                                                                   \n"
-"                                                                           \n"
-"       float p = (a + b + c) * 0.5;                                        \n"
-"       float h = 2.0 / c * sqrt( p * (p-a) * (p-b) * (p-c) );              \n"
-"                                                                           \n"
-"       if (isnan(h)) {                                                     \n"
-"           distLine = 0.0;                                                 \n"
-"           distp1 = a / c;                                                 \n"
-"       } else {                                                            \n"
-"           distLine = h;                                                   \n"
-"           distp1 = sqrt(a*a - h*h) / c;                                   \n"
-"       }                                                                   \n"
-"   }                                                                       \n"
-"                                                                           \n"
-"   void main()                                                             \n"
-"   {                                                                       \n"
-"       vec4 t = texture2D(tex, frag_uv.st);                                \n"
-"                                                                           \n"
-"       float distLine, distp1;                                             \n"
-"       vec2 aspect_uv = vec2(frag_uv.x, frag_uv.y * inv_aspect);           \n"
-"       line(last_pos, cur_pos, aspect_uv, radius, distLine, distp1);       \n"
-"                                                                           \n"
-"       float scale = 1.0 / (2.0 * radius * (1.0 - hardness));              \n"
-"       float period = M_PI * scale;                                        \n"
-"       float phase = (1.0 - scale * 2.0 * radius) * M_PI * 0.5;            \n"
-"       float alpha = cos((period * distLine) + phase);                     \n"
-"                                                                           \n"
-"       if (distLine < radius - (0.5/scale)) {                              \n"
-"           alpha = 1.0;                                                    \n"
-"       } else if (distLine > radius) {                                     \n"
-"           alpha = 0.0;                                                    \n"
-"       }                                                                   \n"
-"                                                                           \n"
-"       float final_alpha = max(t.a, alpha * brush_col.a);                  \n"
-"                                                                           \n"
-"       // TODO: Needs improvement. Self-intersection corners look weird.   \n"
-"       gl_FragColor = vec4(brush_col.rgb,                                  \n"
-"                           clamp(final_alpha,0.0,1.0));                    \n"
-"   }                                                                       \n";
-        const char* name = "brush stroke";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        mem->shaders[PapayaShader_Brush] =
-            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 8,
-                              "pos", "uv",
-                              "proj_mtx", "tex", "cur_pos", "last_pos",
-                              "radius", "brush_col", "hardness", "inv_aspect");
-    }
-
-    // Brush cursor
-    {
-        const char* frag_src =
-"   #version 120                                                            \n"
-"                                                                           \n"
-"   #define M_PI 3.1415926535897932384626433832795                          \n"
-"                                                                           \n"
-"   uniform vec4 brush_col;                                                 \n"
-"   uniform float hardness;                                                 \n"
-"   uniform float pixel_sz; // Size in pixels                               \n"
-"                                                                           \n"
-"   varying vec2 frag_uv;                                                   \n"
-"                                                                           \n"
-"                                                                           \n"
-"   void main()                                                             \n"
-"   {                                                                       \n"
-"       float scale = 1.0 / (1.0 - hardness);                               \n"
-"       float period = M_PI * scale;                                        \n"
-"       float phase = (1.0 - scale) * M_PI * 0.5;                           \n"
-"       float dist = distance(frag_uv, vec2(0.5,0.5));                      \n"
-"       float alpha = cos((period * dist) + phase);                         \n"
-"       if (dist < 0.5 - (0.5/scale)) {                                     \n"
-"           alpha = 1.0;                                                    \n"
-"       } else if (dist > 0.5) {                                            \n"
-"           alpha = 0.0;                                                    \n"
-"       }                                                                   \n"
-"       float border = 1.0 / pixel_sz; // Thickness of border               \n"
-"       gl_FragColor = (dist > 0.5 - border && dist < 0.5) ?                \n"
-"           vec4(0.0,0.0,0.0,1.0) :                                         \n"
-"           vec4(brush_col.rgb, alpha * brush_col.a);                       \n"
-"   }                                                                       \n";
-
-        const char* name = "brush cursor";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        mem->shaders[PapayaShader_BrushCursor] =
-            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 4,
-                              "pos", "uv",
-                              "proj_mtx", "brush_col", "hardness",
-                              "pixel_sz");
-    }
-
     // New image preview
     {
         const char* frag_src =

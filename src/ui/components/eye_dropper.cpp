@@ -6,21 +6,21 @@
 #include "gl_lite.h"
 #include "color_panel.h"
 
-static void compile_shaders(EyeDropper* e, u32 vertex_shader);
+static PaglProgram* compile_shaders(u32 vertex_shader);
 
 EyeDropper* init_eye_dropper(PapayaMemory* mem)
 {
     EyeDropper* e = (EyeDropper*) calloc(sizeof(*e), 1);
     e->mesh = pagl_init_quad_mesh(Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
-    compile_shaders(e, mem->misc.vertex_shader);
+    e->pgm = compile_shaders(mem->misc.vertex_shader);
     return e;
 }
 
 void destroy_eye_dropper(EyeDropper* e)
 {
-	pagl_destroy_mesh(e->mesh);
-	pagl_destroy_program(e->pgm);
-	free(e);
+    pagl_destroy_mesh(e->mesh);
+    pagl_destroy_program(e->pgm);
+    free(e);
 }
 
 void update_and_render_eye_dropper(PapayaMemory* mem)
@@ -37,18 +37,20 @@ void update_and_render_eye_dropper(PapayaMemory* mem)
         pagl_transform_quad_mesh(mem->eye_dropper->mesh,
                                  mem->mouse.pos - (sz * 0.5f), sz);
 
+        pagl_push_state();
+        pagl_enable(1, GL_SCISSOR_TEST);
         pagl_draw_mesh(mem->eye_dropper->mesh, mem->eye_dropper->pgm,
                        3,
                        Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
                        Pagl_UniformType_Color, col,
                        Pagl_UniformType_Color, mem->color_panel->new_color);
-
+        pagl_pop_state();
     } else if (mem->mouse.released[0]) {
         color_panel_set_color(col, mem->color_panel, mem->color_panel->is_open);
     }
 }
 
-static void compile_shaders(EyeDropper* e, u32 vertex_shader)
+static PaglProgram* compile_shaders(u32 vertex_shader)
 {
     const char* frag_src =
 "   #version 120                                                            \n"
@@ -69,7 +71,7 @@ static void compile_shaders(EyeDropper* e, u32 vertex_shader)
 
     const char* name = "eye dropper cursor";
     u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-    e->pgm = pagl_init_program(name, vertex_shader, frag, 2, 3,
+    return pagl_init_program(name, vertex_shader, frag, 2, 3,
                                "pos", "uv",
                                "proj_mtx", "col1", "col2");
 }

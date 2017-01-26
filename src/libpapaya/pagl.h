@@ -335,6 +335,9 @@ PaglMesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage)
 
 void pagl_destroy_mesh(PaglMesh* mesh)
 {
+    if (mesh->vbo_handle) {
+        GLCHK( glDeleteBuffers(1, &mesh->vbo_handle) );
+    }
     free(mesh);
 }
 
@@ -364,7 +367,6 @@ void pagl_draw_mesh(PaglMesh* mesh, PaglProgram* pgm, i32 num_uniforms, ...)
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
     GLCHK( glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture) );
-    glDisable(GL_SCISSOR_TEST);
     GLCHK( glEnable(GL_BLEND) );
     GLCHK( glBlendEquation(GL_FUNC_ADD) );
     GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
