@@ -3,8 +3,11 @@
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
 #include "ui.h"
+#include "gl_lite.h"
 
-ColorPanel* init_color_panel()
+static void compile_shaders(ColorPanel* c, u32 vertex_shader);
+
+ColorPanel* init_color_panel(PapayaMemory* mem)
 {
     ColorPanel* c = (ColorPanel*) calloc(sizeof(*c), 1);
     c->current_color = Color(220, 163, 89);
@@ -16,6 +19,14 @@ ColorPanel* init_color_panel()
     c->sv_box_pos = Vec2(0, 42);
     c->sv_box_size = Vec2(256, 256);
     c->cursor_sv = Vec2(0.5f, 0.5f);
+
+    c->mesh_hue = pagl_init_quad_mesh(c->pos + c->hue_strip_pos,
+                                      c->hue_strip_size,
+                                      GL_STATIC_DRAW);
+    c->mesh_sat_val = pagl_init_quad_mesh(c->pos + c->sv_box_pos,
+                                          c->sv_box_size,
+                                          GL_STATIC_DRAW);
+    compile_shaders(c, mem->misc.vertex_shader);
     return c;
 }
 
@@ -237,3 +248,104 @@ void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
     if (c->bound_color) { *c->bound_color = c->new_color; }
 }
 
+// TODO: Investigate how to move this custom shaded quad drawing into
+//       ImGui to get correct draw order.
+void render_color_panel(PapayaMemory* mem)
+{
+    ColorPanel* c = mem->color_panel;
+
+    // Draw hue picker
+    pagl_draw_mesh(c->mesh_hue, c->pgm_hue,
+                   2,
+                   Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
+                   Pagl_UniformType_Float, mem->color_panel->cursor_h);
+
+    // Draw saturation-value picker
+    pagl_draw_mesh(c->mesh_sat_val, c->pgm_sat_val,
+                   3,
+                   Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
+                   Pagl_UniformType_Float, mem->color_panel->cursor_h,
+                   Pagl_UniformType_Vec2, mem->color_panel->cursor_sv);
+}
+
+static void compile_shaders(ColorPanel* c, u32 vertex_shader)
+{
+
+    // Color picker hue strip
+    {
+        const char* frag_src =
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform float cursor; // Uniforms[1]                                    \n"
+"                                                                           \n"
+"   varying  vec2 frag_uv;                                                  \n"
+"                                                                           \n"
+"   vec3 hsv2rgb(vec3 c)                                                    \n"
+"   {                                                                       \n"
+"       vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
+"       vec3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);                   \n"
+"       return c.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), c.y);           \n"
+"   }                                                                       \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec4 hue = vec4(hsv2rgb(vec3(1.0-frag_uv.y, 1.0, 1.0))              \n"
+"                  .xyz,1.0);                                               \n"
+"       if (abs(0.5 - frag_uv.x) > 0.3333) {                                \n"
+"           gl_FragColor = vec4(0.36,0.36,0.37,                             \n"
+"                               float(abs(1.0-frag_uv.y-cursor) < 0.0039)); \n"
+"       } else {                                                            \n"
+"           gl_FragColor = hue;                                             \n"
+"       }                                                                   \n"
+"   }                                                                       \n";
+
+        const char* name = "color picker hue strip";
+        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
+        c->pgm_hue = pagl_init_program(name, vertex_shader, frag, 2, 2,
+                                       "pos", "uv",
+                                       "proj_mtx", "cursor");
+    }
+
+    // Color picker SV box
+    //  Source: Fast branchless RGB to HSV conversion in GLSL
+    //  http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+    {
+        const char* frag_src =
+"   #version 120                                                            \n"
+"                                                                           \n"
+"   uniform float hue;   // Uniforms[1]                                     \n"
+"   uniform vec2 cursor; // Uniforms[2]                                     \n"
+"   uniform float thickness = 1.0 / 256.0;                                  \n"
+"   uniform float radius = 0.0075;                                          \n"
+"                                                                           \n"
+"   varying  vec2 frag_uv;                                                  \n"
+"                                                                           \n"
+"                                                                           \n"
+"   vec3 hsv2rgb(vec3 c)                                                    \n"
+"   {                                                                       \n"
+"       vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
+"       vec3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);                   \n"
+"       return c.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), c.y);           \n"
+"   }                                                                       \n"
+"                                                                           \n"
+"   void main()                                                             \n"
+"   {                                                                       \n"
+"       vec3 rgb = hsv2rgb(vec3(hue, frag_uv.x, 1.0 - frag_uv.y));          \n"
+"       vec2 inv = vec2(cursor.x, 1.0 - cursor.y);                          \n"
+"       float dist = distance(frag_uv, inv);                                \n"
+"                                                                           \n"
+"       if (dist > radius && dist < radius + thickness) {                   \n"
+"           float a = (inv.x < 0.4 && inv.y > 0.6) ? 0.0 : 1.0;             \n"
+"           gl_FragColor = vec4(a, a, a, 1.0);                              \n"
+"       } else {                                                            \n"
+"           gl_FragColor = vec4(rgb.x, rgb.y, rgb.z, 1.0);                  \n"
+"       }                                                                   \n"
+"   }                                                                       \n";
+
+        const char* name = "color picker SV box";
+        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
+        c->pgm_sat_val = pagl_init_program(name, vertex_shader, frag, 2, 3,
+                                           "pos", "uv",
+                                           "proj_mtx", "hue", "cursor");
+    }
+}

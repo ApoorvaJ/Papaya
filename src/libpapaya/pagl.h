@@ -31,26 +31,29 @@ struct Pagl_Mesh {
 // TODO: Turn this off in release mode
 #define GLCHK(stmt) stmt; pagl_check_error(#stmt, __FILE__, __LINE__)
 
+// State management
 void pagl_check_error(const char* expr, const char* file, i32 line);
 void pagl_init(void);
 void pagl_destroy(void);
-
 void pagl_push_state(void);
 void pagl_pop_state(void);
 void pagl_enable(i32 count, ...);
 void pagl_disable(i32 count, ...);
 
+// Shaders
 u32 pagl_compile_shader(const char* name, const char* src, u32 type);
 Pagl_Program* pagl_init_program(const char* name, u32 vert_id, u32 frag_id,
                                 i32 num_attribs, i32 num_uniforms, ...);
 void pagl_destroy_program(Pagl_Program* p);
 void pagl_set_vertex_attribs(Pagl_Program* p);
 
+// Meshes
 Pagl_Mesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage);
 void pagl_destroy_mesh(Pagl_Mesh* mesh);
 void pagl_transform_quad_mesh(Pagl_Mesh* mesh, Vec2 pos, Vec2 sz);
 void pagl_draw_mesh(Pagl_Mesh* mesh, Pagl_Program* pgm, i32 num_uniforms, ...);
 
+// Textures
 u32 pagl_alloc_texture(i32 w, i32 h, u8* data);
 
 #endif // PAGL_H

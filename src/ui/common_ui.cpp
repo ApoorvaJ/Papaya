@@ -158,6 +158,8 @@ void core::close_doc(PapayaMemory* mem)
 
 void core::init(PapayaMemory* mem)
 {
+    compile_shaders(mem);
+
     // Init values and load textures
     {
         pagl_init();
@@ -173,7 +175,7 @@ void core::init(PapayaMemory* mem)
         mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
 
         crop_rotate::init(mem);
-        mem->color_panel = init_color_panel();
+        mem->color_panel = init_color_panel(mem);
         mem->graph_panel = init_graph_panel();
 
         mem->misc.draw_overlay = false;
@@ -232,20 +234,10 @@ void core::init(PapayaMemory* mem)
         }
     }
 
-    compile_shaders(mem);
-
     mem->meshes[PapayaMesh_BrushCursor] =
         pagl_init_quad_mesh(Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     mem->meshes[PapayaMesh_EyeDropperCursor] =
         pagl_init_quad_mesh(Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
-    mem->meshes[PapayaMesh_PickerSVBox] =
-        pagl_init_quad_mesh(mem->color_panel->pos + mem->color_panel->sv_box_pos,
-                            mem->color_panel->sv_box_size,
-                            GL_STATIC_DRAW);
-    mem->meshes[PapayaMesh_PickerHStrip] =
-        pagl_init_quad_mesh(mem->color_panel->pos + mem->color_panel->hue_strip_pos,
-                            mem->color_panel->hue_strip_size,
-                            GL_STATIC_DRAW);
     mem->meshes[PapayaMesh_ImageSizePreview] =
         pagl_init_quad_mesh(Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
     mem->meshes[PapayaMesh_AlphaGrid] =
@@ -1296,25 +1288,8 @@ EndOfDoc:
 
     ImGui::Render(mem);
 
-    // Color Picker Panel
     if (mem->color_panel->is_open) {
-        // TODO: Investigate how to move this custom shaded quad drawing into
-        //       ImGui to get correct draw order.
-
-        // Draw hue picker
-        pagl_draw_mesh(mem->meshes[PapayaMesh_PickerHStrip],
-                       mem->shaders[PapayaShader_PickerHStrip],
-                       2,
-                       Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
-                       Pagl_UniformType_Float, mem->color_panel->cursor_h);
-
-        // Draw saturation-value picker
-        pagl_draw_mesh(mem->meshes[PapayaMesh_PickerSVBox],
-                       mem->shaders[PapayaShader_PickerSVBox],
-                       3,
-                       Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
-                       Pagl_UniformType_Float, mem->color_panel->cursor_h,
-                       Pagl_UniformType_Vec2, mem->color_panel->cursor_sv);
+        render_color_panel(mem);
     }
 
     // Last mouse info
@@ -1427,7 +1402,7 @@ static void compile_shaders(PapayaMemory* mem)
 "       gl_Position = proj_mtx * vec4(pos.xy, 0, 1);                        \n"
 "   }                                                                       \n";
 
-    u32 vert = pagl_compile_shader("default vertex", vertex_src,
+    mem->misc.vertex_shader = pagl_compile_shader("default vertex", vertex_src,
                                    GL_VERTEX_SHADER);
     // Brush shader
     {
@@ -1520,7 +1495,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "brush stroke";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_Brush] =
-            pagl_init_program(name, vert, frag, 2, 8,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 8,
                               "pos", "uv",
                               "proj_mtx", "tex", "cur_pos", "last_pos",
                               "radius", "brush_col", "hardness", "inv_aspect");
@@ -1561,7 +1536,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "brush cursor";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_BrushCursor] =
-            pagl_init_program(name, vert, frag, 2, 4,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 4,
                               "pos", "uv",
                               "proj_mtx", "brush_col", "hardness",
                               "pixel_sz");
@@ -1589,89 +1564,9 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "eye dropper cursor";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_EyeDropperCursor] =
-            pagl_init_program(name, vert, frag, 2, 3,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 3,
                               "pos", "uv",
                               "proj_mtx", "col1", "col2");
-    }
-
-    // Color picker SV box
-    //  Source: Fast branchless RGB to HSV conversion in GLSL
-    //  http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
-    {
-        const char* frag_src =
-"   #version 120                                                            \n"
-"                                                                           \n"
-"   uniform float hue;   // Uniforms[1]                                     \n"
-"   uniform vec2 cursor; // Uniforms[2]                                     \n"
-"   uniform float thickness = 1.0 / 256.0;                                  \n"
-"   uniform float radius = 0.0075;                                          \n"
-"                                                                           \n"
-"   varying  vec2 frag_uv;                                                  \n"
-"                                                                           \n"
-"                                                                           \n"
-"   vec3 hsv2rgb(vec3 c)                                                    \n"
-"   {                                                                       \n"
-"       vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
-"       vec3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);                   \n"
-"       return c.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), c.y);           \n"
-"   }                                                                       \n"
-"                                                                           \n"
-"   void main()                                                             \n"
-"   {                                                                       \n"
-"       vec3 rgb = hsv2rgb(vec3(hue, frag_uv.x, 1.0 - frag_uv.y));          \n"
-"       vec2 inv = vec2(cursor.x, 1.0 - cursor.y);                          \n"
-"       float dist = distance(frag_uv, inv);                                \n"
-"                                                                           \n"
-"       if (dist > radius && dist < radius + thickness) {                   \n"
-"           float a = (inv.x < 0.4 && inv.y > 0.6) ? 0.0 : 1.0;             \n"
-"           gl_FragColor = vec4(a, a, a, 1.0);                              \n"
-"       } else {                                                            \n"
-"           gl_FragColor = vec4(rgb.x, rgb.y, rgb.z, 1.0);                  \n"
-"       }                                                                   \n"
-"   }                                                                       \n";
-
-        const char* name = "color picker SV box";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        mem->shaders[PapayaShader_PickerSVBox] =
-            pagl_init_program(name, vert, frag, 2, 3,
-                              "pos", "uv",
-                              "proj_mtx", "hue", "cursor");
-    }
-
-    // Color picker hue strip
-    {
-        const char* frag_src =
-"   #version 120                                                            \n"
-"                                                                           \n"
-"   uniform float cursor; // Uniforms[1]                                    \n"
-"                                                                           \n"
-"   varying  vec2 frag_uv;                                                  \n"
-"                                                                           \n"
-"   vec3 hsv2rgb(vec3 c)                                                    \n"
-"   {                                                                       \n"
-"       vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);                      \n"
-"       vec3 p = abs(fract(c.xxx + k.xyz) * 6.0 - k.www);                   \n"
-"       return c.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), c.y);           \n"
-"   }                                                                       \n"
-"                                                                           \n"
-"   void main()                                                             \n"
-"   {                                                                       \n"
-"       vec4 hue = vec4(hsv2rgb(vec3(1.0-frag_uv.y, 1.0, 1.0))              \n"
-"                  .xyz,1.0);                                               \n"
-"       if (abs(0.5 - frag_uv.x) > 0.3333) {                                \n"
-"           gl_FragColor = vec4(0.36,0.36,0.37,                             \n"
-"                               float(abs(1.0-frag_uv.y-cursor) < 0.0039)); \n"
-"       } else {                                                            \n"
-"           gl_FragColor = hue;                                             \n"
-"       }                                                                   \n"
-"   }                                                                       \n";
-
-        const char* name = "color picker hue strip";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        mem->shaders[PapayaShader_PickerHStrip] =
-            pagl_init_program(name, vert, frag, 2, 2,
-                              "pos", "uv",
-                              "proj_mtx", "cursor");
     }
 
     // New image preview
@@ -1694,7 +1589,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "new-image preview";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_ImageSizePreview] =
-            pagl_init_program(name, vert, frag, 2, 5,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 5,
                               "pos", "uv",
                               "proj_mtx", "col1", "col2", "width", "height");
     }
@@ -1727,7 +1622,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "alpha grid";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_AlphaGrid] =
-            pagl_init_program(name, vert, frag, 2, 6,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 6,
                               "pos", "uv",
                               "proj_mtx", "col1", "col2", "zoom",
                               "inv_aspect", "max_dim");
@@ -1751,7 +1646,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "premultiply alpha";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_PreMultiplyAlpha] =
-            pagl_init_program(name, vert, frag, 3, 2,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 3, 2,
                               "pos", "uv", "col",
                               "proj_mtx", "tex");
     }
@@ -1775,7 +1670,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "demultiply alpha";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_DeMultiplyAlpha] =
-            pagl_init_program(name, vert, frag, 3, 2,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 3, 2,
                               "pos", "uv", "col",
                               "proj_mtx", "tex");
     }
@@ -1798,7 +1693,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "default fragment";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_ImGui] =
-            pagl_init_program(name, vert, frag, 3, 2,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 3, 2,
                               "pos", "uv", "col",
                               "proj_mtx", "tex");
     }
@@ -1821,7 +1716,7 @@ static void compile_shaders(PapayaMemory* mem)
         const char* name = "unlit";
         u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
         mem->shaders[PapayaShader_VertexColor] =
-            pagl_init_program(name, vert, frag, 3, 2,
+            pagl_init_program(name, mem->misc.vertex_shader, frag, 3, 2,
                               "pos", "uv", "col",
                               "proj_mtx", "tex");
     }

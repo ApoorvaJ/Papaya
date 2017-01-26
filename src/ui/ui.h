@@ -48,8 +48,6 @@ enum PapayaMesh_ {
     PapayaMesh_BrushCursor,
     PapayaMesh_EyeDropperCursor,
     PapayaMesh_CropOutline,
-    PapayaMesh_PickerHStrip,
-    PapayaMesh_PickerSVBox,
     PapayaMesh_RTTBrush,
     PapayaMesh_RTTAdd,
     PapayaMesh_COUNT
@@ -62,8 +60,6 @@ enum PapayaShader_ {
     PapayaShader_Brush,
     PapayaShader_BrushCursor,
     PapayaShader_EyeDropperCursor,
-    PapayaShader_PickerHStrip,
-    PapayaShader_PickerSVBox,
     PapayaShader_AlphaGrid,
     PapayaShader_PreMultiplyAlpha,
     PapayaShader_DeMultiplyAlpha,
@@ -181,6 +177,7 @@ struct Misc {
     i32 preview_width, preview_height;
     u32 canvas_tex; // Temporarily used for visualization during node bringup
     i32 w, h;
+    u32 vertex_shader;
 };
 
 struct PapayaMemory {

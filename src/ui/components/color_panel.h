@@ -4,6 +4,9 @@
 
 struct Mouse;
 struct Layout;
+struct PapayaMemory;
+struct Pagl_Mesh;
+struct Pagl_Program;
 
 struct ColorPanel {
     bool is_open;
@@ -14,12 +17,18 @@ struct ColorPanel {
     f32 cursor_h;
     Vec2 pos, size, hue_strip_pos, hue_strip_size, sv_box_pos, sv_box_size;
     bool dragging_hue, dragging_sv;
+
+    Pagl_Mesh* mesh_hue;
+    Pagl_Mesh* mesh_sat_val;
+    Pagl_Program* pgm_hue;
+    Pagl_Program* pgm_sat_val;
 };
 
-ColorPanel* init_color_panel();
+ColorPanel* init_color_panel(PapayaMemory* mem);
 void destroy_color_panel(ColorPanel* c);
 // TODO: This API could use some attention
 void color_panel_set_color(Color col, ColorPanel* c,
                            bool set_new_color_only = false);
 void update_color_panel(ColorPanel* c, Color* colors, Mouse& mouse,
                         u32 blank_texture, Layout& layout);
+void render_color_panel(PapayaMemory* mem);
