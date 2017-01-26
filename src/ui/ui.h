@@ -51,7 +51,6 @@ enum PapayaMesh_ {
     PapayaMesh_ImageSizePreview,
     PapayaMesh_AlphaGrid,
     PapayaMesh_CropOutline,
-    PapayaMesh_RTTAdd,
     PapayaMesh_COUNT
 };
 

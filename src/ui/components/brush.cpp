@@ -30,7 +30,10 @@ Brush* init_brush(PapayaMemory* mem)
 
 void destroy_brush(Brush* b)
 {
-
+    destroy_brush_meshes(b);
+    pagl_destroy_mesh(b->mesh_cursor);
+    pagl_destroy_program(b->pgm_cursor);
+    pagl_destroy_program(b->pgm_stroke);
 }
 
 void resize_brush_meshes(Brush* b, Vec2 size)

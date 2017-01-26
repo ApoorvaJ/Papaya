@@ -6,6 +6,7 @@
 #include "ui.h"
 #include "pagl.h"
 #include "gl_lite.h"
+#include "brush.h"
 
 void undo::init(PapayaMemory* mem)
 {
@@ -31,8 +32,7 @@ void undo::init(PapayaMemory* mem)
         GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui]->uniforms[0],
                                   1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
 
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER,
-                            mem->meshes[PapayaMesh_RTTAdd]->vbo_handle) );
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->brush->mesh_RTTAdd->vbo_handle) );
         pagl_set_vertex_attribs(mem->shaders[PapayaShader_ImGui]);
 
         // GLCHK( glBindTexture(GL_TEXTURE_2D,

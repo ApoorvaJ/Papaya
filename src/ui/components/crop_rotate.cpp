@@ -8,18 +8,19 @@
 #include "ui.h"
 #include "pagl.h"
 #include "gl_lite.h"
+#include "brush.h"
 
 void crop_rotate::init(PapayaMemory* mem)
 {
     // Initialize crop line mesh
-    PaglMesh* m = mem->meshes[PapayaMesh_CropOutline];
-    m = (PaglMesh*) calloc(sizeof(*m), 1);
+    PaglMesh* m = (PaglMesh*) calloc(sizeof(*m), 1);
     m->type = GL_LINE_LOOP;
     m->index_count = 4;
     GLCHK( glGenBuffers(1, &m->vbo_handle) );
     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, m->vbo_handle) );
     GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * m->index_count,
                         0, GL_DYNAMIC_DRAW) );
+    mem->meshes[PapayaMesh_CropOutline] = m; // TODO: Own this mesh
 }
 
 void crop_rotate::toolbar(PapayaMemory* mem)
@@ -88,7 +89,7 @@ void crop_rotate::toolbar(PapayaMemory* mem)
         }
 
         // Draw the image onto the frame buffer
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->meshes[PapayaMesh_RTTAdd]->vbo_handle) );
+        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->brush->mesh_RTTAdd->vbo_handle) );
         GLCHK( glUseProgram(mem->shaders[PapayaShader_DeMultiplyAlpha]->id) );
         GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui]->uniforms[0],
                                   1, GL_FALSE, (GLfloat*)r) );
