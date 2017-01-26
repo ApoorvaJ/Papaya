@@ -6,6 +6,7 @@
 #include "libs/mathlib.h"
 #include "libs/linmath.h"
 #include "ui.h"
+#include "pagl.h"
 #include "gl_lite.h"
 
 void crop_rotate::init(PapayaMemory* mem)

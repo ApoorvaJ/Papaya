@@ -4,6 +4,7 @@
 #include "undo.h"
 #include "libs/mathlib.h"
 #include "ui.h"
+#include "pagl.h"
 #include "gl_lite.h"
 
 void undo::init(PapayaMemory* mem)

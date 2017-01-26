@@ -3,6 +3,7 @@
 #include "libs/imgui/imgui.h"
 #include "libs/mathlib.h"
 #include "ui.h"
+#include "pagl.h"
 #include "gl_lite.h"
 
 static void compile_shaders(ColorPanel* c, u32 vertex_shader);

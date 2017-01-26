@@ -5,7 +5,6 @@
 #endif // !_DEBUG
 
 #include "libs/types.h"
-#include "pagl.h"
 #include "libs/timer.h"
 #include "libs/easytab.h"
 #include "libs/imgui/imgui.h"
@@ -19,6 +18,8 @@ struct ImDrawData;
 struct ColorPanel;
 struct GraphPanel;
 struct PapayaDocument;
+struct PaglMesh;
+struct PaglProgram;
 
 enum PapayaTex_ {
     PapayaTex_Font,
