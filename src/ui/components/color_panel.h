@@ -5,8 +5,8 @@
 struct Mouse;
 struct Layout;
 struct PapayaMemory;
-struct Pagl_Mesh;
-struct Pagl_Program;
+struct PaglMesh;
+struct PaglProgram;
 
 struct ColorPanel {
     bool is_open;
@@ -18,10 +18,10 @@ struct ColorPanel {
     Vec2 pos, size, hue_strip_pos, hue_strip_size, sv_box_pos, sv_box_size;
     bool dragging_hue, dragging_sv;
 
-    Pagl_Mesh* mesh_hue;
-    Pagl_Mesh* mesh_sat_val;
-    Pagl_Program* pgm_hue;
-    Pagl_Program* pgm_sat_val;
+    PaglMesh* mesh_hue;
+    PaglMesh* mesh_sat_val;
+    PaglProgram* pgm_hue;
+    PaglProgram* pgm_sat_val;
 };
 
 ColorPanel* init_color_panel(PapayaMemory* mem);

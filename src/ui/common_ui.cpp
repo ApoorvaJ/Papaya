@@ -246,7 +246,7 @@ void core::init(PapayaMemory* mem)
         pagl_init_quad_mesh(Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
 
     // TODO: Free
-    mem->meshes[PapayaMesh_ImGui] = (Pagl_Mesh*) calloc(sizeof(Pagl_Mesh), 1);
+    mem->meshes[PapayaMesh_ImGui] = (PaglMesh*) calloc(sizeof(PaglMesh), 1);
 
     // Setup for ImGui
     {

@@ -11,8 +11,8 @@
 void crop_rotate::init(PapayaMemory* mem)
 {
     // Initialize crop line mesh
-    Pagl_Mesh* m = mem->meshes[PapayaMesh_CropOutline];
-    m = (Pagl_Mesh*) calloc(sizeof(*m), 1);
+    PaglMesh* m = mem->meshes[PapayaMesh_CropOutline];
+    m = (PaglMesh*) calloc(sizeof(*m), 1);
     m->type = GL_LINE_LOOP;
     m->index_count = 4;
     GLCHK( glGenBuffers(1, &m->vbo_handle) );

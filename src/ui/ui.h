@@ -195,9 +195,9 @@ struct PapayaMemory {
 
     u32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
-    Pagl_Mesh* meshes[PapayaMesh_COUNT]; // TODO: Instead of array,
-                                         //       move to respective files
-    Pagl_Program* shaders[PapayaShader_COUNT];
+    PaglMesh* meshes[PapayaMesh_COUNT]; // TODO: Instead of array,
+                                        //       move to respective files
+    PaglProgram* shaders[PapayaShader_COUNT];
 
     PapayaTool_ current_tool;
     Brush brush;

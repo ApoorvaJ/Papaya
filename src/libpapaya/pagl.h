@@ -14,7 +14,7 @@ enum Pagl_UniformType_ {
     Pagl_UniformType_COUNT
 };
 
-struct Pagl_Program {
+struct PaglProgram {
     u32 id;
     const char* name;
     i32 num_attribs, num_uniforms;
@@ -22,7 +22,7 @@ struct Pagl_Program {
     i32* uniforms;
 };
 
-struct Pagl_Mesh {
+struct PaglMesh {
     u32 type;
     u32 vbo_size, index_count;
     u32 vbo_handle, elements_handle;
@@ -42,16 +42,16 @@ void pagl_disable(i32 count, ...);
 
 // Shaders
 u32 pagl_compile_shader(const char* name, const char* src, u32 type);
-Pagl_Program* pagl_init_program(const char* name, u32 vert_id, u32 frag_id,
-                                i32 num_attribs, i32 num_uniforms, ...);
-void pagl_destroy_program(Pagl_Program* p);
-void pagl_set_vertex_attribs(Pagl_Program* p);
+PaglProgram* pagl_init_program(const char* name, u32 vert_id, u32 frag_id,
+                               i32 num_attribs, i32 num_uniforms, ...);
+void pagl_destroy_program(PaglProgram* p);
+void pagl_set_vertex_attribs(PaglProgram* p);
 
 // Meshes
-Pagl_Mesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage);
-void pagl_destroy_mesh(Pagl_Mesh* mesh);
-void pagl_transform_quad_mesh(Pagl_Mesh* mesh, Vec2 pos, Vec2 sz);
-void pagl_draw_mesh(Pagl_Mesh* mesh, Pagl_Program* pgm, i32 num_uniforms, ...);
+PaglMesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage);
+void pagl_destroy_mesh(PaglMesh* mesh);
+void pagl_transform_quad_mesh(PaglMesh* mesh, Vec2 pos, Vec2 sz);
+void pagl_draw_mesh(PaglMesh* mesh, PaglProgram* pgm, i32 num_uniforms, ...);
 
 // Textures
 u32 pagl_alloc_texture(i32 w, i32 h, u8* data);
@@ -244,10 +244,10 @@ u32 pagl_compile_shader(const char* name, const char* src, u32 type)
     return id;
 }
 
-Pagl_Program* pagl_init_program(const char* name, u32 vert_id, u32 frag_id,
-                                i32 num_attribs, i32 num_uniforms, ...)
+PaglProgram* pagl_init_program(const char* name, u32 vert_id, u32 frag_id,
+                               i32 num_attribs, i32 num_uniforms, ...)
 {
-    Pagl_Program* p = (Pagl_Program*) calloc(sizeof(*p), 1);
+    PaglProgram* p = (PaglProgram*) calloc(sizeof(*p), 1);
     p->name = name;
     p->num_attribs = num_attribs;
     p->num_uniforms = num_uniforms;
@@ -284,14 +284,14 @@ Pagl_Program* pagl_init_program(const char* name, u32 vert_id, u32 frag_id,
     return p;
 }
 
-void pagl_destroy_program(Pagl_Program* p)
+void pagl_destroy_program(PaglProgram* p)
 {
     free(p->attribs);
     free(p->uniforms);
     free(p);
 }
 
-void pagl_set_vertex_attribs(Pagl_Program* p)
+void pagl_set_vertex_attribs(PaglProgram* p)
 {
     // Vertex attribs
     i32* a = p->attribs;
@@ -320,9 +320,9 @@ void pagl_set_vertex_attribs(Pagl_Program* p)
     SECTION: Meshes
 */
 
-Pagl_Mesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage)
+PaglMesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage)
 {
-    Pagl_Mesh* m = (Pagl_Mesh*) calloc(sizeof(*m), 1);
+    PaglMesh* m = (PaglMesh*) calloc(sizeof(*m), 1);
     GLCHK( glGenBuffers  (1, &m->vbo_handle) );
     GLCHK( glBindBuffer  (GL_ARRAY_BUFFER, m->vbo_handle) );
     GLCHK( glBufferData(GL_ARRAY_BUFFER, sizeof(ImDrawVert) * 6,
@@ -333,12 +333,12 @@ Pagl_Mesh* pagl_init_quad_mesh(Vec2 pos, Vec2 sz, u32 usage)
     return m;
 }
 
-void pagl_destroy_mesh(Pagl_Mesh* mesh)
+void pagl_destroy_mesh(PaglMesh* mesh)
 {
     free(mesh);
 }
 
-void pagl_transform_quad_mesh(Pagl_Mesh* mesh, Vec2 pos, Vec2 sz)
+void pagl_transform_quad_mesh(PaglMesh* mesh, Vec2 pos, Vec2 sz)
 {
     float x1 = pos.x;
     float x2 = pos.x + sz.x;
@@ -359,7 +359,7 @@ void pagl_transform_quad_mesh(Pagl_Mesh* mesh, Vec2 pos, Vec2 sz)
     GLCHK( glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(v), v) );
 }
 
-void pagl_draw_mesh(Pagl_Mesh* mesh, Pagl_Program* pgm, i32 num_uniforms, ...)
+void pagl_draw_mesh(PaglMesh* mesh, PaglProgram* pgm, i32 num_uniforms, ...)
 {
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
