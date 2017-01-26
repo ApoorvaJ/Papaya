@@ -16,6 +16,7 @@
 
 struct ImDrawData;
 struct ColorPanel;
+struct EyeDropper;
 struct GraphPanel;
 struct PapayaDocument;
 struct PaglMesh;
@@ -47,7 +48,6 @@ enum PapayaMesh_ {
     PapayaMesh_ImageSizePreview,
     PapayaMesh_AlphaGrid,
     PapayaMesh_BrushCursor,
-    PapayaMesh_EyeDropperCursor,
     PapayaMesh_CropOutline,
     PapayaMesh_RTTBrush,
     PapayaMesh_RTTAdd,
@@ -60,7 +60,6 @@ enum PapayaShader_ {
     PapayaShader_ImageSizePreview,
     PapayaShader_Brush,
     PapayaShader_BrushCursor,
-    PapayaShader_EyeDropperCursor,
     PapayaShader_AlphaGrid,
     PapayaShader_PreMultiplyAlpha,
     PapayaShader_DeMultiplyAlpha,
@@ -155,10 +154,6 @@ struct Brush {
     Vec2 straight_drag_start_uv;
 };
 
-struct EyeDropper {
-    Color color;
-};
-
 struct Profile {
     i64 current_time; // Used on Windows.
     f32 last_frame_time; // Used on Linux. TODO: Combine this var and the one above.
@@ -202,8 +197,8 @@ struct PapayaMemory {
 
     PapayaTool_ current_tool;
     Brush brush;
-    EyeDropper eye_dropper;
     CropRotate crop_rotate;
+    EyeDropper* eye_dropper;
     ColorPanel* color_panel;
     GraphPanel* graph_panel;
     Misc misc;

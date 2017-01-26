@@ -15,6 +15,7 @@ SRCS=linux_ui.cpp               \
 	 metrics_window.cpp         \
 	 node.cpp                   \
 	 color_panel.cpp            \
+	 eye_dropper.cpp            \
 	 graph_panel.cpp            \
 	 node_properties_panel.cpp  \
 	 prefs.cpp                  \

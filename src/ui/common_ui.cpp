@@ -3,6 +3,7 @@
 
 #include "components/metrics_window.h"
 #include "components/color_panel.h"
+#include "components/eye_dropper.h"
 #include "components/graph_panel.h"
 #include "libs/stb_image.h"
 #include "libs/stb_image_write.h"
@@ -175,6 +176,7 @@ void core::init(PapayaMemory* mem)
         mem->brush.line_segment_start_uv = Vec2(-1.0f, -1.0f);
 
         crop_rotate::init(mem);
+        mem->eye_dropper = init_eye_dropper(mem);
         mem->color_panel = init_color_panel(mem);
         mem->graph_panel = init_graph_panel();
 
@@ -235,8 +237,6 @@ void core::init(PapayaMemory* mem)
     }
 
     mem->meshes[PapayaMesh_BrushCursor] =
-        pagl_init_quad_mesh(Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
-    mem->meshes[PapayaMesh_EyeDropperCursor] =
         pagl_init_quad_mesh(Vec2(40, 60), Vec2(30, 30), GL_DYNAMIC_DRAW);
     mem->meshes[PapayaMesh_ImageSizePreview] =
         pagl_init_quad_mesh(Vec2(0,0), Vec2(10,10), GL_DYNAMIC_DRAW);
@@ -332,6 +332,10 @@ void core::destroy(PapayaMemory* mem)
     for (i32 i = 0; i < PapayaMesh_COUNT; i++) {
         pagl_destroy_mesh(mem->meshes[i]);
     }
+
+    destroy_color_panel(mem->color_panel);
+    destroy_eye_dropper(mem->eye_dropper);
+    destroy_graph_panel(mem->graph_panel);
 
     pagl_destroy();
 }
@@ -1248,38 +1252,10 @@ void core::update(PapayaMemory* mem)
     }
 
     // Eye dropper
-    // TODO: Clean
-    {
-        if ((mem->current_tool == PapayaTool_EyeDropper || (mem->current_tool == PapayaTool_Brush && ImGui::GetIO().KeyAlt))
-            && mem->mouse.in_workspace)
-        {
-            if (mem->mouse.is_down[0])
-            {
-                // Get pixel color
-                {
-                    f32 Pixel[3] = { 0 };
-                    GLCHK( glReadPixels((i32)mem->mouse.pos.x, mem->window.height - (i32)mem->mouse.pos.y, 1, 1, GL_RGB, GL_FLOAT, Pixel) );
-                    mem->eye_dropper.color = Color(Pixel[0], Pixel[1], Pixel[2]);
-                }
-
-                Vec2 Size = Vec2(230,230);
-                pagl_transform_quad_mesh(mem->meshes[PapayaMesh_EyeDropperCursor],
-                                         mem->mouse.pos - (Size * 0.5f),
-                                         Size);
-
-                pagl_draw_mesh(mem->meshes[PapayaMesh_EyeDropperCursor],
-                               mem->shaders[PapayaShader_EyeDropperCursor],
-                               3,
-                               Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
-                               Pagl_UniformType_Color, mem->eye_dropper.color,
-                               Pagl_UniformType_Color, mem->color_panel->new_color);
-            }
-            else if (mem->mouse.released[0])
-            {
-                color_panel_set_color(mem->eye_dropper.color, mem->color_panel,
-                                      mem->color_panel->is_open);
-            }
-        }
+    if ((mem->current_tool == PapayaTool_EyeDropper ||
+         (mem->current_tool == PapayaTool_Brush && ImGui::GetIO().KeyAlt))
+        && mem->mouse.in_workspace) {
+        update_and_render_eye_dropper(mem);
     }
 
 EndOfDoc:
@@ -1540,33 +1516,6 @@ static void compile_shaders(PapayaMemory* mem)
                               "pos", "uv",
                               "proj_mtx", "brush_col", "hardness",
                               "pixel_sz");
-    }
-
-    // Eye dropper cursor
-    {
-        const char* frag_src =
-"   #version 120                                                            \n"
-"                                                                           \n"
-"   uniform vec4 col1; // Uniforms[1]                                       \n"
-"   uniform vec4 col2; // Uniforms[2]                                       \n"
-"                                                                           \n"
-"   varying vec2 frag_uv;                                                   \n"
-"                                                                           \n"
-"   void main()                                                             \n"
-"   {                                                                       \n"
-"       float d = length(vec2(0.5,0.5) - frag_uv);                          \n"
-"       float t = 1.0 - clamp((d - 0.49) * 250.0, 0.0, 1.0);                \n"
-"       t = t - 1.0 + clamp((d - 0.4) * 250.0, 0.0, 1.0);                   \n"
-"       gl_FragColor = (frag_uv.y < 0.5) ? col1: col2;                      \n"
-"       gl_FragColor.a = t;                                                 \n"
-"   }                                                                       \n";
-
-        const char* name = "eye dropper cursor";
-        u32 frag = pagl_compile_shader(name, frag_src, GL_FRAGMENT_SHADER);
-        mem->shaders[PapayaShader_EyeDropperCursor] =
-            pagl_init_program(name, mem->misc.vertex_shader, frag, 2, 3,
-                              "pos", "uv",
-                              "proj_mtx", "col1", "col2");
     }
 
     // New image preview

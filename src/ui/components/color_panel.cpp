@@ -33,6 +33,10 @@ ColorPanel* init_color_panel(PapayaMemory* mem)
 
 void destroy_color_panel(ColorPanel* c)
 {
+    pagl_destroy_mesh(c->mesh_hue);
+    pagl_destroy_mesh(c->mesh_sat_val);
+    pagl_destroy_program(c->pgm_hue);
+    pagl_destroy_program(c->pgm_sat_val);
     free(c);
 }
 
