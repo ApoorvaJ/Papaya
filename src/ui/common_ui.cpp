@@ -673,6 +673,10 @@ void core::update(PapayaMemory* mem)
             Vec2((f32)(mem->window.width - mem->cur_doc->width) / 2, top_margin + (f32)(mem->window.height - top_margin - mem->cur_doc->height) / 2),
             Vec2((f32)mem->cur_doc->width, (f32)mem->cur_doc->height));
 
+        GLCHK( glEnable(GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+
         pagl_draw_mesh(mem->meshes[PapayaMesh_ImageSizePreview],
                        mem->shaders[PapayaShader_ImageSizePreview],
                        5,
@@ -829,6 +833,10 @@ void core::update(PapayaMemory* mem)
             mat4x4_dup(m, r);
         }
 
+        GLCHK( glEnable(GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+
         pagl_draw_mesh(mem->meshes[PapayaMesh_AlphaGrid],
                        mem->shaders[PapayaShader_AlphaGrid],
                        6,
@@ -870,13 +878,16 @@ void core::update(PapayaMemory* mem)
         GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
+        GLCHK( glEnable(GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+
         pagl_draw_mesh(mem->meshes[PapayaMesh_Canvas],
                        mem->shaders[PapayaShader_ImGui],
                        1,
                        Pagl_UniformType_Matrix4, m);
 
-        if (mem->misc.draw_overlay)
-        {
+        if (mem->brush->being_dragged) {
             GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
             GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
@@ -908,6 +919,10 @@ void core::update(PapayaMemory* mem)
                                      - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
                                     Vec2(ScaledDiameter,ScaledDiameter));
 
+            GLCHK( glEnable(GL_BLEND) );
+            GLCHK( glBlendEquation(GL_FUNC_ADD) );
+            GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+        
             pagl_draw_mesh(mem->brush->mesh_cursor,
                            mem->brush->pgm_cursor,
                            4,

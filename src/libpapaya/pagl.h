@@ -11,6 +11,7 @@ enum Pagl_UniformType_ {
     Pagl_UniformType_Vec2,
     Pagl_UniformType_Matrix4,
     Pagl_UniformType_Color,
+    Pagl_UniformType_Tex0,
     Pagl_UniformType_COUNT
 };
 
@@ -366,10 +367,6 @@ void pagl_draw_mesh(PaglMesh* mesh, PaglProgram* pgm, i32 num_uniforms, ...)
     GLint last_program, last_texture;
     GLCHK( glGetIntegerv(GL_CURRENT_PROGRAM, &last_program) );
     GLCHK( glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture) );
-    GLCHK( glEnable(GL_BLEND) );
-    GLCHK( glBlendEquation(GL_FUNC_ADD) );
-    GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-
     GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo_handle) );
     GLCHK( glUseProgram(pgm->id) );
 
@@ -396,6 +393,12 @@ void pagl_draw_mesh(PaglMesh* mesh, PaglProgram* pgm, i32 num_uniforms, ...)
             case Pagl_UniformType_Color: {
                 Color col = va_arg(args, Color);
                 GLCHK( glUniform4f(u, col.r, col.g, col.b, col.a) );
+            } break;
+
+            case Pagl_UniformType_Tex0: {
+                u32 tex = va_arg(args, u32);
+                GLCHK( glActiveTexture(GL_TEXTURE0) );
+                GLCHK( glBindTexture(GL_TEXTURE_2D, tex) );
             } break;
         }
     }

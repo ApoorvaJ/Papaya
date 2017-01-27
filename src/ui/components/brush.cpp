@@ -102,62 +102,59 @@ static void draw_brush_stroke(PapayaMemory* mem)
     GLCHK( glDisable(GL_BLEND) );
     GLCHK( glDisable(GL_SCISSOR_TEST) );
 
-    // TODO: Call pagl_draw_mesh
     {
         GLCHK( glUseProgram(b->pgm_stroke->id) );
 
-        f32 width  = (f32)mem->cur_doc->width;
-        f32 height = (f32)mem->cur_doc->height;
-        Vec2 Correction = (b->diameter % 2 == 0 ? Vec2() : Vec2(0.5f/width, 0.5f/height));
-        Vec2 CorrectedPos = mem->mouse.uv + Correction;
-        Vec2 CorrectedLastPos = (b->draw_line_segment ? b->line_segment_start_uv : mem->mouse.last_uv) + Correction;
+        // TODO: Tidy up the uniform calculation variables
+        f32 w = (f32)mem->cur_doc->width;
+        f32 h = (f32)mem->cur_doc->height;
+        Vec2 c = (b->diameter % 2 == 0 ? Vec2() :
+                  Vec2(0.5f / w, 0.5f / h)); // Pixel correction
+
+        Vec2 pos = mem->mouse.uv + c;
+        Vec2 last_pos = (b->draw_line_segment ?
+                         b->line_segment_start_uv : mem->mouse.last_uv) + c;
+        pos.y *= mem->cur_doc->inverse_aspect;
+        last_pos.y *= mem->cur_doc->inverse_aspect;
 
         b->draw_line_segment = false;
 
-        PaglProgram* pgm = b->pgm_stroke;
-        GLCHK( glUniformMatrix4fv(pgm->uniforms[0], 1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
-        GLCHK( glUniform2f(pgm->uniforms[2], CorrectedPos.x, CorrectedPos.y * mem->cur_doc->inverse_aspect) ); // Pos uniform
-        GLCHK( glUniform2f(pgm->uniforms[3], CorrectedLastPos.x, CorrectedLastPos.y * mem->cur_doc->inverse_aspect) ); // Lastpos uniform
-        GLCHK( glUniform1f(pgm->uniforms[4], (f32)b->diameter / ((f32)mem->cur_doc->width * 2.0f)) );
-        f32 Opacity = b->opacity;
-        //if (mem->tablet.Pressure > 0.0f) { Opacity *= mem->tablet.Pressure; }
-        GLCHK( glUniform4f(pgm->uniforms[5], mem->color_panel->current_color.r,
-                    mem->color_panel->current_color.g,
-                    mem->color_panel->current_color.b,
-                    Opacity) );
-        // Brush hardness
+        f32 hardness;
         {
-            f32 Hardness;
-            if (b->anti_alias && b->diameter > 2)
-            {
-                f32 AAWidth = 1.0f; // The width of pixels over which the antialiased falloff occurs
-                f32 Radius  = b->diameter / 2.0f;
-                Hardness      = math::min(b->hardness, 1.0f - (AAWidth / Radius));
+            if (b->anti_alias && b->diameter > 2) {
+                f32 aa_width = 1.0f; // The width of pixels over which the antialiased falloff occurs
+                f32 radius = b->diameter / 2.0f;
+                hardness = math::min(b->hardness, 1.0f - (aa_width / radius));
+            } else {
+                hardness = b->hardness;
             }
-            else
-            {
-                Hardness      = b->hardness;
-            }
-
-            GLCHK( glUniform1f(pgm->uniforms[6], Hardness) );
         }
 
-        GLCHK( glUniform1f(pgm->uniforms[7], mem->cur_doc->inverse_aspect) ); // Inverse Aspect uniform
+        f32 uv_dia = (f32)b->diameter / ((f32)mem->cur_doc->width * 2.0f);
+        Color* a = &mem->color_panel->current_color;
+        Color col = Color(a->r, a->g, a->b, b->opacity);
 
-        GLCHK( glBindBuffer(GL_ARRAY_BUFFER, b->mesh_RTTBrush->vbo_handle) );
-        pagl_set_vertex_attribs(pgm);
 
-        GLCHK( glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
-        GLCHK( glDrawArrays(GL_TRIANGLES, 0, 6) );
+        pagl_draw_mesh(b->mesh_RTTBrush, b->pgm_stroke, 8,
+                       Pagl_UniformType_Matrix4, &mem->cur_doc->proj_mtx[0][0],
+                       Pagl_UniformType_Tex0, mem->misc.fbo_sample_tex,
+                       Pagl_UniformType_Vec2, pos,
+                       Pagl_UniformType_Vec2, last_pos,
+                       Pagl_UniformType_Float, uv_dia,
+                       Pagl_UniformType_Color, col,
+                       Pagl_UniformType_Float, hardness,
+                       Pagl_UniformType_Float, mem->cur_doc->inverse_aspect);
     }
 
     // Swap textures
-    u32 Temp = mem->misc.fbo_render_tex;
-    mem->misc.fbo_render_tex = mem->misc.fbo_sample_tex;
-    mem->misc.fbo_sample_tex = Temp;
-    // TODO: Necessary?
-    GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                  GL_TEXTURE_2D, mem->misc.fbo_render_tex, 0) );
+    {
+        u32 temp = mem->misc.fbo_render_tex;
+        mem->misc.fbo_render_tex = mem->misc.fbo_sample_tex;
+        mem->misc.fbo_sample_tex = temp;
+        GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                      GL_TEXTURE_2D, mem->misc.fbo_render_tex,
+                                      0) );
+    }
 
     // Reset frame buffer and viewport
     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );

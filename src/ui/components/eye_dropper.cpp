@@ -39,6 +39,11 @@ void update_and_render_eye_dropper(PapayaMemory* mem)
 
         pagl_push_state();
         pagl_enable(1, GL_SCISSOR_TEST);
+        
+        GLCHK( glEnable(GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+
         pagl_draw_mesh(mem->eye_dropper->mesh, mem->eye_dropper->pgm,
                        3,
                        Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
