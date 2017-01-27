@@ -43,3 +43,6 @@ void destroy_brush(Brush* b);
 // TODO: Remove these functions. Use a canvas mesh instead.
 void resize_brush_meshes(Brush* b, Vec2 size);
 void destroy_brush_meshes(Brush* b);
+//
+
+void update_and_render_brush(PapayaMemory* mem);

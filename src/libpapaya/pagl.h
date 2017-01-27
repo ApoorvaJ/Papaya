@@ -315,7 +315,6 @@ void pagl_set_vertex_attribs(PaglProgram* p)
     }
 }
 
-
 /*
     SECTION: Meshes
 */
