@@ -134,6 +134,7 @@ static void draw_brush_stroke(PapayaMemory* mem)
         Color* a = &mem->color_panel->current_color;
         Color col = Color(a->r, a->g, a->b, b->opacity);
 
+        GLCHK( glDisable(GL_BLEND) );
 
         pagl_draw_mesh(b->mesh_RTTBrush, b->pgm_stroke, 8,
                        Pagl_UniformType_Matrix4, &mem->cur_doc->proj_mtx[0][0],
@@ -160,7 +161,46 @@ static void draw_brush_stroke(PapayaMemory* mem)
     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
     GLCHK( glViewport(0, 0, (i32)ImGui::GetIO().DisplaySize.x, (i32)ImGui::GetIO().DisplaySize.y) );
 
+    // Draw the brush stroke as a blended quad on top of the canvas
+    {
+        GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
+        GLCHK( glEnable(GL_BLEND) );
+        GLCHK( glBlendEquation(GL_FUNC_ADD) );
+        GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
 
+        pagl_draw_mesh(mem->meshes[PapayaMesh_Canvas],
+                       mem->shaders[PapayaShader_ImGui],
+                       1,
+                       Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0]);
+    }
+
+}
+
+static void draw_brush_cursor(PapayaMemory* mem)
+{
+    f32 ScaledDiameter = mem->brush->diameter * mem->cur_doc->canvas_zoom;
+
+    pagl_transform_quad_mesh(mem->brush->mesh_cursor,
+                             (mem->mouse.is_down[1] ||
+                              mem->mouse.was_down[1] ?
+                              mem->brush->rt_drag_start_pos :
+                              mem->mouse.pos)
+                             - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
+                            Vec2(ScaledDiameter,ScaledDiameter));
+
+    GLCHK( glEnable(GL_BLEND) );
+    GLCHK( glBlendEquation(GL_FUNC_ADD) );
+    GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+
+    pagl_draw_mesh(mem->brush->mesh_cursor,
+                   mem->brush->pgm_cursor,
+                   4,
+                   Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
+                   Pagl_UniformType_Color, Color(1.0f, 0.0f, 0.0f, mem->mouse.is_down[1] ? mem->brush->opacity : 0.0f),
+                   Pagl_UniformType_Float, mem->brush->hardness,
+                   Pagl_UniformType_Float, ScaledDiameter);
 }
 
 static void merge_brush_stroke(PapayaMemory* mem)
@@ -180,6 +220,8 @@ void update_and_render_brush(PapayaMemory* mem)
 {
     Brush* b = mem->brush;
     Mouse* mouse = &mem->mouse;
+
+    draw_brush_cursor(mem);
 
     if (mouse->pressed[1]) {
 
@@ -232,7 +274,7 @@ void update_and_render_brush(PapayaMemory* mem)
             c->current_color = c->new_color;
         }
 
-    } else if (mouse->is_down[0]) {
+    } else if (mouse->is_down[0] && b->being_dragged) {
 
         // Left mouse dragged
         draw_brush_stroke(mem);

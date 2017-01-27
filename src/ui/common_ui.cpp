@@ -689,14 +689,6 @@ void core::update(PapayaMemory* mem)
 
     if (!mem->cur_doc) { goto EndOfDoc; }
 
-    // Brush tool
-    if (mem->current_tool == PapayaTool_Brush &&
-        !mem->misc.menu_open &&
-        (!ImGui::GetIO().KeyAlt || mem->mouse.is_down[1] ||
-         mem->mouse.released[1])) {
-        update_and_render_brush(mem);
-    }
-
     // Undo/Redo
     {
         if (ImGui::GetIO().KeyCtrl &&
@@ -886,16 +878,16 @@ void core::update(PapayaMemory* mem)
                        mem->shaders[PapayaShader_ImGui],
                        1,
                        Pagl_UniformType_Matrix4, m);
+    }
 
-        if (mem->brush->being_dragged) {
-            GLCHK( glBindTexture  (GL_TEXTURE_2D, (GLuint)(intptr_t)mem->misc.fbo_sample_tex) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
-            GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
-            pagl_draw_mesh(mem->meshes[PapayaMesh_Canvas],
-                           mem->shaders[PapayaShader_ImGui],
-                           1,
-                           Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0]);
-        }
+    // TODO: Switch case <------
+
+    // Brush tool
+    if (mem->current_tool == PapayaTool_Brush &&
+        !mem->misc.menu_open &&
+        (!ImGui::GetIO().KeyAlt || mem->mouse.is_down[1] ||
+         mem->mouse.released[1])) {
+        update_and_render_brush(mem);
     }
 
     // Update and draw crop outline
@@ -904,41 +896,14 @@ void core::update(PapayaMemory* mem)
         crop_rotate::crop_outline(mem);
     }
 
-    // Draw brush cursor
-    {
-        if (mem->current_tool == PapayaTool_Brush &&
-            (!ImGui::GetIO().KeyAlt || mem->mouse.is_down[1]))
-        {
-            f32 ScaledDiameter = mem->brush->diameter * mem->cur_doc->canvas_zoom;
-
-            pagl_transform_quad_mesh(mem->brush->mesh_cursor,
-                                     (mem->mouse.is_down[1] ||
-                                      mem->mouse.was_down[1] ?
-                                      mem->brush->rt_drag_start_pos :
-                                      mem->mouse.pos)
-                                     - (Vec2(ScaledDiameter,ScaledDiameter) * 0.5f),
-                                    Vec2(ScaledDiameter,ScaledDiameter));
-
-            GLCHK( glEnable(GL_BLEND) );
-            GLCHK( glBlendEquation(GL_FUNC_ADD) );
-            GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-        
-            pagl_draw_mesh(mem->brush->mesh_cursor,
-                           mem->brush->pgm_cursor,
-                           4,
-                           Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
-                           Pagl_UniformType_Color, Color(1.0f, 0.0f, 0.0f, mem->mouse.is_down[1] ? mem->brush->opacity : 0.0f),
-                           Pagl_UniformType_Float, mem->brush->hardness,
-                           Pagl_UniformType_Float, ScaledDiameter);
-        }
-    }
-
     // Eye dropper
     if ((mem->current_tool == PapayaTool_EyeDropper ||
          (mem->current_tool == PapayaTool_Brush && ImGui::GetIO().KeyAlt))
         && mem->mouse.in_workspace) {
         update_and_render_eye_dropper(mem);
     }
+
+    // TODO: /Switch case <------
 
 EndOfDoc:
 
