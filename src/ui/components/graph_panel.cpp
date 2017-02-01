@@ -43,7 +43,7 @@ static PapayaSlot* find_snapped_slot(PapayaMemory* mem, Vec2 offset)
     PapayaNode* snapped_node = 0; // Snapped node
 
     // Find the node that is currently being moused over
-    for (int i = 0; i < mem->doc->num_nodes; i++) {
+    for (size_t i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
 
         Vec2 p = offset + Vec2(n->pos_x, n->pos_y);
@@ -116,9 +116,9 @@ static void draw_nodes(PapayaMemory* mem)
     GraphPanel* g = mem->graph_panel;
     Vec2 offset = ImGui::GetCursorScreenPos() + g->scroll_pos;
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    int hovered_node = -1;
+    size_t hovered_node = -1;
 
-    for (int i = 0; i < mem->doc->num_nodes; i++) {
+    for (size_t i = 0; i < mem->doc->num_nodes; i++) {
         PapayaNode* n = &mem->doc->nodes[i];
         Vec2 pos = offset + Vec2(n->pos_x - 1, n->pos_y - 1);
 

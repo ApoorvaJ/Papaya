@@ -37,5 +37,6 @@ namespace undo {
     void push(UndoBuffer* undo, Profile* profile, Vec2i pos, Vec2i size,
               i8* pre_brush_img, Vec2 line_segment_start_uv);
     void pop(PapayaMemory* mem, bool load_pre_brush_image);
+    void visualize_undo_buffer(PapayaMemory* mem);
 }
 

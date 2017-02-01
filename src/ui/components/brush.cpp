@@ -1,6 +1,7 @@
 
 #include "brush.h"
 #include "libs/mathlib.h"
+#include "libs/linmath.h"
 #include "ui.h"
 #include "pagl.h"
 #include "gl_lite.h"
@@ -91,6 +92,8 @@ static void clear_brush_frame_buffer(PapayaMemory* mem)
 
 static void draw_brush_stroke(PapayaMemory* mem)
 {
+    // TODO: Implement
+#if 0
     Brush* b = mem->brush;
     mem->misc.draw_overlay = true;
 
@@ -98,7 +101,7 @@ static void draw_brush_stroke(PapayaMemory* mem)
 
     // Bind frame buffer
     GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, mem->misc.fbo) );
-    GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
+    GLCHK( glViewport(0, 0, mem->doc->canvas_size.x, mem->doc->canvas_size.y) );
     GLCHK( glDisable(GL_BLEND) );
     GLCHK( glDisable(GL_SCISSOR_TEST) );
 
@@ -106,16 +109,17 @@ static void draw_brush_stroke(PapayaMemory* mem)
         GLCHK( glUseProgram(b->pgm_stroke->id) );
 
         // TODO: Tidy up the uniform calculation variables
-        f32 w = (f32)mem->cur_doc->width;
-        f32 h = (f32)mem->cur_doc->height;
+        f32 w = (f32)mem->doc->canvas_size.x;
+        f32 h = (f32)mem->doc->canvas_size.y;
         Vec2 c = (b->diameter % 2 == 0 ? Vec2() :
                   Vec2(0.5f / w, 0.5f / h)); // Pixel correction
 
         Vec2 pos = mem->mouse.uv + c;
         Vec2 last_pos = (b->draw_line_segment ?
                          b->line_segment_start_uv : mem->mouse.last_uv) + c;
-        pos.y *= mem->cur_doc->inverse_aspect;
-        last_pos.y *= mem->cur_doc->inverse_aspect;
+        f32 inv_aspect = mem->doc->canvas_size.y / mem->doc->canvas_size.x;
+        pos.y *= inv_aspect;
+        last_pos.y *= inv_aspect;
 
         b->draw_line_segment = false;
 
@@ -130,21 +134,27 @@ static void draw_brush_stroke(PapayaMemory* mem)
             }
         }
 
-        f32 uv_dia = (f32)b->diameter / ((f32)mem->cur_doc->width * 2.0f);
+        f32 uv_dia = (f32)b->diameter / (mem->doc->canvas_size.x * 2.0f);
         Color* a = &mem->color_panel->current_color;
         Color col = Color(a->r, a->g, a->b, b->opacity);
 
         GLCHK( glDisable(GL_BLEND) );
 
+        f32 proj_mtx[4][4];
+        mat4x4_ortho(proj_mtx, 0.f,
+                     mem->doc->canvas_size.x, 0.f,
+                     mem->doc->canvas_size.y,
+                     -1.f, 1.f);
+
         pagl_draw_mesh(b->mesh_RTTBrush, b->pgm_stroke, 8,
-                       Pagl_UniformType_Matrix4, &mem->cur_doc->proj_mtx[0][0],
+                       Pagl_UniformType_Matrix4, &proj_mtx[0][0],
                        Pagl_UniformType_Tex0, mem->misc.fbo_sample_tex,
                        Pagl_UniformType_Vec2, pos,
                        Pagl_UniformType_Vec2, last_pos,
                        Pagl_UniformType_Float, uv_dia,
                        Pagl_UniformType_Color, col,
                        Pagl_UniformType_Float, hardness,
-                       Pagl_UniformType_Float, mem->cur_doc->inverse_aspect);
+                       Pagl_UniformType_Float, inv_aspect);
     }
 
     // Swap textures
@@ -175,12 +185,12 @@ static void draw_brush_stroke(PapayaMemory* mem)
                        1,
                        Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0]);
     }
-
+#endif
 }
 
 static void draw_brush_cursor(PapayaMemory* mem)
 {
-    f32 ScaledDiameter = mem->brush->diameter * mem->cur_doc->canvas_zoom;
+    f32 ScaledDiameter = mem->brush->diameter * mem->doc->canvas_zoom;
 
     pagl_transform_quad_mesh(mem->brush->mesh_cursor,
                              (mem->mouse.is_down[1] ||
@@ -242,7 +252,7 @@ void update_and_render_brush(PapayaMemory* mem)
             f32 opacity = b->rt_drag_start_opacity + (delta.x * 0.0025f);
             b->opacity = math::clamp(opacity, 0.0f, 1.0f);
         } else {
-            f32 zoom = mem->cur_doc ? mem->cur_doc->canvas_zoom : 1.0f;
+            f32 zoom = mem->doc ? mem->doc->canvas_zoom : 1.0f;
             f32 dia = b->rt_drag_start_diameter + (delta.x / zoom * 2.0f);
             b->diameter = math::clamp((i32)dia, 1, b->max_diameter);
 
@@ -264,8 +274,8 @@ void update_and_render_brush(PapayaMemory* mem)
         b->being_dragged = true;
         b->draw_line_segment = (ImGui::GetIO().KeyShift &&
                                 b->line_segment_start_uv.x >= 0.0f);
-        b->paint_area_1 = Vec2i(mem->cur_doc->width + 1,
-                                mem->cur_doc->height + 1);
+        b->paint_area_1 = Vec2i(mem->doc->canvas_size.x + 1,
+                                mem->doc->canvas_size.y + 1);
         b->paint_area_2 = Vec2i(0,0);
         clear_brush_frame_buffer(mem);
 

@@ -13,7 +13,6 @@ SRCS=linux_ui.cpp               \
 	 single_header_libs.cpp     \
 	 crop_rotate.cpp            \
 	 metrics_window.cpp         \
-	 node.cpp                   \
 	 brush.cpp                  \
 	 color_panel.cpp            \
 	 eye_dropper.cpp            \

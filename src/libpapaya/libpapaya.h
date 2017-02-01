@@ -89,11 +89,6 @@ struct PapayaNode {
     } params;
 };
 
-struct PapayaDocument {
-    PapayaNode* nodes;
-    int num_nodes;
-};
-
 // -----------------------------------------------------------------------------
 
 void papaya_evaluate_node(PapayaNode* node, int w, int h, uint8_t* out);

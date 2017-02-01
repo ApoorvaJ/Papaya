@@ -25,6 +25,8 @@ void crop_rotate::init(PapayaMemory* mem)
 
 void crop_rotate::toolbar(PapayaMemory* mem)
 {
+    // TODO: Implement
+#if 0
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3, 0));
     if (ImGui::Button("-90")) { mem->crop_rotate.base_rotation--; }
     ImGui::SameLine();
@@ -128,10 +130,13 @@ void crop_rotate::toolbar(PapayaMemory* mem)
     }
 
     ImGui::PopStyleVar();
+#endif
 }
 
 void crop_rotate::crop_outline(PapayaMemory* mem)
 {
+    // TODO: Implement
+#if 0
     // TODO: Function lacks grace
     Vec2 mouse = mem->mouse.pos;
     Vec2 p[4];
@@ -302,4 +307,5 @@ drawing:
                    mem->shaders[PapayaShader_VertexColor],
                    1,
                    Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0]);
+#endif
 }

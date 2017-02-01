@@ -3,6 +3,7 @@
 
 #include "undo.h"
 #include "libs/mathlib.h"
+#include "libs/linmath.h"
 #include "ui.h"
 #include "pagl.h"
 #include "gl_lite.h"
@@ -11,11 +12,12 @@
 void undo::init(PapayaMemory* mem)
 {
     size_t size = 512 * 1024 * 1024;
-    size_t min_size = 3 * (sizeof(UndoData) + 8 * mem->cur_doc->width * mem->cur_doc->height);
-    mem->cur_doc->undo.size = math::max(size, min_size);
+    size_t min_size = 3 * (sizeof(UndoData) + 8 * mem->doc->canvas_size.x *
+                           mem->doc->canvas_size.y);
+    mem->doc->undo.size = math::max(size, min_size);
 
-    mem->cur_doc->undo.start = malloc((size_t)mem->cur_doc->undo.size);
-    mem->cur_doc->undo.current_index = -1;
+    mem->doc->undo.start = malloc((size_t)mem->doc->undo.size);
+    mem->doc->undo.current_index = -1;
 
     // TODO: Near-duplicate code from brush release. Combine.
     // Additive render-to-texture
@@ -26,32 +28,39 @@ void undo::init(PapayaMemory* mem)
                                       GL_TEXTURE_2D, mem->misc.fbo_render_tex,
                                       0) );
 
-        GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
+        GLCHK( glViewport(0, 0, mem->doc->canvas_size.x, mem->doc->canvas_size.y) );
         GLCHK( glUseProgram(mem->shaders[PapayaShader_ImGui]->id) );
 
+        f32 proj_mtx[4][4];
+        mat4x4_ortho(proj_mtx, 0.f,
+                     mem->doc->canvas_size.x, 0.f,
+                     mem->doc->canvas_size.y,
+                     -1.f, 1.f);
+
         GLCHK( glUniformMatrix4fv(mem->shaders[PapayaShader_ImGui]->uniforms[0],
-                                  1, GL_FALSE, &mem->cur_doc->proj_mtx[0][0]) );
+                                  1, GL_FALSE, &proj_mtx[0][0]) );
 
         GLCHK( glBindBuffer(GL_ARRAY_BUFFER, mem->brush->mesh_RTTAdd->vbo_handle) );
         pagl_set_vertex_attribs(mem->shaders[PapayaShader_ImGui]);
 
         // GLCHK( glBindTexture(GL_TEXTURE_2D,
-        //                      (GLuint)(intptr_t)mem->cur_doc->texture_id) );
+        //                      (GLuint)(intptr_t)mem->doc->texture_id) );
         // GLCHK( glDrawArrays (GL_TRIANGLES, 0, 6) );
 
-        undo::push(&mem->cur_doc->undo, &mem->profile,
-                   Vec2i(0,0), Vec2i(mem->cur_doc->width, mem->cur_doc->height),
+        undo::push(&mem->doc->undo, &mem->profile,
+                   Vec2i(0,0), Vec2i(mem->doc->canvas_size.x,
+                                     mem->doc->canvas_size.y),
                    0, Vec2());
 
         // u32 temp = mem->misc.fbo_render_tex;
-        // mem->misc.fbo_render_tex = mem->cur_doc->texture_id;
+        // mem->misc.fbo_render_tex = mem->doc->texture_id;
         GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                       GL_TEXTURE_2D, mem->misc.fbo_render_tex,
                                       0) );
-        // mem->cur_doc->texture_id = temp;
+        // mem->doc->texture_id = temp;
 
         GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-        GLCHK( glViewport(0, 0, mem->cur_doc->width, mem->cur_doc->height) );
+        GLCHK( glViewport(0, 0, mem->doc->canvas_size.x, mem->doc->canvas_size.y) );
 
         GLCHK( glDisable(GL_BLEND) );
     }
@@ -59,11 +68,11 @@ void undo::init(PapayaMemory* mem)
 
 void undo::destroy(PapayaMemory* mem)
 {
-    free(mem->cur_doc->undo.start);
-    mem->cur_doc->undo.start = mem->cur_doc->undo.top = 0;
-    mem->cur_doc->undo.base = mem->cur_doc->undo.current = mem->cur_doc->undo.last = 0;
-    mem->cur_doc->undo.size = mem->cur_doc->undo.count = 0;
-    mem->cur_doc->undo.current_index = -1;
+    free(mem->doc->undo.start);
+    mem->doc->undo.start = mem->doc->undo.top = 0;
+    mem->doc->undo.base = mem->doc->undo.current = mem->doc->undo.last = 0;
+    mem->doc->undo.size = mem->doc->undo.count = 0;
+    mem->doc->undo.current_index = -1;
 }
 
 // This function reads from the frame buffer and hence needs the appropriate frame buffer to be
@@ -184,7 +193,7 @@ void undo::push(UndoBuffer* undo, Profile* profile, Vec2i pos, Vec2i size,
 
 void undo::pop(PapayaMemory* mem, bool load_pre_brush_image)
 {
-    UndoBuffer* undo = &mem->cur_doc->undo;
+    UndoBuffer* undo = &mem->doc->undo;
     UndoData data = {};
     i8* img = 0;
     bool alloc_used = false;
@@ -209,7 +218,7 @@ void undo::pop(PapayaMemory* mem, bool load_pre_brush_image)
                (size_t)(img_size - (bytes_to_right - sizeof(UndoData))));
     }
 
-    // GLCHK( glBindTexture(GL_TEXTURE_2D, mem->cur_doc->texture_id) );
+    // GLCHK( glBindTexture(GL_TEXTURE_2D, mem->doc->texture_id) );
     // GLCHK( glTexSubImage2D(GL_TEXTURE_2D, 0, data.pos.x, data.pos.y,
     //                        data.size.x, data.size.y, GL_RGBA, GL_UNSIGNED_BYTE, 
     //                        img + (load_pre_brush_image ? 
@@ -218,3 +227,41 @@ void undo::pop(PapayaMemory* mem, bool load_pre_brush_image)
     if (alloc_used) { free(img); }
 }
 
+void undo::visualize_undo_buffer(PapayaMemory* mem)
+{
+    ImGui::Begin("Undo buffer");
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    // Buffer line
+    f32 width = ImGui::GetWindowSize().x;
+    Vec2 Pos = ImGui::GetWindowPos();
+    Vec2 P1 = Pos + Vec2(10, 40);
+    Vec2 P2 = Pos + Vec2(width - 10, 40);
+    draw_list->AddLine(P1, P2, 0xFFFFFFFF);
+
+    // Base mark
+    u64 BaseOffset = (i8*)mem->doc->undo.base - (i8*)mem->doc->undo.start;
+    f32 BaseX       = P1.x + (f32)BaseOffset / (f32)mem->doc->undo.size * (P2.x - P1.x);
+    draw_list->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
+
+    // Current mark
+    u64 CurrOffset = (i8*)mem->doc->undo.current - (i8*)mem->doc->undo.start;
+    f32 CurrX       = P1.x + (f32)CurrOffset / (f32)mem->doc->undo.size * (P2.x - P1.x);
+    draw_list->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
+
+    // Top mark
+    u64 TopOffset = (i8*)mem->doc->undo.top - (i8*)mem->doc->undo.start;
+    f32 TopX       = P1.x + (f32)TopOffset / (f32)mem->doc->undo.size * (P2.x - P1.x);
+    draw_list->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
+
+    ImGui::Text(" "); //
+    ImGui::Text(" "); // Vertical spacers
+    ImGui::TextColored(Color(0.0f,1.0f,1.0f,1.0f), "Base    %" PRIu64, BaseOffset);
+    ImGui::TextColored(Color(1.0f,0.0f,1.0f,1.0f), "Current %" PRIu64, CurrOffset);
+    ImGui::TextColored(Color(1.0f,1.0f,0.0f,1.0f), "Top     %" PRIu64, TopOffset);
+    ImGui::Text("Count   %lu", mem->doc->undo.count);
+    ImGui::Text("Index   %lu", mem->doc->undo.current_index);
+
+    ImGui::End();
+}

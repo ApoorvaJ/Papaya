@@ -40,111 +40,56 @@ void core::resize_doc(PapayaMemory* mem, i32 width, i32 height)
 
 bool core::open_doc(const char* path, PapayaMemory* mem)
 {
-    // TODO: Move the profiling data into a globally accessible struct.
     timer::start(Timer_ImageOpen);
-
-    // Load/create image
-    {
-        u8* img = 0;
-        Document doc = {0};
-
-        if (path) {
-            img = stbi_load(path, &doc.width, &doc.height,
-                            &doc.components_per_pixel, 4);
-        } else {
-            // Creating new image
-            img = (u8*)calloc(1,
-                mem->misc.preview_width * mem->misc.preview_height * 4);
-        }
-
-        if (!img) { return false; }
-
-        mem->docs.push_back(doc);
-        mem->cur_doc = &mem->docs[0];
-
-        Node* node = node::init("Base", Vec2(58, 108), img, mem);
-
-        int w,h,c;
-        u8* o_img = stbi_load("/home/apoorvaj/Pictures/o1.png", &w, &h, &c, 4);
-        Node* o_node = node::init("Overlay", Vec2(58, 58), o_img, mem);
-        node::connect(node, o_node, mem);
-
-        mem->cur_doc->inverse_aspect = (f32)mem->cur_doc->height /
-                                       (f32)mem->cur_doc->width;
-        free(img);
-    }
-
-    resize_doc(mem, mem->cur_doc->width, mem->cur_doc->height);
-
-    // Set up the frame buffer
-    {
-        // Create a framebuffer object and bind it
-        GLCHK( glDisable(GL_BLEND) );
-        GLCHK( glGenFramebuffers(1, &mem->misc.fbo) );
-        GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, mem->misc.fbo) );
-
-        // Attach the color texture to the FBO
-        GLCHK( glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                      GL_TEXTURE_2D, mem->misc.fbo_render_tex,
-                                      0) );
-
-        static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-        GLCHK( glDrawBuffers(1, draw_buffers) );
-
-        GLenum FrameBufferStatus = GLCHK( glCheckFramebufferStatus(GL_FRAMEBUFFER) );
-        if(FrameBufferStatus != GL_FRAMEBUFFER_COMPLETE) {
-            // TODO: Log: Frame buffer not initialized correctly
-            exit(1);
-        }
-
-        GLCHK( glBindFramebuffer(GL_FRAMEBUFFER, 0) );
-    }
-
-    // Projection matrix
-    mat4x4_ortho(mem->cur_doc->proj_mtx, 0.f, 
-                 (f32)mem->cur_doc->width, 0.f, (f32)mem->cur_doc->height,
-                 -1.f, 1.f);
-
-    // undo::init(mem);
-
+    // TODO: Implement
     timer::stop(Timer_ImageOpen);
-
-    //TODO: Move this to adjust after cropping and rotation
-    mem->crop_rotate.top_left = Vec2(0,0);
-    mem->crop_rotate.bot_right = Vec2((f32)mem->cur_doc->width, (f32)mem->cur_doc->height);
-
     return true;
 }
 
 void core::close_doc(PapayaMemory* mem)
 {
-    for (int i = 0; i < mem->cur_doc->node_count; i++) {
-        node::destroy(mem->cur_doc->nodes[i]);
-    }
-
-    // undo::destroy(mem);
-
-    // Frame buffer
-    if (mem->misc.fbo) {
-        GLCHK( glDeleteFramebuffers(1, &mem->misc.fbo) );
-        mem->misc.fbo = 0;
-    }
-
-    if (mem->misc.fbo_render_tex) {
-        GLCHK( glDeleteTextures(1, &mem->misc.fbo_render_tex) );
-        mem->misc.fbo_render_tex = 0;
-    }
-
-    if (mem->misc.fbo_sample_tex) {
-        GLCHK( glDeleteTextures(1, &mem->misc.fbo_sample_tex) );
-        mem->misc.fbo_sample_tex = 0;
-    }
-
-    destroy_brush_meshes(mem->brush);
+    free(mem->doc->nodes);
+    free(mem->doc);
 }
 
 void core::init(PapayaMemory* mem)
 {
+    // TODO: Temporary only
+    {
+        mem->doc = (Document*) calloc(1, sizeof(Document));
+        mem->doc->num_nodes = 3;
+        mem->doc->nodes = (PapayaNode*) calloc(1, mem->doc->num_nodes *
+                                               sizeof(PapayaNode));
+        int w0, w1, h0, h1, c0, c1;
+        u8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
+        u8* img1 = stbi_load("/home/apoorvaj/Pictures/o2.png", &w1, &h1, &c1, 4);
+
+        PapayaNode* n = mem->doc->nodes;
+        init_bitmap_node(&n[0], "Base image", img0, w0, h0, c0);
+        init_invert_color_node(&n[1], "Color inversion");
+        init_bitmap_node(&n[2], "Yellow circle", img1, w1, h1, c1);
+
+        papaya_connect(&n[0].slots[1], &n[1].slots[0]);
+        papaya_connect(&n[2].slots[1], &n[1].slots[2]);
+
+        n[0].pos_x = 108; n[0].pos_y = 158;
+        n[1].pos_x = 108; n[1].pos_y = 108;
+        n[2].pos_x = 158; n[2].pos_y = 158;
+
+        // Create texture
+        GLCHK( glGenTextures(1, &mem->misc.canvas_tex) );
+        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
+        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
+
+        mem->misc.w = w0;
+        mem->misc.h = h0;
+        mem->doc->canvas_size = Vec2(w0, h0);
+        mem->doc->canvas_zoom = 1.0f;
+        mem->doc->canvas_pos = Vec2((mem->window.width - mem->doc->canvas_size.x) / 2.0f,
+                                    (mem->window.height - mem->doc->canvas_size.y) / 2.0f);
+    }
+
     compile_shaders(mem);
 
     // Init values and load textures
@@ -269,38 +214,8 @@ void core::init(PapayaMemory* mem)
         style.Colors[ImGuiCol_SliderGrabActive] = mem->colors[PapayaCol_ButtonActive];
     }
 
-    // TODO: Temporary only
-    {
-        mem->doc = (PapayaDocument*) calloc(1, sizeof(PapayaDocument));
-        mem->doc->num_nodes = 3;
-        mem->doc->nodes = (PapayaNode*) calloc(1, mem->doc->num_nodes *
-                                               sizeof(PapayaNode));
-        int w0, w1, h0, h1, c0, c1;
-        u8* img0 = stbi_load("/home/apoorvaj/Pictures/o0.png", &w0, &h0, &c0, 4);
-        u8* img1 = stbi_load("/home/apoorvaj/Pictures/o2.png", &w1, &h1, &c1, 4);
-
-        PapayaNode* n = mem->doc->nodes;
-        init_bitmap_node(&n[0], "Base image", img0, w0, h0, c0);
-        init_invert_color_node(&n[1], "Color inversion");
-        init_bitmap_node(&n[2], "Yellow circle", img1, w1, h1, c1);
-
-        papaya_connect(&n[0].slots[1], &n[1].slots[0]);
-        papaya_connect(&n[2].slots[1], &n[1].slots[2]);
-
-        n[0].pos_x = 108; n[0].pos_y = 158;
-        n[1].pos_x = 108; n[1].pos_y = 108;
-        n[2].pos_x = 158; n[2].pos_y = 158;
-
-        // Create texture
-        GLCHK( glGenTextures(1, &mem->misc.canvas_tex) );
-        GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
-        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) );
-        GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) );
-
-        mem->misc.w = w0;
-        mem->misc.h = h0;
-        update_canvas(mem);
-    }
+    // TODO: Temporary
+    update_canvas(mem);
 }
 
 void core::destroy(PapayaMemory* mem)
@@ -330,23 +245,24 @@ void core::resize(PapayaMemory* mem, i32 width, i32 height)
     // TODO: Improve this code to autocenter canvas on turning the right panels
     //       on and off
     // TODO: Put common layout constants in struct
-    i32 top_margin = 53; 
-    f32 available_width = mem->window.width;
-    if (mem->misc.show_nodes) { available_width -= 400.0f; }
-    f32 available_height = mem->window.height - top_margin;
+    // i32 top_margin = 53; 
+    // f32 available_width = mem->window.width;
+    // if (mem->misc.show_nodes) { available_width -= 400.0f; }
+    // f32 available_height = mem->window.height - top_margin;
 
-    mem->cur_doc->canvas_zoom = 0.8f *
-        math::min(available_width  / (f32)mem->cur_doc->width,
-                  available_height / (f32)mem->cur_doc->height);
-    if (mem->cur_doc->canvas_zoom > 1.0f) { mem->cur_doc->canvas_zoom = 1.0f; }
+    // TODO: Adjust canvas zoom after resize
+    // mem->doc->canvas_zoom = 0.8f *
+    //     math::min(available_width  / (f32)mem->doc->width,
+    //               available_height / (f32)mem->doc->height);
+    // if (mem->doc->canvas_zoom > 1.0f) { mem->doc->canvas_zoom = 1.0f; }
 
-    i32 x = 
-        (available_width - (f32)mem->cur_doc->width * mem->cur_doc->canvas_zoom)
-        / 2.0f;
-    i32 y = top_margin + 
-       (available_height - (f32)mem->cur_doc->height * mem->cur_doc->canvas_zoom)
-       / 2.0f;
-    mem->cur_doc->canvas_pos = Vec2i(x, y);
+    // TODO: Adjust canvas position after resize
+    // i32 x = (available_width - (f32)mem->doc->width * mem->doc->canvas_zoom)
+    //     / 2.0f;
+    // i32 y = top_margin + 
+    //    (available_height - (f32)mem->doc->height * mem->doc->canvas_zoom)
+    //    / 2.0f;
+    // mem->doc->canvas_pos = Vec2i(x, y);
 }
 
 void core::update(PapayaMemory* mem)
@@ -356,9 +272,10 @@ void core::update(PapayaMemory* mem)
         // Current mouse info
         {
             mem->mouse.pos = math::round_to_vec2i(ImGui::GetMousePos());
-            Vec2 mouse_pixel_pos = Vec2(math::floor((mem->mouse.pos.x - mem->cur_doc->canvas_pos.x) / mem->cur_doc->canvas_zoom),
-                                        math::floor((mem->mouse.pos.y - mem->cur_doc->canvas_pos.y) / mem->cur_doc->canvas_zoom));
-            mem->mouse.uv = Vec2(mouse_pixel_pos.x / (f32) mem->cur_doc->width, mouse_pixel_pos.y / (f32) mem->cur_doc->height);
+            Vec2 mouse_pixel_pos = Vec2(floor((mem->mouse.pos.x - mem->doc->canvas_pos.x) / mem->doc->canvas_zoom),
+                                        floor((mem->mouse.pos.y - mem->doc->canvas_pos.y) / mem->doc->canvas_zoom));
+            mem->mouse.uv = Vec2(mouse_pixel_pos.x / (f32) mem->doc->canvas_size.x,
+                                 mouse_pixel_pos.y / (f32) mem->doc->canvas_size.y);
 
             for (i32 i = 0; i < 3; i++) {
                 mem->mouse.is_down[i] = ImGui::IsMouseDown(i);
@@ -433,22 +350,23 @@ void core::update(PapayaMemory* mem)
             if (ImGui::BeginMenu("FILE")) {
                 mem->misc.menu_open = true;
 
-                if (mem->cur_doc && mem->cur_doc->final_node) {
+                // TODO: Implement
+                /*if (mem->doc) {
                     // A document is already open
 
                     if (ImGui::MenuItem("Close")) { close_doc(mem); }
                     if (ImGui::MenuItem("Save")) {
                         char* Path = platform::save_file_dialog();
-                        u8* tex = (u8*)malloc(4 * mem->cur_doc->width * mem->cur_doc->height);
+                        u8* tex = (u8*)malloc(4 * mem->doc->width * mem->doc->height);
                         if (Path) {
                             // TODO: Do this on a separate thread. Massively blocks UI for large images.
                             GLCHK(glBindTexture(GL_TEXTURE_2D,
-                                                mem->cur_doc->final_node->tex_id));
+                                                mem->doc->final_node->tex_id));
                             GLCHK(glGetTexImage(GL_TEXTURE_2D, 0,
                                                 GL_RGBA, GL_UNSIGNED_BYTE,
                                                 tex));
 
-                            i32 Result = stbi_write_png(Path, mem->cur_doc->width, mem->cur_doc->height, 4, tex, 4 * mem->cur_doc->width);
+                            i32 Result = stbi_write_png(Path, mem->doc->width, mem->doc->height, 4, tex, 4 * mem->doc->width);
                             if (!Result) {
                                 // TODO: Log: Save failed
                                 platform::print("Save failed\n");
@@ -458,7 +376,7 @@ void core::update(PapayaMemory* mem)
                             free(Path);
                         }
                     }
-                } else {
+                } else */{
                 // No document open
 
                     if (ImGui::MenuItem("Open")) {
@@ -598,63 +516,33 @@ void core::update(PapayaMemory* mem)
         bool Show = true;
         ImGui::Begin("Tool param bar", &Show, mem->window.default_imgui_flags);
 
-        // New document options. Might convert into modal window later.
-        if (!mem->cur_doc) // No document is open
+        if (mem->current_tool == PapayaTool_Brush)
         {
-            // Size
-            {
-                i32 size[2];
-                size[0] = mem->cur_doc->width;
-                size[1] = mem->cur_doc->height;
-                ImGui::PushItemWidth(85);
-                ImGui::InputInt2("Size", size);
-                ImGui::PopItemWidth();
-                mem->cur_doc->width  = math::clamp(size[0], 1, 9000);
-                mem->cur_doc->height = math::clamp(size[1], 1, 9000);
-                ImGui::SameLine();
-                ImGui::Checkbox("Preview", &mem->misc.preview_image_size);
-            }
+            ImGui::PushItemWidth(85);
+            ImGui::InputInt("Diameter", &mem->brush->diameter);
+            mem->brush->diameter = math::clamp(mem->brush->diameter, 1, mem->brush->max_diameter);
 
-            // "New" button
-            {
-                ImGui::SameLine(ImGui::GetWindowWidth() - 70); // TODO: Magic number alert
-                if (ImGui::Button("New Image"))
-                {
-                    mem->cur_doc->components_per_pixel = 4;
-                    open_doc(0, mem);
-                }
-            }
+            ImGui::PopItemWidth();
+            ImGui::PushItemWidth(80);
+            ImGui::SameLine();
+
+            f32 scaled_hardness = mem->brush->hardness * 100.0f;
+            ImGui::SliderFloat("Hardness", &scaled_hardness, 0.0f, 100.0f, "%.0f");
+            mem->brush->hardness = scaled_hardness / 100.0f;
+            ImGui::SameLine();
+
+            f32 scaled_opacity = mem->brush->opacity * 100.0f;
+            ImGui::SliderFloat("Opacity", &scaled_opacity, 0.0f, 100.0f, "%.0f");
+            mem->brush->opacity = scaled_opacity / 100.0f;
+            ImGui::SameLine();
+
+            ImGui::Checkbox("Anti-alias", &mem->brush->anti_alias); // TODO: Replace this with a toggleable icon button
+
+            ImGui::PopItemWidth();
         }
-        else  // Document is open
+        else if (mem->current_tool == PapayaTool_CropRotate)
         {
-            if (mem->current_tool == PapayaTool_Brush)
-            {
-                ImGui::PushItemWidth(85);
-                ImGui::InputInt("Diameter", &mem->brush->diameter);
-                mem->brush->diameter = math::clamp(mem->brush->diameter, 1, mem->brush->max_diameter);
-
-                ImGui::PopItemWidth();
-                ImGui::PushItemWidth(80);
-                ImGui::SameLine();
-
-                f32 scaled_hardness = mem->brush->hardness * 100.0f;
-                ImGui::SliderFloat("Hardness", &scaled_hardness, 0.0f, 100.0f, "%.0f");
-                mem->brush->hardness = scaled_hardness / 100.0f;
-                ImGui::SameLine();
-
-                f32 scaled_opacity = mem->brush->opacity * 100.0f;
-                ImGui::SliderFloat("Opacity", &scaled_opacity, 0.0f, 100.0f, "%.0f");
-                mem->brush->opacity = scaled_opacity / 100.0f;
-                ImGui::SameLine();
-
-                ImGui::Checkbox("Anti-alias", &mem->brush->anti_alias); // TODO: Replace this with a toggleable icon button
-
-                ImGui::PopItemWidth();
-            }
-            else if (mem->current_tool == PapayaTool_CropRotate)
-            {
-                crop_rotate::toolbar(mem);
-            }
+            crop_rotate::toolbar(mem);
         }
 
         ImGui::End();
@@ -666,28 +554,7 @@ void core::update(PapayaMemory* mem)
         draw_graph_panel(mem);
     }
 
-    // Image size preview
-    if (!mem->cur_doc && mem->misc.preview_image_size) {
-        i32 top_margin = 53; // TODO: Put common layout constants in struct
-        pagl_transform_quad_mesh(mem->meshes[PapayaMesh_ImageSizePreview],
-            Vec2((f32)(mem->window.width - mem->cur_doc->width) / 2, top_margin + (f32)(mem->window.height - top_margin - mem->cur_doc->height) / 2),
-            Vec2((f32)mem->cur_doc->width, (f32)mem->cur_doc->height));
-
-        GLCHK( glEnable(GL_BLEND) );
-        GLCHK( glBlendEquation(GL_FUNC_ADD) );
-        GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
-
-        pagl_draw_mesh(mem->meshes[PapayaMesh_ImageSizePreview],
-                       mem->shaders[PapayaShader_ImageSizePreview],
-                       5,
-                       Pagl_UniformType_Matrix4, &mem->window.proj_mtx[0][0],
-                       Pagl_UniformType_Color, mem->colors[PapayaCol_ImageSizePreview1],
-                       Pagl_UniformType_Color, mem->colors[PapayaCol_ImageSizePreview2],
-                       Pagl_UniformType_Float, (f32) mem->cur_doc->width,
-                       Pagl_UniformType_Float, (f32) mem->cur_doc->height);
-    }
-
-    if (!mem->cur_doc) { goto EndOfDoc; }
+    if (!mem->doc) { goto EndOfDoc; }
 
     // Undo/Redo
     {
@@ -697,26 +564,26 @@ void core::update(PapayaMemory* mem)
             bool refresh = false;
 
             if (ImGui::GetIO().KeyShift &&
-                mem->cur_doc->undo.current_index < mem->cur_doc->undo.count - 1 &&
-                mem->cur_doc->undo.current->next != 0) {
+                mem->doc->undo.current_index < mem->doc->undo.count - 1 &&
+                mem->doc->undo.current->next != 0) {
                 // Redo 
-                mem->cur_doc->undo.current = mem->cur_doc->undo.current->next;
-                mem->cur_doc->undo.current_index++;
-                mem->brush->line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
+                mem->doc->undo.current = mem->doc->undo.current->next;
+                mem->doc->undo.current_index++;
+                mem->brush->line_segment_start_uv = mem->doc->undo.current->line_segment_start_uv;
                 refresh = true;
             } else if (!ImGui::GetIO().KeyShift &&
-                mem->cur_doc->undo.current_index > 0 &&
-                mem->cur_doc->undo.current->prev != 0) {
+                mem->doc->undo.current_index > 0 &&
+                mem->doc->undo.current->prev != 0) {
                 // Undo
-                if (mem->cur_doc->undo.current->IsSubRect) {
+                if (mem->doc->undo.current->IsSubRect) {
                     // undo::pop(mem, true);
                 } else {
                     refresh = true;
                 }
 
-                mem->cur_doc->undo.current = mem->cur_doc->undo.current->prev;
-                mem->cur_doc->undo.current_index--;
-                mem->brush->line_segment_start_uv = mem->cur_doc->undo.current->line_segment_start_uv;
+                mem->doc->undo.current = mem->doc->undo.current->prev;
+                mem->doc->undo.current_index--;
+                mem->brush->line_segment_start_uv = mem->doc->undo.current->line_segment_start_uv;
             }
 
             if (refresh) {
@@ -725,88 +592,60 @@ void core::update(PapayaMemory* mem)
         }
 
         // Visualization: Undo buffer
-        if (mem->misc.show_undo_buffer)
-        {
-            ImGui::Begin("Undo buffer");
-
-            ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
-            // Buffer line
-            f32 width = ImGui::GetWindowSize().x;
-            Vec2 Pos    = ImGui::GetWindowPos();
-            Vec2 P1     = Pos + Vec2(10, 40);
-            Vec2 P2     = Pos + Vec2(width - 10, 40);
-            draw_list->AddLine(P1, P2, 0xFFFFFFFF);
-
-            // Base mark
-            u64 BaseOffset = (i8*)mem->cur_doc->undo.base - (i8*)mem->cur_doc->undo.start;
-            f32 BaseX       = P1.x + (f32)BaseOffset / (f32)mem->cur_doc->undo.size * (P2.x - P1.x);
-            draw_list->AddLine(Vec2(BaseX, Pos.y + 26), Vec2(BaseX,Pos.y + 54), 0xFFFFFF00);
-
-            // Current mark
-            u64 CurrOffset = (i8*)mem->cur_doc->undo.current - (i8*)mem->cur_doc->undo.start;
-            f32 CurrX       = P1.x + (f32)CurrOffset / (f32)mem->cur_doc->undo.size * (P2.x - P1.x);
-            draw_list->AddLine(Vec2(CurrX, Pos.y + 29), Vec2(CurrX, Pos.y + 51), 0xFFFF00FF);
-
-            // Top mark
-            u64 TopOffset = (i8*)mem->cur_doc->undo.top - (i8*)mem->cur_doc->undo.start;
-            f32 TopX       = P1.x + (f32)TopOffset / (f32)mem->cur_doc->undo.size * (P2.x - P1.x);
-            draw_list->AddLine(Vec2(TopX, Pos.y + 35), Vec2(TopX, Pos.y + 45), 0xFF00FFFF);
-
-            ImGui::Text(" "); ImGui::Text(" "); // Vertical spacers
-            ImGui::TextColored  (Color(0.0f,1.0f,1.0f,1.0f), "Base    %" PRIu64, BaseOffset);
-            ImGui::TextColored  (Color(1.0f,0.0f,1.0f,1.0f), "Current %" PRIu64, CurrOffset);
-            ImGui::TextColored  (Color(1.0f,1.0f,0.0f,1.0f), "Top     %" PRIu64, TopOffset);
-            ImGui::Text         ("Count   %lu", mem->cur_doc->undo.count);
-            ImGui::Text         ("Index   %lu", mem->cur_doc->undo.current_index);
-
-            ImGui::End();
+        if (mem->misc.show_undo_buffer) {
+            undo::visualize_undo_buffer(mem);
         }
     }
 
     // Canvas zooming and panning
     {
         // Panning
-        mem->cur_doc->canvas_pos += math::round_to_vec2i(ImGui::GetMouseDragDelta(2));
+        mem->doc->canvas_pos += math::round_to_vec2i(ImGui::GetMouseDragDelta(2));
         ImGui::ResetMouseDragDelta(2);
 
         // Zooming
         if (!ImGui::IsMouseDown(2) && ImGui::GetIO().MouseWheel)
         {
             f32 min_zoom = 0.01f, MaxZoom = 32.0f;
-            f32 zoom_speed = 0.2f * mem->cur_doc->canvas_zoom;
-            f32 scale_delta = math::min(MaxZoom - mem->cur_doc->canvas_zoom, ImGui::GetIO().MouseWheel * zoom_speed);
-            Vec2 old_zoom = Vec2((f32)mem->cur_doc->width, (f32)mem->cur_doc->height) * mem->cur_doc->canvas_zoom;
+            f32 zoom_speed = 0.2f * mem->doc->canvas_zoom;
+            f32 scale_delta = math::min(MaxZoom - mem->doc->canvas_zoom, ImGui::GetIO().MouseWheel * zoom_speed);
+            Vec2 old_zoom = mem->doc->canvas_size * mem->doc->canvas_zoom;
 
-            mem->cur_doc->canvas_zoom += scale_delta;
-            if (mem->cur_doc->canvas_zoom < min_zoom) { mem->cur_doc->canvas_zoom = min_zoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
-            Vec2i new_canvas_size = math::round_to_vec2i(Vec2((f32)mem->cur_doc->width, (f32)mem->cur_doc->height) * mem->cur_doc->canvas_zoom);
+            mem->doc->canvas_zoom += scale_delta;
+            if (mem->doc->canvas_zoom < min_zoom) { mem->doc->canvas_zoom = min_zoom; } // TODO: Dynamically clamp min such that fully zoomed out image is 2x2 pixels?
+            Vec2 new_canvas_size = mem->doc->canvas_size * mem->doc->canvas_zoom;
 
             if ((new_canvas_size.x > mem->window.width || new_canvas_size.y > mem->window.height))
             {
-                Vec2 pre_scale_mouse_pos = Vec2(mem->mouse.pos - mem->cur_doc->canvas_pos) / old_zoom;
-                Vec2 new_pos = Vec2(mem->cur_doc->canvas_pos) -
-                    Vec2(pre_scale_mouse_pos.x * scale_delta * (f32)mem->cur_doc->width,
-                        pre_scale_mouse_pos.y * scale_delta * (f32)mem->cur_doc->height);
-                mem->cur_doc->canvas_pos = math::round_to_vec2i(new_pos);
+                Vec2 pre_scale_mouse_pos = Vec2(mem->mouse.pos - mem->doc->canvas_pos) / old_zoom;
+                Vec2 new_pos = Vec2(mem->doc->canvas_pos) -
+                    Vec2(pre_scale_mouse_pos.x * scale_delta * mem->doc->canvas_size.x,
+                        pre_scale_mouse_pos.y * scale_delta * (f32)mem->doc->canvas_size.y);
+                mem->doc->canvas_pos = math::round_to_vec2i(new_pos);
             }
             else // Center canvas
             {
                 // TODO: Maybe disable centering on zoom out. Needs more usability testing.
                 i32 top_margin = 53; // TODO: Put common layout constants in struct
-                mem->cur_doc->canvas_pos.x = math::round_to_int((mem->window.width - (f32)mem->cur_doc->width * mem->cur_doc->canvas_zoom) / 2.0f);
-                mem->cur_doc->canvas_pos.y = top_margin + math::round_to_int((mem->window.height - top_margin - (f32)mem->cur_doc->height * mem->cur_doc->canvas_zoom) / 2.0f);
+                mem->doc->canvas_pos.x =
+                    math::round_to_int((mem->window.width -
+                                        (f32)mem->doc->canvas_size.x *
+                                        mem->doc->canvas_zoom) / 2.0f);
+                mem->doc->canvas_pos.y = top_margin +
+                    math::round_to_int((mem->window.height - top_margin -
+                                        (f32)mem->doc->canvas_size.y *
+                                        mem->doc->canvas_zoom) / 2.0f);
             }
         }
     }
 
     // Draw alpha grid
     {
+        glEnable(GL_SCISSOR_TEST);
         // TODO: Conflate PapayaMesh_AlphaGrid and PapayaMesh_Canvas?
         pagl_transform_quad_mesh(mem->meshes[PapayaMesh_AlphaGrid],
-                                 mem->cur_doc->canvas_pos,
-                                 Vec2(mem->cur_doc->width * mem->cur_doc->canvas_zoom,
-                                      mem->cur_doc->height * mem->cur_doc->canvas_zoom));
+                                 mem->doc->canvas_pos,
+                                 mem->doc->canvas_size * mem->doc->canvas_zoom);
 
         mat4x4 m;
         mat4x4_ortho(m, 0.f, (f32)mem->window.width, (f32)mem->window.height, 0.f, -1.f, 1.f);
@@ -814,14 +653,11 @@ void core::update(PapayaMemory* mem)
         if (mem->current_tool == PapayaTool_CropRotate) // Rotate around center
         {
             mat4x4 r;
-            Vec2 Offset = Vec2(mem->cur_doc->canvas_pos.x + mem->cur_doc->width *
-                               mem->cur_doc->canvas_zoom * 0.5f,
-                               mem->cur_doc->canvas_pos.y + mem->cur_doc->height *
-                               mem->cur_doc->canvas_zoom * 0.5f);
+            Vec2 offset = mem->doc->canvas_pos + (mem->doc->canvas_size * 0.5f);
 
-            mat4x4_translate_in_place(m, Offset.x, Offset.y, 0.f);
+            mat4x4_translate_in_place(m, offset.x, offset.y, 0.f);
             mat4x4_rotate_Z(r, m, math::to_radians(90.0f * mem->crop_rotate.base_rotation));
-            mat4x4_translate_in_place(r, -Offset.x, -Offset.y, 0.f);
+            mat4x4_translate_in_place(r, -offset.x, -offset.y, 0.f);
             mat4x4_dup(m, r);
         }
 
@@ -829,23 +665,24 @@ void core::update(PapayaMemory* mem)
         GLCHK( glBlendEquation(GL_FUNC_ADD) );
         GLCHK( glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
 
+        f32 inv_aspect = mem->doc->canvas_size.y / mem->doc->canvas_size.x;
         pagl_draw_mesh(mem->meshes[PapayaMesh_AlphaGrid],
                        mem->shaders[PapayaShader_AlphaGrid],
                        6,
                        Pagl_UniformType_Matrix4, m,
                        Pagl_UniformType_Color, mem->colors[PapayaCol_AlphaGrid1],
                        Pagl_UniformType_Color, mem->colors[PapayaCol_AlphaGrid2],
-                       Pagl_UniformType_Float, mem->cur_doc->canvas_zoom,
-                       Pagl_UniformType_Float, mem->cur_doc->inverse_aspect,
-                       Pagl_UniformType_Float, math::max((f32)mem->cur_doc->width, (f32)mem->cur_doc->height));
+                       Pagl_UniformType_Float, mem->doc->canvas_zoom,
+                       Pagl_UniformType_Float, inv_aspect,
+                       Pagl_UniformType_Float, math::max(mem->doc->canvas_size.x,
+                                                         mem->doc->canvas_size.y));
     }
 
     // Draw canvas
     {
         pagl_transform_quad_mesh(mem->meshes[PapayaMesh_Canvas],
-                                 mem->cur_doc->canvas_pos,
-                                 Vec2(mem->cur_doc->width * mem->cur_doc->canvas_zoom,
-                                      mem->cur_doc->height * mem->cur_doc->canvas_zoom));
+                                 mem->doc->canvas_pos,
+                                 mem->doc->canvas_size * mem->doc->canvas_zoom);
 
         mat4x4 m;
         mat4x4_ortho(m, 0.f, (f32)mem->window.width, (f32)mem->window.height, 0.f, -1.f, 1.f);
@@ -853,20 +690,17 @@ void core::update(PapayaMemory* mem)
         if (mem->current_tool == PapayaTool_CropRotate) // Rotate around center
         {
             mat4x4 r;
-            Vec2 Offset = Vec2(mem->cur_doc->canvas_pos.x + mem->cur_doc->width *
-                    mem->cur_doc->canvas_zoom * 0.5f,
-                    mem->cur_doc->canvas_pos.y + mem->cur_doc->height *
-                    mem->cur_doc->canvas_zoom * 0.5f);
+            Vec2 offset = mem->doc->canvas_pos + (mem->doc->canvas_size * 0.5f);
 
-            mat4x4_translate_in_place(m, Offset.x, Offset.y, 0.f);
+            mat4x4_translate_in_place(m, offset.x, offset.y, 0.f);
             mat4x4_rotate_Z(r, m, mem->crop_rotate.slider_angle + 
                     math::to_radians(90.0f * mem->crop_rotate.base_rotation));
-            mat4x4_translate_in_place(r, -Offset.x, -Offset.y, 0.f);
+            mat4x4_translate_in_place(r, -offset.x, -offset.y, 0.f);
             mat4x4_dup(m, r);
         }
 
         // TODO: Node support 
-        // GLCHK( glBindTexture(GL_TEXTURE_2D, mem->cur_doc->final_node->tex_id) );
+        // GLCHK( glBindTexture(GL_TEXTURE_2D, mem->doc->final_node->tex_id) );
         GLCHK( glBindTexture(GL_TEXTURE_2D, mem->misc.canvas_tex) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ) );
         GLCHK( glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) );
@@ -878,6 +712,7 @@ void core::update(PapayaMemory* mem)
                        mem->shaders[PapayaShader_ImGui],
                        1,
                        Pagl_UniformType_Matrix4, m);
+        glDisable(GL_SCISSOR_TEST);
     }
 
     // TODO: Switch case <------

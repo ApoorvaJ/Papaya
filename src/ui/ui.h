@@ -10,7 +10,6 @@
 #include "libs/imgui/imgui.h"
 
 #include "components/crop_rotate.h"
-#include "components/node.h"
 #include "components/prefs.h"
 #include "components/undo.h"
 
@@ -21,7 +20,7 @@ struct ColorPanel;
 struct EyeDropper;
 struct GraphPanel;
 
-struct PapayaDocument;
+struct PapayaNode;
 struct PaglMesh;
 struct PaglProgram;
 
@@ -85,23 +84,36 @@ struct Layout {
     i32 default_imgui_flags;
 };
 
+// struct Document {
+//     Node* nodes[512];
+//     int node_count;
+//     Node* final_node;
+//     Node* current_node;
+//     i64 next_node_id;
+
+//     // Links are automatically maintained. Treat as read-only.
+//     NodeLink* links[512];
+//     int link_count;
+
+//     i32 width, height;
+//     i32 components_per_pixel;
+//     Vec2i canvas_pos;
+//     f32 canvas_zoom;
+//     f32 inverse_aspect;
+//     f32 proj_mtx[4][4];
+//     UndoBuffer undo;
+// };
+
 struct Document {
-    Node* nodes[512];
-    int node_count;
-    Node* final_node;
-    Node* current_node;
-    i64 next_node_id;
+    PapayaNode* nodes;
+    size_t num_nodes;
+    PapayaNode* view_node; // Node that is being evaluated and viewed
+    PapayaNode* edit_node; // Node that is being edited
 
-    // Links are automatically maintained. Treat as read-only.
-    NodeLink* links[512];
-    int link_count;
-
-    i32 width, height;
-    i32 components_per_pixel;
-    Vec2i canvas_pos;
+    Vec2 canvas_pos;
+    Vec2 canvas_size;
     f32 canvas_zoom;
-    f32 inverse_aspect;
-    f32 proj_mtx[4][4];
+
     UndoBuffer undo;
 };
 
@@ -159,9 +171,7 @@ struct PapayaMemory {
     Tablet tablet;
     Profile profile;
 
-    ImVector<Document> docs; // TODO: Use custom vector type?
-    Document* cur_doc;
-    PapayaDocument* doc;
+    Document* doc;
 
     u32 textures[PapayaTex_COUNT];
     Color colors[PapayaCol_COUNT];
