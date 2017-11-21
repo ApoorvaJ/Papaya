@@ -106,7 +106,7 @@ char* platform::save_file_dialog()
         }
     }
 
-    char buffer[256];
+    char buffer[MAX_PATH+2];
     sprintf(buffer, "%s\n", file_name);
     OutputDebugStringA(buffer);
 
