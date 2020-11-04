@@ -1,3 +1,7 @@
+This repo contains the predecessor to [papaya.io](https://papaya.io). This repo is not being actively developed. It is here for posterity.
+
+---
+
 Papaya is a free, open-source and cross-platform image editor.
 
 ![screenshot 1](/web/img.0.0.jpg?raw=true)
